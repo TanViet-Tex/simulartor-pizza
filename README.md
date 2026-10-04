@@ -4,13 +4,15 @@
 
 Trang `/` mở menu minh họa có animation. Bắt đầu dẫn qua hướng dẫn rồi vào quán; `/?mode=shop` mở thẳng phần chuẩn bị và `/?mode=freeplay` là màn tập làm bánh độc lập. Giao diện đã duyệt được ghi trong [mốc UI](_bmad-output/implementation-artifacts/ui-baseline-2026-10-02.md).
 
-Trong ca bán: **Pause → Kết thúc ngày → Xác nhận** để vào màn tổng kết. Xem doanh thu, chi phí, lợi nhuận, đơn hoàn thành/khách bỏ đi và đánh giá thực tế. Dùng Chợ/Kho chuẩn bị nguyên liệu, chọn món rồi **Mở quán — Ngày N+1**. Tiền và lô còn hạn được giữ qua ngày. Quán/Nhiệm vụ/cấp chưa triển khai hiển thị “Chưa mở”. Demo kết thúc sau ngày 3 hoặc khi thiếu vốn; ngày đã chốt không thể mở lại trong phiên.
+Trong ca bán, chạm đồng hồ ca → **Kết thúc ngày → Xác nhận** để vào tổng kết. Dùng Chợ mua trước ca và giữa các ngày, nhập Kho rồi **Mở quán — Ngày N+1**; ca sử dụng tồn kho đó. Tiền và lô còn hạn được giữ qua ngày. Pause có Tiếp tục/Cài đặt/Menu; về Menu giữ phiên đang chơi.
 
-Luồng Cozy này giữ tiến độ trong **RAM của phiên đang mở**; tải lại trang không khôi phục các ngày đã chơi. Chi tiết theo [spec cuối ngày](_bmad-output/implementation-artifacts/spec-end-of-day-reference.md).
+Chiến dịch chính có khung **ngày 1–30**. Sau ngày 30 xem tổng tiền, cấp/XP, uy tín, đơn/pizza đã bán và nhiệm vụ hoàn thành; có thể xem lại hoặc bắt đầu lượt mới sau xác nhận. Chưa bổ sung VIP, lịch XP/nhiệm vụ mới hoặc cân bằng đầy đủ 30 ngày. Save cũ đã vượt ngày 30 giữ toàn bộ dữ liệu, hoàn tất ngày đang chuẩn bị rồi tổng kết.
+
+Tiến độ dùng **IndexedDB** khi tạo chiến dịch, mua nâng cấp/công thức/nhân viên và chốt ngày; không lưu giữa ca. Tải lại giữa ca trở về checkpoint đầu ngày đang chơi. Lỗi lưu có thử lại và giữ bản cũ; lượt mới chỉ thay phiên sau khi lưu thành công. Xem [spec chiến dịch](_bmad-output/implementation-artifacts/spec-9-1-thirty-day-campaign.md).
 
 ## Chiến dịch riêng
 
-`/?mode=campaign` mở prototype chiến dịch ba ngày với giao diện riêng. Tiến độ được ghi vào IndexedDB khi tạo chiến dịch và chốt ngày. Tải lại giữa ngày trở về checkpoint đầu ngày đó; lỗi lưu giữ màn tổng kết để thử lại. Luồng cuối ngày Cozy không thay dữ liệu hoặc cơ chế lưu chiến dịch này.
+`/?mode=campaign` vẫn là prototype ba ngày với giao diện và dữ liệu riêng. Khung chiến dịch 30 ngày áp dụng cho luồng chính Cozy, không thay prototype này.
 
 ## Chạy dự án
 

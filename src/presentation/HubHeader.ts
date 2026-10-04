@@ -1,6 +1,7 @@
 import type Phaser from 'phaser';
 import {HUB_THEME} from './HubTheme';
 import type {HubHit,HubTab} from './HubCanvasUI';
+import {CAMPAIGN_LAST_DAY} from '../config/campaignRules';
 
 export const HUB_HEADER_ART={key:'shared-hub-header',url:'assets/references/Giao diện game pizza gỗ tối giản.png'};
 let serial=0;
@@ -19,15 +20,16 @@ function text(ctx:CanvasRenderingContext2D,x:number,y:number,value:string,size:n
   ctx.fillText(value,x,y);ctx.restore();
 }
 export function paintHubHeader(scene:Phaser.Scene,ctx:CanvasRenderingContext2D,hit:HubHit,input:{title:string;subtitle:string;cash:number;pause:()=>void}):void{
+  const subtitle=input.subtitle.replace(/(ngày\s+)(\d+)(?![\d/])/i,(_match,prefix:string,day:string)=>`${prefix}${day}/${Math.max(CAMPAIGN_LAST_DAY,Number(day))}`);
   // Crop only framed artwork; the supplied image's wood never forms a second backdrop.
   crop(scene,ctx,[414,20,1250,356],[71,3,215,62],16);
   crop(scene,ctx,[1689,70,380,164],[290,12,65,28],13);
   crop(scene,ctx,[98,112,178,160],[17,19,31,28],7);
-  text(ctx,178,18,input.title,20,192);text(ctx,178,46,input.subtitle,11,192,HUB_THEME.colors.muted);
+  text(ctx,178,18,input.title,20,192);text(ctx,178,46,subtitle,11,192,HUB_THEME.colors.muted);
   text(ctx,333,21,`${input.cash} xu`,11,37);
   hit('pause',12,14,40,40,true,input.pause);
   scene.game.canvas.dataset.hubHeader='minimal-wood-reference';
-  scene.game.canvas.dataset.hubHeaderLabels=JSON.stringify([input.title,input.subtitle,`${input.cash} xu`,'Tổng kết','Chợ','Kho','Quán','Nhiệm vụ']);
+  scene.game.canvas.dataset.hubHeaderLabels=JSON.stringify([input.title,subtitle,`${input.cash} xu`,'Tổng kết','Chợ','Kho','Quán','Nhiệm vụ']);
 }
 export function paintHubNavigation(scene:Phaser.Scene,ctx:CanvasRenderingContext2D,hit:HubHit,active:HubTab,tab:(id:HubTab)=>void):void{
   crop(scene,ctx,[17,407,2058,319],[3,70,354,55],12);

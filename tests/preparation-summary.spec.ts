@@ -12,7 +12,7 @@ test('Continue day one enters the five-tab summary hub and opens the same unstar
   await expect(canvas).toHaveAttribute('data-screen','preparation-hub');await expect(canvas).toHaveAttribute('data-summary-tab','summary');
   const cash=await canvas.getAttribute('data-cash'),stock=await canvas.getAttribute('data-stock');
   const labels=[...JSON.parse(await canvas.getAttribute('data-labels')??'[]').map((l:{text:string})=>l.text),...JSON.parse(await canvas.getAttribute('data-hub-header-labels')??'[]')];
-  expect(labels).toEqual(expect.arrayContaining(['Tổng kết','Chợ','Kho','Quán','Nhiệm vụ','Ngày 1 chưa bắt đầu']));
+  expect(labels).toEqual(expect.arrayContaining(['Tổng kết','Chợ','Kho','Quán','Nhiệm vụ','Ngày 1/30 chưa bắt đầu']));
   expect(labels).not.toContain('Đặt nguyên liệu trong ca');
   await tap(page,'pause');await tap(page,'main-menu');await expect(canvas).toHaveAttribute('data-screen','menu');
   await tap(page,'menu-continue',true);await expect(canvas).toHaveAttribute('data-screen','preparation-hub');await expect(canvas).toHaveAttribute('data-summary-tab','summary');

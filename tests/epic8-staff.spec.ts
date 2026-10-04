@@ -3,7 +3,7 @@ import {build} from 'esbuild';
 type Control={id:string;x:number;y:number;width:number;height:number;enabled:boolean};
 async function data(page:Page,key:string){return JSON.parse(await page.locator('canvas').getAttribute('data-'+key)??'null');}
 async function tap(page:Page,id:string){let c:Control|undefined;await expect.poll(async()=>{c=((await data(page,'controls'))??[]).find((v:Control)=>v.id===id&&v.enabled);return !!c;}).toBe(true);const b=(await page.locator('canvas').boundingBox())!,r=c!;expect(r.width*b.width/360).toBeGreaterThanOrEqual(48);expect(r.height*b.height/640).toBeGreaterThanOrEqual(48);await page.touchscreen.tap(b.x+(r.x+r.width/2)*b.width/360,b.y+(r.y+r.height/2)*b.height/640);await page.evaluate(()=>new Promise<void>(resolve=>requestAnimationFrame(()=>requestAnimationFrame(()=>resolve()))));}
-async function ready(page:Page){await expect.poll(async()=>(await data(page,'save-state'))?.state).toBe('ready');}
+async function ready(page:Page){await expect.poll(async()=>!!(await data(page,'staff-state'))&&(await data(page,'save-state'))?.state==='ready').toBe(true);}
 async function active(page:Page){return page.evaluate(()=>new Promise<any>((resolve,reject)=>{const q=indexedDB.open('pizza-cozy-checkpoints',1);q.onerror=()=>reject(q.error);q.onsuccess=()=>{const db=q.result,tx=db.transaction('latest','readonly'),r=tx.objectStore('latest').get('active');tx.oncomplete=()=>{db.close();resolve(r.result);};};}));}
 async function seed(page:Page){
  const moduleName:string='node:path';const paths:{resolve:(p:string)=>string}=await import(moduleName);

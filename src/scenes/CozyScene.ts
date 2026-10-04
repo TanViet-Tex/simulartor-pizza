@@ -115,7 +115,10 @@ export class CozyScene extends Phaser.Scene {
   private unsubscribeSave?:()=>void;
   private saveDismissed=false;
   private finalOpen=false;
+  private finalLease?:PauseLease;
+  private pendingFinalResults=false;
   private newCampaignConfirmation=false;
+  private newCampaignLease?:PauseLease;
   private reloadConfirmation=false;
   private notification?:{layout:NotificationLayout;ids:string[];start:number;end:number;title:boolean};
   private notificationButtonLabel=false;
@@ -146,6 +149,7 @@ export class CozyScene extends Phaser.Scene {
     this.events.once('shutdown',()=>this.closeMarketPurchase());
     this.events.once('shutdown',()=>{this.closeDeliveryApp();this.closeHubPanels();});
     this.events.once('shutdown',()=>{this.endedDayLease?.release();this.endedDayLease=undefined;this.endedDayNotice=null;});
+    this.events.once('shutdown',()=>{this.closeFinalResults();this.closeNewCampaign();});
     this.events.once('destroy',()=>{this.closeDeliveryApp();this.closeHubPanels();});
     this.events.once('shutdown',()=>this.closeMarketQuantity());
     this.events.once('destroy',()=>this.closeMarketQuantity());
@@ -165,6 +169,7 @@ export class CozyScene extends Phaser.Scene {
       this.warnedPayrollDays.add(this.runtime.day);this.summaryTab='summary';
       this.hubDetail={title:'Chưa đủ tiền trả lương',body:this.runtime.staffState.warning+'\nKhoản chưa trả được giữ để trả cùng lương vào cuối ngày sau.',lease:this.runtime.acquirePause('order')};this.dirty=true;
     }
+    if(this.pendingFinalResults&&!this.runtime.pauses.length&&!this.campaignSession?.view.pending){this.pendingFinalResults=false;this.openFinalResults();}
     const s=this.runtime.state;
     this.game.canvas.dataset.shiftClock=JSON.stringify(this.runtime.shiftClock);
     const sig=[s.stage,s.ingredients.join(','),Math.floor(this.runtime.ovenState?.ovenSeconds??s.ovenSeconds),this.runtime.expressOrders.map(o=>`${o.id}:${Math.ceil(o.remaining*10)}`).join(','),this.runtime.tickets.map(t=>`${t.id}:${Math.ceil(t.remaining)}:${t.packed}:${t.riderState}`).join(','),this.runtime.selectedTicketId,this.runtime.tutorialActive,this.runtime.pauseRevision,this.runtime.shopRevision,this.runtime.shiftClock.phase,this.runtime.deliveryStatus.phase,Math.ceil(this.runtime.deliveryStatus.remaining)].join('|');
@@ -309,7 +314,7 @@ export class CozyScene extends Phaser.Scene {
     });
     this.inspectedOrderId=this.orderQueue.inspectedId;
     this.hit('pause',18,5,32,29,true,()=>this.hold('user'));
-    this.label(180,0,`Ngày ${this.runtime.day}`,18);
+    this.label(180,0,this.runtime.productionActive?`Ngày ${this.runtime.day}/${this.runtime.campaignEndDay}`:`Ngày ${this.runtime.day}`,18);
     this.timer(189,23,()=>this.runtime.productionActive&&(!this.runtime.ovenOwner||this.runtime.shiftClock.phase==='awaiting-close')?this.shiftTimeText():`Lò ${timerText(Math.floor(this.runtime.ovenState?.ovenSeconds??this.runtime.state.ovenSeconds))}`,10,'#ead1b3');
     if(this.runtime.shopOpen)this.hit('end-day',133,22,114,20,this.runtime.canCloseDay,()=>{this.hold('user');this.endDayConfirmation=true;this.dirty=true;});
     this.label(306,10,`${s.cash} xu`,17,ink);
@@ -380,6 +385,8 @@ export class CozyScene extends Phaser.Scene {
     this.staticGraphics.bake(this.layer);
     const canvas=this.game.canvas;canvas.dataset.screen=this.endedDayNotice!==null?'day-ended-notice':this.preparationHub?'preparation-hub':this.runtime.shopPhase==='summary'?'day-summary':'game';canvas.dataset.day=String(this.runtime.day);canvas.dataset.daySummary=JSON.stringify(this.runtime.daySummary);canvas.dataset.summaryTab=this.summaryTab;canvas.dataset.stage=s.stage;canvas.dataset.ingredients=s.ingredients.join(',');canvas.dataset.oven=String(s.ovenSeconds);canvas.dataset.cash=String(s.cash);canvas.dataset.paused=this.runtime.pauses.join(',');canvas.dataset.controls=JSON.stringify(this.controls);canvas.dataset.booted='true';
     canvas.setAttribute('aria-label',`Tiệm pizza. Ngày ${this.runtime.day}. ${s.cash} xu. ${this.runtime.productionActive?this.runtime.shopMessage:s.feedback}`);
+    canvas.dataset.campaignProgress=JSON.stringify({day:this.runtime.day,endDay:this.runtime.campaignEndDay});
+    canvas.dataset.campaignResults=JSON.stringify(this.runtime.campaignResults);
     canvas.dataset.tutorial=this.runtime.tutorialStep??'off';
     canvas.dataset.commercialCash=String(this.runtime.commercialState.cash);
     canvas.dataset.reducedMotion=String(this.reducedMotion);
@@ -664,7 +671,7 @@ export class CozyScene extends Phaser.Scene {
       const saveBlocked=this.campaignSession&&['error','recovery'].includes(this.campaignSession.view.state);
       const footer=saveBlocked?{id:'save-show-status',title:'Xử lý lưu tiến độ',enabled:true,action:()=>{this.saveDismissed=false;this.dirty=true;}}:
         initial?{id:'summary-open-first-day',title:`Mở quán — Ngày ${this.runtime.day}`,enabled:this.runtime.canOpen,action:()=>{this.runtime.openShop();this.inspectedOrderId=null;}}:
-        summary!.ending?{id:'summary-final-result',title:'Kết quả cuối',enabled:!this.campaignSession||['ready','temporary'].includes(this.campaignSession.view.state),action:()=>{this.finalOpen=true;this.dirty=true;}}:
+        summary!.ending?{id:'summary-final-result',title:'Kết quả chiến dịch',enabled:!this.campaignSession||['ready','temporary'].includes(this.campaignSession.view.state),action:()=>this.openFinalResults()}:
         {id:'summary-open-next-day',title:`Mở quán — Ngày ${summary!.day+1}`,enabled:this.runtime.canOpenNextDay,action:()=>{this.runtime.openNextDay();this.inspectedOrderId=null;}};
       const reports=this.runtime.completedReports,previous=summary?reports.find(r=>r.day===summary.day-1):undefined;
       const tab=(id:'summary'|'market'|'stock'|'shop'|'missions')=>{this.summaryTab=id;this.stockDrag.active=false;this.marketDrag.active=false;this.dirty=true;};
@@ -876,20 +883,23 @@ export class CozyScene extends Phaser.Scene {
     this.button('save-view-summary',184,440,128,48,'Xem kết quả',this.runtime.shopPhase==='summary',()=>{this.saveDismissed=true;this.dirty=true;},UI.dark);
     this.label(180,514,'Chuẩn bị và mở ngày sau đang bị khóa.',11,wood,278);
   }
+  private openFinalResults():void {if(!this.runtime.daySummary?.ending||this.finalOpen)return;this.finalOpen=true;this.finalLease=this.runtime.acquirePause('order');this.dirty=true;}
+  private closeFinalResults():void {this.finalOpen=false;this.finalLease?.release();this.finalLease=undefined;this.dirty=true;}
+  private openNewCampaign():void {this.closeFinalResults();this.newCampaignConfirmation=true;this.newCampaignLease??=this.runtime.acquirePause('order');this.dirty=true;}
+  private closeNewCampaign():void {this.newCampaignConfirmation=false;this.newCampaignLease?.release();this.newCampaignLease=undefined;this.dirty=true;}
   private finalDialog():void {
-    const s=this.runtime.daySummary!;this.resetModalControls();this.notificationFrame(["summary-final-close"],236,490,490);
-    this.label(180,191,s.ending==='complete'?'Hoàn thành demo 3 ngày':'Không đủ vốn',22,ink,280);
-    const p=s.progression;
-    this.explanation(236,170,[s.viability?.message??'',`Tiền cuối: ${s.cash} xu`,`Lợi nhuận cộng dồn: ${s.accounts.cumulativeProfit} xu`,`Cấp ${p.xp>=150?3:p.xp>=60?2:1} · ${p.xp} XP`,`Uy tín ${s.reputation}/100 · Quan hệ Linh ${s.relationship}/3`,`Nhiệm vụ phô mai: ${p.cheeseSales}/8 · ${p.mission==='completed'?'hoàn thành':p.mission==='expired'?'đã hết hạn':'chưa hoàn thành'}`,this.campaignSession?.view.state==='temporary'?'Phiên tạm không lưu.':this.campaignSession?'Kết quả đã lưu. Không có Ngày 4 trong demo.':'Kết quả chỉ giữ trong phiên này.'].filter(Boolean).join('\n'),14);
-    if(this.campaignSession)this.button('summary-new-campaign',48,432,264,48,'Chiến dịch mới',true,()=>{this.finalOpen=false;this.newCampaignConfirmation=true;this.dirty=true;});
-    this.button('summary-final-close',48,500,264,48,'Xem tổng kết',true,()=>{this.finalOpen=false;this.dirty=true;},UI.dark);
+    const s=this.runtime.daySummary!,result=this.runtime.campaignResults;this.resetModalControls();this.notificationFrame(['summary-new-campaign','summary-final-close'],236,440,470);
+    this.label(180,191,s.ending==='complete'?'Hoàn thành chiến dịch':'Không đủ vốn',22,ink,280);
+    this.explanation(236,185,[`Đã chốt ${result.daysCompleted}/${result.endDay} ngày`,s.ending==='insolvent'?s.viability?.message:'',`Cấp ${result.level} · ${result.xp} XP · Uy tín ${result.reputation}/100`,`Tiền cuối: ${result.cash} xu`,`Bán ${result.pizzas} pizza · Giao ${result.orders} đơn`,`Doanh thu: ${result.revenue} xu`,`Lợi nhuận cộng dồn: ${result.cumulativeProfit} xu`,`Mục tiêu ngày: ${result.goalsCompleted} · Nhiệm vụ: ${result.missionsCompleted}`,this.runtime.staffState.arrears?`Lương chưa trả: ${this.runtime.staffState.arrears} xu`:'',this.campaignSession?.view.state==='temporary'?'Phiên tạm không lưu.':this.campaignSession?'Kết quả đã lưu.':'Kết quả chỉ giữ trong phiên này.'].filter(Boolean).join('\n'),14);
+    this.button('summary-new-campaign',40,430,132,48,'Chiến dịch mới',!!this.campaignSession||!!this.replaceRuntime,()=>this.openNewCampaign());
+    this.button('summary-final-close',188,430,132,48,'Xem tổng kết',true,()=>this.closeFinalResults(),UI.dark);
   }
   private newCampaignDialog():void {
     this.resetModalControls();this.notificationFrame(["market-new-cancel","market-new-confirm"],278,350,420);
-    this.label(180,231,this.campaignSession?'Chiến dịch mới?':'Làm lại Ngày 1?',23,ink);
+    this.label(180,231,'Chiến dịch mới?',23,ink);
     this.explanation(278,72,this.campaignSession?'Tiến độ hiện tại sẽ được thay bằng Ngày 1, 300 xu và kho trống. Các ngày đã chốt không thể mở lại. Chỉ thay bản cũ sau khi lưu mới thành công.':'Tiền và kho hiện tại sẽ được đặt lại về 300 xu và kho trống.',14);
-    this.button('market-new-cancel',48,377,264,48,'Giữ chiến dịch hiện tại',true,()=>{this.newCampaignConfirmation=false;this.dirty=true;},UI.dark);
-    this.button('market-new-confirm',48,442,264,48,this.campaignSession?'Tạo chiến dịch mới':'Xác nhận làm lại',true,()=>{this.newCampaignConfirmation=false;if(this.campaignSession)void this.campaignSession.start(false).then(runtime=>{if(runtime)this.replaceRuntime?.(runtime);});else {this.release('user');this.runtime.dispatch({type:'reset'});this.dirty=true;}});
+    this.button('market-new-cancel',48,377,264,48,'Giữ phiên',true,()=>this.closeNewCampaign(),UI.dark);
+    this.button('market-new-confirm',48,442,264,48,'Bắt đầu mới',true,()=>{this.closeNewCampaign();if(this.campaignSession)void this.campaignSession.start(false).then(runtime=>{if(runtime)this.replaceRuntime?.(runtime);});else if(this.replaceRuntime)this.replaceRuntime(new CozyRuntime(false,true));else {this.release('user');this.runtime.dispatch({type:'reset'});this.dirty=true;}});
   }
   private discardDialog():void{
     this.notificationFrame(["confirm-discard","cancel-discard"],276,332,420);
@@ -976,7 +986,7 @@ export class CozyScene extends Phaser.Scene {
     }
     this.notice('Đơn của Linh','1 pizza phô mai · Mang đi\nĐế bánh + sốt cà chua + phô mai\n'+reasons,'close-order','Làm bánh thôi',()=>this.release('order'),this.scenePauses.has('order'),12);
     if(pauses.includes('user')&&this.returnToMenu)this.button('main-menu',64,418,232,54,'Về menu chính',true,this.returnToMenu,UI.dark);
-    if(this.runtime.postTutorialPreparation&&this.scenePauses.has('user'))this.button('market-reset',64,482,232,48,this.campaignSession?'Chiến dịch mới':'Làm lại Ngày 1',true,()=>{this.newCampaignConfirmation=true;this.dirty=true;},UI.dark);
+    if(this.runtime.postTutorialPreparation&&this.scenePauses.has('user'))this.button('market-reset',64,482,232,48,this.campaignSession?'Chiến dịch mới':'Làm lại Ngày 1',true,()=>this.openNewCampaign(),UI.dark);
     if(this.scenePauses.has('user')&&this.runtime.shopOpen)this.button('end-day',64,482,232,48,'Kết thúc ngày',this.runtime.canCloseDay,()=>{this.endDayConfirmation=true;this.dirty=true;},0xa65547);
   }
   private finishDay():void{
@@ -985,6 +995,7 @@ export class CozyScene extends Phaser.Scene {
     this.endDayConfirmation=false;this.release('user');
     if(day===1){this.endedDayNotice=day;this.endedDayLease=this.runtime.acquirePause('order');}
     else this.summaryTab='summary';
+    if(this.runtime.daySummary?.ending==='complete')this.pendingFinalResults=true;
     this.dirty=true;
   }
   private resumePause():void{

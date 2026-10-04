@@ -164,6 +164,11 @@ Sau demo; P07, P11, P15, P16, tích hợp P01–P14. Trụ cột tiến độ. P
 
 Điều kiện trước triển khai: bảng XP/mở khóa 30 ngày, lịch nhiệm vụ và nền kinh tế được duyệt; playtest các mốc 7/14/21/30; không khóa kết thúc vì bỏ lỡ một nhiệm vụ ẩn.
 
+**Phạm vi đã duyệt 2026-10-05:**
+
+- **9.1 — Khung chiến dịch 30 ngày:** giữ luồng Chợ/Kho/ca bán/tổng kết, hiển thị ngày trên tổng 30, chốt chiến dịch sau ngày 30, xem thành tích thật và bắt đầu lượt mới có xác nhận. Giữ luật XP/tiền/kho/lương/save; không thêm thưởng kết thúc. Save cũ đã quá ngày 30 giữ toàn bộ dữ liệu, hoàn tất ngày đang chuẩn bị rồi kết thúc; không cắt lịch sử hoặc đặt lại tiền. Xem [spec 9.1](../../implementation-artifacts/spec-9-1-thirty-day-campaign.md).
+- VIP, lịch nhiệm vụ/XP/mở khóa mới, balance dài hạn và playtest vẫn chưa thuộc đợt này; toàn Epic 9 còn in-progress.
+
 ## Chỉnh sửa luồng cuối ngày Cozy — người dùng 2026-10-02
 
 Màn cuối ngày đã được người dùng xác nhận bằng ảnh và yêu cầu giữ làm mốc. Story triển khai tiếp theo phải đọc [mốc UI, phần cuối ngày](../../implementation-artifacts/ui-baseline-2026-10-02.md), giữ bố cục/phong cách/nút và các tab hiện có; không diễn giải spec “reference” thành quyền tự thiết kế lại. Chỉ số/nhận xét thay theo dữ liệu thật, không đóng băng giá trị trong ảnh.

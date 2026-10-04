@@ -37,7 +37,7 @@ function directPlay():Phaser.Scene {
     game.scene.stop('CozyScene');game.scene.stop('PlayScene');
     if(!game.scene.getScene('MainMenuScene'))game.scene.add('MainMenuScene',menu,false);
     game.scene.start('MainMenuScene');
-  },playAudio,lifecycle);
+  },playAudio,lifecycle,undefined,next=>{menuLease?.release();menuLease=undefined;lifecycle.destroy();runtime=next;lifecycle=new PlayLifecycle(runtime);enter();});
   game.events.once(Phaser.Core.Events.DESTROY,()=>{menuLease?.release();lifecycle.destroy();preferences.destroy();});
   return makePlay();
 }

@@ -348,3 +348,12 @@ Dòng ghi chú hiện có hiển thị số người, tổng lương ngày và k
 ![Thông báo thiếu lương](ui-baseline/epic8-wage-shortage.png)
 
 ![Khoản lương chưa trả](ui-baseline/epic8-unpaid-staff.png)
+### Epic9.1 — tiến độ và kết quả30ngày, 2026-10-05
+
+Nhãn ngày trong header/bếp hiện /30 (save grandfather hiện endDay thật). Giữ vị trí/font/art/năm tab/body/footer; footer terminal mở kết quả chiến dịch thay mở ngày sau. Khung hai nút hiện kết quả thật, Xem tổng kết và Chiến dịch mới; lượt mới hỏi xác nhận và giữ bản cũ đến khi lưu thành công. Không thêm reward hoặc reflow hub.
+
+![Chuẩn bị ngày30](ui-baseline/epic9-prepare-day30.png)
+
+![Hoàn thành chiến dịch](ui-baseline/epic9-campaign-complete.png)
+
+![Xác nhận lượt mới](ui-baseline/epic9-restart-confirm.png)
