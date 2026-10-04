@@ -16,9 +16,33 @@ describe('Epic7 shop investment',()=>{
   expect(r.placeShopItem('table-plant',true,'again')).toBe(false);expect(r.shopState.effects.visitors).toBe(.03);
   expect(r.shopItemPreview('table-plant',false).after.visitors).toBe(0);
   expect(r.placeShopItem('table-plant',false,'store')).toBe(true);expect(r.state.cash).toBe(cash-500);expect(r.shopState.acquired).toHaveLength(1);
-  expect(r.buyShopItem('customer-tables','blocked')).toBe(false);expect(SHOP_CATALOG.find(i=>i.id==='customer-tables')!.price).toBe(4000);
+  expect(SHOP_CATALOG.find(i=>i.id==='customer-tables')).toMatchObject({price:4000,available:true});
   r.openShop();expect(r.buyShopItem('wifi','shift')).toBe(false);expect(r.placeShopItem('table-plant',true,'shift-place')).toBe(false);
   const poor=new CozyRuntime(false,true);expect(poor.buyShopItem('table-plant','poor')).toBe(false);expect(poor.shopItemPreview('table-plant').missing).toBe(200);expect(poor.state.cash).toBe(300);
+ });
+ it('tables activate only after placement, survive reload and cask without changing capacity',()=>{
+  const r=CozyRuntime.restoreCheckpoint(fundedShopCheckpoint(),false,{schedule:day=>({day,duration:180,grace:120,slots:[{id:'counter',at:0,kind:'regular',opportunity:'commercial',commercialOrdinal:1,takeaway:false}]})})!,cash=r.state.cash;
+  expect(r.buyShopItem('customer-tables','tables')).toBe(true);expect(r.state.cash).toBe(cash-4000);
+  expect(r.shopState.effects.patience).toBe(0);expect(r.queueCapacity).toBe(4);
+  expect(r.placeShopItem('customer-tables',true,'place')).toBe(true);expect(r.shopState.effects.patience).toBe(.10);
+  const loaded=CozyRuntime.restoreCheckpoint(r.exportCheckpoint(),false,{schedule:day=>({day,duration:180,grace:120,slots:[{id:'counter',at:0,kind:'regular',opportunity:'commercial',commercialOrdinal:1,takeaway:false}]})})!;
+  expect(loaded.queueCapacity).toBe(4);expect(loaded.shopState.effects.patience).toBe(.10);
+  loaded.openShop();expect(loaded.tickets[0].patience).toBeCloseTo(132);expect(loaded.shopState.frozenEffects.patience).toBe(.10);
+  expect(loaded.placeShopItem('customer-tables',false,'during-shift')).toBe(false);
+  const stored=CozyRuntime.restoreCheckpoint(r.exportCheckpoint())!;expect(stored.placeShopItem('customer-tables',false,'store')).toBe(true);
+  expect(stored.shopState.effects.patience).toBe(0);expect(stored.state.cash).toBe(cash-4000);expect(stored.queueCapacity).toBe(4);
+ });
+ it('all twelve placed items never change capacity; only the single expansion changes four to six',()=>{
+  const r=CozyRuntime.restoreCheckpoint(fundedShopCheckpoint(30000))!;
+  for(const item of SHOP_CATALOG){expect(r.buyShopItem(item.id,'buy-'+item.id)).toBe(true);expect(r.queueCapacity).toBe(4);expect(r.placeShopItem(item.id,true,'place-'+item.id)).toBe(true);expect(r.queueCapacity).toBe(4);}
+  const prep=r.exportCheckpoint();expect(prep.shop!.acquired).toHaveLength(12);expect(validateCozyCheckpoint(prep)).not.toBeNull();
+  expect(r.shopState.effects).toEqual({visitors:.29,patience:.38});expect(r.shopState.effects.patience).toBeLessThanOrEqual(.40);
+  const loaded=CozyRuntime.restoreCheckpoint(prep)!;expect(loaded.queueCapacity).toBe(4);
+  expect(loaded.upgradeShop('queue','expansion')).toBe(true);expect(loaded.queueCapacity).toBe(6);expect(loaded.upgradePrice('queue')).toBeNull();
+  const expanded=loaded.exportCheckpoint(),cash=loaded.state.cash;
+  expect(loaded.upgradeShop('queue','expansion-again')).toBe(false);expect(loaded.state.cash).toBe(cash);expect(loaded.exportCheckpoint()).toEqual(expanded);
+  expect(CozyRuntime.restoreCheckpoint(expanded)!.queueCapacity).toBe(6);
+  for(const level of [2,3]){const forged=structuredClone(expanded);forged.upgrades.queueLevel=level;expect(validateCozyCheckpoint(forged)).toBeNull();expect(CozyRuntime.restoreCheckpoint(forged)).toBeNull();}
  });
  it('restores actual receipts and capital accounting once, rejects forged investment metadata',()=>{
   const r=CozyRuntime.restoreCheckpoint(fundedShopCheckpoint())!;

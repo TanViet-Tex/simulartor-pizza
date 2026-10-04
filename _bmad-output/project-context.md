@@ -98,7 +98,7 @@ Người dùng tiếp theo yêu cầu Ngày1 kết thúc hiện thông báo mộ
 
 ### Trang trí/Tiện nghi chức năng — 2026-10-04, chỉ ghi tài liệu
 
-- [Yêu cầu](implementation-artifacts/requirement-decoration-and-amenity-effects.md) chốt: trang trí tăng khách theo từng đồ3/5/5/8/5/3%; tiện nghi ghế5%, Wi-Fi8%, quạt5%, máy lạnh10%, loa5%, bàn ghế+2 chỗ chờ. Mỗi loại một bản, đồ sở hữu chưa đặt không bonus; cộng trên gốc, quạt/máy lạnh lấy max, cap khách30%/kiên nhẫn40%. Chốt bộ hiệu ứng khi mở ngày, nối scheduler/patience thật, không đổi đồ trong ca hoặc tăng giá/sao/nướng.
+- [Yêu cầu](implementation-artifacts/requirement-decoration-and-amenity-effects.md) chốt: trang trí tăng khách theo từng đồ3/5/5/8/5/3%; tiện nghi ghế5%, Wi-Fi8%, quạt5%, máy lạnh10%, loa5%, bàn ghế+10% kiên nhẫn, không tăng sức chứa. Mỗi loại một bản, đồ sở hữu chưa đặt không bonus; cộng trên gốc, quạt/máy lạnh lấy max, cap khách30%/kiên nhẫn40%. Chốt bộ hiệu ứng khi mở ngày, nối scheduler/patience thật, không đổi đồ trong ca hoặc tăng giá/sao/nướng.
 - Mua chỉ trong chuẩn bị: tiền/sở hữu cùng giao dịch, lưu thành công rồi UI xác nhận; lỗi không mất tiền thiếu đồ, double-tap/retry một lần. Đặt vị trí hợp lệ/xem trước/xác nhận, cất giữ sở hữu; save đồ/vị trí/cấp, tính lại bonus không cộng lặp; save cũ giữ tiền/tiến độ và chưa có đồ mới. Đây là **bổ sung ranh giới lưu chuẩn bị cho đồ**, chưa triển khai, không tự áp dụng lưu mỗi tap/giữa ca. Giá dùng config dự án, không ảnh; nguồn giá/vị trí/sức chứa/scheduler policy còn cần xác định trước làm.
 - BacklogE07: mở rộng7.1/7.2 và thêm7.4 hiệu ứng gameplay,7.5 giao dịch/save/migration. UI vẫn ưu tiên theo3.8, nhưng nút bật phải có chức năng thật, phần chưa làm có trạng thái rõ. **Chỉ note; chưa code/xem references/chạy build/test.**
 
@@ -310,8 +310,11 @@ User next explicitly authorized continuing these three tabs using notes and refe
 
 ### Epic 7 — triển khai phần đã chốt, 2026-10-04
 
-Đã triển khai 11 món Trang trí/Tiện nghi giá 500–10.000 xu: mua một lần, đặt/cất ở vị trí cố định trong preview Quán, chỉ đồ đang đặt có bonus. Giữ sáu mục Quán, header/footer và bếp đã duyệt. Ca đóng băng hiệu ứng khi mở; bonus sinh khách chỉ nhân cơ hội thương mại tại quầy, bonus kiên nhẫn áp dụng khách trả tiền tại quầy (kể cả referral), không tăng hạn đơn app. Lò cấp 2/3 giá 2.000/5.000; mở rộng 4→6 giá 6.000.
+Đã triển khai 12 món Trang trí/Tiện nghi giá 500–10.000 xu: mua một lần, đặt/cất ở vị trí cố định trong preview Quán, chỉ đồ đang đặt có bonus. Giữ sáu mục Quán, header/footer và bếp đã duyệt. Ca đóng băng hiệu ứng khi mở; bonus sinh khách chỉ nhân cơ hội thương mại tại quầy, bonus kiên nhẫn áp dụng khách trả tiền tại quầy (kể cả referral), không tăng hạn đơn app. Lò cấp 2/3 giá 2.000/5.000; mở rộng 4→6 giá 6.000.
 
 Mua/đặt/cất/nâng cấp chuẩn bị staging trên candidate; commit thành công mới cập nhật chính runtime hiện tại, lỗi/retry không trừ trùng. Metadata lưu sở hữu/vị trí/giá thực trả; save cũ giữ tiền/kho/tiến độ và giá nâng cấp lịch sử. Không lưu giữa ca. Build, 110 unit và 7 E2E Chromium 360×640 đạt; ba review độc lập hoàn tất.
 
-Bàn ghế 4.000 vẫn chờ chốt mô hình +2 chỗ đợi; mở rộng lần 2 giá 10.000 chờ sức chứa/bố cục. Thiết bị mới/quảng bá/hư hỏng chưa có luật. Toàn Epic7 vẫn in-progress. Ghi chú này thay các nhận định trước đây rằng đồ mới chưa có giá hoặc toàn bộ luồng mua chưa triển khai. Chi tiết: `_bmad-output/implementation-artifacts/spec-7-shop-development.md`.
+Bàn ghế 4.000 tăng10% kiên nhẫn, mua/đặt/cất được; không tăng sức chứa. Chỉ mở rộng quán tăng4→6 khách, tối đa6; giữ6 ô khách cố định, không avatar cuộn. Mở rộng lần2 giá10.000 chưa có tác dụng được chốt và chưa bật mua. Thiết bị mới/quảng bá/hư hỏng chưa có luật. Toàn Epic7 vẫn in-progress. Ghi chú này thay các nhận định trước đây rằng đồ mới chưa có giá hoặc toàn bộ luồng mua chưa triển khai. Chi tiết: `_bmad-output/implementation-artifacts/spec-7-shop-development.md`.
+### Luật Epic 7 thay thế — 2026-10-04
+
+Chỉ mở rộng quán tăng sức chứa: mặc định4 khách, mở rộng lần1 lên6, tối đa6. Bàn ghế4000xu chỉ tăng10% kiên nhẫn khi đang đặt; không tăng khách hoặc chỗ chờ phụ. Tổng tiện nghi sau lấy max quạt/máy lạnh là38%, cap40%. Giữ6 ô khách cố định, loại bỏ đề xuất cap8/10 và hàng avatar cuộn. Mở rộng lần2 giá10000 chưa có tác dụng được chốt, chưa cho mua và không tự gán bonus. Các luật bàn ghế/chỗ chờ trước đây được thay bằng quyết định này. Xem spec-7-capacity-and-table-patience.md trong implementation-artifacts.

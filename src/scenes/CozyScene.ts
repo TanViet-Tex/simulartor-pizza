@@ -382,7 +382,7 @@ export class CozyScene extends Phaser.Scene {
     canvas.dataset.tickets=JSON.stringify(this.runtime.tickets);
     canvas.dataset.selectedTicket=this.runtime.selectedTicketId;
     canvas.dataset.orderQueue=JSON.stringify(this.orderQueue.slots);
-    canvas.dataset.kitchenLayout=JSON.stringify({width:KITCHEN.width,height:KITCHEN.height,order:KITCHEN.order,board:KITCHEN.board,customers:this.orderQueue.slots.map((_,i)=>KITCHEN.customer(i)),recipes:Array.from({length:8},(_,i)=>KITCHEN.recipe(i)),ingredients:Array.from({length:20},(_,i)=>KITCHEN.ingredient(i)),ovens:[KITCHEN.oven(0),KITCHEN.oven(1)],actions:[KITCHEN.action(0),KITCHEN.action(1)]});
+    canvas.dataset.kitchenLayout=JSON.stringify({width:KITCHEN.width,height:KITCHEN.height,order:KITCHEN.order,board:KITCHEN.board,customerFrames:Array.from({length:6},(_,i)=>KITCHEN.customer(i)),customers:this.orderQueue.slots.map((_,i)=>KITCHEN.customer(i)),recipes:Array.from({length:8},(_,i)=>KITCHEN.recipe(i)),ingredients:Array.from({length:20},(_,i)=>KITCHEN.ingredient(i)),ovens:[KITCHEN.oven(0),KITCHEN.oven(1)],actions:[KITCHEN.action(0),KITCHEN.action(1)]});
     canvas.dataset.kitchenArt=JSON.stringify(this.layer.list.filter((o):o is Phaser.GameObjects.Image=>o instanceof Phaser.GameObjects.Image).map(image=>({key:image.texture.key,frame:image.frame.name,x:image.x,y:image.y,width:image.displayWidth,height:image.displayHeight})));
     canvas.dataset.orderDetail=JSON.stringify(this.orderQueue.detail);
     canvas.dataset.ovenOwner=this.runtime.ovenOwner??'';
@@ -737,7 +737,7 @@ export class CozyScene extends Phaser.Scene {
       for(const id of placed){const entry=shopItem(id)!,position=SHOP_INSTALL_LOCATIONS[id],x=50+260*position.x,y=240+93*position.y;this.graphics();this.art.g.fillStyle(0xfff0d2,.95).fillRoundedRect(x-11,y-position.height*.39-2,22,position.height*.78+4,4);illustration(entry.artKey,'shop-item-'+id,entry.crop,x,y,20,position.height*.78);}
       this.game.canvas.dataset.shopPlacement=JSON.stringify({id:item.id,mode:dialog.mode,slot});
     }else illustration(item.artKey,'shop-item-'+item.id,item.crop,180,264,68,68);
-    const effect='visitors' in item.effect?`+${Math.round(item.effect.visitors*100)}% khách ghé`:'waitingSeats' in item.effect?'+2 chỗ chờ':`+${Math.round(('patience' in item.effect?item.effect.patience:item.effect.cooling)*100)}% thời gian chờ`;
+    const effect='visitors' in item.effect?`+${Math.round(item.effect.visitors*100)}% khách ghé`:`+${Math.round(('patience' in item.effect?item.effect.patience:item.effect.cooling)*100)}% thời gian chờ`;
     const percent=(n:number)=>Math.round(n*100)+'%';
     const body=changing?`${dialog.mode==='place'?'Đặt tại:':'Cất khỏi:'} ${slot.name}\nKhách: +${percent(preview.current.visitors)} → +${percent(preview.after.visitors)}\nThời gian chờ: +${percent(preview.current.patience)} → +${percent(preview.after.patience)}\n${dialog.mode==='place'?'Áp dụng từ ca sắp mở.':'Giữ sở hữu, không hoàn tiền.'}`:`Giá: ${item.price?.toLocaleString('vi-VN')??'—'} xu · ${effect}\n${preview.owned?(preview.placed?'Đang đặt · '+slot.name:'Đã sở hữu · Đang cất'):(preview.missing?'Còn thiếu '+preview.missing.toLocaleString('vi-VN')+' xu.':'Đủ tiền mua.')}\n${item.available?(preview.owned?'Xem trước rồi xác nhận đặt/cất.':'Mua chưa đặt không cộng hiệu ứng.'):item.blockedReason}\nKhách: +${percent(preview.current.visitors)} → +${percent(preview.after.visitors)} · Chờ: +${percent(preview.current.patience)} → +${percent(preview.after.patience)}`;
     this.label(180,changing?339:312,body,13,ink,286);

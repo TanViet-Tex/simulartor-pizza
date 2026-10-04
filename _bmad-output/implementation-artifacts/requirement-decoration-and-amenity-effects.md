@@ -1,7 +1,7 @@
 ---
 title: 'Trang trí và Tiện nghi — chỉ số, mua, bố trí, gameplay và lưu'
 date: '2026-10-04'
-status: implemented-priced-items-pending-capacity-and-expansion
+status: implemented-priced-items-pending-expansion-2-effects
 scope: epic-7-priced-items
 source: user
 ---
@@ -22,12 +22,13 @@ Yêu cầu triển khai Epic7 đã được đưa ra. Bảng dưới đây thay 
 | Biển hiệu (bảng hiệu) | 2.500 xu | +8% khách ghé |
 | Nhạc trong quán (loa) | 3.000 xu | +5% thời gian chờ |
 | Điều hòa (máy lạnh) | 5.000 xu | +10% thời gian chờ |
+| Bàn ghế khách | 4.000 xu | +10% kiên nhẫn; không tăng sức chứa |
 | Lò cấp 2 | 2.000 xu | Cửa sổ chín4–6s theo nâng cấp hiện có |
 | Lò cấp 3 | 5.000 xu | Cửa sổ chín2–4s theo nâng cấp hiện có |
 | Mở rộng lần 1 | 6.000 xu | Hàng chờ4→6 khách |
-| Mở rộng lần 2 | 10.000 xu | Chờ chốt bố cục/sức chứa trước bật mua |
+| Mở rộng lần 2 | 10.000 xu | Chưa chốt tác dụng, chưa bật mua; không tăng quá6 khách |
 
-Người dùng tiếp theo xác định giá mọi món500–10000xu; giữ bảng đã chốt, bổ sung chậu cây lớn1500, rèm1000, quạt1500, bàn ghế khách4000xu. Bàn ghế vẫn cần chốt mô hình2chỗ chờ riêng với4/6ô đơn, đang hỏi người dùng; không bật mua trước có tác dụng thật. Thiết bị mới/quảng bá/hư hỏng/sửa chữa chưa có luật riêng. Giá nâng cấp mới chỉ áp dụng giao dịch mới, không định giá lại/nộp thêm tiền cho lò hoặc hàng chờ đã mua ở save cũ. Nhạc trong quán ở đây là bonus tiện nghi, không tự đồng nghĩa đã có audio nhạc nền.
+Người dùng tiếp theo xác định giá mọi món500–10000xu; giữ bảng đã chốt, bổ sung chậu cây lớn1500, rèm1000, quạt1500, bàn ghế khách4000xu. Bàn ghế tăng10% kiên nhẫn theo câu trả lời người dùng; không tăng sức chứa và được bật mua/đặt/cất. Thiết bị mới/quảng bá/hư hỏng/sửa chữa chưa có luật riêng. Giá nâng cấp mới chỉ áp dụng giao dịch mới, không định giá lại/nộp thêm tiền cho lò hoặc hàng chờ đã mua ở save cũ. Nhạc trong quán ở đây là bonus tiện nghi, không tự đồng nghĩa đã có audio nhạc nền.
 
 Triển khai đợt này dùng vị trí lắp cố định cho từng món trong preview Quán, xem trước rồi xác nhận; giữ nguyên bếp và sáu ô khách. Mở rộng lần2 chưa được cho phép đổi bố cục.
 
@@ -51,7 +52,7 @@ Phần dưới được ghi ở lượt tài liệu trước yêu cầu triển 
 | Quạt đứng | +5% kiên nhẫn |
 | Máy lạnh | +10% kiên nhẫn |
 | Loa nghe nhạc | +5% kiên nhẫn |
-| Bàn ghế khách | +2 chỗ chờ |
+| Bàn ghế khách | +10% kiên nhẫn, không tăng sức chứa |
 
 **Giá mua theo bảng người dùng chốt ở đầu tài liệu, không lấy giá ảnh.** Món ngoài bảng cần chốt giá trước khi bật Mua.
 
@@ -87,10 +88,10 @@ Khi xác nhận:
 - Các loại khác nhau **cộng phần trăm trên chỉ số gốc**, không nhân nối tiếp; chỉ tính đồ **đang đặt/kích hoạt**, không tính đồ cất.
 - **Quạt và máy lạnh lấy mức cao hơn**: quạt 5%, máy lạnh 10%, cả hai vẫn 10%.
 - `bonusKhach = min(0.30, tổng bonus trang trí đang đặt)`.
-- `bonusCho = min(0.40, bonus ghế + Wi-Fi + loa đang đặt + max(bonus quạt, bonus máy lạnh đang đặt))`.
-- Bàn ghế **+2 chỗ chờ riêng**, không vượt giới hạn bố trí. Không tự đồng nhất chỗ chờ với cap phiếu hoạt động hoặc số avatar UI.
+- `bonusCho = min(0.40, bonus ghế + Wi-Fi + loa + bàn ghế đang đặt + max(bonus quạt, bonus máy lạnh đang đặt))`.
+- Bàn ghế **+10% kiên nhẫn**, không tăng sức chứa. Chỉ mở rộng quán tăng từ4 lên tối đa6 khách; không có chỗ chờ phụ hoặc avatar cuộn.
 - Ví dụ **60 × (1 + 0.05 + 0.08) = 67.8 giây**, không nhân lần lượt 1.05/1.08.
-- Đối chiếu toàn bộ danh mục: trang trí 29%; tiện nghi tăng kiên nhẫn sau loại trừ quạt/máy lạnh 28%. Trần **30%/40%** vẫn áp dụng; không đổi chỉ số item để chạm trần.
+- Đối chiếu toàn bộ danh mục: trang trí 29%; tiện nghi tăng kiên nhẫn sau loại trừ quạt/máy lạnh 38%. Trần **30%/40%** vẫn áp dụng; không đổi chỉ số item để chạm trần.
 
 ## Gameplay khi mở ngày
 
@@ -98,7 +99,7 @@ Khi xác nhận:
 - **Thời gian đợi = thời gian gốc từng khách × (1 + bonusCho)**.
 - Tăng khách nối **hệ thống sinh khách thực tế**, giữ quy tắc đầy hàng chờ và không vượt sức chứa. Là **tăng kỳ vọng**, không bảo đảm số khách cố định mỗi ngày; không chỉ thay nhãn UI.
 - Không thay đồ trong ca; hiệu ứng không tự tăng **giá bán, điểm đánh giá hoặc tốc độ nướng**.
-- Chính sách sinh khách kỳ vọng, model sức chứa/giới hạn bố trí/vị trí hợp lệ cần chi tiết hóa trước tích hợp. Không tự thêm số slot cố định hoặc đổi lịch demo ở lượt ghi tài liệu.
+- Sức chứa chỉ từ mở rộng quán: mặc định4, mở rộng lần1 lên6, tối đa6. Giữ6 ô khách cố định; không hàng chờ phụ/overflow hoặc avatar cuộn. Mở rộng lần2 chưa có tác dụng được chốt; không tự thêm bonus hay tăng cap.
 
 ## Dữ liệu và lưu
 
@@ -112,11 +113,11 @@ Tiến độ lưu **sở hữu, đồ đang đặt/vị trí, cấp nâng cấp 
 
 “Lưu mua thành công rồi cập nhật UI” bổ sung **giao dịch bền mua đồ trong chuẩn bị** ngoài ranh giới tạo chiến dịch/chốt ngày cũ. Tiền/sở hữu phải cùng kết quả atomic, không ghi đồ độc lập có thể lệch tiền. Xác nhận bố trí/cấp nâng cấp phải khôi phục nhất quán sau reload; lịch ghi đặt/cất phải được thiết kế để đáp ứng yêu cầu này.
 
-Đã triển khai candidate checkpoint, commit/revision, lỗi/retry và bảo toàn tiền/kho/tiến độ cho 11 món khả dụng cùng nâng cấp lò/hàng chờ. Chỉ cập nhật runtime hiện tại sau commit thành công. Không đổi ngày đã chốt, ghi mỗi cú chạm/xem trước hoặc lưu giữa ca. Không mở ngày khi giao dịch/lưu còn pending. Save cũ giữ giá đã trả; nâng cấp tiếp theo dùng bảng giá mới. Bàn ghế và mở rộng lần 2 vẫn chờ quyết định sức chứa/bố cục.
+Đã triển khai candidate checkpoint, commit/revision, lỗi/retry và bảo toàn tiền/kho/tiến độ cho 12 món khả dụng cùng nâng cấp lò/hàng chờ. Chỉ cập nhật runtime hiện tại sau commit thành công. Không đổi ngày đã chốt, ghi mỗi cú chạm/xem trước hoặc lưu giữa ca. Không mở ngày khi giao dịch/lưu còn pending. Save cũ giữ giá đã trả; nâng cấp tiếp theo dùng bảng giá mới. Bàn ghế tăng10% kiên nhẫn; mở rộng lần2 chưa có tác dụng được chốt và chưa bật mua. Chỉ mở rộng lần1 tăng sức chứa4→6.
 
 ## UI và nghiệm thu
 
-- Thẻ ghi đúng **“+5% khách ghé”** hoặc **“+5% thời gian đợi”** theo chỉ số thực; bàn ghế ghi +2 chỗ chờ. Nhãn **“Đã sở hữu”**, **“Đang đặt”** đúng dữ liệu.
+- Thẻ ghi đúng **“+5% khách ghé”** hoặc **“+5% thời gian đợi”** theo chỉ số thực; bàn ghế ghi +10% thời gian đợi. Nhãn **“Đã sở hữu”**, **“Đang đặt”** đúng dữ liệu.
 - Thiếu tiền không cho xác nhận. Mọi nút bật nối **chức năng thật**, không đổi hình/thông báo giả thay nghiệp vụ. Chưa làm thì trạng thái rõ và không bật hành động nghiệp vụ.
 - Giữ kem–gỗ–viền đồng và UI ngoài phạm vi/vùng thao tác bếp đã duyệt.
 
@@ -131,3 +132,5 @@ Kiểm tra khi được yêu cầu triển khai:
 7. **Build đạt; 110 unit và 7 E2E Chromium 360×640 đạt** trong đợt triển khai hiện tại. Xem [spec triển khai](spec-7-shop-development.md) để biết phạm vi và bằng chứng.
 
 Phân việc: **7.1 trang trí/sở hữu/bố trí; 7.2 tiện nghi và thiết bị riêng; 7.4 bonus ngày/sinh khách; 7.5 giao dịch chuẩn bị/save/migration**. UI/luồng thuộc3.8; UI xong chưa là nghiệp vụ xong. Xem [epics](../planning-artifacts/pizza-gdd/epics.md), [Quán](requirement-shop-tab.md).
+
+Cập nhật kiểm chứng luật sức chứa/bàn ghế: build đạt, 41 unit liên quan và4 E2E Epic7 Chromium360×640 đạt; ba review độc lập không có lỗi production cần sửa. Bàn ghế4000xu tăng10% kiên nhẫn, không tăng sức chứa; mọi đồ vẫn cap4/6 chỉ từ mở rộng. Xem [spec luật mới](spec-7-capacity-and-table-patience.md); kết quả110unit/7E2E phía trên là mốc đợt triển khai trước thay đổi luật này.

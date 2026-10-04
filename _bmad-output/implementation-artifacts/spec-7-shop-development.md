@@ -18,13 +18,13 @@ Người dùng giao triển khai Epic7, gồm mua/đặt/cất trang trí, thi�
 
 ## Luật đã chốt
 
-Trang trí: cây bàn3%, tranh5%, đèn5%, bảng hiệu8%, cây lớn5%, rèm3% khách ghé; cap30%. Tiện nghi: ghế5%, Wi-Fi8%, quạt5%, máy lạnh10%, loa5% kiên nhẫn; quạt/máy lạnh lấy max, cap40%; bàn ghế+2 chỗ chờ riêng. Cộng trên gốc, mua chưa đặt không bonus. Mỗi loại một bản. Chỉ mua/đặt/cất trong chuẩn bị; ca dùng snapshot hiệu ứng lúc mở ngày. Không tăng giá/sao/nướng từ bonus trang trí. Tiền/sở hữu atomic, save cũ không tự có đồ; hủy/preview không ghi, retry không mua trùng. Đặt/cất xác nhận lưu nhất quán, không lưu giữa ca.
+Trang trí: cây bàn3%, tranh5%, đèn5%, bảng hiệu8%, cây lớn5%, rèm3% khách ghé; cap30%. Tiện nghi: ghế5%, Wi-Fi8%, quạt5%, máy lạnh10%, loa5% kiên nhẫn; quạt/máy lạnh lấy max, cap40%; bàn ghế+10% kiên nhẫn, không tăng sức chứa. Cộng trên gốc, mua chưa đặt không bonus. Mỗi loại một bản. Chỉ mua/đặt/cất trong chuẩn bị; ca dùng snapshot hiệu ứng lúc mở ngày. Không tăng giá/sao/nướng từ bonus trang trí. Tiền/sở hữu atomic, save cũ không tự có đồ; hủy/preview không ghi, retry không mua trùng. Đặt/cất xác nhận lưu nhất quán, không lưu giữa ca.
 
 </frozen-after-approval>
 
 ## Quyết định người dùng và giới hạn đợt triển khai
 
-Người dùng thay bảng giá đề xuất bằng bảng chính thức dưới đây, sau đó yêu cầu mọi món giá500–10000xu. Bổ sung cây lớn1500, rèm1000, quạt1500, bàn ghế4000xu; giữ giá tám món người dùng đã chỉ định. Bàn ghế chờ quyết định mô hình2chỗ đợi riêng/cộng vào đơn, chưa bật mua nếu chưa có luật sức chứa. Mở rộng2 có giá nhưng chính người dùng yêu cầu chốt bố cục, không bật mua. Thiết bị mới/quảng bá/hư hỏng chưa có luật nên giữ backlog, không đánh dấu toàn Epic7 done.
+Người dùng thay bảng giá đề xuất bằng bảng chính thức dưới đây, sau đó yêu cầu mọi món giá500–10000xu. Bổ sung cây lớn1500, rèm1000, quạt1500, bàn ghế4000xu; giữ giá tám món người dùng đã chỉ định. Bàn ghế4000xu tăng10% kiên nhẫn, không thêm khách. Chỉ mở rộng tăng4→6, tối đa6 khách. Mở rộng2 chưa có tác dụng được chốt, không bật mua hoặc tự gán tác dụng. Thiết bị mới/quảng bá/hư hỏng chưa có luật nên giữ backlog, không đánh dấu toàn Epic7 done.
 
 | Đồ | Giá đã chốt (xu) |
 |---|---:|
@@ -34,7 +34,7 @@ Người dùng thay bảng giá đề xuất bằng bảng chính thức dưới
 | Điều hòa / Nhạc trong quán | 5000 / 3000 |
 | Chậu cây lớn / Rèm / Quạt / Bàn ghế khách | 1500 / 1000 / 1500 / 4000 |
 | Lò cấp2 / cấp3 | 2000 / 5000 |
-| Mở rộng1 (4→6) / mở rộng2 (chờ bố cục) | 6000 / 10000 |
+| Mở rộng1 (4→6) / mở rộng2 (chưa chốt tác dụng) | 6000 / 10000 |
 
 Triển khai vị trí lắp cố định riêng mỗi đồ trong preview Quán; Đặt mở xem trước vị trí/bonus rồi xác nhận, không thay bếp hoặc kéo thả tự do. Sinh khách tăng kỳ vọng qua cơ hội thêm theo xác suất bonus, hash ổn định day/slot để không đổi khi reload; chỉ khách thương mại tại quầy, không nhân app/help/referral; khoảng trống/tick hợp lệ, cap30 outcome và hàng chờ4/6 giữ nguyên. Patience bonus áp dụng khách tại quầy, không đổi hạn app90s. Snapshot đóng băng đầu ca. Đồ mua chưa đặt không bonus; thẻ/preview đọc dữ liệu thật, nền minh họa giữ nhãn minh họa.
 
@@ -43,7 +43,7 @@ Giao dịch đồ trong campaign: chuẩn bị candidate trên bản sao, giữ 
 ## Code Map
 
 - `src/domain/ShopEffects.ts`: quy tắc hiệu ứng đã chốt, snapshot immutable; không giá/vị trí.
-- `src/domain/ShopEffects.test.ts`: ví dụ67.8s, max cooling, tổng29%/28%, chỗ chờ riêng, không bonus trùng.
+- `src/domain/ShopEffects.test.ts`: ví dụ67.8s, max cooling, tổng29%/38%, không tăng sức chứa từ đồ, không bonus trùng.
 - `src/presentation/ReferenceShop.ts`: sáu mục/art crops/layout hiện có; nơi nối thẻ sở hữu/chi tiết.
 - `src/scenes/CozyScene.ts`: khung xác nhận/lease, renderer và hub preview hiện có.
 - `src/runtime/CozyRuntime.ts`: chuẩn bị/mở ngày/scheduler/patience/accounting; snapshot hiệu ứng khi mở.
@@ -55,11 +55,11 @@ Giao dịch đồ trong campaign: chuẩn bị candidate trên bản sao, giữ 
 - [x] Tổng hợp context Epic7 và kiểm tra nguồn cấu hình, không suy giá từ references.
 - [x] Làm pure domain effect đã chốt và4unit, nối runtime snapshot đầu ca.
 - [x] Chốt bảng giá người dùng; giới hạn món/luật chưa chốt ở backlog rõ ràng.
-- [x] Nối11món sở hữu/bố trí/transaction/schema với runtime và renderer đúng bố cục.
-- [x] Nối bonus ngày/sinh khách/kiên nhẫn; giữ cap4/6, bàn ghế4000xu chờ luật chỗ đợi.
+- [x] Nối12món sở hữu/bố trí/transaction/schema với runtime và renderer đúng bố cục.
+- [x] Nối bonus ngày/sinh khách/kiên nhẫn; giữ cap4/6, bàn ghế4000xu tăng10% kiên nhẫn, không thêm chỗ đợi.
 - [x] Unit money/save/retry/migration/effects; E2E tập trung360×640; build và review độc lập.
 
-Given ghế và Wi-Fi đang đặt, when tính thời gian gốc60s, then67.8s. Given quạt và máy lạnh cùng đặt, when tính cooling, then10% chứ không15%. Given đủ12đồ đang đặt, when tính bonus, then khách29%, kiên nhẫn28%, chỗ chờ+2 riêng. Given đồ mua chưa đặt, when mở ca, then không bonus từ đồ đó. Given save cũ, when tải sau tích hợp, then tiền/kho/tiến độ giữ nguyên và đồ mới chưa sở hữu.
+Given ghế và Wi-Fi đang đặt, when tính thời gian gốc60s, then67.8s. Given quạt và máy lạnh cùng đặt, when tính cooling, then10% chứ không15%. Given đủ12đồ đang đặt, when tính bonus, then khách29%, kiên nhẫn38%, sức chứa chỉ4/6 từ mở rộng. Given đồ mua chưa đặt, when mở ca, then không bonus từ đồ đó. Given save cũ, when tải sau tích hợp, then tiền/kho/tiến độ giữ nguyên và đồ mới chưa sở hữu.
 
 ## Verification
 
@@ -77,8 +77,10 @@ Build đạt; 110unit trong15file hiện hành đạt, gồm6Epic7/4pureeffects 
 
 ## Phần chưa triển khai trong toàn Epic7
 
-Bàn ghế đã có giá4000xu; đang chờ người dùng chọn mô hình2chỗ đợi riêng hoặc cộng vào số đơn/đổi bố cục. Chưa bật mua. Mở rộng2 giá10000xu chờ sức chứa/bố cục theo chính bảng người dùng. Thiết bị mới (lò2/tủ lạnh/bàn làm), quảng bá, hư hỏng/sửa chữa chưa có luật và chưa có quyền dùng cấu hình tạm. Đây là phạm vi còn lại củaEpic7; không đánh dấu toàn epicdone.
+Bàn ghế4000xu tăng10% kiên nhẫn đã có mua/đặt/cất. Mở rộng2 giá10000xu chưa có tác dụng được chốt, chưa bật mua; cap tối đa6 khách. Thiết bị mới (lò2/tủ lạnh/bàn làm), quảng bá, hư hỏng/sửa chữa chưa có luật và chưa có quyền dùng cấu hình tạm. Đây là phạm vi còn lại củaEpic7; không đánh dấu toàn epicdone.
 
 ## Review và bản sửa
 
 Ba review độc lập không tìm thấy lỗi atomic/capital/save/migration cụ thể. Đã sửa bonus kiên nhẫn cho khách referral trả tiền (bonus lượt sinh vẫn không nhân referral), thêm preview vị trí thật dùng tọa độ cố định chia sẻ, giữ vị trí khi cất món khác, hiển thị current→expected trước mua, đổi nhãn trạng thái cũ và đánh số lò1/2/3 theo bảng người dùng. Nghi vấn thiếu nútX trongE2E được bác bỏ vì button chung tự tạo notification-close và browsercheck đã đạt. LỗiE2E giả lập save bị lặp sau reload đã sửa harness bằng sessionStorage; production không cần thay.
+
+Cập nhật kiểm chứng luật sức chứa/bàn ghế: build đạt, 41 unit liên quan và4 E2E Epic7 Chromium360×640 đạt; ba review độc lập không có lỗi production cần sửa. Bàn ghế4000xu tăng10% kiên nhẫn, không tăng sức chứa; mọi đồ vẫn cap4/6 chỉ từ mở rộng. Xem [spec luật mới](spec-7-capacity-and-table-patience.md); kết quả110unit/7E2E phía trên là mốc đợt triển khai trước thay đổi luật này.

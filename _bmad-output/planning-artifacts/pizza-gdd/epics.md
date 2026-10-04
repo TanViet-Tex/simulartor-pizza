@@ -128,7 +128,7 @@ Sau demo; P08, P09, phần thiết bị của P15. Trụ cột kinh tế. Phụ 
 
 Backlog theo [tab Quán](../../implementation-artifacts/requirement-shop-tab.md):
 
-**Bổ sung chức năng 2026-10-04:** [Trang trí/Tiện nghi](../../implementation-artifacts/requirement-decoration-and-amenity-effects.md) chốt bonus từng đồ, chỉ sở hữu một bản/loại, đặt/cất, cộng trên gốc (cap khách30%, kiên nhẫn40%, quạt/máy lạnh lấy max, bàn ghế+2 chỗ chờ), chốt hiệu ứng đầu ngày và nối sinh khách thật. Các ghi chú chưa chốt bên dưới chỉ áp dụng phần còn thiếu như nguồn giá/điều kiện/vị trí, thiết bị/mở rộng. Giá theo cấu hình dự án, không ảnh. Chưa code hoặc xem references.
+**Bổ sung chức năng 2026-10-04:** [Trang trí/Tiện nghi](../../implementation-artifacts/requirement-decoration-and-amenity-effects.md) chốt bonus từng đồ, chỉ sở hữu một bản/loại, đặt/cất, cộng trên gốc (cap khách30%, kiên nhẫn40%, quạt/máy lạnh lấy max, bàn ghế+10% kiên nhẫn, không tăng sức chứa), chốt hiệu ứng đầu ngày và nối sinh khách thật. Các ghi chú chưa chốt bên dưới chỉ áp dụng phần còn thiếu như nguồn giá/điều kiện/vị trí, thiết bị/mở rộng. Giá theo cấu hình dự án, không ảnh. Chưa code hoặc xem references.
 
 - **7.1 — Sở hữu và bố trí trang trí:** xem đồ/giá/công dụng/điều kiện → xác nhận mua; đủ tiền, số tiền thiếu, một giao dịch/một quyền sở hữu; đồ có rồi không bắt mua lại; Đặt vào quán/Cất đi. Sở hữu/bố trí lưu cùng tiến độ theo hợp đồng checkpoint cần chi tiết hóa.
 - **7.2 — Thiết bị và tiện nghi:** lò/tủ lạnh/bàn pizza, ghế chờ/Wi-Fi/máy lạnh/loa; phân biệt hỗ trợ sản xuất và trải nghiệm khách. Giá/chỉ số/tác dụng/nâng cấp chưa chốt thì hiển thị chưa triển khai, không tự tạo bonus từ ảnh. Mua/lưu một lần, giữ quy tắc gameplay đã chốt.
@@ -139,7 +139,7 @@ Backlog theo [tab Quán](../../implementation-artifacts/requirement-shop-tab.md)
 
 Nghiệm thu7.1/7.2 gồm UI đầy đủ hình/tên/giá/tác dụng/sở hữu/hiệu quả hiện tại-dự kiến; mua → chọn vị trí → xem trước → xác nhận, hủy giữ sở hữu chưa bonus; cất giữ sở hữu; không đặt chồng lò/nút/vùng thao tác, tiện nghi cố định có vị trí định sẵn. Build và test nghiệp vụ/modal/gameplay/save liên quan phải đạt; không coi nút đổi hình/thông báo giả là chức năng đã làm.
 
-**Triển khai 2026-10-04:** 11 món giá 500–10000 xu đã có mua/đặt/cất, vị trí cố định, preview, hiệu ứng đầu ca và lưu atomic; lò cấp 2/3 giá 2000/5000, mở rộng 4→6 giá 6000, giữ save cũ và giá lịch sử. Build, 110 unit, 7 E2E tập trung đạt. 7.1/7.4/7.5 ở review; 7.2/7.3 và toàn Epic7 còn in-progress: bàn ghế 4000 chờ mô hình chỗ đợi, mở rộng 2 giá 10000 chờ bố cục; thiết bị mới/quảng bá/hư hỏng còn thiếu luật. Xem [spec](../../implementation-artifacts/spec-7-shop-development.md).
+**Triển khai 2026-10-04:** 12 món giá 500–10000 xu đã có mua/đặt/cất, vị trí cố định, preview, hiệu ứng đầu ca và lưu atomic; lò cấp 2/3 giá 2000/5000, mở rộng 4→6 giá 6000, giữ save cũ và giá lịch sử. Build, 110 unit, 7 E2E tập trung đạt. 7.1/7.4/7.5 ở review; 7.2/7.3 và toàn Epic7 còn in-progress: bàn ghế4000 đã có tác dụng10% kiên nhẫn; mở rộng2 giá10000 chưa chốt tác dụng; thiết bị mới/quảng bá/hư hỏng còn thiếu luật. Xem [spec](../../implementation-artifacts/spec-7-shop-development.md).
 
 ## E08 - Nhân viên, câu chuyện và khách đặc biệt
 
@@ -169,3 +169,7 @@ Sau demo; P07, P11, P15, P16, tích hợp P01–P14. Trụ cột tiến độ. P
 Màn cuối ngày đã được người dùng xác nhận bằng ảnh và yêu cầu giữ làm mốc. Story triển khai tiếp theo phải đọc [mốc UI, phần cuối ngày](../../implementation-artifacts/ui-baseline-2026-10-02.md), giữ bố cục/phong cách/nút và các tab hiện có; không diễn giải spec “reference” thành quyền tự thiết kế lại. Chỉ số/nhận xét thay theo dữ liệu thật, không đóng băng giá trị trong ảnh.
 
 Theo [spec cuối ngày](../../implementation-artifacts/spec-end-of-day-reference.md), người dùng chọn bấm “Kết thúc ngày” trong bảng pause, xác nhận rồi qua hub Tổng kết / Chợ / Kho / Quán / Nhiệm vụ, chuẩn bị và mở ngày sau. Đây là nối luồng cho phiên Cozy hiện tại theo ảnh người dùng, không phải chấp nhận toàn bộ E03/E04 hoặc lưu campaign. Giữ nguyên bếp, menu và UI hàng chờ. Chỉ số/nhận xét lấy từ ca thật; hệ thống nhiệm vụ/trang trí chưa có ghi “Chưa mở”.
+
+### Luật Epic 7 thay thế — 2026-10-04
+
+Chỉ mở rộng quán tăng sức chứa: mặc định4 khách, mở rộng lần1 lên6, tối đa6. Bàn ghế4000xu chỉ tăng10% kiên nhẫn khi đang đặt; không tăng khách hoặc chỗ chờ phụ. Tổng tiện nghi sau lấy max quạt/máy lạnh là38%, cap40%. Giữ6 ô khách cố định, loại bỏ đề xuất cap8/10 và hàng avatar cuộn. Mở rộng lần2 giá10000 chưa có tác dụng được chốt, chưa cho mua và không tự gán bonus. Các luật bàn ghế/chỗ chờ trước đây được thay bằng quyết định này. Xem spec-7-capacity-and-table-patience.md trong implementation-artifacts.

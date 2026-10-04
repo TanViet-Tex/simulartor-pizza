@@ -9,7 +9,7 @@
 
 ## Chỉ số và chức năng Trang trí/Tiện nghi — 2026-10-04
 
-- Chốt bonus từng đồ, cộng trên gốc, quạt/máy lạnh lấy mức cao hơn, trần khách30%/kiên nhẫn40%, bàn ghế+2 chỗ chờ; sở hữu một bản/loại, chỉ đồ đặt có bonus; chốt đầu ngày, nối sinh khách/kiên nhẫn thật và giữ sức chứa.
+- Chốt bonus từng đồ, cộng trên gốc, quạt/máy lạnh lấy mức cao hơn, trần khách30%/kiên nhẫn40%, bàn ghế+10% kiên nhẫn, không tăng sức chứa; sở hữu một bản/loại, chỉ đồ đặt có bonus; chốt đầu ngày, nối sinh khách/kiên nhẫn thật và giữ sức chứa.
 - Mua trong chuẩn bị, tiền/sở hữu cùng giao dịch và lưu thành công rồi cập nhật UI. Đây là bổ sung ranh giới lưu cho mua đồ ngoài tạo campaign/chốt ngày cũ; lỗi không mất tiền thiếu đồ, retry/double-tap một lần. Đặt/cất đúng vị trí, giữ sở hữu; lưu bố trí/cấp, migration save cũ giữ tiền/tiến độ, không nhân đôi bonus.
 - Giá theo cấu hình dự án, không ảnh. Chưa xác định đủ nguồn giá/vị trí/sức chứa/cách tăng kỳ vọng spawn trong lượt đối chiếu, cần chi tiết hóa trước triển khai, không tự bịa.
 - [Yêu cầu đầy đủ](../../implementation-artifacts/requirement-decoration-and-amenity-effects.md), backlogE07 mở rộng7.1/7.2, thêm7.4/7.5. Chỉ ghi tài liệu; chưa code, xem ảnh hoặc chạy build/test.
@@ -116,3 +116,7 @@ User-confirmed direction: **2D cartoon**, replacing the previous pixel-art direc
 - Khách mặc cả chỉ mở lựa chọn riêng về giá. Khách quen xin giúp vẫn có Help / Decline vì là lựa chọn cốt truyện; khách quen mua hàng thông thường theo luồng tự tạo đơn.
 - Ticket thường được tạo nguyên tử cùng giữ kho và bắt đầu kiên nhẫn khi lượt đến hợp lệ; không pause ca. Lựa chọn giá/Help dùng pause riêng và chưa tạo ticket trước khi đồng ý. Giữ kiểm tra sức chứa, giá, kho, không đổi món âm thầm.
 - Đồng bộ GDD, epics, UX và cache Epic 1. Chỉ sửa tài liệu; code Story 1.5 vẫn theo hợp đồng cũ. Mở lại Story 1.5 ở ready-for-dev, giữ bằng chứng kiểm thử cũ làm lịch sử và thêm task chuyển luồng tự động.
+
+### Luật Epic 7 thay thế — 2026-10-04
+
+Chỉ mở rộng quán tăng sức chứa: mặc định4 khách, mở rộng lần1 lên6, tối đa6. Bàn ghế4000xu chỉ tăng10% kiên nhẫn khi đang đặt; không tăng khách hoặc chỗ chờ phụ. Tổng tiện nghi sau lấy max quạt/máy lạnh là38%, cap40%. Giữ6 ô khách cố định, loại bỏ đề xuất cap8/10 và hàng avatar cuộn. Mở rộng lần2 giá10000 chưa có tác dụng được chốt, chưa cho mua và không tự gán bonus. Các luật bàn ghế/chỗ chờ trước đây được thay bằng quyết định này. Xem spec-7-capacity-and-table-patience.md trong implementation-artifacts.

@@ -1,6 +1,6 @@
 import {SHOP_ITEM_EFFECTS,type ShopItemId} from '../domain/ShopEffects';
 type Crop=readonly [number,number,number,number];
-const definition=(id:ShopItemId,name:string,group:'decoration'|'amenities',price:number|null,crop:Crop)=>Object.freeze({id,name,group,price,slot:id,blockedReason:id==='customer-tables'?'Chờ chốt chỗ chờ':null,available:price!==null&&id!=='customer-tables',effect:SHOP_ITEM_EFFECTS[id],artKey:`reference-shop-${group}`,crop});
+const definition=(id:ShopItemId,name:string,group:'decoration'|'amenities',price:number|null,crop:Crop)=>Object.freeze({id,name,group,price,slot:id,blockedReason:null,available:price!==null,effect:SHOP_ITEM_EFFECTS[id],artKey:`reference-shop-${group}`,crop});
 export const SHOP_CATALOG=Object.freeze([
  definition('table-plant','Cây trang trí','decoration',500,[39,610,180,233]),
  definition('pizza-painting','Tranh pizza','decoration',800,[494,620,185,225]),

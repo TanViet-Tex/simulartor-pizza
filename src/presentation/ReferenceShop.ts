@@ -88,15 +88,15 @@ export class ReferenceShop {
         const enabled=input.canAct&&input.queuePrice!==null;
         ui.button(22,370,316,43,input.queuePrice===null?'Đã mở tối đa 6 ô':`Mở 6 ô · ${input.queuePrice} xu`,enabled,16);
         this.hit('summary-upgrade-queue',20,368,320,48,enabled,()=>input.upgrade('queue'));
-        ui.panel(8,439,344,88);ui.text(23,452,'Tu sửa / mở rộng mặt bằng',16);ui.text(23,480,'Chờ chốt sức chứa và bố cục.',12,c.muted,false,318);
-        ui.text(23,498,'Lần 2: 10.000 xu · Chờ chốt bố cục',11,c.muted,false,318);
+        ui.panel(8,439,344,88);ui.text(23,452,'Tu sửa / mở rộng mặt bằng',16);ui.text(23,480,'Lần 2 chưa chốt tác dụng.',12,c.muted,false,318);
+        ui.text(23,498,'Lần 2: 10.000 xu · Chưa mở mua',11,c.muted,false,318);
         note(['Nâng hàng chờ theo cấu hình hiện tại.','Giữ 6 ô hiện có; chưa mua mở rộng lần 2.']);
       }else if(input.page==='decoration'||input.page==='amenities'){
         const items=SHOP_CATALOG.filter(item=>item.group===input.page);
         items.forEach((item,i)=>{
           const x=8+i%2*176,y=180+Math.floor(i/2)*116,owned=input.shop?.acquired.find(entry=>entry.id===item.id);
           ui.panel(x,y,168,109);art(item.artKey,item.crop,x+10,y+5,148,65);
-          const effect='visitors' in item.effect?`+${Math.round(item.effect.visitors*100)}% khách ghé`:'waitingSeats' in item.effect?'+2 chỗ chờ':`+${Math.round(('patience' in item.effect?item.effect.patience:item.effect.cooling)*100)}% thời gian chờ`;
+          const effect='visitors' in item.effect?`+${Math.round(item.effect.visitors*100)}% khách ghé`:`+${Math.round(('patience' in item.effect?item.effect.patience:item.effect.cooling)*100)}% thời gian chờ`;
           if(owned||!item.available){ui.panel(x+76,y+6,85,18,c.inset);ui.text(x+118,y+10,owned?(owned.placedSlot?'Đang đặt':'Đã sở hữu'):'Chờ chốt',9,c.ink,true,79);}
           ui.text(x+84,y+73,item.name,12,c.ink,true,153);ui.text(x+84,y+91,`${item.price?.toLocaleString('vi-VN')??'—'} xu · ${effect}`,10,c.muted,true,154);
           this.hit('shop-item-'+item.id,x,y,168,109,!!input.item,()=>input.item?.(item.id));

@@ -4,7 +4,7 @@
 
 ## Goal
 
-Cho người chơi đầu tư vào quán bằng trang trí, thiết bị, tiện nghi, tu sửa/mở rộng và quảng bá, với tác dụng gameplay thật, chi phí rõ và tiến độ lưu nhất quán. Đây là phần kinh tế sau demo, phụ thuộc E05; nhân sự thuộc E08. Bonus Trang trí/Tiện nghi đã chốt, nhưng giá, vị trí, sức chứa, thiết bị mới, mở rộng và quảng bá còn thiếu quyết định nên chưa thể bật toàn bộ nghiệp vụ.
+Cho người chơi đầu tư vào quán bằng trang trí, thiết bị, tiện nghi, tu sửa/mở rộng và quảng bá, với tác dụng gameplay thật, chi phí rõ và tiến độ lưu nhất quán. Đây là phần kinh tế sau demo, phụ thuộc E05; nhân sự thuộc E08. 12 món Trang trí/Tiện nghi đã chốt giá/tác dụng/vị trí; bàn ghế4000xu tăng10% kiên nhẫn. Sức chứa mặc định4, chỉ mở rộng lần1 lên6, tối đa6. Thiết bị mới, tác dụng mở rộng lần2 và quảng bá còn thiếu quyết định nên chưa thể bật toàn bộ nghiệp vụ.
 
 ## Stories
 
@@ -17,11 +17,11 @@ Cho người chơi đầu tư vào quán bằng trang trí, thiết bị, tiện
 ## Requirements & Constraints
 
 - Mỗi loại đồ sở hữu một bản; mua không tự đặt. Chỉ mua/đặt/cất trong chuẩn bị. Xem/hủy không trừ tiền; thiếu tiền báo số còn thiếu; cất giữ sở hữu, không bán/hoàn tiền. Kiểm tra lại điều kiện trên trạng thái thật khi xác nhận.
-- Trang trí tăng kỳ vọng khách: cây để bàn 3%, tranh pizza 5%, đèn trang trí 5%, bảng hiệu 8%, chậu cây lớn 5%, rèm cửa 3%. Tiện nghi tăng kiên nhẫn: ghế chờ 5%, Wi-Fi 8%, quạt đứng 5%, máy lạnh 10%, loa 5%; bàn ghế khách thêm 2 chỗ chờ riêng.
-- Chỉ đồ đang đặt/kích hoạt có tác dụng. Cộng phần trăm trên gốc; quạt/máy lạnh lấy mức cao hơn. Cap khách 30%, kiên nhẫn 40%; toàn danh mục hiện đạt 29%/28%, không sửa item để chạm cap. Ví dụ gốc 60 giây với ghế và Wi-Fi thành 67.8 giây.
+- Trang trí tăng kỳ vọng khách: cây để bàn 3%, tranh pizza 5%, đèn trang trí 5%, bảng hiệu 8%, chậu cây lớn 5%, rèm cửa 3%. Tiện nghi tăng kiên nhẫn: ghế chờ 5%, Wi-Fi 8%, quạt đứng 5%, máy lạnh 10%, loa 5%; bàn ghế khách +10% kiên nhẫn, không tăng sức chứa.
+- Chỉ đồ đang đặt/kích hoạt có tác dụng. Cộng phần trăm trên gốc; quạt/máy lạnh lấy mức cao hơn. Cap khách 30%, kiên nhẫn 40%; toàn danh mục hiện đạt 29%/38%, không sửa item để chạm cap. Ví dụ gốc 60 giây với ghế và Wi-Fi thành 67.8 giây.
 - Chốt bộ hiệu ứng khi mở ngày; mỗi khách dùng kiên nhẫn gốc của mình. Bonus khách phải nối scheduler thật, tăng kỳ vọng chứ không bảo đảm lượng khách cố định; giữ chính sách đầy hàng chờ/sức chứa. Không đổi đồ trong ca hoặc tự tăng giá, sao, tốc độ nướng.
-- Chỗ chờ không tự đồng nhất với cap đơn/phiếu hoặc số avatar. Mở rộng không tự cho phép thay bố cục bếp. Chi phí mua thiết bị/nâng cấp là dòng tiền, không trừ lại trong lợi nhuận; lương chỉ xuất hiện khi có dữ liệu nhân sự E08 thật.
-- Các quyết định còn thiếu phải được chốt trước khi bật chức năng: catalog ID/giá/điều kiện mua đồ mới; vị trí hợp lệ, vị trí lắp cố định và giới hạn bố trí; model chỗ chờ và quan hệ với cap đơn; cách áp bonus vào kỳ vọng scheduler; chỉ số/giá/nâng cấp tủ lạnh, bàn pizza và thiết bị mới; cấp/giá/điều kiện/diện tích/chỗ ngồi mở rộng; nguồn hư hỏng và sửa chữa. Giá nâng cấp lò/hàng chờ hiện có là tạm, không suy rộng thành bảng giá mới.
+- Không chỗ chờ phụ/overflow hoặc hàng avatar cuộn. Giữ6 ô khách cố định, không cap8/10. Mở rộng không tự cho phép thay bố cục bếp hoặc thêm tác dụng cho lần2. Chi phí mua thiết bị/nâng cấp là dòng tiền, không trừ lại trong lợi nhuận; lương chỉ xuất hiện khi có dữ liệu nhân sự E08 thật.
+- Các quyết định còn thiếu: chỉ số/giá/nâng cấp tủ lạnh, bàn pizza và thiết bị mới; tác dụng/điều kiện mở rộng lần2; nguồn hư hỏng và sửa chữa. Lò cấp2/3 giá2000/5000, mở rộng lần1 giá6000 đã chốt; mở rộng lần2 giá10000 nhưng chưa có tác dụng.
 - Quảng bá vẫn thuộc E07: tờ rơi, giảm giá món mới và trang trí thu hút nhóm khách. Chưa có story hoặc bảng chi phí, thời hạn, nhóm đích, mức giảm giá, giới hạn/cách cộng với bonus khác; không tự tạo chương trình quảng bá hoặc lợi ích miễn phí.
 - Kiểm tra tập trung nghiệp vụ, modal, gameplay và save: thiếu tiền/hủy/điều kiện sai, double-tap/retry, lưu lỗi, vị trí sai, mua chưa đặt, đặt/cất, công thức bonus/cap/sức chứa, reload và save cũ. Full browser matrix chỉ khi hoàn tất Epic 1 hoặc trước release.
 
@@ -47,8 +47,8 @@ Cho người chơi đầu tư vào quán bằng trang trí, thiết bị, tiện
 
 ### Epic 7 — triển khai phần đã chốt, 2026-10-04
 
-Đã triển khai 11 món Trang trí/Tiện nghi giá 500–10.000 xu: mua một lần, đặt/cất ở vị trí cố định trong preview Quán, chỉ đồ đang đặt có bonus. Giữ sáu mục Quán, header/footer và bếp đã duyệt. Ca đóng băng hiệu ứng khi mở; bonus sinh khách chỉ nhân cơ hội thương mại tại quầy, bonus kiên nhẫn áp dụng khách trả tiền tại quầy (kể cả referral), không tăng hạn đơn app. Lò cấp 2/3 giá 2.000/5.000; mở rộng 4→6 giá 6.000.
+Đã triển khai 12 món Trang trí/Tiện nghi giá 500–10.000 xu: mua một lần, đặt/cất ở vị trí cố định trong preview Quán, chỉ đồ đang đặt có bonus. Giữ sáu mục Quán, header/footer và bếp đã duyệt. Ca đóng băng hiệu ứng khi mở; bonus sinh khách chỉ nhân cơ hội thương mại tại quầy, bonus kiên nhẫn áp dụng khách trả tiền tại quầy (kể cả referral), không tăng hạn đơn app. Lò cấp 2/3 giá 2.000/5.000; mở rộng 4→6 giá 6.000.
 
 Mua/đặt/cất/nâng cấp chuẩn bị staging trên candidate; commit thành công mới cập nhật chính runtime hiện tại, lỗi/retry không trừ trùng. Metadata lưu sở hữu/vị trí/giá thực trả; save cũ giữ tiền/kho/tiến độ và giá nâng cấp lịch sử. Không lưu giữa ca. Build, 110 unit và 7 E2E Chromium 360×640 đạt; ba review độc lập hoàn tất.
 
-Bàn ghế 4.000 vẫn chờ chốt mô hình +2 chỗ đợi; mở rộng lần 2 giá 10.000 chờ sức chứa/bố cục. Thiết bị mới/quảng bá/hư hỏng chưa có luật. Toàn Epic7 vẫn in-progress. Ghi chú này thay các nhận định trước đây rằng đồ mới chưa có giá hoặc toàn bộ luồng mua chưa triển khai. Chi tiết: `_bmad-output/implementation-artifacts/spec-7-shop-development.md`.
+Bàn ghế 4.000 tăng10% kiên nhẫn, mua/đặt/cất được; không tăng sức chứa. Chỉ mở rộng quán tăng4→6 khách, tối đa6; giữ6 ô khách cố định, không avatar cuộn. Mở rộng lần2 giá10.000 chưa có tác dụng được chốt và chưa bật mua. Thiết bị mới/quảng bá/hư hỏng chưa có luật. Toàn Epic7 vẫn in-progress. Ghi chú này thay các nhận định trước đây rằng đồ mới chưa có giá hoặc toàn bộ luồng mua chưa triển khai. Chi tiết: `_bmad-output/implementation-artifacts/spec-7-shop-development.md`.

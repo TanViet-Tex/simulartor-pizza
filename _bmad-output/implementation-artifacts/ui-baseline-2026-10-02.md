@@ -314,7 +314,7 @@ Theo yêu cầu Epic6, chỉ thêm nút App giao hàng trong hàng tiêu đề T
 
 ### Epic 7: đồ Quán và bố trí — 2026-10-04
 
-Giữ header/năm tab/sáu mục Quán và kích thước sáu thẻ từng nhóm. Trang trí/Tiện nghi hiển thị giá, hiệu ứng, sở hữu/đang đặt từ dữ liệu thật; bấm thẻ mở khung chung với giá/tiền thiếu/current→expected. Mua chưa tự đặt. Đặt/Cất có preview phòng và vị trí cố định trước xác nhận; hủy không đổi tiền/sở hữu/vị trí. Preview đã đặt dùng cùng tọa độ, giữ vị trí khi cất món khác; không thay bếp. Giá đồ/nâng cấp 500–10.000 xu theo bảng người dùng; lò hiển thị cấp 1/2/3. Bàn ghế 4.000 và mở rộng 2 giá 10.000 hiển thị chờ chốt, chưa bật mua.
+Giữ header/năm tab/sáu mục Quán và kích thước sáu thẻ từng nhóm. Trang trí/Tiện nghi hiển thị giá, hiệu ứng, sở hữu/đang đặt từ dữ liệu thật; bấm thẻ mở khung chung với giá/tiền thiếu/current→expected. Mua chưa tự đặt. Đặt/Cất có preview phòng và vị trí cố định trước xác nhận; hủy không đổi tiền/sở hữu/vị trí. Preview đã đặt dùng cùng tọa độ, giữ vị trí khi cất món khác; không thay bếp. Giá đồ/nâng cấp 500–10.000 xu theo bảng người dùng; lò hiển thị cấp 1/2/3. Bàn ghế4.000 tăng10% kiên nhẫn, mua/đặt/cất được. Mở rộng2 giá10.000 chưa chốt tác dụng, chưa bật mua; không thêm sức chứa. Giữ6 ô khách cố định, không hàng avatar cuộn.
 
 Ảnh kiểm tra renderer thật 360×640 của phạm vi này; không thay các ảnh mốc ngoài Quán:
 
@@ -325,3 +325,12 @@ Giữ header/năm tab/sáu mục Quán và kích thước sáu thẻ từng nhó
 ![Xem trước vị trí](ui-baseline/epic7-placement-preview.png)
 
 ![Quán có đồ đã đặt](ui-baseline/epic7-placed-shop.png)
+### Luật Epic 7 thay thế — 2026-10-04
+
+Chỉ mở rộng quán tăng sức chứa: mặc định4 khách, mở rộng lần1 lên6, tối đa6. Bàn ghế4000xu chỉ tăng10% kiên nhẫn khi đang đặt; không tăng khách hoặc chỗ chờ phụ. Tổng tiện nghi sau lấy max quạt/máy lạnh là38%, cap40%. Giữ6 ô khách cố định, loại bỏ đề xuất cap8/10 và hàng avatar cuộn. Mở rộng lần2 giá10000 chưa có tác dụng được chốt, chưa cho mua và không tự gán bonus. Các luật bàn ghế/chỗ chờ trước đây được thay bằng quyết định này. Xem spec-7-capacity-and-table-patience.md trong implementation-artifacts.
+
+Ảnh kiểm tra360×640 bổ sung cho luật này; không thay bố cục đã duyệt:
+
+![Bàn ghế tăng kiên nhẫn](ui-baseline/epic7-tables-patience.png)
+
+![Mở rộng lần2 chưa có tác dụng](ui-baseline/epic7-expansion-no-second-effect.png)

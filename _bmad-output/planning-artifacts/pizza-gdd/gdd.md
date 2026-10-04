@@ -239,7 +239,7 @@ Sau demo, chủ quán chọn phân công, mua hàng, giá và quảng bá; nhân
 
 Không xây dựng mặt bằng tự do trong demo. Sau demo, trang trí và thiết bị gắn vào vị trí định sẵn là đề xuất để hạn chế độ phức tạp; số vị trí, điều kiện mua, nâng cấp và bán lại sẽ chốt ở thiết kế E07. Không coi tùy chọn này là quyền loại bỏ trang trí người dùng yêu cầu.
 
-**Bổ sung Trang trí/Tiện nghi2026-10-04, chỉ tài liệu:** [yêu cầu chức năng](../../implementation-artifacts/requirement-decoration-and-amenity-effects.md) xác định bonus từng đồ, cộng trên gốc, quạt/máy lạnh lấy max, cap khách30%/kiên nhẫn40%, bàn ghế+2 chỗ chờ; chỉ đồ đặt có hiệu ứng, chốt khi mở ngày và nối spawn/patience thật. Mua đồ chuẩn bị ghi tiền/sở hữu atomic, lưu thành công rồi UI; đặt/xem trước/xác nhận/cất giữ sở hữu và save bố trí/cấp, tương thích save cũ. Không tăng giá/sao/tốc độ nướng, đổi đồ trong ca hoặc dùng số ảnh làm giá. Giá/vị trí/cap bố trí/chính sách tăng kỳ vọng spawn cần nguồn cấu hình hoặc chi tiết hóa trước triển khai. BacklogE07 7.1/7.2/7.4/7.5; chưa sửa luật demo/code hiện tại.
+**Bổ sung Trang trí/Tiện nghi2026-10-04, chỉ tài liệu:** [yêu cầu chức năng](../../implementation-artifacts/requirement-decoration-and-amenity-effects.md) xác định bonus từng đồ, cộng trên gốc, quạt/máy lạnh lấy max, cap khách30%/kiên nhẫn40%, bàn ghế+10% kiên nhẫn, không tăng sức chứa; chỉ đồ đặt có hiệu ứng, chốt khi mở ngày và nối spawn/patience thật. Mua đồ chuẩn bị ghi tiền/sở hữu atomic, lưu thành công rồi UI; đặt/xem trước/xác nhận/cất giữ sở hữu và save bố trí/cấp, tương thích save cũ. Không tăng giá/sao/tốc độ nướng, đổi đồ trong ca hoặc dùng số ảnh làm giá. Giá/vị trí/cap bố trí/chính sách tăng kỳ vọng spawn cần nguồn cấu hình hoặc chi tiết hóa trước triển khai. BacklogE07 7.1/7.2/7.4/7.5; chưa sửa luật demo/code hiện tại.
 
 ### Ranh giới tương tác dài hạn
 
@@ -307,3 +307,7 @@ User-confirmed direction: **2D cartoon**, replacing the previous pixel-art direc
 ## Manual-close amendment for the current Cozy session — 2026-10-02
 
 The user explicitly chose ending a day by pressing “Kết thúc ngày”, with confirmation, instead of an automatic timer transition. This applies to the current Cozy RAM session and its new reference-inspired summary/preparation hub; the legacy campaign schedule/checkpoint flow is unchanged. Preserve inventory accounting, terminal three-day/insolvency handling and no replay of a closed day. See [implementation scope](../../implementation-artifacts/spec-end-of-day-reference.md). This scoped request does not itself implement later mission/decor/XP systems or certify E03/E04 completion.
+
+### Luật Epic 7 thay thế — 2026-10-04
+
+Chỉ mở rộng quán tăng sức chứa: mặc định4 khách, mở rộng lần1 lên6, tối đa6. Bàn ghế4000xu chỉ tăng10% kiên nhẫn khi đang đặt; không tăng khách hoặc chỗ chờ phụ. Tổng tiện nghi sau lấy max quạt/máy lạnh là38%, cap40%. Giữ6 ô khách cố định, loại bỏ đề xuất cap8/10 và hàng avatar cuộn. Mở rộng lần2 giá10000 chưa có tác dụng được chốt, chưa cho mua và không tự gán bonus. Các luật bàn ghế/chỗ chờ trước đây được thay bằng quyết định này. Xem spec-7-capacity-and-table-patience.md trong implementation-artifacts.

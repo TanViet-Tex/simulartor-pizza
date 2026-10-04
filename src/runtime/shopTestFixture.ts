@@ -2,11 +2,11 @@ import {CozyRuntime} from './CozyRuntime';
 import type {CozyCheckpoint} from '../domain/CozyCheckpoint';
 let cache:CozyCheckpoint|null=null;
 /** Earned cash and real reports keep persistence tests honest. */
-export function fundedShopCheckpoint():CozyCheckpoint {
- if(cache)return structuredClone(cache);
+export function fundedShopCheckpoint(minCash=18000):CozyCheckpoint {
+ if(cache&&cache.stock.cash>=minCash)return structuredClone(cache);
  const r=new CozyRuntime(false,true,{schedule:day=>({day,duration:180,grace:120,slots:Array.from({length:15},(_,i)=>({id:`earned-${day}-${i}`,at:i*10,kind:'regular',opportunity:'commercial',commercialOrdinal:i+1,takeaway:true}))})});
  r.configureMenu('mushroom',100,false);
- for(let day=1;r.state.cash<18000&&day<100;day++){
+ for(let day=1;r.state.cash<minCash&&day<100;day++){
   for(const ingredient of ['dough','sauce','cheese'] as const)r.buy(ingredient,15);
   if(day===1)r.openShop();else r.openNextDay();r.dismissThanks();
   for(let i=0;i<15;i++){

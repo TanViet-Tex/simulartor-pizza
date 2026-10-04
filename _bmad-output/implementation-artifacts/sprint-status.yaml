@@ -1,4 +1,4 @@
-﻿# Only audited stories are marked done. Backlog does not imply absence of prototype code.
+# Only audited stories are marked done. Backlog does not imply absence of prototype code.
 last_updated: '2026-10-04'
 development_status:
   epic-1: in-progress
@@ -53,8 +53,8 @@ development_status:
   6-2-booked-shipper-and-staff-delivery-cycle: review
   6-3-weather-rush-and-festival-events: review
 
-  # 11 priced items + existing oven/4-to-6 queue upgrade implemented; remaining scope unresolved.
-  # Tables await waiting-seat model; second expansion/layout, new equipment and advertising pending.
+  # 12 priced items + existing oven/4-to-6 queue upgrade implemented; remaining scope unresolved.
+  # Tables give 10% patience only; capacity 4-to-6 from expansion only. Expansion2 effect, new equipment and advertising pending.
   epic-7: in-progress
   7-1-decoration-ownership-and-placement: review
   7-2-equipment-and-amenities: in-progress
