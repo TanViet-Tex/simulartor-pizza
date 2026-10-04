@@ -7,7 +7,7 @@ import {ORDER_TEST_SCHEDULE} from '../runtime/cozyScheduleFixture';
 function boundary(){const r=new CozyRuntime(false,true,ORDER_TEST_SCHEDULE);for(const id of ['dough','sauce','cheese'] as const)r.buy(id,1);r.openShop();r.closeDay();return r.exportCheckpoint();}
 describe('Cozy latest boundary validation',()=>{
   it('migrates old saves and preserves preparation purchases alongside an upgrade',()=>{
-    const r=new CozyRuntime(false,true);r.buy('dough',2);expect(r.upgradeShop('oven','prep')).toBe(true);
+    const oldUpgrade=new CozyRuntime(false,true).exportCheckpoint();oldUpgrade.stock.cash-=150;oldUpgrade.upgrades={ovenLevel:1,queueLevel:0,spent:150,pendingSpent:150};const r=CozyRuntime.restoreCheckpoint(oldUpgrade)!;r.buy('dough',2);expect(r.upgradePrice('oven')).toBe(5000);
     const saved=r.exportCheckpoint(),loaded=CozyRuntime.restoreCheckpoint(saved)!;
     expect(loaded.state.cash).toBe(140);expect(loaded.owned('dough')).toBe(2);expect(loaded.ovenLevel).toBe(1);
     expect(loaded.openShop()).toBe(true);loaded.closeDay();expect(loaded.daySummary!.accounts.endingCash).toBe(120);

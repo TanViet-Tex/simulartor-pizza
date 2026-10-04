@@ -1,3 +1,4 @@
+import {fundedShopCheckpoint} from './shopTestFixture';
 import {describe,it,expect} from 'vitest';
 import {CozyRuntime} from './CozyRuntime';
 import {type CozyScheduleDependencies} from './CozyRuntime';
@@ -57,15 +58,15 @@ describe('direct kitchen gameplay',()=>{
     expect(r.customerMemory[accept?'accepted':'declined']).toHaveLength(1);expect(r.resolveBargain(accept)).toBe(false);expect(r.state.cash).toBe(cash+(accept?45:50));
   });
   it('upgrades queue to six only in preparation and prevents duplicate charges',()=>{
-    const r=new CozyRuntime(false,true,schedule('regular',7));expect(r.dispatch({type:'shop.upgrade',kind:'queue',commandId:'seats'})).toBe(true);const cash=r.state.cash;
+    const r=CozyRuntime.restoreCheckpoint(fundedShopCheckpoint(),false,schedule('regular',7))!;expect(r.dispatch({type:'shop.upgrade',kind:'queue',commandId:'seats'})).toBe(true);const cash=r.state.cash;
     expect(r.dispatch({type:'shop.upgrade',kind:'queue',commandId:'seats'})).toBe(false);expect(r.state.cash).toBe(cash);r.openShop();time(r,6);expect(r.tickets).toHaveLength(6);expect(r.queueCapacity).toBe(6);
     expect(r.dispatch({type:'shop.upgrade',kind:'oven',commandId:'hot'})).toBe(false);
   });
   it('persists an oven upgrade, then uses four to six seconds without charging it twice',()=>{
-    const r=new CozyRuntime(false,true,schedule());expect(r.upgradeShop('oven','oven-1')).toBe(true);
-    const saved=r.exportCheckpoint(),loaded=CozyRuntime.restoreCheckpoint(saved)!;expect(loaded).not.toBeNull();expect(loaded.ovenLevel).toBe(1);expect(loaded.state.cash).toBe(150);
+    const r=CozyRuntime.restoreCheckpoint(fundedShopCheckpoint(),false,schedule())!;const cash=r.state.cash;expect(r.upgradeShop('oven','oven-1')).toBe(true);
+    const saved=r.exportCheckpoint(),loaded=CozyRuntime.restoreCheckpoint(saved)!;expect(loaded).not.toBeNull();expect(loaded.ovenLevel).toBe(1);expect(loaded.state.cash).toBe(cash-2000);
     for(const id of ['dough','sauce','cheese'] as const)loaded.buy(id,1);loaded.openShop();time(loaded,10);oven(loaded);time(loaded,4);expect(loaded.dispatch({type:'extract'})).toBe(true);expect(loaded.state.stage).toBe('ready');
-    loaded.closeDay();expect(loaded.daySummary!.accounts.capitalPurchases).toBe(150);expect(loaded.daySummary!.accounts.endingCash).toBe(loaded.state.cash);
+    loaded.closeDay();expect(loaded.daySummary!.accounts.capitalPurchases).toBe(2000);expect(loaded.daySummary!.accounts.endingCash).toBe(loaded.state.cash);
     const restored=CozyRuntime.restoreCheckpoint(loaded.exportCheckpoint())!;expect(restored.ovenLevel).toBe(1);expect(restored.state.cash).toBe(loaded.state.cash);
   });
   it('keeps the oven owner when switching customers and consumes only that pizza',()=>{

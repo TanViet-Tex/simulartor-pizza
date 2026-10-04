@@ -53,12 +53,14 @@ development_status:
   6-2-booked-shipper-and-staff-delivery-cycle: review
   6-3-weather-rush-and-festival-events: review
 
-  epic-7: backlog
-  7-1-decoration-ownership-and-placement: backlog
-  7-2-equipment-and-amenities: backlog
-  7-3-shop-renovation-and-expansion: backlog
-  7-4-placed-item-daily-gameplay-effects: backlog
-  7-5-preparation-item-transactions-and-save-migration: backlog
+  # 11 priced items + existing oven/4-to-6 queue upgrade implemented; remaining scope unresolved.
+  # Tables await waiting-seat model; second expansion/layout, new equipment and advertising pending.
+  epic-7: in-progress
+  7-1-decoration-ownership-and-placement: review
+  7-2-equipment-and-amenities: in-progress
+  7-3-shop-renovation-and-expansion: in-progress
+  7-4-placed-item-daily-gameplay-effects: review
+  7-5-preparation-item-transactions-and-save-migration: review
   epic-8: backlog
   8-1-staff-hiring-assignment-and-wages: backlog
 

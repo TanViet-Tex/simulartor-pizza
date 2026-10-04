@@ -311,3 +311,17 @@ Theo yêu cầu Epic6, chỉ thêm nút App giao hàng trong hàng tiêu đề T
 ![Xác nhận book shipper](ui-baseline/epic6-book-shipper.png)
 
 ![Hoàn tất đơn ngay khi giao](ui-baseline/epic6-app-completed.png)
+
+### Epic 7: đồ Quán và bố trí — 2026-10-04
+
+Giữ header/năm tab/sáu mục Quán và kích thước sáu thẻ từng nhóm. Trang trí/Tiện nghi hiển thị giá, hiệu ứng, sở hữu/đang đặt từ dữ liệu thật; bấm thẻ mở khung chung với giá/tiền thiếu/current→expected. Mua chưa tự đặt. Đặt/Cất có preview phòng và vị trí cố định trước xác nhận; hủy không đổi tiền/sở hữu/vị trí. Preview đã đặt dùng cùng tọa độ, giữ vị trí khi cất món khác; không thay bếp. Giá đồ/nâng cấp 500–10.000 xu theo bảng người dùng; lò hiển thị cấp 1/2/3. Bàn ghế 4.000 và mở rộng 2 giá 10.000 hiển thị chờ chốt, chưa bật mua.
+
+Ảnh kiểm tra renderer thật 360×640 của phạm vi này; không thay các ảnh mốc ngoài Quán:
+
+![Trang trí](ui-baseline/epic7-decoration.png)
+
+![Tiện nghi](ui-baseline/epic7-amenities.png)
+
+![Xem trước vị trí](ui-baseline/epic7-placement-preview.png)
+
+![Quán có đồ đã đặt](ui-baseline/epic7-placed-shop.png)

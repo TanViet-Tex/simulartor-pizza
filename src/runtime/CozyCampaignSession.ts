@@ -15,7 +15,7 @@ export class CozyCampaignSession {
   private saved:CozySaveEnvelope|null=null;
   private recovery:Extract<CozyLoadResult,{kind:'loaded'|'recovery'}>|null=null;
   private replacement:string|undefined;
-  private pending:{request:CozyWriteRequest;kind:'create'|'day'|'upgrade';tutorial:boolean}|null=null;
+  private pending:{request:CozyWriteRequest;kind:'create'|'day'|'upgrade';tutorial:boolean;shopCommand?:string}|null=null;
   private inFlight:Promise<CozyRuntime|null>|null=null;
   private listeners=new Set<()=>void>();
   private generation=0;
@@ -77,13 +77,15 @@ export class CozyCampaignSession {
     catch{this.install(CozyRuntime.restoreCheckpoint(before)!);this.publish();return false;}
     void this.writePending();return true;
   }
-  upgradeShop(kind:'oven'|'queue',commandId:string):boolean {
-    if(!this.allowed()||!this.current)return false;
-    const before=this.current.exportCheckpoint();
-    if(!this.current.upgradeShop(kind,commandId))return false;
-    if(this.status==='temporary'){this.publish();return true;}
-    try{this.pending={kind:'upgrade',tutorial:false,request:{campaignId:this.saved!.campaignId,commitId:this.id(),sourceRevision:this.saved!.revision,payload:this.current.exportCheckpoint(),...(this.confirmedRecovery?{confirmedRecovery:true}:{})}};}
-    catch{this.install(CozyRuntime.restoreCheckpoint(before)!);this.publish();return false;}
+  buyShopItem(id:import('../domain/ShopEffects').ShopItemId,commandId:string):boolean {return this.stageShop(r=>r.buyShopItem(id,commandId),commandId);}
+  placeShopItem(id:import('../domain/ShopEffects').ShopItemId,placed:boolean,commandId:string):boolean {return this.stageShop(r=>r.placeShopItem(id,placed,commandId),commandId);}
+  upgradeShop(kind:'oven'|'queue',commandId:string):boolean {return this.stageShop(r=>r.upgradeShop(kind,commandId),commandId);}
+  private stageShop(action:(candidate:CozyRuntime)=>boolean,commandId:string):boolean {
+    if(!this.allowed()||!this.current||!this.current.canSetPrices||this.current.shopCommandUsed(commandId))return false;
+    if(this.status==='temporary'){const accepted=action(this.current);if(accepted)this.publish();return accepted;}
+    const candidate=CozyRuntime.restoreCheckpoint(this.current.exportCheckpoint())!;
+    if(!action(candidate))return false;
+    this.pending={kind:'upgrade',tutorial:false,shopCommand:commandId,request:{campaignId:this.saved!.campaignId,commitId:this.id(),sourceRevision:this.saved!.revision,payload:candidate.exportCheckpoint(),...(this.confirmedRecovery?{confirmedRecovery:true}:{})}};
     void this.writePending();return true;
   }
   private writePending():Promise<CozyRuntime|null> {
@@ -94,6 +96,7 @@ export class CozyCampaignSession {
       const result=await this.repository.commit(structuredClone(pending.request));if(generation!==this.generation)return null;
       if(!result.ok){this.status='error';this.failure=result;this.publish();return null;}
       this.saved=structuredClone(result.envelope);this.replacement=replacementToken({campaignId:result.envelope.campaignId,checksum:result.envelope.checksum,commitId:result.envelope.commitId,revision:result.envelope.revision});this.confirmedRecovery=false;
+      if(pending.shopCommand)this.current!.confirmShopCheckpoint(result.envelope.payload,pending.shopCommand);
       if(pending.kind==='create')this.install(CozyRuntime.restoreCheckpoint(result.envelope.payload,pending.tutorial)!);
       this.pending=null;this.status='ready';this.failure=null;this.releaseSave();this.publish();return this.current;
     })().finally(()=>{this.inFlight=null;});return this.inFlight;

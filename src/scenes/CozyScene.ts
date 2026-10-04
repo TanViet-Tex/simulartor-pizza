@@ -1,5 +1,8 @@
 import {RECIPE_CATALOG,recipeDefinition} from '../config/recipeCatalog';
 import {DELIVERY_RULES} from '../config/deliveryEvents';
+import {shopItem} from '../config/shopCatalog';
+import type {ShopItemId} from '../domain/ShopEffects';
+import {SHOP_INSTALL_LOCATIONS} from '../presentation/ShopPlacement';
 import {ReferenceStock,type StockFilter} from '../presentation/ReferenceStock';
 import {ReferenceShop,SHOP_ART,type ShopPage} from '../presentation/ReferenceShop';
 import {ReferenceMissions} from '../presentation/ReferenceMissions';
@@ -76,6 +79,7 @@ export class CozyScene extends Phaser.Scene {
   private plannerIngredientPage=0;
   private plannerInput?:{recipe:StockRecipe;input:MarketQuantityInput};
   private recipePurchase?:{recipe:StockRecipe;commandId:string;lease:PauseLease};
+  private shopItemDialog?:{id:ShopItemId;mode:'detail'|'place'|'store';commandId:string;lease:PauseLease};
   private appDialog?:{kind:'settings'|'book';ticketId?:string;lease:PauseLease;commandId:string};
   private shopPage:ShopPage='home';
   private stockCriteria?:{kind:'low'|'expiry';input:MarketQuantityInput;lease:PauseLease};
@@ -339,6 +343,7 @@ export class CozyScene extends Phaser.Scene {
       else if(this.marketQuantityEditor)this.marketQuantityDialog();
       else if(this.stockCriteria)this.stockCriteriaDialog();
       else if(this.appDialog)this.deliveryAppDialog();
+      else if(this.shopItemDialog)this.shopInvestmentDialog();
       else if(this.recipePurchase)this.recipePurchaseDialog();
       else if(this.hubUpgrade)this.hubUpgradeDialog();
       else if(this.hubDetail)this.hubDetailDialog();
@@ -384,6 +389,7 @@ export class CozyScene extends Phaser.Scene {
     canvas.dataset.discardPending=String(this.runtime.discardPending);
     canvas.dataset.deliveryPending=JSON.stringify(this.runtime.deliveryPending);
     canvas.dataset.deliveryApp=JSON.stringify(this.runtime.deliveryApp);
+    canvas.dataset.shopItems=JSON.stringify(this.runtime.shopState);
     canvas.dataset.deliveryStatus=JSON.stringify(this.runtime.deliveryStatus);
     canvas.dataset.result=JSON.stringify(this.runtime.lastResult);
     canvas.dataset.bargain=JSON.stringify(this.runtime.bargainPending);
@@ -656,7 +662,7 @@ export class CozyScene extends Phaser.Scene {
         new ReferenceStock(this,this.layer,(...args)=>this.hit(...args)).draw({day:this.runtime.preparationDay,cash:this.runtime.state.cash,rows:stockRows(this.runtime.stockLots,this.runtime.preparationDay,id=>this.runtime.reserved(id)),filter:this.stockFilter,low:this.stockLow,expiryDays:this.stockExpiry,offset:this.stockOffset,drag:this.stockDrag,canScroll:()=>this.runtime.pauses.length===0,scroll:n=>{this.stockOffset=n;this.dirty=true;},setFilter:f=>this.setStockFilter(f),detail:id=>this.openStockLot(id),suggestions:()=>this.openStockPlanner(),market:()=>tab('market'),tab,pause:()=>this.hold('user')});return;
       }
       if(this.summaryTab==='shop'){
-        new ReferenceShop(this,this.layer,(...args)=>this.hit(...args)).draw({app:()=>this.openDeliveryApp('settings'),deliveryApp:{...this.runtime.deliveryApp,eventName:this.runtime.deliveryApp.nextEvent.name},day:this.runtime.preparationDay,cash:this.runtime.state.cash,page:this.shopPage,canAct:this.runtime.canSetPrices,ovenLevel:this.runtime.ovenLevel,queueCapacity:this.runtime.queueCapacity,ovenPrice:this.runtime.upgradePrice('oven'),queuePrice:this.runtime.upgradePrice('queue'),menuPage:this.shopMenuPage,pageMenu:page=>{this.shopMenuPage=page;this.dirty=true;},buy:id=>this.openRecipePurchase(id),recipes:RECIPE_CATALOG.map(r=>r.id).map(id=>({id,name:recipeName(id),price:this.runtime.customerProgress.prices[id],cost:recipeIngredients(id).reduce((n,item)=>n+this.runtime.price(item),0),enabled:this.runtime.menuRecipes.includes(id),owned:this.runtime.ownedRecipes.includes(id),purchasePrice:recipeDefinition(id).purchasePrice})),open:page=>{this.shopPage=page;this.dirty=true;},price:id=>this.choosePrice(id),upgrade:kind=>this.openHubUpgrade(kind),tab,pause:()=>this.hold('user'),footer});return;
+        new ReferenceShop(this,this.layer,(...args)=>this.hit(...args)).draw({shop:this.runtime.shopState,item:id=>this.openShopItem(id),app:()=>this.openDeliveryApp('settings'),deliveryApp:{...this.runtime.deliveryApp,eventName:this.runtime.deliveryApp.nextEvent.name},day:this.runtime.preparationDay,cash:this.runtime.state.cash,page:this.shopPage,canAct:this.runtime.canSetPrices,ovenLevel:this.runtime.ovenLevel,queueCapacity:this.runtime.queueCapacity,ovenPrice:this.runtime.upgradePrice('oven'),queuePrice:this.runtime.upgradePrice('queue'),menuPage:this.shopMenuPage,pageMenu:page=>{this.shopMenuPage=page;this.dirty=true;},buy:id=>this.openRecipePurchase(id),recipes:RECIPE_CATALOG.map(r=>r.id).map(id=>({id,name:recipeName(id),price:this.runtime.customerProgress.prices[id],cost:recipeIngredients(id).reduce((n,item)=>n+this.runtime.price(item),0),enabled:this.runtime.menuRecipes.includes(id),owned:this.runtime.ownedRecipes.includes(id),purchasePrice:recipeDefinition(id).purchasePrice})),open:page=>{this.shopPage=page;this.dirty=true;},price:id=>this.choosePrice(id),upgrade:kind=>this.openHubUpgrade(kind),tab,pause:()=>this.hold('user'),footer});return;
       }
       if(this.summaryTab==='missions'){
         new ReferenceMissions(this,this.layer,(...args)=>this.hit(...args)).draw({day:this.runtime.preparationDay,cash:this.runtime.state.cash,progress:this.runtime.progression,ending:!!summary?.ending,tab,pause:()=>this.hold('user'),footer});return;
@@ -671,6 +677,7 @@ export class CozyScene extends Phaser.Scene {
   }
   private resetModalControls(){this.controls=[];this.visibleActions=[];for(const zone of this.hitZones.values())zone.disableInteractive();}
   private closeHubPanels():void{
+    this.shopItemDialog?.lease.release();this.shopItemDialog=undefined;
     this.recipePurchase?.lease.release();this.recipePurchase=undefined;this.plannerInput?.input.destroy();this.plannerInput=undefined;
     this.stockCriteria?.input.destroy();this.stockCriteria?.lease.release();this.stockCriteria=undefined;
     this.hubDetail?.lease.release();this.hubDetail=undefined;this.hubUpgrade?.lease.release();this.hubUpgrade=undefined;this.stockPlannerLease?.release();this.stockPlannerLease=undefined;this.dirty=true;
@@ -711,6 +718,39 @@ export class CozyScene extends Phaser.Scene {
   private openHubUpgrade(kind:'oven'|'queue'):void{
     if(!this.runtime.canSetPrices)return;const cost=this.runtime.upgradePrice(kind);if(cost===null)return;
     this.hubUpgrade={kind,cost,commandId:`upgrade:${this.purchaseScope}:${kind}:${kind==='oven'?this.runtime.ovenLevel:this.runtime.queueCapacity}`,lease:this.runtime.acquirePause('order')};this.dirty=true;
+  }
+  private openShopItem(id:ShopItemId):void {
+    if(this.runtime.pauses.length||!shopItem(id))return;
+    this.shopItemDialog={id,mode:'detail',commandId:`shop-item:${this.purchaseScope}:${++this.purchaseSerial}`,lease:this.runtime.acquirePause('order')};this.dirty=true;
+  }
+  private shopInvestmentDialog():void {
+    const dialog=this.shopItemDialog!,item=shopItem(dialog.id)!;
+    const preview=this.runtime.shopItemPreview(dialog.id,dialog.mode!=='store');
+    const slot=SHOP_INSTALL_LOCATIONS[item.id],changing=dialog.mode!=='detail';
+    this.summaryModalVeil();this.notificationFrame(['shop-item-cancel','shop-item-confirm'],250,420,390);
+    this.label(180,207,item.name,21,ink);
+    const illustration=(key:string,frame:string,crop:readonly[number,number,number,number],x:number,y:number,w:number,h:number)=>{if(!this.textures.exists(key))return;const texture=this.textures.get(key);if(!texture.has(frame))texture.add(frame,0,...crop);const art=this.add.image(x,y,key,frame);art.setScale(Math.min(w/art.frame.realWidth,h/art.frame.realHeight));this.layer.add(art);return art;};
+    if(changing){
+      illustration('reference-shop','shop-placement-room',[40,354,865,308],180,286,260,93);
+      const placed=this.runtime.shopState.acquired.filter(entry=>entry.placedSlot!==null&&entry.id!==item.id).map(entry=>entry.id);
+      if(dialog.mode==='place')placed.push(item.id);
+      for(const id of placed){const entry=shopItem(id)!,position=SHOP_INSTALL_LOCATIONS[id],x=50+260*position.x,y=240+93*position.y;this.graphics();this.art.g.fillStyle(0xfff0d2,.95).fillRoundedRect(x-11,y-position.height*.39-2,22,position.height*.78+4,4);illustration(entry.artKey,'shop-item-'+id,entry.crop,x,y,20,position.height*.78);}
+      this.game.canvas.dataset.shopPlacement=JSON.stringify({id:item.id,mode:dialog.mode,slot});
+    }else illustration(item.artKey,'shop-item-'+item.id,item.crop,180,264,68,68);
+    const effect='visitors' in item.effect?`+${Math.round(item.effect.visitors*100)}% khách ghé`:'waitingSeats' in item.effect?'+2 chỗ chờ':`+${Math.round(('patience' in item.effect?item.effect.patience:item.effect.cooling)*100)}% thời gian chờ`;
+    const percent=(n:number)=>Math.round(n*100)+'%';
+    const body=changing?`${dialog.mode==='place'?'Đặt tại:':'Cất khỏi:'} ${slot.name}\nKhách: +${percent(preview.current.visitors)} → +${percent(preview.after.visitors)}\nThời gian chờ: +${percent(preview.current.patience)} → +${percent(preview.after.patience)}\n${dialog.mode==='place'?'Áp dụng từ ca sắp mở.':'Giữ sở hữu, không hoàn tiền.'}`:`Giá: ${item.price?.toLocaleString('vi-VN')??'—'} xu · ${effect}\n${preview.owned?(preview.placed?'Đang đặt · '+slot.name:'Đã sở hữu · Đang cất'):(preview.missing?'Còn thiếu '+preview.missing.toLocaleString('vi-VN')+' xu.':'Đủ tiền mua.')}\n${item.available?(preview.owned?'Xem trước rồi xác nhận đặt/cất.':'Mua chưa đặt không cộng hiệu ứng.'):item.blockedReason}\nKhách: +${percent(preview.current.visitors)} → +${percent(preview.after.visitors)} · Chờ: +${percent(preview.current.patience)} → +${percent(preview.after.patience)}`;
+    this.label(180,changing?339:312,body,13,ink,286);
+    this.button('shop-item-cancel',40,430,132,48,'Quay lại',true,()=>this.closeHubPanels(),UI.dark);
+    const enabled=item.available&&!this.runtime.pauses.some(p=>p!=='order')&&(preview.owned||preview.missing===0);
+    const title=changing?'Xác nhận':preview.owned?(preview.placed?'Cất đi':'Đặt vào quán'):'Mua';
+    this.button('shop-item-confirm',188,430,132,48,title,enabled,()=>{
+      if(!changing&&preview.owned){dialog.mode=preview.placed?'store':'place';this.dirty=true;return;}
+      this.closeHubPanels();
+      if(changing){if(this.campaignSession)this.campaignSession.placeShopItem(item.id,dialog.mode==='place',dialog.commandId);else this.runtime.placeShopItem(item.id,dialog.mode==='place',dialog.commandId);}
+      else {if(this.campaignSession)this.campaignSession.buyShopItem(item.id,dialog.commandId);else this.runtime.buyShopItem(item.id,dialog.commandId);}
+      this.dirty=true;
+    });
   }
   private openDeliveryApp(kind:'settings'|'book',ticketId?:string):void {
     if(this.runtime.pauses.length)return;

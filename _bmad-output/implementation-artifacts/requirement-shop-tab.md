@@ -78,3 +78,11 @@ Trang chính là phần đề xuất riêng cho tab Quán, không cho phép đ�
 - Lưu giá ngày sau không đổi đơn hiện có/giá ngày hiện tại; cảnh báo giá và lãi dự kiến dùng dữ liệu thật.
 - Mua thành công/thiếu tiền/hủy/chạm lặp/đã sở hữu; đặt/cất trang trí giữ sở hữu; quyền sở hữu/bố trí/nâng cấp khớp tiến độ sau lưu và tải lại theo hợp đồng được chốt.
 - Giữ style hiện hành và trạng thái dữ liệu thật; chỉ kiểm tra phần liên quan, chưa chạy build/test ở lượt ghi tài liệu này.
+
+### Epic 7 — triển khai phần đã chốt, 2026-10-04
+
+Đã triển khai 11 món Trang trí/Tiện nghi giá 500–10.000 xu: mua một lần, đặt/cất ở vị trí cố định trong preview Quán, chỉ đồ đang đặt có bonus. Giữ sáu mục Quán, header/footer và bếp đã duyệt. Ca đóng băng hiệu ứng khi mở; bonus sinh khách chỉ nhân cơ hội thương mại tại quầy, bonus kiên nhẫn áp dụng khách trả tiền tại quầy (kể cả referral), không tăng hạn đơn app. Lò cấp 2/3 giá 2.000/5.000; mở rộng 4→6 giá 6.000.
+
+Mua/đặt/cất/nâng cấp chuẩn bị staging trên candidate; commit thành công mới cập nhật chính runtime hiện tại, lỗi/retry không trừ trùng. Metadata lưu sở hữu/vị trí/giá thực trả; save cũ giữ tiền/kho/tiến độ và giá nâng cấp lịch sử. Không lưu giữa ca. Build, 110 unit và 7 E2E Chromium 360×640 đạt; ba review độc lập hoàn tất.
+
+Bàn ghế 4.000 vẫn chờ chốt mô hình +2 chỗ đợi; mở rộng lần 2 giá 10.000 chờ sức chứa/bố cục. Thiết bị mới/quảng bá/hư hỏng chưa có luật. Toàn Epic7 vẫn in-progress. Ghi chú này thay các nhận định trước đây rằng đồ mới chưa có giá hoặc toàn bộ luồng mua chưa triển khai. Chi tiết: `_bmad-output/implementation-artifacts/spec-7-shop-development.md`.

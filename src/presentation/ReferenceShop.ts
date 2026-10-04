@@ -4,6 +4,10 @@ import Phaser from 'phaser';
 import type {StockRecipe} from '../domain/CozyStock';
 import {HubCanvasUI,type HubHit,type HubTab} from './HubCanvasUI';
 import {HUB_THEME} from './HubTheme';
+import {SHOP_CATALOG} from '../config/shopCatalog';
+import type {ShopItemId,ShopEffects} from '../domain/ShopEffects';
+import type {ShopAcquisition} from '../domain/ShopCheckpoint';
+import {SHOP_INSTALL_LOCATIONS} from './ShopPlacement';
 
 export type ShopPage='home'|'menu'|'decoration'|'equipment'|'amenities'|'expansion'|'staff';
 export const SHOP_ART=[
@@ -16,10 +20,10 @@ export const SHOP_ART=[
   {key:'reference-shop-staff',url:'assets/references/Tuyển nhân viên tiệm pizza-6.png'},
 ] as const;
 type Crop=readonly [number,number,number,number];
-type Input={deliveryApp?:{available:boolean;enabled:boolean;eventName:string};app?:()=>void;day:number;cash:number;page:ShopPage;canAct:boolean;ovenLevel:number;queueCapacity:number;ovenPrice:number|null;queuePrice:number|null;menuPage:number;pageMenu:(page:number)=>void;buy:(recipe:StockRecipe)=>void;recipes:{id:StockRecipe;name:string;price:number;cost:number;enabled:boolean;owned:boolean;purchasePrice:number}[];open:(page:ShopPage)=>void;price:(recipe:StockRecipe)=>void;upgrade:(kind:'oven'|'queue')=>void;tab:(tab:HubTab)=>void;pause:()=>void;footer:{id:string;title:string;enabled:boolean;action:()=>void}};
+type Input={shop?:{acquired:ShopAcquisition[];effects:ShopEffects};item?:(id:ShopItemId)=>void;deliveryApp?:{available:boolean;enabled:boolean;eventName:string};app?:()=>void;day:number;cash:number;page:ShopPage;canAct:boolean;ovenLevel:number;queueCapacity:number;ovenPrice:number|null;queuePrice:number|null;menuPage:number;pageMenu:(page:number)=>void;buy:(recipe:StockRecipe)=>void;recipes:{id:StockRecipe;name:string;price:number;cost:number;enabled:boolean;owned:boolean;purchasePrice:number}[];open:(page:ShopPage)=>void;price:(recipe:StockRecipe)=>void;upgrade:(kind:'oven'|'queue')=>void;tab:(tab:HubTab)=>void;pause:()=>void;footer:{id:string;title:string;enabled:boolean;action:()=>void}};
 const sections=[
   {id:'menu',title:'Menu & giá bán',subtitle:'Chọn món · Chỉnh giá',crop:[95,752,270,143]},
-  {id:'decoration',title:'Trang trí',subtitle:'Đồ & vị trí chưa mở',crop:[513,750,323,145]},
+  {id:'decoration',title:'Trang trí',subtitle:'Mua đồ · Đặt / Cất',crop:[513,750,323,145]},
   {id:'equipment',title:'Thiết bị',subtitle:'Nâng cấp lò hiện có',crop:[60,1000,339,150]},
   {id:'amenities',title:'Tiện nghi',subtitle:'Mua & đặt chưa mở',crop:[534,1007,326,143]},
   {id:'expansion',title:'Mở rộng quán',subtitle:'Nâng ô hàng chờ',crop:[58,1260,345,145]},
@@ -44,7 +48,9 @@ export class ReferenceShop {
     if(input.page==='home'){
       ui.frame({x:8,y:133,width:344,height:151});
       art('reference-shop',[40,354,865,308],15,140,330,117);
-      ui.text(180,263,`Minh họa · Lò cấp ${input.ovenLevel} · ${input.queueCapacity} ô chờ`,11,c.muted,true,323);
+      const placed=input.shop?.acquired.filter(item=>item.placedSlot!==null)??[];
+      placed.forEach(entry=>{const item=SHOP_CATALOG.find(item=>item.id===entry.id)!,slot=SHOP_INSTALL_LOCATIONS[item.id],x=15+330*slot.x,y=140+117*slot.y;ui.panel(x-15,y-slot.height/2-2,30,slot.height+4,c.inset);art(item.artKey,item.crop,x-13,y-slot.height/2,26,slot.height);});
+      ui.text(180,263,input.shop?`Minh họa · Đang đặt ${placed.length} · Khách +${Math.round(input.shop.effects.visitors*100)}% · Chờ +${Math.round(input.shop.effects.patience*100)}%`:`Minh họa · Lò cấp ${input.ovenLevel} · ${input.queueCapacity} ô chờ`,10,c.muted,true,323);
       sections.forEach((section,i)=>{
         const x=8+i%2*176,y=292+Math.floor(i/2)*95;
         ui.panel(x,y,168,89);art('reference-shop',section.crop,x+15,y+4,137,48);
@@ -71,7 +77,7 @@ export class ReferenceShop {
         items.forEach(([name,source],i)=>{
           const x=8+i%2*176,y=180+Math.floor(i/2)*174;ui.panel(x,y,168,166);art('reference-shop-equipment',source,x+8,y+8,152,91);
           ui.text(x+84,y+104,name,14,c.ink,true,154);
-          if(i===0){ui.text(x+84,y+122,`Cấp ${input.ovenLevel} · ${['6–8','4–6','2–4'][Math.min(2,input.ovenLevel)]}s`,11,c.muted,true);
+          if(i===0){ui.text(x+84,y+122,`Cấp ${input.ovenLevel+1} · ${['6–8','4–6','2–4'][Math.min(2,input.ovenLevel)]}s`,11,c.muted,true);
             const enabled=input.canAct&&input.ovenPrice!==null;ui.button(x+7,y+140,154,23,input.ovenPrice===null?'Đã nâng tối đa':`Nâng cấp · ${input.ovenPrice} xu`,enabled,11);
             this.hit('summary-upgrade-oven',x+4,y+125,160,41,enabled,()=>input.upgrade('oven'));
           }else ui.text(x+84,y+135,'Chưa triển khai',12,c.muted,true);
@@ -82,15 +88,24 @@ export class ReferenceShop {
         const enabled=input.canAct&&input.queuePrice!==null;
         ui.button(22,370,316,43,input.queuePrice===null?'Đã mở tối đa 6 ô':`Mở 6 ô · ${input.queuePrice} xu`,enabled,16);
         this.hit('summary-upgrade-queue',20,368,320,48,enabled,()=>input.upgrade('queue'));
-        ui.panel(8,439,344,88);ui.text(23,452,'Tu sửa / mở rộng mặt bằng',16);ui.text(23,480,'Chưa triển khai · Chưa có giá và lưu.',12,c.muted,false,318);
-        note(['Nâng hàng chờ theo cấu hình hiện tại.','Ảnh không xác định diện tích hoặc đồ sở hữu.']);
+        ui.panel(8,439,344,88);ui.text(23,452,'Tu sửa / mở rộng mặt bằng',16);ui.text(23,480,'Chờ chốt sức chứa và bố cục.',12,c.muted,false,318);
+        ui.text(23,498,'Lần 2: 10.000 xu · Chờ chốt bố cục',11,c.muted,false,318);
+        note(['Nâng hàng chờ theo cấu hình hiện tại.','Giữ 6 ô hiện có; chưa mua mở rộng lần 2.']);
+      }else if(input.page==='decoration'||input.page==='amenities'){
+        const items=SHOP_CATALOG.filter(item=>item.group===input.page);
+        items.forEach((item,i)=>{
+          const x=8+i%2*176,y=180+Math.floor(i/2)*116,owned=input.shop?.acquired.find(entry=>entry.id===item.id);
+          ui.panel(x,y,168,109);art(item.artKey,item.crop,x+10,y+5,148,65);
+          const effect='visitors' in item.effect?`+${Math.round(item.effect.visitors*100)}% khách ghé`:'waitingSeats' in item.effect?'+2 chỗ chờ':`+${Math.round(('patience' in item.effect?item.effect.patience:item.effect.cooling)*100)}% thời gian chờ`;
+          if(owned||!item.available){ui.panel(x+76,y+6,85,18,c.inset);ui.text(x+118,y+10,owned?(owned.placedSlot?'Đang đặt':'Đã sở hữu'):'Chờ chốt',9,c.ink,true,79);}
+          ui.text(x+84,y+73,item.name,12,c.ink,true,153);ui.text(x+84,y+91,`${item.price?.toLocaleString('vi-VN')??'—'} xu · ${effect}`,10,c.muted,true,154);
+          this.hit('shop-item-'+item.id,x,y,168,109,!!input.item,()=>input.item?.(item.id));
+        });
+        const effects=input.shop?.effects;
+        note([`Đang đặt: khách +${Math.round((effects?.visitors??0)*100)}% · Thời gian chờ +${Math.round((effects?.patience??0)*100)}%`,'Mua chưa đặt không cộng hiệu ứng; đổi trước ca.']);
       }else{
-        const catalog=input.page==='decoration'?
-          [['Cây để bàn',[39,610,180,233]],['Tranh pizza',[494,620,185,225]],['Đèn trang trí',[46,879,173,241]],['Bảng hiệu',[493,900,188,212]],['Chậu cây lớn',[43,1170,169,239]],['Rèm cửa',[490,1175,199,230]]] as const:
-          input.page==='amenities'?
-          [['Ghế chờ',[43,533,220,139]],['Wi-Fi',[497,538,227,136]],['Quạt đứng',[47,835,197,154]],['Máy lạnh',[506,851,220,136]],['Loa nghe nhạc',[46,1177,190,150]],['Bàn ghế khách',[496,1165,228,157]]] as const:
-          [['Chuẩn bị nguyên liệu',[54,322,384,300]],['Phụ trách lò',[502,322,387,300]],['Đóng hộp pizza',[54,918,384,300]],['Giao tại quầy',[502,918,387,300]]] as const;
-        const six=catalog.length===6,height=six?109:163,step=six?116:175;
+        const catalog=[['Chuẩn bị nguyên liệu',[54,322,384,300]],['Phụ trách lò',[502,322,387,300]],['Đóng hộp pizza',[54,918,384,300]],['Giao tại quầy',[502,918,387,300]]] as const;
+        const six=false,height=163,step=175;
         catalog.forEach(([name,source],i)=>{const x=8+i%2*176,y=180+Math.floor(i/2)*step;
           ui.panel(x,y,168,height);art(`reference-shop-${input.page}`,source,x+10,y+5,148,six?65:110);
           ui.text(x+84,y+(six?73:118),name,12,c.ink,true,153);ui.text(x+84,y+(six?91:140),'Chưa triển khai',10,c.muted,true);

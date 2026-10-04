@@ -1,14 +1,37 @@
 ---
 title: 'Trang trí và Tiện nghi — chỉ số, mua, bố trí, gameplay và lưu'
 date: '2026-10-04'
-status: documented-not-implemented
-scope: documentation-only
+status: implemented-priced-items-pending-capacity-and-expansion
+scope: epic-7-priced-items
 source: user
 ---
 
 # Trang trí và Tiện nghi — yêu cầu chức năng
 
-**Chỉ ghi tài liệu/backlog E07; chưa code, xem ảnh references hoặc chạy build/test.** Khi được yêu cầu làm mới xem ảnh. Chỉ số bên dưới do người dùng xác định, thay ghi chú cũ rằng công dụng Trang trí/Tiện nghi hoàn toàn chưa chốt. Thiết bị/nhân viên có thông số riêng.
+## Bảng giá người dùng chốt — 2026-10-04
+
+Yêu cầu triển khai Epic7 đã được đưa ra. Bảng dưới đây thay mọi giá tạm/giá minh họa trong ảnh. Các luật tác dụng, mỗi loại một bản, mua chưa đặt không bonus, chuẩn bị/atomic save ở phần sau vẫn áp dụng.
+
+| Món / nâng cấp | Giá | Tác dụng |
+|---|---:|---|
+| Cây trang trí (cây để bàn) | 500 xu | +3% khách ghé |
+| Tranh pizza | 800 xu | +5% khách ghé |
+| Đèn trang trí | 1.000 xu | +5% khách ghé |
+| Ghế chờ | 1.200 xu | +5% thời gian chờ |
+| Wi-Fi | 2.000 xu | +8% thời gian chờ |
+| Biển hiệu (bảng hiệu) | 2.500 xu | +8% khách ghé |
+| Nhạc trong quán (loa) | 3.000 xu | +5% thời gian chờ |
+| Điều hòa (máy lạnh) | 5.000 xu | +10% thời gian chờ |
+| Lò cấp 2 | 2.000 xu | Cửa sổ chín4–6s theo nâng cấp hiện có |
+| Lò cấp 3 | 5.000 xu | Cửa sổ chín2–4s theo nâng cấp hiện có |
+| Mở rộng lần 1 | 6.000 xu | Hàng chờ4→6 khách |
+| Mở rộng lần 2 | 10.000 xu | Chờ chốt bố cục/sức chứa trước bật mua |
+
+Người dùng tiếp theo xác định giá mọi món500–10000xu; giữ bảng đã chốt, bổ sung chậu cây lớn1500, rèm1000, quạt1500, bàn ghế khách4000xu. Bàn ghế vẫn cần chốt mô hình2chỗ chờ riêng với4/6ô đơn, đang hỏi người dùng; không bật mua trước có tác dụng thật. Thiết bị mới/quảng bá/hư hỏng/sửa chữa chưa có luật riêng. Giá nâng cấp mới chỉ áp dụng giao dịch mới, không định giá lại/nộp thêm tiền cho lò hoặc hàng chờ đã mua ở save cũ. Nhạc trong quán ở đây là bonus tiện nghi, không tự đồng nghĩa đã có audio nhạc nền.
+
+Triển khai đợt này dùng vị trí lắp cố định cho từng món trong preview Quán, xem trước rồi xác nhận; giữ nguyên bếp và sáu ô khách. Mở rộng lần2 chưa được cho phép đổi bố cục.
+
+Phần dưới được ghi ở lượt tài liệu trước yêu cầu triển khai. Chỉ số do người dùng xác định; trạng thái kiểm chứng triển khai mới theo [spec Epic7](spec-7-shop-development.md), không coi ghi chú lịch sử là quyền tự đặt giá.
 
 ## Công dụng và chỉ số
 
@@ -30,7 +53,7 @@ source: user
 | Loa nghe nhạc | +5% kiên nhẫn |
 | Bàn ghế khách | +2 chỗ chờ |
 
-**Giá mua dùng cấu hình đã chốt của dự án, không lấy giá ảnh.** Không đặt bảng giá mới tại đây. Khi triển khai xác định nguồn giá/ID chính xác; thiếu thì chốt trước khi bật Mua. Lượt đối chiếu cấu hình nội dung hiện có chưa xác định được bảng giá các đồ trên; không coi đó là quyền tự đặt giá.
+**Giá mua theo bảng người dùng chốt ở đầu tài liệu, không lấy giá ảnh.** Món ngoài bảng cần chốt giá trước khi bật Mua.
 
 ## Luồng mua
 
@@ -85,11 +108,11 @@ Tiến độ lưu **sở hữu, đồ đang đặt/vị trí, cấp nâng cấp 
 
 **Save cũ:** đồ mới mặc định chưa sở hữu/chưa đặt, giữ tiền/tiến độ cũ. Migration trên bản sao được kiểm tra, không tự reset/cấp đồ hoặc ghi đè trước khi chuyển đổi hợp lệ và lưu thành công.
 
-### Ranh giới lưu mới, chưa triển khai
+### Ranh giới lưu chuẩn bị
 
 “Lưu mua thành công rồi cập nhật UI” bổ sung **giao dịch bền mua đồ trong chuẩn bị** ngoài ranh giới tạo chiến dịch/chốt ngày cũ. Tiền/sở hữu phải cùng kết quả atomic, không ghi đồ độc lập có thể lệch tiền. Xác nhận bố trí/cấp nâng cấp phải khôi phục nhất quán sau reload; lịch ghi đặt/cất phải được thiết kế để đáp ứng yêu cầu này.
 
-Khi triển khai chi tiết hóa schema/version, commit ID/revision, lỗi/retry/xung đột và bảo toàn tiền/kho/tiến độ. Không đổi ngày đã chốt, tạo checkpoint ngày cũ, ghi mỗi cú chạm/xem trước hoặc vô tình lưu/khôi phục giữa ca. Không mở ngày khi giao dịch/lưu còn pending. **Đây là yêu cầu mới, không phải bằng chứng save hiện tại đã hỗ trợ.**
+Đã triển khai candidate checkpoint, commit/revision, lỗi/retry và bảo toàn tiền/kho/tiến độ cho 11 món khả dụng cùng nâng cấp lò/hàng chờ. Chỉ cập nhật runtime hiện tại sau commit thành công. Không đổi ngày đã chốt, ghi mỗi cú chạm/xem trước hoặc lưu giữa ca. Không mở ngày khi giao dịch/lưu còn pending. Save cũ giữ giá đã trả; nâng cấp tiếp theo dùng bảng giá mới. Bàn ghế và mở rộng lần 2 vẫn chờ quyết định sức chứa/bố cục.
 
 ## UI và nghiệm thu
 
@@ -105,6 +128,6 @@ Kiểm tra khi được yêu cầu triển khai:
 4. Mở ngày dùng bonus thật cho sinh khách/kiên nhẫn, không vượt sức chứa; không đổi trong ca hoặc tác động giá/sao/nướng.
 5. Quạt+máy lạnh không cộng dồn; cộng trên gốc, đúng 67.8 giây/cap30%/40%, sức chứa tính riêng.
 6. Reload giữ đồ/vị trí/cấp, không nhân đôi bonus; save cũ giữ tiền/tiến độ, chưa sở hữu đồ mới.
-7. **Build và test liên quan thành công** khi triển khai, kiểm tra tập trung theo nhịp dự án; chưa chạy ở lượt chỉ tài liệu.
+7. **Build đạt; 110 unit và 7 E2E Chromium 360×640 đạt** trong đợt triển khai hiện tại. Xem [spec triển khai](spec-7-shop-development.md) để biết phạm vi và bằng chứng.
 
 Phân việc: **7.1 trang trí/sở hữu/bố trí; 7.2 tiện nghi và thiết bị riêng; 7.4 bonus ngày/sinh khách; 7.5 giao dịch chuẩn bị/save/migration**. UI/luồng thuộc3.8; UI xong chưa là nghiệp vụ xong. Xem [epics](../planning-artifacts/pizza-gdd/epics.md), [Quán](requirement-shop-tab.md).

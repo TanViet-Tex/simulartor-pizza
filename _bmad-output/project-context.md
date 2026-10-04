@@ -307,3 +307,11 @@ User subsequently supplied `references/Giao diện game pizza gỗ tối giản.
 ### Stock, Shop and Missions bodies — 2026-10-04
 
 User next explicitly authorized continuing these three tabs using notes and references. Their bodies now use HubTheme/HubCanvasUI, the same reference header/wood and dynamic content; the preceding header-only restriction describes the earlier request. Stock has19ingredients, real lot detail/usable stock, explicit player-selected filter criteria, read-only current-menu purchase planning and Market navigation. Shop has six category pages with illustrative art, existing price editing and confirmed oven/queue upgrades; new items missing purchase/save configuration remain explicitly unavailable. Missions presents actual day goals, latest closed result, cheese8mission, XP/unlock and automatic reward status. Do not fabricate full8recipe quantities, art-derived prices/ownership, new purchases or reward claims. Summary/Market/kitchen/save/runtime rules remain unchanged. See implementation-artifacts/spec-stock-shop-missions-ui.md and updated UI baseline.
+
+### Epic 7 — triển khai phần đã chốt, 2026-10-04
+
+Đã triển khai 11 món Trang trí/Tiện nghi giá 500–10.000 xu: mua một lần, đặt/cất ở vị trí cố định trong preview Quán, chỉ đồ đang đặt có bonus. Giữ sáu mục Quán, header/footer và bếp đã duyệt. Ca đóng băng hiệu ứng khi mở; bonus sinh khách chỉ nhân cơ hội thương mại tại quầy, bonus kiên nhẫn áp dụng khách trả tiền tại quầy (kể cả referral), không tăng hạn đơn app. Lò cấp 2/3 giá 2.000/5.000; mở rộng 4→6 giá 6.000.
+
+Mua/đặt/cất/nâng cấp chuẩn bị staging trên candidate; commit thành công mới cập nhật chính runtime hiện tại, lỗi/retry không trừ trùng. Metadata lưu sở hữu/vị trí/giá thực trả; save cũ giữ tiền/kho/tiến độ và giá nâng cấp lịch sử. Không lưu giữa ca. Build, 110 unit và 7 E2E Chromium 360×640 đạt; ba review độc lập hoàn tất.
+
+Bàn ghế 4.000 vẫn chờ chốt mô hình +2 chỗ đợi; mở rộng lần 2 giá 10.000 chờ sức chứa/bố cục. Thiết bị mới/quảng bá/hư hỏng chưa có luật. Toàn Epic7 vẫn in-progress. Ghi chú này thay các nhận định trước đây rằng đồ mới chưa có giá hoặc toàn bộ luồng mua chưa triển khai. Chi tiết: `_bmad-output/implementation-artifacts/spec-7-shop-development.md`.

@@ -1,3 +1,7 @@
+import {shopItem} from '../config/shopCatalog';
+import {shopEffects,type ShopItemId,type ShopEffects} from '../domain/ShopEffects';
+import {shopSchedule} from '../domain/ShopSchedule';
+import type {ShopCheckpoint,UpgradeReceipt} from '../domain/ShopCheckpoint';
 import {recipeDefinition,defaultRecipePercents} from '../config/recipeCatalog';
 import {DELIVERY_RULES,deliveryEvent,deliveryTiming,deliverySchedule,type DeliveryEvent,type DeliveryScheduleSlot} from '../config/deliveryEvents';
 import { bakeTiming } from '../config/bakeTiming';
@@ -15,7 +19,7 @@ import {CozyProgression,type ProgressEffects} from '../domain/CozyProgression';
 import type { PauseLease } from './PlayLifecycle';
 import { COZY_BAKE, CozyOrder, type CozyIntent } from '../domain/CozyOrder';
 import { CozyStock,STOCK_RECIPES, datedIngredientPrice, ingredientExpiry, ingredientName, recipeIngredients, recipePrice, type StockIngredient, type StockRecipe } from '../domain/CozyStock';
-export type CozyRuntimeIntent=CozyIntent|{type:'customer.price';recipe:StockRecipe;percent:number}|{type:'customer.bargain';accept:boolean}|{type:'customer.help';accept:boolean}|{type:'customer.thanks'}|{type:'market.buy';ingredient:StockIngredient;quantity:number;commandId:string}|{type:'menu.configure';recipe:StockRecipe;percent:number;enabled:boolean}|{type:'express.order';ingredient:StockIngredient;quantity:number;commandId:string}|{type:'shop.upgrade';kind:'oven'|'queue';commandId:string};
+export type CozyRuntimeIntent=CozyIntent|{type:'customer.price';recipe:StockRecipe;percent:number}|{type:'customer.bargain';accept:boolean}|{type:'customer.help';accept:boolean}|{type:'customer.thanks'}|{type:'market.buy';ingredient:StockIngredient;quantity:number;commandId:string}|{type:'menu.configure';recipe:StockRecipe;percent:number;enabled:boolean}|{type:'express.order';ingredient:StockIngredient;quantity:number;commandId:string}|{type:'shop.buy';id:ShopItemId;commandId:string}|{type:'shop.place';id:ShopItemId;placed:boolean;commandId:string}|{type:'shop.upgrade';kind:'oven'|'queue';commandId:string};
 
 export type CozyPause = 'user' | 'visibility' | 'orientation' | 'order' | 'gap' | 'success' | 'tutorial' | 'discard' | 'delivery' | 'menu' | 'bargain' | 'help' | 'save';
 export type CozyTutorialStep = 'dough' | 'sauce' | 'cheese' | 'bake' | 'warming' | 'extract' | 'box' | 'deliver' | 'complete';
@@ -67,6 +71,27 @@ export class CozyRuntime {
     const cost=recipeDefinition(recipe).purchasePrice;if(!this.stock.debit(cost))return this.shopFeedback('Kh\u00f4ng \u0111\u1ee7 ti\u1ec1n mua c\u00f4ng th\u1ee9c.');
     this.recipeCommands.add(commandId);this.recipeOwnership.add(recipe);this.enabledMenu.add(recipe);this.purchasedRecipes.push(recipe);this.recipeSpent+=cost;this.pendingRecipeSpent+=cost;this.message='\u0110\u00e3 m\u1edf c\u00f4ng th\u1ee9c '+recipeDefinition(recipe).name;this.revision++;return true;
   }
+  private shop:ShopCheckpoint={acquired:[],spent:0,pendingSpent:0};
+  private shopCommands=new Set<string>();
+  private upgradeReceipts:UpgradeReceipt[]=[];
+  private frozenShopEffects:ShopEffects=shopEffects([]);
+  shopCommandUsed(commandId:string){return this.shopCommands.has(commandId)||this.upgradeCommands.has(commandId);}
+  get shopState(){return {...structuredClone(this.shop),effects:shopEffects(this.shop.acquired.filter(i=>i.placedSlot!==null).map(i=>i.id)),frozenEffects:this.frozenShopEffects};}
+  shopItemPreview(id:ShopItemId,placed=true){const item=shopItem(id),owned=this.shop.acquired.find(i=>i.id===id),ids=this.shop.acquired.filter(i=>i.placedSlot!==null&&i.id!==id).map(i=>i.id);if(placed)ids.push(id);return {item,owned:!!owned,placed:!!owned?.placedSlot,price:item?.price??null,missing:Math.max(0,(item?.price??0)-this.stock.cash),current:this.shopState.effects,after:shopEffects(ids)};}
+  buyShopItem(id:ShopItemId,commandId:string):boolean {
+    const item=shopItem(id);if(!this.canSetPrices||!item||!item.available||item.price===null||typeof commandId!=='string'||!commandId.trim()||this.shopCommands.has(commandId)||this.shop.acquired.some(i=>i.id===id))return false;
+    if(!this.stock.debit(item.price))return this.shopFeedback('Không đủ tiền. Thiếu '+Math.max(0,item.price-this.stock.cash)+' xu.');
+    this.shop.acquired.push({id,actualPrice:item.price,placedSlot:null});this.shop.spent+=item.price;this.shop.pendingSpent+=item.price;this.shopCommands.add(commandId);this.revision++;return true;
+  }
+  placeShopItem(id:ShopItemId,placed:boolean,commandId:string):boolean {
+    const item=this.shop.acquired.find(i=>i.id===id);if(!this.canSetPrices||!item||typeof placed!=='boolean'||typeof commandId!=='string'||!commandId.trim()||this.shopCommands.has(commandId)||!!item.placedSlot===placed)return false;
+    item.placedSlot=placed?id:null;this.shopCommands.add(commandId);this.revision++;return true;
+  }
+  /** Session confirmation changes only checkpoint-owned investment state; leases and scene identity survive. */
+  confirmShopCheckpoint(value:CozyCheckpoint,commandId:string):boolean {
+    const s=validateCozyCheckpoint(value);if(!s||this.shiftOpen||s.day!==(this.phase==='summary'?this.currentDay+1:this.currentDay))return false;
+    this.stock=CozyStock.restore(s.stock)!;this.shop=structuredClone(s.shop!);this.ovenUpgrade=s.upgrades.ovenLevel as 0|1|2;this.queueUpgrade=s.upgrades.queueLevel;this.upgradeSpent=s.upgrades.spent;this.pendingUpgradeSpent=s.upgrades.pendingSpent;this.upgradeReceipts=structuredClone(s.upgrades.receipts??[]);this.shopCommands.add(commandId);this.upgradeCommands.add(commandId);this.order=new CozyOrder(false,this.recipe,true,this.ovenUpgrade);this.revision++;return true;
+  }
   private ovenUpgrade:0|1|2=0;
   private queueUpgrade=0;
   private upgradeSpent=0;
@@ -78,7 +103,7 @@ export class CozyRuntime {
   get ovenLevel(){return this.ovenUpgrade;}
   get queueCapacity(){return this.queueUpgrade?6:4;}
   get bakeTiming(){return bakeTiming(this.ovenUpgrade);}
-  get upgrades(){return {ovenLevel:this.ovenUpgrade,queueLevel:this.queueUpgrade,spent:this.upgradeSpent,pendingSpent:this.pendingUpgradeSpent};}
+  get upgrades(){return {receipts:structuredClone(this.upgradeReceipts),ovenLevel:this.ovenUpgrade,queueLevel:this.queueUpgrade,spent:this.upgradeSpent,pendingSpent:this.pendingUpgradeSpent};}
   get customerMemory(){return structuredClone(this.customerDecisions);}
   get expressOrders(){return [...this.expressPending.values()].map(order=>({...order}));}
   expressPrice(id:StockIngredient){return Math.ceil(datedIngredientPrice(id,this.preparationDay)*1.6);}
@@ -100,13 +125,13 @@ export class CozyRuntime {
     if(!this.production||this.shiftOpen||this.tutorialActive||!['preparation','summary'].includes(this.phase))throw new Error('Not a day boundary');
     const terminal=!!this.summary?.ending,day=this.summary?(terminal?this.currentDay:this.currentDay+1):this.currentDay;
     const recipe=this.recipeOwnership.has(this.recipe)?this.recipe:this.menuFor(day)[0];
-    const data:CozyCheckpoint={deliveryAppEnabled:this.appEnabled,ownedRecipes:this.ownedRecipes,recipePurchases:this.recipePurchases,upgrades:this.upgrades,customerMemory:this.customerMemory,contentId:COZY_CONTENT_VERSION,day,terminal,stock:this.stock.exportCheckpoint(),progression:this.progress.snapshot,help:{decision:this.help.decision,outcome:this.help.outcome==='pending'?null:this.help.outcome,claims:[...this.help.claims]},menu:[...this.enabledMenu],prices:{...this.pricing},recipe,reports:structuredClone(this.reports),cumulativeProfit:this.cumulativeProfit,reputation:this.reputation,relationship:this.relationship,relationshipDays:[...this.relationshipDays],regularDay1Stars:this.regularDay1Stars,regularLatestStars:this.regularLatestStars,referral:this.referral?{...this.referral}:null};
+    const data:CozyCheckpoint={shop:structuredClone(this.shop),deliveryAppEnabled:this.appEnabled,ownedRecipes:this.ownedRecipes,recipePurchases:this.recipePurchases,upgrades:this.upgrades,customerMemory:this.customerMemory,contentId:COZY_CONTENT_VERSION,day,terminal,stock:this.stock.exportCheckpoint(),progression:this.progress.snapshot,help:{decision:this.help.decision,outcome:this.help.outcome==='pending'?null:this.help.outcome,claims:[...this.help.claims]},menu:[...this.enabledMenu],prices:{...this.pricing},recipe,reports:structuredClone(this.reports),cumulativeProfit:this.cumulativeProfit,reputation:this.reputation,relationship:this.relationship,relationshipDays:[...this.relationshipDays],regularDay1Stars:this.regularDay1Stars,regularLatestStars:this.regularLatestStars,referral:this.referral?{...this.referral}:null};
     const validated=validateCozyCheckpoint(data);if(!validated)throw new Error('Invalid day boundary');return validated;
   }
   static restoreCheckpoint(value:unknown,tutorial=false,dependencies:CozyScheduleDependencies={}):CozyRuntime|null {
     const s=validateCozyCheckpoint(value);if(!s)return null;
     const r=new CozyRuntime(tutorial&&s.day===1&&!s.reports.length,true,dependencies);
-    r.appEnabled=s.deliveryAppEnabled??false;r.recipeOwnership=new Set(s.ownedRecipes);r.purchasedRecipes=[...s.recipePurchases.purchased];r.grantedRecipes=[...(s.recipePurchases.granted??[])];r.recipeSpent=s.recipePurchases.spent;r.pendingRecipeSpent=s.recipePurchases.pendingSpent;
+    r.shop=structuredClone(s.shop!);r.upgradeReceipts=structuredClone(s.upgrades.receipts??[]);r.appEnabled=s.deliveryAppEnabled??false;r.recipeOwnership=new Set(s.ownedRecipes);r.purchasedRecipes=[...s.recipePurchases.purchased];r.grantedRecipes=[...(s.recipePurchases.granted??[])];r.recipeSpent=s.recipePurchases.spent;r.pendingRecipeSpent=s.recipePurchases.pendingSpent;
     r.ovenUpgrade=s.upgrades.ovenLevel as 0|1|2;r.queueUpgrade=s.upgrades.queueLevel;r.upgradeSpent=s.upgrades.spent;r.pendingUpgradeSpent=s.upgrades.pendingSpent;r.customerDecisions=structuredClone(s.customerMemory);r.stock=CozyStock.restore(s.stock)!;r.progress=CozyProgression.restore(s.progression)!;r.currentDay=s.day;r.enabledMenu=new Set(s.menu);r.pricing={...s.prices};r.recipe=s.recipe;r.order=new CozyOrder(false,s.recipe,true,r.ovenUpgrade);r.reports=structuredClone(s.reports);r.closedDays=new Set(s.reports.map(x=>x.day));r.cumulativeProfit=s.cumulativeProfit;r.reputation=s.reputation;r.relationship=s.relationship;r.relationshipDays=new Set(s.relationshipDays);r.regularDay1Stars=s.regularDay1Stars;r.regularLatestStars=s.regularLatestStars;r.referral=s.referral?{...s.referral}:null;
     r.serial=s.progression.outcomes.reduce((n,id)=>Math.max(n,Number(id.replace('cozy-',''))||0),0)+s.reports.reduce((n,x)=>n+x.abandoned,0)+(s.help.decision==='accepted'?1:0);
     r.help={...s.help,ticketId:null,offer:null,giftCost:0,thanksPending:false};r.startingCash=s.reports[s.reports.length-1]?.cash??300;r.openingInventoryValue=s.reports[s.reports.length-1]?.accounts.inventory.value??0;
@@ -221,7 +246,7 @@ export class CozyRuntime {
     if(this.priceRejections<3){this.priceRejections++;this.reputation+=delta;}
     return this.shopFeedback('Khách từ chối giá vượt mức chấp nhận · Uy tín '+delta+' (tối đa 3 lần/ngày).');
   }
-  private createTicket(kind:CustomerKind,name:string,recipe:StockRecipe,finalPrice:number,arrivalId:string,takeaway:boolean,help=false):boolean {
+  private createTicket(kind:CustomerKind,name:string,recipe:StockRecipe,finalPrice:number,arrivalId:string,takeaway:boolean,help=false,commercial=true):boolean {
     const profile=CUSTOMER_PROFILES[kind],id='cozy-'+(this.serial+1);
     const eligiblePrice=kind==='bargain'?agreedPrice(finalPrice,profile.discountPercent):finalPrice;
     if(!priceAccepted(eligiblePrice,recipePrice(recipe),profile.maxPricePercent))return this.rejectPrice();
@@ -231,7 +256,8 @@ export class CozyRuntime {
     if(avatarIndex===undefined)return this.shopFeedback('Không có khách mới phù hợp.');
     if(!help)name=customerProfile(avatarIndex).name;
     this.serial++;
-    const t:Ticket={source:'shop',quantity:1,packed:[],avatarIndex,id,name,recipe,kind,help,takeaway,finalPrice,patience:profile.patience,extraPenalty:profile.extraPenalty,deadline:this.elapsed+profile.patience,committed:false,order:new CozyOrder(false,recipe,true,this.ovenUpgrade)};
+    const patience=profile.patience*(help||!commercial?1:1+this.frozenShopEffects.patience);
+    const t:Ticket={source:'shop',quantity:1,packed:[],avatarIndex,id,name,recipe,kind,help,takeaway,finalPrice,patience,extraPenalty:profile.extraPenalty,deadline:this.elapsed+patience,committed:false,order:new CozyOrder(false,recipe,true,this.ovenUpgrade)};
     this.active.set(id,t);
     if(!this.active.has(this.ticket)){this.ticket=id;this.order=t.order;}
     if(this.phase==='delivered')this.phase='making';
@@ -368,7 +394,7 @@ export class CozyRuntime {
     if(!['oven','queue'].includes(kind)||!this.canSetPrices||typeof commandId!=='string'||!commandId.trim()||this.upgradeCommands.has(commandId))return false;
     const cost=this.upgradePrice(kind);if(cost===null||!this.stock.debit(cost))return this.shopFeedback('Không đủ tiền hoặc đã nâng cấp tối đa.');
     if(kind==='oven')this.ovenUpgrade=(this.ovenUpgrade+1) as 1|2;else this.queueUpgrade=1;
-    this.upgradeSpent+=cost;this.pendingUpgradeSpent+=cost;
+    this.upgradeReceipts.push({kind,level:kind==='oven'?this.ovenUpgrade:this.queueUpgrade,actualPrice:cost});this.upgradeSpent+=cost;this.pendingUpgradeSpent+=cost;
     this.upgradeCommands.add(commandId);this.revision++;return true;
   }
   selectRecipe(recipe: StockRecipe): boolean {
@@ -384,8 +410,9 @@ export class CozyRuntime {
     if (!this.canOpen) return this.shopFeedback(this.missingReason);
     this.schedule=validateCozySchedule((this.scheduleDependencies.schedule??threeDaySchedule)(this.currentDay,{regularDay1Stars:this.regularDay1Stars,regularLatestStars:this.regularLatestStars,helpSucceeded:this.help.outcome==='succeeded',referral:this.currentDay>=4?this.reputation>=55:!!this.referral?.eligible}));
     this.shiftEvent=deliveryEvent(this.currentDay);this.shiftStaff=!!this.scheduleDependencies.deliveryStaffAvailable?.();this.shiftApp=this.appEnabled&&this.currentDay>=5;if(!this.scheduleDependencies.schedule)this.schedule=deliverySchedule(this.schedule,this.shiftApp);
+    this.frozenShopEffects=this.shopState.effects;this.schedule=shopSchedule(this.schedule,this.frozenShopEffects.visitors);
     this.shiftOpen = true; this.phase = 'making';
-    this.capitalPurchases=this.pendingUpgradeSpent+this.pendingRecipeSpent;this.pendingUpgradeSpent=0;this.pendingRecipeSpent=0;
+    this.capitalPurchases=this.pendingUpgradeSpent+this.pendingRecipeSpent+this.shop.pendingSpent;this.pendingUpgradeSpent=0;this.pendingRecipeSpent=0;this.shop.pendingSpent=0;
     const first=this.schedule.slots[0];if(first?.at===0)this.processArrival(first.id);
     this.revision++; return true;
   }
@@ -406,7 +433,7 @@ export class CozyRuntime {
     const recipe=this.scheduleDependencies.resolveRecipe?this.scheduleDependencies.resolveRecipe(slot,this.eligibleMenuRecipes(),this.recipe):resolveScheduleRecipe(slot,this.eligibleMenuRecipes());
     if(!recipe)return this.shopFeedback('Khách chưa thể đặt món. Món yêu cầu chưa có trong thực đơn.');
     const originalPrice=menuPrice(recipePrice(recipe),this.pricing[recipe])!;
-    const accepted=this.createTicket(kind,name,recipe,originalPrice,arrivalId,slot.takeaway);
+    const accepted=this.createTicket(kind,name,recipe,originalPrice,arrivalId,slot.takeaway,false,(slot as DeliveryScheduleSlot).source!=='app');
     const deliverySlot=slot as DeliveryScheduleSlot;if(accepted&&deliverySlot.source==='app'&&this.shiftApp){const t=this.active.get('cozy-'+this.serial)!;t.source='app';t.quantity=deliverySlot.quantity??1;t.takeaway=true;t.patience=DELIVERY_RULES.deadline;t.deadline=this.elapsed+t.patience;t.kind='hurry';t.extraPenalty=0;t.name='App '+t.id;}
     return accepted;
   }
@@ -595,6 +622,8 @@ export class CozyRuntime {
     if(!this.saveGuard()||this.guarded&&intent.type==='reset')return false;
     if(intent.type==='menu.configure')return this.configureMenu(intent.recipe,intent.percent,intent.enabled);
     if(intent.type==='express.order')return this.orderExpress(intent.ingredient,intent.quantity,intent.commandId);
+    if(intent.type==='shop.buy')return this.buyShopItem(intent.id,intent.commandId);
+    if(intent.type==='shop.place')return this.placeShopItem(intent.id,intent.placed,intent.commandId);
     if(intent.type==='shop.upgrade')return this.upgradeShop(intent.kind,intent.commandId);
     if(intent.type==='market.buy')return this.buy(intent.ingredient,intent.quantity,intent.commandId);
     if(intent.type==='customer.price')return this.setMenuPrice(intent.recipe,intent.percent);
@@ -606,7 +635,7 @@ export class CozyRuntime {
       if (!this.production) return this.order.dispatch(intent);
       if (intent.type === 'reset') {
         if(this.closedDays.size)return false;
-        this.appEnabled=false;this.appCommands.clear();this.bookingCommands.clear();this.shiftEvent=null;this.shiftApp=false;this.shiftStaff=false;this.deliveryFees=0;this.pizzasSold=0;this.deliveryTime=0;this.courier=null;this.recipeOwnership=new Set(['cheese','mushroom']);this.recipeSpent=0;this.pendingRecipeSpent=0;this.purchasedRecipes=[];this.grantedRecipes=[];this.recipeCommands.clear();this.ovenUpgrade=0;this.queueUpgrade=0;this.upgradeSpent=0;this.pendingUpgradeSpent=0;this.capitalPurchases=0;this.upgradeCommands.clear();this.customerDecisions={accepted:[],declined:[]};this.expressPending.clear();
+        this.appEnabled=false;this.appCommands.clear();this.bookingCommands.clear();this.shiftEvent=null;this.shiftApp=false;this.shiftStaff=false;this.deliveryFees=0;this.pizzasSold=0;this.deliveryTime=0;this.courier=null;this.recipeOwnership=new Set(['cheese','mushroom']);this.recipeSpent=0;this.pendingRecipeSpent=0;this.purchasedRecipes=[];this.grantedRecipes=[];this.recipeCommands.clear();this.shop={acquired:[],spent:0,pendingSpent:0};this.shopCommands.clear();this.upgradeReceipts=[];this.frozenShopEffects=shopEffects([]);this.ovenUpgrade=0;this.queueUpgrade=0;this.upgradeSpent=0;this.pendingUpgradeSpent=0;this.capitalPurchases=0;this.upgradeCommands.clear();this.customerDecisions={accepted:[],declined:[]};this.expressPending.clear();
         this.stock = new CozyStock();this.progress=new CozyProgression();this.rewardCash=0;this.dailyGiftCost=0;this.help={decision:'unseen',outcome:null,ticketId:null,offer:null,giftCost:0,claims:[],thanksPending:false};this.enabledMenu=new Set(['cheese','mushroom']);this.startingCash=300;this.openingInventoryValue=0;this.cumulativeProfit=0; this.purchaseCommands.clear();this.purchaseSerial=0;this.order = new CozyOrder(); this.recipe = 'cheese'; this.phase = 'preparation';
         this.active.clear(); this.processedArrivals.clear(); this.ovenId = null; this.discardId = null; this.ticket = ''; this.elapsed = 0; this.serial = 0; this.arrival = 0; this.schedule=null;this.regularDay1Stars=null;this.regularLatestStars=null; this.shiftOpen = false; this.history = [];
         this.completed = null;this.summary=null;this.reports=[];this.currentDay=1;this.revenue=0;this.deliveredCount=0;this.abandonedCount=0;this.reviews=[];

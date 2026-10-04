@@ -1,3 +1,4 @@
+import {fundedShopCheckpoint} from './shopTestFixture';
 import {describe,it,expect} from 'vitest';
 import {CozyCampaignSession} from './CozyCampaignSession';
 import {CozyRuntime} from './CozyRuntime';
@@ -9,23 +10,23 @@ class MemoryPort implements CozySavePort {
   async commit(request:CozyWriteRequest):Promise<CozyWriteResult>{this.calls.push(structuredClone(request));if(this.defer)await new Promise<void>(resolve=>{this.release=resolve;});if(this.conflict)return saveFailure('revision-conflict');if(this.fail)return saveFailure('write-failed');const value:CozySaveEnvelope={schemaVersion:COZY_SCHEMA_VERSION,contentVersion:COZY_CONTENT_VERSION,campaignId:request.campaignId,commitId:request.commitId,revision:(this.value?.revision??0)+1,checksum:checkpointChecksum(request.payload),payload:structuredClone(request.payload)};this.value=value;return {ok:true,envelope:value};}
 }
 const settle=()=>new Promise<void>(resolve=>setTimeout(resolve,0));
-async function setup(){let id=0;const port=new MemoryPort(),session=new CozyCampaignSession(port,()=>`id-${++id}`);await session.load();const r=(await session.start(false))!;return {port,session,r};}
+async function setup(funded=false){let id=0;const port=new MemoryPort(),session=new CozyCampaignSession(port,()=>`id-${++id}`);await session.load();const r=(await session.start(false))!;if(funded){port.value!.payload=fundedShopCheckpoint();port.value!.checksum=checkpointChecksum(port.value!.payload);const loaded=(await session.load())!;return {port,session,r:loaded};}return {port,session,r};}
 function open(r:CozyRuntime){for(const id of ['dough','sauce','cheese'] as const)r.buy(id,1);expect(r.openShop()).toBe(true);}
 describe('Cozy prepare/commit/confirm session',()=>{
   it('saves upgrade money and ownership together; blocked retries never charge twice',async()=>{
-    const {session,port,r}=await setup();port.defer=true;
-    expect(session.upgradeShop('oven','oven')).toBe(true);expect(r.state.cash).toBe(150);
+    const {session,port,r}=await setup(true);const cash=r.state.cash;port.defer=true;
+    expect(session.upgradeShop('oven','oven')).toBe(true);expect(r.state.cash).toBe(cash);
     expect(session.upgradeShop('oven','again')).toBe(false);expect(session.view.state).toBe('saving');
     port.release!();await settle();expect(session.view.state).toBe('ready');
-    const loaded=(await session.load())!;expect(loaded.ovenLevel).toBe(1);expect(loaded.state.cash).toBe(150);
-    expect(port.value!.payload.upgrades.pendingSpent).toBe(150);
+    const loaded=(await session.load())!;expect(loaded.ovenLevel).toBe(1);expect(loaded.state.cash).toBe(cash-2000);
+    expect(port.value!.payload.upgrades.pendingSpent).toBe(2000);
   });
   it('keeps the old save on upgrade write failure and retries the same atomic payload',async()=>{
-    const {session,port,r}=await setup();port.fail=true;expect(session.upgradeShop('queue','queue')).toBe(true);await settle();
-    expect(session.view.state).toBe('error');expect(port.value!.payload.stock.cash).toBe(300);
-    expect(r.queueCapacity).toBe(6);expect(r.state.cash).toBe(100);expect(r.openShop()).toBe(false);
+    const {session,port,r}=await setup(true);const cash=r.state.cash;port.fail=true;expect(session.upgradeShop('queue','queue')).toBe(true);await settle();
+    expect(session.view.state).toBe('error');expect(port.value!.payload.stock.cash).toBe(cash);
+    expect(r.queueCapacity).toBe(4);expect(r.state.cash).toBe(cash);expect(r.openShop()).toBe(false);
     const request=port.calls[1];port.fail=false;await session.retry();expect(port.calls[2]).toEqual(request);
-    expect((await session.load())!.queueCapacity).toBe(6);expect(session.runtime!.state.cash).toBe(100);
+    expect((await session.load())!.queueCapacity).toBe(6);expect(session.runtime!.state.cash).toBe(cash-6000);
   });
   it('explicit empty-store reload removes stale runtime and prevents its further mutations',async()=>{
     const {session,port,r}=await setup();port.value=null;expect(await session.load()).toBeNull();expect(session.runtime).toBeNull();expect(session.hasSession).toBe(false);expect(r.buy('dough',1)).toBe(false);expect(await session.start(false)).not.toBeNull();
