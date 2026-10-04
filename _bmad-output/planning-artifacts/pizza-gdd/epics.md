@@ -98,13 +98,23 @@ E05 giữ phạm vi sau demo. **UI/luồng liên quan được ưu tiên ghi và
 
 ## E06 - Giao hàng và sự kiện
 
+### Triển khai theo yêu cầu 2026-10-04
+
+Người dùng yêu cầu làm E06 và chốt: chưa có nhân viên → nhận đơn app → book shipper → làm/đóng hộp → shipper tới lấy/giao; có nhân viên → làm/đóng hộp → nhân viên đi giao → quay về nhận đơn tiếp. Nhánh nhân viên nối availability từ hệ thống thuê thật ở E08, không tạo người đã thuê giả. Giao đếm thời gian simulation; thông số phí/thời gian/sự kiện là cấu hình tạm cần playtest. Save cũ giữ dữ liệu, app mặc định tắt, không lưu giữa ca. Xem [spec Epic6](../../implementation-artifacts/spec-6-delivery-and-events.md).
+
+- **6.1:** App từ ngày5, bật/tắt trước ca, đơn1–3pizza và đóng hộp từng phần.
+- **6.2:** Book shipper trước nướng, chờ tới lấy/giao, thanh toán một lần; availability nhân viên và chuyến đi/về.
+- **6.3:** Mưa/cao điểm/lễ hội, dự báo trước ca, lịch cầu thay đổi có giới hạn và không sinh đơn app khi chưa bật.
+
+Yêu cầu tiếp theo: Giao bánh hoàn tất/nhận tiền ngay, bỏ thời gian chuyến giao/phạt đến trễ. Vẫn đợi shipper tới trước giao; nhân viên trở về trước nhận đơn tiếp. Không đổi tiền/kho/lưu.
+
 Sau demo; P04, P05, hỗ trợ P14. Trụ cột phục vụ và kinh tế. Phụ thuộc E05.
 
 - Người chơi mở app, nhận đơn giao và đơn nhiều pizza với hạn giao/đóng gói.
 - Người chơi chuẩn bị cho mưa, giờ cao điểm và lễ hội.
 - Người chơi xem đánh giá khi giao trễ/sai và biết nguyên nhân.
 
-Điều kiện trước triển khai: chọn cách giao, phí giao, hạn giao, năng lực và bảng thời tiết; không phát đơn giao trước khi app mở.
+Luồng giao đã chốt và được triển khai theo spec2026-10-04. Phí/hạn/thời gian và bảng sự kiện là config tạm cần playtest, không coi là balance đã duyệt; không phát đơn giao trước khi app bật. Tuyển/lương/roster nhân viên thật vẫn thuộc E08.
 
 ## E07 - Quán, thiết bị, tiện nghi, mở rộng và quảng bá
 

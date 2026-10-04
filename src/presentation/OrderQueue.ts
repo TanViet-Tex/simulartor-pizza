@@ -1,4 +1,5 @@
 import type {StockRecipe} from '../domain/CozyStock';
+import {recipeDefinition} from '../config/recipeCatalog';
 import { timerText } from './PlayHud';
 
 /** Source describes the order channel, independently of takeaway packaging. */
@@ -15,6 +16,9 @@ export type OrderQueueInput = Readonly<{
   takeaway?:boolean;
   help?:boolean;
   number?:string;
+  quantity?:number;
+  packed?:number;
+  deliveryStatus?:string;
 }>;
 
 export const ORDER_QUEUE_LIMIT=6;
@@ -28,7 +32,7 @@ export type OrderQueueSlot=Readonly<{
 }>;
 export type OrderQueueDetail=Readonly<{
   id:string;number:string;name:string;source:'shop'|'app';sourceLabel:string;
-  recipe:OrderQueueInput['recipe'];recipeLabel:string;quantity:1;takeaway:boolean;deadline:string;
+  recipe:OrderQueueInput['recipe'];recipeLabel:string;quantity:number;takeaway:boolean;deadline:string;
   lines:readonly [string,string,string];
 }>;
 
@@ -48,13 +52,14 @@ export function createOrderQueue(orders:readonly OrderQueueInput[],inspectedId:s
   const slot=slots.find(order=>order.selected);
   if(!slot)return {slots,detail:null,inspectedId:null};
   const sourceLabel=slot.source==='app'?'Qua app':'Tại quán';
-  const recipeLabel=slot.recipe==='mushroom'?'Pizza nấm':slot.recipe==='sausage'?'Pizza xúc xích':'Pizza phô mai';
+  const recipeLabel='Pizza '+recipeDefinition(slot.recipe).name.toLocaleLowerCase('vi');
+  const quantity=inspected?.quantity??1;
   const takeaway=inspected?.takeaway??true;
   const service=takeaway?'Mang đi':'Tại quầy',packaging=takeaway?'Cần đóng hộp':'Không cần hộp';
   const detail:OrderQueueDetail={id:slot.id,number:slot.number,name:slot.name,source:slot.source,sourceLabel,
-    recipe:slot.recipe,recipeLabel,quantity:1,takeaway,deadline:slot.deadline,
-    lines:[`#${slot.number} · ${slot.name} · ${inspected?.kindLabel?inspected.kindLabel+' · ':''}${sourceLabel}`,`${recipeLabel} ×1 · ${service}${inspected?.help?' · Tặng miễn phí':inspected?.finalPrice!==undefined?' · '+inspected.finalPrice+' xu':''}`,
-      slot.deadline==='Không giới hạn'?`Không giới hạn · ${packaging}`:`Còn ${slot.deadline} · ${inspected?.maxPricePercent?(takeaway?'Hộp':'Quầy')+' · Giá ≤'+inspected.maxPricePercent+'%':packaging}`],
+    recipe:slot.recipe,recipeLabel,quantity,takeaway,deadline:slot.deadline,
+    lines:[`#${slot.number} · ${slot.name} · ${inspected?.kindLabel?inspected.kindLabel+' · ':''}${sourceLabel}`,`${recipeLabel} ×${quantity} · ${service}${inspected?.help?' · Tặng miễn phí':inspected?.finalPrice!==undefined?' · '+inspected.finalPrice+' xu':''}`,
+      slot.source==='app'&&inspected?.quantity!==undefined?`Hộp ${inspected?.packed??0}/${quantity} · ${inspected?.deliveryStatus??'Chưa book shipper'} · ${slot.deadline}`:slot.deadline==='Không giới hạn'?`Không giới hạn · ${packaging}`:`Còn ${slot.deadline} · ${inspected?.maxPricePercent?(takeaway?'Hộp':'Quầy')+' · Giá ≤'+inspected.maxPricePercent+'%':packaging}`],
   };
   return {slots,detail,inspectedId:slot.id};
 }

@@ -68,6 +68,15 @@ export class CozyCampaignSession {
     if(!this.current.buyRecipe(recipe,commandId))return false;if(this.status==='temporary'){this.publish();return true;}
     try{this.pending={kind:'upgrade',tutorial:false,request:{campaignId:this.saved!.campaignId,commitId:this.id(),sourceRevision:this.saved!.revision,payload:this.current.exportCheckpoint(),...(this.confirmedRecovery?{confirmedRecovery:true}:{})}};}catch{this.install(CozyRuntime.restoreCheckpoint(before)!);this.publish();return false;}void this.writePending();return true;
   }
+  configureDeliveryApp(enabled:boolean,commandId:string):boolean {
+    if(!this.allowed()||!this.current||!this.current.canSetPrices)return false;
+    const before=this.current.exportCheckpoint();
+    if(!this.current.configureDeliveryApp(enabled,commandId))return false;
+    if(this.status==='temporary'){this.publish();return true;}
+    try{this.pending={kind:'upgrade',tutorial:false,request:{campaignId:this.saved!.campaignId,commitId:this.id(),sourceRevision:this.saved!.revision,payload:this.current.exportCheckpoint(),...(this.confirmedRecovery?{confirmedRecovery:true}:{})}};}
+    catch{this.install(CozyRuntime.restoreCheckpoint(before)!);this.publish();return false;}
+    void this.writePending();return true;
+  }
   upgradeShop(kind:'oven'|'queue',commandId:string):boolean {
     if(!this.allowed()||!this.current)return false;
     const before=this.current.exportCheckpoint();

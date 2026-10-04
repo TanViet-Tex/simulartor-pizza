@@ -299,3 +299,15 @@ Gợi ý Kho phân trang ba mục số phần/năm dòng nguyên liệu, số ph
 ![Gợi ý menu đầy đủ](ui-baseline/epic5-full-menu-plan.png)
 
 ![Gợi ý trang nguyên liệu cuối](ui-baseline/epic5-full-menu-plan-last.png)
+
+### Epic 6: app và trạng thái giao — 2026-10-04
+
+Theo yêu cầu Epic6, chỉ thêm nút App giao hàng trong hàng tiêu đề Tiện nghi hiện có, giữ sáu thẻ Quán/header/footer. Bật/tắt và book shipper dùng khung hai nút chung/lớp tối; giữ nút đóng và modal lease. Không thêm tab, panel tuyển hoặc nhân viên giả.
+
+Đơn app dùng icon điện thoại đã có trong sáu ô hàng chờ. Khung chi tiết hiện tại hiển thị lượng bánh/giá cả đơn/số hộp và trạng thái rider. Book shipper nằm bên phải trong chính khung này; thu vùng bấm xem đơn để không che nút book. Theo yêu cầu tiếp theo, Giao bánh hoàn tất ngay, **không hiển thị countdown chuyến giao**. Trạng thái đợi shipper/nhân viên trở về vẫn ở khung chi tiết kể cả đang xem đơn khác. Hai nút Đóng hộp/Giao bánh, tám ô món, lò/nguyên liệu và số ô chờ giữ nguyên vị trí. Phí giao hiện trong chi tiết tài chính Tổng kết, không thêm thẻ.
+
+![App giao hàng](ui-baseline/epic6-app-enabled.png)
+
+![Xác nhận book shipper](ui-baseline/epic6-book-shipper.png)
+
+![Hoàn tất đơn ngay khi giao](ui-baseline/epic6-app-completed.png)

@@ -16,7 +16,7 @@ export const SHOP_ART=[
   {key:'reference-shop-staff',url:'assets/references/Tuyển nhân viên tiệm pizza-6.png'},
 ] as const;
 type Crop=readonly [number,number,number,number];
-type Input={day:number;cash:number;page:ShopPage;canAct:boolean;ovenLevel:number;queueCapacity:number;ovenPrice:number|null;queuePrice:number|null;menuPage:number;pageMenu:(page:number)=>void;buy:(recipe:StockRecipe)=>void;recipes:{id:StockRecipe;name:string;price:number;cost:number;enabled:boolean;owned:boolean;purchasePrice:number}[];open:(page:ShopPage)=>void;price:(recipe:StockRecipe)=>void;upgrade:(kind:'oven'|'queue')=>void;tab:(tab:HubTab)=>void;pause:()=>void;footer:{id:string;title:string;enabled:boolean;action:()=>void}};
+type Input={deliveryApp?:{available:boolean;enabled:boolean;eventName:string};app?:()=>void;day:number;cash:number;page:ShopPage;canAct:boolean;ovenLevel:number;queueCapacity:number;ovenPrice:number|null;queuePrice:number|null;menuPage:number;pageMenu:(page:number)=>void;buy:(recipe:StockRecipe)=>void;recipes:{id:StockRecipe;name:string;price:number;cost:number;enabled:boolean;owned:boolean;purchasePrice:number}[];open:(page:ShopPage)=>void;price:(recipe:StockRecipe)=>void;upgrade:(kind:'oven'|'queue')=>void;tab:(tab:HubTab)=>void;pause:()=>void;footer:{id:string;title:string;enabled:boolean;action:()=>void}};
 const sections=[
   {id:'menu',title:'Menu & giá bán',subtitle:'Chọn món · Chỉnh giá',crop:[95,752,270,143]},
   {id:'decoration',title:'Trang trí',subtitle:'Đồ & vị trí chưa mở',crop:[513,750,323,145]},
@@ -48,12 +48,13 @@ export class ReferenceShop {
       sections.forEach((section,i)=>{
         const x=8+i%2*176,y=292+Math.floor(i/2)*95;
         ui.panel(x,y,168,89);art('reference-shop',section.crop,x+15,y+4,137,48);
-        ui.text(x+84,y+54,section.title,14,c.ink,true,155);ui.text(x+84,y+72,section.subtitle,10,c.muted,true,155);
+        ui.text(x+84,y+54,section.title,14,c.ink,true,155);ui.text(x+84,y+72,section.id==='amenities'&&input.deliveryApp?'App giao hàng · '+(input.deliveryApp.available?(input.deliveryApp.enabled?'Bật':'Tắt'):'Từ ngày 5'):section.subtitle,10,c.muted,true,155);
         this.hit(`shop-section-${section.id}`,x,y,168,89,true,()=>input.open(section.id));
       });
     }else{
       ui.button(8,133,120,36,'‹ Về Quán',true,14);this.hit('shop-back',8,130,120,43,true,()=>input.open('home'));
-      if(input.page!=='menu')ui.text(140,145,'Ảnh minh họa',11,c.muted,false,205);
+      if(input.page==='amenities'&&input.deliveryApp&&input.app){ui.button(140,133,212,36,'App giao hàng · '+(input.deliveryApp.available?(input.deliveryApp.enabled?'Bật':'Tắt'):'Ngày 5'),true,13);this.hit('shop-delivery-app',140,128,212,48,true,input.app);}
+      else if(input.page!=='menu')ui.text(140,145,'Ảnh minh họa',11,c.muted,false,205);
       if(input.page==='menu'){
         const sources:Partial<Record<StockRecipe,Crop>>={cheese:[43,190,205,168],mushroom:[40,404,161,123],sausage:[40,551,162,123]};
         input.recipes.slice(input.menuPage*3,input.menuPage*3+3).forEach((recipe,i)=>{

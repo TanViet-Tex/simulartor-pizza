@@ -36,6 +36,10 @@ _Tệp này chứa các quy tắc và patterns quan trọng mà AI agent phải 
 
 ## Critical Implementation Rules
 
+### Epic 6: app và shipper — 2026-10-04
+
+App mở miễn phí từ ngày5, mặc định tắt cho save cũ; bật/tắt trong chuẩn bị qua transaction checkpoint hiện có. Không lưu giữa ca. Đơn app1–3pizza cùng món: book shipper trước bake, từng bánh tiêu hao FEFO tại bake rồi đóng hộp/tích vào đơn. Theo yêu cầu tiếp theo, đủ hộp và rider tới thì **bấm Giao bánh hoàn tất/nhận tiền ngay**, không thời gian chuyến hoặc phạt đến trễ. Doanh thu gross/phí riêng/net cash; XP/mục tiêu một outcome/đơn, lượng pizza bán riêng. Cấu hình tạm: hạn90s, shipper tới10s (mưa15s), phí5xu; hết hạn chưa giao hủy. Một booking, giao xong giải phóng shipper/trả slot ngay. Availability nhân viên đóng băng đầu ca; default false, Epic8 cung cấp roster thật, không thuê/lương giả. Nhân viên cũng chốt đơn ngay nhưng vẫn trở về20s/mưa30s trước nhận đơn tiếp, chặn chốt ngày trong lúc về. Ngày6/7/8/9 lần lượt mưa/cao điểm/bình thường/lễ hội, lặp4ngày; event/app đóng băng đầu ca. Giữ Pause/background lease và UI đã duyệt. Xem [spec Epic6](implementation-artifacts/spec-6-delivery-and-events.md).
+
 ### Chạy khi rời tab, dừng bằng Pause — 2026-10-04
 
 Người dùng xác nhận game vẫn chạy khi bấm ra ngoài/chuyển tab; chỉ chủ động Pause mới dừng. Yêu cầu này thay auto-pause visibility/gap và recovery Tiếp tục trong các tài liệu cũ. Browser có thể hạn chế render nền; đồng hồ simulation đồng bộ thời gian thực khi chạy lại, gồm ngày/lò/kiên nhẫn/sinh khách/hỏa tốc. Pause/Cài đặt/Menu và modal nghiệp vụ/save/tutorial giữ lease và không cộng thời gian đã dừng. Không bỏ chặn input modal, không lưu giữa ca, không đổi tiền/kho/UI. Xem [spec](implementation-artifacts/spec-background-play-until-manual-pause.md).

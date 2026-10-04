@@ -46,6 +46,13 @@ development_status:
   5-1-expanded-ingredient-and-recipe-catalog: done
   5-2-menu-based-purchase-suggestions: done
 
+  # Epic6 build/100 current units/10 focused E2E and three reviews verified; human review ready.
+  # Staff trip/return port verified; real hiring/roster remains Epic8. Six baseline-old tests deferred.
+  epic-6: in-progress
+  6-1-delivery-app-and-multi-pizza-orders: review
+  6-2-booked-shipper-and-staff-delivery-cycle: review
+  6-3-weather-rush-and-festival-events: review
+
   epic-7: backlog
   7-1-decoration-ownership-and-placement: backlog
   7-2-equipment-and-amenities: backlog
