@@ -46,13 +46,13 @@ test('canonical Day 1 personalities, final prices and progression retain approve
  expect(controls.filter(c=>c.id.startsWith('summary-tab-'))).toHaveLength(5);expect(controls.filter(c=>c.id.startsWith('summary-prepare-'))).toHaveLength(4);
  expect(await labels(page)).toContain('Quan hệ +1');await page.screenshot({path:info.outputPath('epic2-summary.png')});expect(errors).toEqual([]);
 });
-test('interrupted bargain remains frozen and both decisions survive owned visibility pause at 200% text',async({page},info)=>{
+test('bargain remains frozen and both decisions stay available across tab changes at 200% text',async({page},info)=>{
  test.setTimeout(240000);await start(page);await page.addStyleTag({content:'html { font-size:32px; }'});const canvas=page.locator('canvas');await serve(page,'cozy-1');await page.clock.runFor(57000);
  await expect(canvas).toHaveAttribute('data-paused','bargain');const pending=await data(page,'bargain'),tickets=await data(page,'tickets'),stock=await data(page,'stock');
  await page.clock.runFor(1000);expect(await data(page,'tickets')).toEqual(tickets);expect(await data(page,'stock')).toEqual(stock);
  await page.evaluate(()=>{Object.defineProperty(document,'hidden',{configurable:true,value:true});document.dispatchEvent(new Event('visibilitychange'));Object.defineProperty(document,'hidden',{configurable:true,value:false});document.dispatchEvent(new Event('visibilitychange'));});await page.clock.runFor(50);
- await expect(canvas).toHaveAttribute('data-paused','bargain,visibility');expect(((await data(page,'controls')) as Control[]).some(c=>c.id==='accept-bargain')).toBe(false);
- await tap(page,'resume');await expect(canvas).toHaveAttribute('data-paused','bargain');expect(await data(page,'bargain')).toEqual(pending);
+ await expect(canvas).toHaveAttribute('data-paused','bargain');expect(((await data(page,'controls')) as Control[]).some(c=>c.id==='accept-bargain'&&c.enabled)).toBe(true);
+ expect(await data(page,'bargain')).toEqual(pending);
  const regions=await data(page,'modal-scroll');const region=regions.find((r:{max:number})=>r.max>0);expect(region).toBeTruthy();
  const bounds=(await canvas.boundingBox())!,session=await page.context().newCDPSession(page);
  const x=bounds.x+(region.x+region.width/2)*bounds.width/360,startY=bounds.y+(region.y+region.height-5)*bounds.height/640;

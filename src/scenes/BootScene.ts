@@ -46,6 +46,12 @@ export class BootScene extends Phaser.Scene {
   private accumulator = 0;
   private drawn = 0;
   private lifecycle!:PlayLifecycle;
+  private readonly clockListeners=new Set<(phase:"before"|"after")=>void>();
+  private clockBoundary(phase:"before"|"after"){for(const listener of this.clockListeners)listener(phase);}
+  private setPause(reason:string,paused:boolean){this.clockBoundary("before");if(paused)this.reasons.add(reason);else this.reasons.delete(reason);this.accumulator=0;this.clockBoundary("after");}
+  private setBusy(value:boolean){this.clockBoundary("before");this.busy=value;this.accumulator=0;this.clockBoundary("after");}
+  private get clockRunning(){return this.screen==="game"&&this.model.state.phase==="shop"&&!this.busy&&!this.reasons.size&&!this.model.state.offer&&!this.confirmAction;}
+  private advanceElapsed(delta:number){if(!Number.isFinite(delta)||delta<=0)return;this.accumulator+=delta;while(this.accumulator>=50&&this.clockRunning){this.accumulator-=50;this.model.tick(.05);}if(!this.clockRunning)this.accumulator=0;}
   private browserLifecycle!:BrowserPlayLifecycle;
   private targets: { x: number; y: number; w: number; h: number; action: () => void }[] = [];
   constructor(private readonly audio=new PlayAudio()) { super('BootScene'); }
@@ -58,11 +64,9 @@ export class BootScene extends Phaser.Scene {
       if (hit && !this.busy) { hit.action();void this.audio.interact().then(()=>{this.audio.cue();this.render();}); }
     });
     this.cameras.main.setBackgroundColor(C.bg);
-    this.lifecycle=new PlayLifecycle({acquirePause:reason=>{
-      this.reasons.add(reason);this.accumulator=0;this.render();let released=false;
-      return {release:()=>{if(released)return;released=true;this.reasons.delete(reason);this.accumulator=0;}};
-    }});
-    this.browserLifecycle=new BrowserPlayLifecycle(this.lifecycle,()=>{this.accumulator=0;this.audio.silence();this.render();});
+    const scene=this;
+    this.lifecycle=new PlayLifecycle({get simulationActive(){return scene.clockRunning;},get pauses(){return [...scene.reasons];},advanceElapsed:delta=>this.advanceElapsed(delta),subscribeTimeBoundary:listener=>{this.clockListeners.add(listener);return ()=>this.clockListeners.delete(listener);}});
+    this.browserLifecycle=new BrowserPlayLifecycle(this.lifecycle,()=>{this.audio.silence();this.render();});
     const unload = (e: BeforeUnloadEvent) => {
       if (this.screen === 'game' && this.model.state.phase !== 'end') { e.preventDefault(); e.returnValue = ''; }
     };
@@ -92,24 +96,24 @@ export class BootScene extends Phaser.Scene {
   private describe(e: unknown) { return e instanceof Error ? e.message : 'Không thể lưu dữ liệu. Hãy thử lại.'; }
   private async startNew() {
     if (this.busy) return;
-    this.busy = true; this.error = ''; this.render();
+    this.setBusy(true); this.error = ''; this.render();
     try {
       const fresh = new DemoGame(); this.revision = await resetCheckpoint(fresh.snapshot());
-      this.model = fresh; this.pending = null; this.hasSave = true; this.screen = 'game'; this.reasons.add('tutorial');
+      this.model = fresh; this.pending = null; this.hasSave = true; this.screen = 'game'; this.setPause('tutorial',true);
     } catch (e) { this.error = this.describe(e); }
-    this.busy = false; this.render();
+    this.setBusy(false); this.render();
   }
   private async nextDay() {
     if (this.busy) return;
-    this.busy = true; this.error = ''; this.pending ??= this.model.nextDayCheckpoint(); this.render();
+    this.setBusy(true); this.error = ''; this.pending ??= this.model.nextDayCheckpoint(); this.render();
     try {
       this.revision = await saveCheckpoint(this.pending, this.revision);
       this.model = new DemoGame(this.pending); this.pending = null;
     } catch (e) { this.error = this.describe(e); }
-    this.busy = false; this.render();
+    this.setBusy(false); this.render();
   }
-  private command(c: Command) { const result = this.model.dispatch(c); this.error = result.ok ? '' : result.message ?? ''; this.render(); }
-  private ask(text: string, action: () => void) { this.confirmText = text; this.confirmAction = action; this.reasons.add('confirm'); this.render(); }
+  private command(c: Command) {this.clockBoundary('before');try{const result = this.model.dispatch(c); this.error = result.ok ? '' : result.message ?? ''; this.render();}finally{this.clockBoundary('after');} }
+  private ask(text: string, action: () => void) { this.confirmText = text; this.confirmAction = action; this.setPause('confirm',true); this.render(); }
   private text(x: number, y: number, value: string, size = 16, color = C.ink, width = 340) {
     const t = this.add.text(x, y, value, { fontFamily: 'Arial, sans-serif', fontSize: `${size}px`, color, wordWrap: { width }, lineSpacing: 3 });
     this.layer.add(t); return t;
@@ -235,14 +239,14 @@ export class BootScene extends Phaser.Scene {
     this.text(10, 6, `Ngày ${s.day}/3  ·  ${s.cash} xu`, 18);
     this.text(10, 31, `XP ${s.xp}   Uy tín ${s.reputation}`, 13, C.muted);
     this.button(248, 4, 48, this.audio.muted ? 'Âm tắt' : 'Âm bật', () => { this.audio.toggleMute(); this.render(); }, true, C.green);
-    this.button(304, 4, 48, 'Ⅱ', () => { this.reasons.add('user'); this.render(); }, true, C.green);
+    this.button(304, 4, 48, 'Ⅱ', () => { this.setPause('user',true); this.render(); }, true, C.green);
   }
   private shopHeader() {
     const s = this.model.state;
     this.rect(0, 0, 360, 49, 0x55251f);
     this.rect(0, 43, 360, 6, 0x3e211b);
     for (let y = 7; y < 43; y += 18) this.rect(0, y, 360, 1, 0x71382f, .6);
-    this.button(4, 0, 48, 'Ⅱ', () => { this.reasons.add('user'); this.render(); }, true, 0x9e433b);
+    this.button(4, 0, 48, 'Ⅱ', () => { this.setPause('user',true); this.render(); }, true, 0x9e433b);
     this.button(54, 0, 48, this.audio.muted ? 'Âm tắt' : 'Âm bật', () => { this.audio.toggleMute(); this.render(); }, true, 0x72362e);
     const day = this.text(111, 1, `Ngày ${s.day}`, 19, '#fff1df', 132).setAlign('center').setFixedSize(132, 24);
     day.setFontStyle('bold');
@@ -536,8 +540,8 @@ export class BootScene extends Phaser.Scene {
   private confirm() {
     this.shade();const layout=drawNotificationFrame(this,this.layer,'two');this.notificationTitle(layout,'XÁC NHẬN');
     modalText(this,this.layer,layout.body.x,layout.body.y,layout.body.width,layout.body.height,this.confirmText,19,C.ink,Math.max(1,Math.min(2,parseFloat(getComputedStyle(document.documentElement).fontSize)/16)));
-    this.notificationButton(layout,0,'Đồng ý',()=>{const action=this.confirmAction;this.confirmAction=null;this.reasons.delete('confirm');action?.();this.render();});
-    this.notificationButton(layout,1,'Hủy',()=>{this.confirmAction=null;this.reasons.delete('confirm');this.render();});
+    this.notificationButton(layout,0,'Đồng ý',()=>{const action=this.confirmAction;this.confirmAction=null;this.setPause('confirm',false);action?.();this.render();});
+    this.notificationButton(layout,1,'Hủy',()=>{this.confirmAction=null;this.setPause('confirm',false);this.render();});
   }
   private pause() {
     this.shade();
@@ -547,20 +551,17 @@ export class BootScene extends Phaser.Scene {
     const layout=drawCompactNotification(this,this.layer,tutorial?'NGÀY ĐẦU MỞ QUÁN':'TẠM DỪNG',(tutorial ? 'Nhập đế, sốt và phô mai trước khi mở cửa.\n\nKhách tự đặt đơn → chọn nguyên liệu → nướng 3–5 giây → lấy bánh → giao khách.\n\nĐơn mang đi cần đóng hộp.' : 'Đồng hồ và lò nướng đang dừng.\n\nCheckpoint ở cuối ngày. Thoát giữa ca sẽ trở lại đầu ngày đang lưu.')+'\n\nĐang dừng: '+reasons,17,Math.max(1,Math.min(2,parseFloat(getComputedStyle(document.documentElement).fontSize)/16)));
     this.notificationButton(layout,0,tutorial ? 'Đến chợ sáng' : 'Tiếp tục', () => {
       if (this.lifecycle.needsContinue)this.lifecycle.continue();
-      else if (tutorial) this.reasons.delete('tutorial');
-      else if (this.reasons.has('user')) this.reasons.delete('user');
-      else if (this.reasons.has('visibility')) this.reasons.delete('visibility');
-      else this.reasons.delete('gap');
+      else if (tutorial) this.setPause('tutorial',false);
+      else if (this.reasons.has('user')) this.setPause('user',false);
+      else if (this.reasons.has('visibility')) this.setPause('visibility',false);
+      else this.setPause('gap',false);
       this.accumulator = 0; this.render();
     });
   }
-  update(time: number, delta: number) {
+  update(time: number, _delta: number) {
+    const phase = this.model.state.phase;
     this.lifecycle.frame(performance.now(),this.screen==='game'&&this.model.state.phase==='shop'&&this.reasons.size===0&&!this.busy&&!this.model.state.offer);
     if (this.screen !== 'game' || this.busy || this.reasons.size || this.confirmAction) return;
-    if (delta > 250) { if (this.model.state.phase === 'shop') this.reasons.add('gap'); this.accumulator = 0; this.render(); return; }
-    const phase = this.model.state.phase;
-    this.accumulator += delta;
-    while (this.accumulator >= 50) { this.model.tick(.05); this.accumulator -= 50; }
     if (time - this.drawn >= 100 && this.model.state.phase === 'shop') { this.drawn = time; this.render(); }
     if (phase !== this.model.state.phase) this.render();
   }

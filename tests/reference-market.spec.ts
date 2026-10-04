@@ -129,11 +129,10 @@ test('unaffordable purchases are explained and save guards prevent cash or stock
   expect(((await data(page,'controls')) as Control[]).find(c=>c.id==='summary-open-first-day')?.enabled).toBe(false);
 });
 
-test('terminal market stays read-only and purchase close does not release visibility pause',async({page})=>{
+test('terminal market stays read-only and switching tabs does not add a visibility pause',async({page})=>{
   await fixture(page);const canvas=page.locator('canvas');await tap(page,'market-buy-dough');
   await page.evaluate(()=>{Object.defineProperty(document,'hidden',{configurable:true,value:true});document.dispatchEvent(new Event('visibilitychange'));Object.defineProperty(document,'hidden',{configurable:true,value:false});document.dispatchEvent(new Event('visibilitychange'));});
-  await tap(page,'market-purchase-cancel');await expect(canvas).toHaveAttribute('data-paused','visibility');await expect(canvas).toHaveAttribute('data-cash','300');
-  await tap(page,'resume');await expect(canvas).toHaveAttribute('data-paused','');
+  await tap(page,'market-purchase-cancel');await expect(canvas).toHaveAttribute('data-paused','');await expect(canvas).toHaveAttribute('data-cash','300');
   await fixture(page,'terminal');expect(((await data(page,'controls')) as Control[]).filter(c=>c.id.startsWith('market-buy-')&&c.enabled)).toEqual([]);
   expect(((await data(page,'controls')) as Control[]).some(c=>c.id==='summary-open-next-day')).toBe(false);
 });

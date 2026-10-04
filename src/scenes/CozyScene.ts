@@ -150,7 +150,6 @@ export class CozyScene extends Phaser.Scene {
   private release(reason:'user'|'order'):void{this.scenePauses.get(reason)?.release();this.scenePauses.delete(reason);}
   update(_time:number,delta:number):void{
     this.lifecycle.frame(performance.now(),this.runtime.pauses.length===0&&this.runtime.simulationActive);
-    this.runtime.advance(delta);
     if(this.runtime.day===1&&this.runtime.shopOpen&&this.runtime.shiftClock.phase==='awaiting-close'&&!this.runtime.pauses.length&&this.runtime.canCloseDay)this.finishDay();
     const s=this.runtime.state;
     this.game.canvas.dataset.shiftClock=JSON.stringify(this.runtime.shiftClock);

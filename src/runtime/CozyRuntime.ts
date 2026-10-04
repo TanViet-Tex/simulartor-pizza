@@ -270,7 +270,8 @@ export class CozyRuntime {
   get canCloseDay() {return this.productionActive&&this.shiftOpen&&this.phase!=='summary'&&!this.expressPending.size&&!this.blocked('user');}
   get canPrepareNextDay() {return this.saveGuard()&&this.phase==='summary'&&!!this.summary&&!this.summary.ending;}
   get canOpenNextDay() {return this.canPrepareNextDay&&!this.reasons.size;}
-  closeDay():boolean {
+  closeDay():boolean {return this.clockAction(()=>this.closeDayNow());}
+  private closeDayNow():boolean {
     if(!this.canCloseDay||this.closedDays.has(this.currentDay))return false;
     for(const t of this.active.values()){this.stock.release(t.id);if(!t.help)this.abandonedCount++;this.terminal(t,1,['Quán đóng cửa trước khi giao món'],'closed');}
     this.applyProgress(this.progress.closeDay(this.currentDay,this.goalStats()));
@@ -286,7 +287,8 @@ export class CozyRuntime {
     this.closedDays.add(this.currentDay);this.shiftOpen=false;this.phase='summary';this.active.clear();this.abandoned.clear();this.ovenId=null;this.ticket='';this.sourceId='';this.pendingDelivery=null;this.discardId=null;this.result=null;this.order=new CozyOrder(false,this.recipe,true,this.ovenUpgrade);this.accumulator=0;
     this.message='Ngày đã chốt. Chuẩn bị cho ngày tiếp theo.';this.revision++;return true;
   }
-  openNextDay():boolean {
+  openNextDay():boolean {return this.clockAction(()=>this.openNextDayNow());}
+  private openNextDayNow():boolean {
     if(!this.canOpenNextDay)return false;
     this.startingCash=this.summary!.cash;this.openingInventoryValue=this.summary!.accounts.inventory.value;
     this.currentDay++;this.rewardCash=0;this.dailyGiftCost=0;this.priceRejections=0;this.summary=null;this.reviews=[];this.revenue=0;this.deliveredCount=0;this.abandonedCount=0;this.elapsed=0;this.arrival=0;this.schedule=null;this.processedArrivals.clear();this.completed=null;this.result=null;this.phase='preparation';this.accumulator=0;
@@ -353,7 +355,8 @@ export class CozyRuntime {
     if (!this.active.size) this.order = new CozyOrder(false,recipe,true,this.ovenUpgrade);
     this.message = this.missingReason || 'Đủ nguyên liệu cho món đã chọn.'; this.revision++; return true;
   }
-  openShop(): boolean {
+  openShop():boolean {return this.clockAction(()=>this.openShopNow());}
+  private openShopNow():boolean {
     if (!this.saveGuard() || !this.productionActive || this.reasons.size || this.phase !== 'preparation') return false;
     if (this.shiftOpen) return this.returnToOrders();
     if (!this.canOpen) return this.shopFeedback(this.missingReason);
@@ -383,15 +386,18 @@ export class CozyRuntime {
     return this.createTicket(kind,name,recipe,originalPrice,arrivalId,slot.takeaway);
   }
 
-  prepareAgain(): boolean {
+  prepareAgain():boolean {return this.clockAction(()=>this.prepareAgainNow());}
+  private prepareAgainNow(): boolean {
     if (!this.saveGuard() || !this.productionActive || this.reasons.size || this.phase !== 'making') return false;
     this.phase = 'preparation'; this.message = 'Mua thêm nguyên liệu cho đơn tiếp theo.'; this.revision++; return true;
   }
-  returnToOrders(): boolean {
+  returnToOrders():boolean {return this.clockAction(()=>this.returnToOrdersNow());}
+  private returnToOrdersNow():boolean {
     if (!this.saveGuard() || !this.productionActive || this.reasons.size || this.phase !== 'preparation' || !this.shiftOpen) return false;
     this.phase = 'making'; this.revision++; return true;
   }
-  continueShift(): boolean {
+  continueShift():boolean {return this.clockAction(()=>this.continueShiftNow());}
+  private continueShiftNow():boolean {
     if (!this.saveGuard() || !this.productionActive || this.reasons.size || this.phase !== 'delivered') return false;
     this.phase = 'making'; this.ticket = ''; this.order = new CozyOrder(false,this.recipe,true,this.ovenUpgrade);
     this.message = 'Ca tiếp tục. Khách tiếp theo sắp đến.'; this.revision++; return true;
@@ -486,17 +492,24 @@ export class CozyRuntime {
   get tutorialStep() { return this.step; }
   get expectedControl(): string | null { return this.step === 'complete' ? 'start-shift' : this.step === 'warming' ? null : this.step; }
   get pauseRevision() { return this.pauseVersion; }
+  private readonly timeBoundaryListeners=new Set<(phase:'before'|'after')=>void>();
+  subscribeTimeBoundary(listener:(phase:'before'|'after')=>void):()=>void {this.timeBoundaryListeners.add(listener);return ()=>this.timeBoundaryListeners.delete(listener);}
+  private clockAction<T>(action:()=>T):T {this.timeBoundary("before");try{return action();}finally{this.timeBoundary("after");}}
+  private timeBoundary(phase:'before'|'after'):void {for(const listener of this.timeBoundaryListeners)listener(phase);}
   get pauses(): readonly CozyPause[] { return [...this.reasons]; }
   acquirePause(reason:CozyPause):PauseLease {
+    this.timeBoundary('before');
     const token=Symbol(reason),owners=this.leases.get(reason)??new Set<symbol>();
     owners.add(token);this.leases.set(reason,owners);
     if(!this.reasons.has(reason)){this.reasons.add(reason);this.pauseVersion++;}
     this.accumulator=0;
+    this.timeBoundary('after');
     let released=false;
     return {release:()=>{
-      if(released)return;released=true;owners.delete(token);
+      if(released)return;this.timeBoundary('before');released=true;owners.delete(token);
       if(!owners.size){this.leases.delete(reason);this.reasons.delete(reason);this.pauseVersion++;}
       this.accumulator=0;
+      this.timeBoundary('after');
     }};
   }
   pause(reason: CozyPause): void {
@@ -512,7 +525,8 @@ export class CozyRuntime {
     this.step = step; this.pauseVersion++; this.accumulator = 0;
     if (step === 'warming') {this.legacyLeases.get('tutorial')?.release();this.legacyLeases.delete('tutorial');} else this.pause('tutorial');
   }
-  dispatch(intent: CozyRuntimeIntent): boolean {
+  dispatch(intent:CozyRuntimeIntent):boolean {return this.clockAction(()=>this.dispatchIntent(intent));}
+  private dispatchIntent(intent: CozyRuntimeIntent): boolean {
     if(!this.saveGuard()||this.guarded&&intent.type==='reset')return false;
     if(intent.type==='menu.configure')return this.configureMenu(intent.recipe,intent.percent,intent.enabled);
     if(intent.type==='express.order')return this.orderExpress(intent.ingredient,intent.quantity,intent.commandId);
@@ -562,10 +576,19 @@ export class CozyRuntime {
     if (!matches || !this.practice.dispatch(intent)) return false;
     this.setStep(steps[steps.indexOf(this.step!) + 1]!); return true;
   }
-  startShift(): boolean {
+  startShift():boolean {return this.clockAction(()=>this.startShiftNow());}
+  private startShiftNow():boolean {
     if(!this.saveGuard())return false;
     if (this.step !== 'complete' || this.otherPaused()) return false;
     this.step = null; this.guidedPreparation=true; this.resume('tutorial'); this.accumulator = 0; this.pauseVersion++; return true;
+  }
+  /** Wall-clock catch-up uses bounded steps and stops at the first decision or shift boundary. */
+  advanceElapsed(delta:number):void {
+    if(!Number.isFinite(delta)||delta<=0)return;
+    let remaining=delta;
+    while(remaining>0&&this.simulationActive&&!this.reasons.size&&this.saveGuard()){
+      const step=Math.min(50,remaining);remaining-=step;this.advance(step);
+    }
   }
   advance(delta: number): void {
     if(!this.saveGuard())return;

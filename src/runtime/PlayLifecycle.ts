@@ -1,38 +1,35 @@
 export type PauseLease = { release(): void };
-export interface LifecyclePausePort { acquirePause(reason:'visibility'|'gap'):PauseLease }
+export interface LifecyclePausePort {
+  readonly simulationActive:boolean;
+  readonly pauses:readonly string[];
+  advanceElapsed(milliseconds:number):void;
+  subscribeTimeBoundary(listener:(phase:'before'|'after')=>void):()=>void;
+}
 
-/** Browser events request leases; only a player gesture clears foreground recovery. */
+/** Owns wall-clock reconciliation; hidden/blurred pages never acquire pause leases. */
 export class PlayLifecycle {
-  private hidden=false;
-  private foreground?:PauseLease;
-  private gap?:PauseLease;
   private lastFrame?:number;
   private disposed=false;
-  constructor(private readonly pauses:LifecyclePausePort){}
-  get needsContinue():boolean{return !!this.foreground||!!this.gap;}
-  frame(now:number,running:boolean):void{
-    if(this.disposed||!Number.isFinite(now))return;
-    if(running&&this.lastFrame!==undefined&&now-this.lastFrame>250&&!this.gap)this.gap=this.pauses.acquirePause('gap');
-    this.lastFrame=now;
+  private synchronizing=false;
+  private readonly unsubscribe:()=>void;
+  constructor(private readonly runtime:LifecyclePausePort,private readonly clock:()=>number=()=>performance.now()){
+    this.unsubscribe=runtime.subscribeTimeBoundary(phase=>{
+      if(this.disposed||this.synchronizing)return;
+      if(phase==='before')this.reconcile();else this.lastFrame=this.clock();
+    });
   }
-  setHidden(hidden:boolean):void{
-    if(this.disposed)return;
-    this.hidden=hidden;
-    this.lastFrame=undefined;
-    if(hidden&&!this.foreground)this.foreground=this.pauses.acquirePause('visibility');
+  get needsContinue():boolean{return false;}
+  frame(now:number,_running:boolean):void{this.synchronize(now);}
+  reconcile():void{this.synchronize(this.clock());}
+  private synchronize(now:number):void{
+    if(this.disposed||this.synchronizing||!Number.isFinite(now))return;
+    const previous=this.lastFrame;if(previous!==undefined&&now<previous)return;this.lastFrame=now;
+    if(previous===undefined||now<=previous||this.runtime.pauses.length||!this.runtime.simulationActive)return;
+    this.synchronizing=true;
+    try{this.runtime.advanceElapsed(now-previous);}finally{this.synchronizing=false;}
   }
-  viewportChanged():void{
-    if(this.disposed)return;
-    this.lastFrame=undefined;
-  }
-  continue():boolean{
-    if(this.disposed||this.hidden||!this.needsContinue)return false;
-    if(this.foreground){this.foreground.release();this.foreground=undefined;}
-    else {this.gap?.release();this.gap=undefined;}
-    this.lastFrame=undefined;return true;
-  }
-  destroy():void{
-    this.disposed=true;this.foreground?.release();this.gap?.release();
-    this.foreground=undefined;this.gap=undefined;
-  }
+  setHidden(_hidden:boolean):void{this.reconcile();}
+  viewportChanged():void{this.reconcile();}
+  continue():boolean{return false;}
+  destroy():void{if(this.disposed)return;this.disposed=true;this.unsubscribe();this.lastFrame=undefined;}
 }

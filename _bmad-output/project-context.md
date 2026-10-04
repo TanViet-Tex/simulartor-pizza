@@ -36,6 +36,10 @@ _Tệp này chứa các quy tắc và patterns quan trọng mà AI agent phải 
 
 ## Critical Implementation Rules
 
+### Chạy khi rời tab, dừng bằng Pause — 2026-10-04
+
+Người dùng xác nhận game vẫn chạy khi bấm ra ngoài/chuyển tab; chỉ chủ động Pause mới dừng. Yêu cầu này thay auto-pause visibility/gap và recovery Tiếp tục trong các tài liệu cũ. Browser có thể hạn chế render nền; đồng hồ simulation đồng bộ thời gian thực khi chạy lại, gồm ngày/lò/kiên nhẫn/sinh khách/hỏa tốc. Pause/Cài đặt/Menu và modal nghiệp vụ/save/tutorial giữ lease và không cộng thời gian đã dừng. Không bỏ chặn input modal, không lưu giữa ca, không đổi tiền/kho/UI. Xem [spec](implementation-artifacts/spec-background-play-until-manual-pause.md).
+
 ### Epic 5: chơi tiếp và mua công thức — 2026-10-04
 
 Người dùng giao hoàn tất Epic 5, bỏ giới hạn demo 3 ngày và mua công thức bằng tiền. Runtime dùng catalog 19 nguyên liệu/8 pizza; Phô mai/Nấm mở sẵn, sáu món còn lại mua trong chuẩn bị và lưu atomic tiền + sở hữu, không ghi giữa ca. Save v1 được kiểm tra checksum gốc rồi chuyển schema 2, giữ tiền/lô/XP/công thức đã mở/campaign identity; kết thúc demo ngày 3 được tiếp ngày 4, phá sản vẫn giữ. Giá/định lượng trong config là tạm cần playtest. Ngày 4+ dùng lịch nối tiếp, mục tiêu riêng từng ngày, khách quen/referral và nhà cung cấp sau 500 xu mua thường (giảm 10% từ ngày sau, hỏa tốc không tính). Báo cáo lưu gọn, master progression lưu một lần và lịch sử đọc lại bằng prefix. Gợi ý Kho dùng menu đã sở hữu đang bán, số phần 0–100 do người chơi nhập, cộng nhu cầu rồi trừ available một lần; không tự mua. Giữ bố cục đã duyệt, chỉ phân trang phần Menu/gợi ý để đủ nội dung. Xem [spec Epic 5](implementation-artifacts/spec-5-1-expanded-ingredient-and-recipe-catalog.md). Không coi đây là nội dung cốt truyện 30 ngày hoặc hoàn tất E09.

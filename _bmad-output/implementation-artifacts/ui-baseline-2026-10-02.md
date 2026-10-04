@@ -13,6 +13,10 @@ Tài liệu này là nguồn hiện hành cho **bố cục và phong cách màn 
 
 ## Màn chơi cần giữ
 
+### Hành vi rời tab — yêu cầu 2026-10-04
+
+Người dùng xác nhận chuyển tab/bấm ra ngoài vẫn chạy game; chỉ bấm Pause mới dừng. Bỏ tự mở recovery/Tiếp tục do visibility hoặc frame gap. Pause/Cài đặt/Menu và các modal hiện có vẫn dừng theo lease riêng; không đổi hình/vùng nút/bố cục. Đồng bộ thời gian đã trôi khi browser cho chạy lại, không cộng thời gian đã Pause. Quyết định này thay riêng hành vi auto-pause trong các phần lịch sử bên dưới. Xem [spec](spec-background-play-until-manual-pause.md).
+
 ### Hết Ngày 1 → Đã hiểu → Tổng kết — 2026-10-04
 
 Yêu cầu mới của người dùng thay bước chuyển riêng Ngày1: hết ca và grace theo clock hiện có sẽ tự chốt khi không còn pause/hỏa tốc chờ. Kết thúc sớm vẫn hỏi xác nhận. Sau giao dịch chốt hiện khung một nút compact “Đã hết ngày 1”, nền đen/chặn thao tác, bấm “Đã hiểu” mới vẽ tab Tổng kết. Chỉ trả pause lease của thông báo, không trả visibility/owner khác. Ngày khác giữ cách chốt hiện hành; giao dịch tiền/kho/checkpoint không đổi. Save/recovery vẫn ưu tiên; không thêm lưu acknowledgement. Xem [spec](spec-day-one-ended-notice.md).

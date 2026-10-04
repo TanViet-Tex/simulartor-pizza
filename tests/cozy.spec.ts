@@ -132,8 +132,6 @@ test('preview protects nested pauses, orientation and does not access campaign s
     Object.defineProperty(document, 'hidden', { configurable: true, value: false });
     document.dispatchEvent(new Event('visibilitychange'));
   });
-  await expect(canvas).toHaveAttribute('data-paused', /visibility/);
-  await tapControl(page, 'resume');
   await expect(canvas).toHaveAttribute('data-paused', 'user');
   await tapControl(page, 'resume');
   await expect(canvas).toHaveAttribute('data-paused', '');
@@ -145,9 +143,6 @@ test('preview protects nested pauses, orientation and does not access campaign s
     Object.defineProperty(document, 'hidden', { configurable: true, value: false });
     document.dispatchEvent(new Event('visibilitychange'));
   });
-  await expect(canvas).toHaveAttribute('data-paused', /visibility/);
-  // Resume only the currently displayed owner until the explicit order can close.
-  await tapControl(page, 'resume');
   await expect(canvas).toHaveAttribute('data-paused', 'order');
   await tapControl(page, 'close-order');
   await expect(canvas).toHaveAttribute('data-paused', '');

@@ -44,7 +44,7 @@ test('three artwork buttons block background; settings and pause freeze every si
   await advance(page);expect((await snapshot(page)).clock).not.toEqual(frozen.clock);
 });
 
-test('resume cannot release a separately owned order or hidden-tab pause',async({page})=>{
+test('resume keeps another order owner while switching tabs adds no automatic pause',async({page})=>{
   await fixture(page);const canvas=page.locator('canvas');await tap(page,'pause');
   await page.evaluate(()=>{
     const state=(window as unknown as {pauseTest:{runtime:any;other?:any}}).pauseTest;
@@ -52,10 +52,52 @@ test('resume cannot release a separately owned order or hidden-tab pause',async(
     Object.defineProperty(document,'hidden',{configurable:true,value:true});document.dispatchEvent(new Event('visibilitychange'));
   });
   const frozen=await snapshot(page);await tap(page,'resume');await advance(page);expect(await snapshot(page)).toEqual(frozen);
-  expect((await canvas.getAttribute('data-paused'))!.split(',')).toEqual(expect.arrayContaining(['order','visibility']));
+  expect((await canvas.getAttribute('data-paused'))!.split(',')).toContain('order');
+  expect((await canvas.getAttribute('data-paused'))!.split(',')).not.toContain('visibility');
   await page.evaluate(()=>{Object.defineProperty(document,'hidden',{configurable:true,value:false});document.dispatchEvent(new Event('visibilitychange'));});
-  await tap(page,'resume');expect((await canvas.getAttribute('data-paused'))!.split(',')).toContain('order');
+  expect((await canvas.getAttribute('data-paused'))!.split(',')).toContain('order');
   await page.evaluate(()=>{(window as unknown as {pauseTest:{other:any}}).pauseTest.other.release();});
+});
+
+test('hidden throttled render catches up clock, oven, patience, arrivals and express without Continue',async({page})=>{
+  await fixture(page);const canvas=page.locator('canvas');
+  await page.evaluate(()=>{
+    const r=(window as unknown as {pauseTest:{runtime:any}}).pauseTest.runtime;
+    r.dispatch({type:'express.order',ingredient:'dough',quantity:1,commandId:'background-test'});
+  });
+  const before=await snapshot(page);
+  await page.evaluate(()=>{
+    const s=(window as unknown as {pauseTest:{game:any}}).pauseTest;
+    Object.defineProperty(document,'hidden',{configurable:true,value:true});document.dispatchEvent(new Event('visibilitychange'));
+    window.dispatchEvent(new Event('blur'));s.game.loop.sleep();
+  });
+  await page.waitForTimeout(5400);
+  await page.evaluate(()=>{
+    Object.defineProperty(document,'hidden',{configurable:true,value:false});document.dispatchEvent(new Event('visibilitychange'));
+    window.dispatchEvent(new Event('focus'));(window as unknown as {pauseTest:{game:any}}).pauseTest.game.loop.wake();
+  });
+  await expect.poll(async()=> (await snapshot(page)).clock.elapsed).toBeGreaterThan(before.clock.elapsed+5);
+  const after=await snapshot(page);expect(after.oven).toBeGreaterThan((before.oven??0)+5);expect(after.tickets.length).toBe(2);
+  expect(after.tickets[0].remaining).toBeLessThan(before.tickets[0].remaining-5);expect(after.stock).toBe(before.stock+1);
+  await expect(canvas).toHaveAttribute('data-paused','');
+  expect(JSON.parse(await canvas.getAttribute('data-controls')??'[]').some((c:{id:string})=>c.id==='resume')).toBe(false);
+});
+
+test('manual Pause and Settings exclude hidden time and resume without catch-up',async({page})=>{
+  await fixture(page);const canvas=page.locator('canvas');await tap(page,'pause');await tap(page,'pause-settings');
+  const before=await snapshot(page);
+  await page.evaluate(()=>{
+    Object.defineProperty(document,'hidden',{configurable:true,value:true});document.dispatchEvent(new Event('visibilitychange'));
+    (window as unknown as {pauseTest:{game:any}}).pauseTest.game.loop.sleep();
+  });
+  await page.waitForTimeout(1600);
+  await page.evaluate(()=>{
+    Object.defineProperty(document,'hidden',{configurable:true,value:false});document.dispatchEvent(new Event('visibilitychange'));
+    (window as unknown as {pauseTest:{game:any}}).pauseTest.game.loop.wake();
+  });
+  await tap(page,'pause-settings-back');expect(await snapshot(page)).toEqual(before);await tap(page,'resume');
+  await page.waitForTimeout(200);const after=await snapshot(page);expect(after.clock.elapsed-before.clock.elapsed).toBeLessThan(1);
+  await expect(canvas).toHaveAttribute('data-paused','');
 });
 
 test('Menu and Continue keep the exact active session without writing or ending the day',async({page})=>{

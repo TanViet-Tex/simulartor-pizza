@@ -48,16 +48,16 @@ test('preparation prices and next-day purchases preserve geometry and closed acc
   expect(await labels(page)).toContain('Tiền hiện có: 304 xu');expect(await labels(page)).toContain('Tiền cuối ngày đã chốt: 310 xu');
   await page.evaluate(()=>{Object.defineProperty(document,'hidden',{configurable:true,value:true});document.dispatchEvent(new Event('visibilitychange'));Object.defineProperty(document,'hidden',{configurable:true,value:false});document.dispatchEvent(new Event('visibilitychange'));});await page.clock.runFor(50);
   await expect(page.locator('canvas')).toHaveAttribute('data-statement-open','true');
-  expect(((await data(page,'controls')) as Control[]).some(c=>c.id==='summary-statement-close'&&c.enabled)).toBe(false);
-  await tap(page,'resume');await tap(page,'summary-statement-close');await expect(page.locator('canvas')).toHaveAttribute('data-paused','');
+  expect(((await data(page,'controls')) as Control[]).some(c=>c.id==='summary-statement-close'&&c.enabled)).toBe(true);
+  await tap(page,'summary-statement-close');await expect(page.locator('canvas')).toHaveAttribute('data-paused','');
   expect(await data(page,'day-summary')).toEqual(statement);
 });
-test('price editor retains its lease across visibility pause and cancels without price mutation',async({page})=>{
+test('price editor retains its lease across tab changes and cancels without price mutation',async({page})=>{
   await start(page);await tap(page,'market-recipe-mushroom');await tap(page,'market-price-plus');
   await page.evaluate(()=>{Object.defineProperty(document,'hidden',{configurable:true,value:true});document.dispatchEvent(new Event('visibilitychange'));Object.defineProperty(document,'hidden',{configurable:true,value:false});document.dispatchEvent(new Event('visibilitychange'));});await page.clock.runFor(50);
   expect(await data(page,'price-dialog')).toMatchObject({recipe:'mushroom',percent:105});
-  expect(((await data(page,'controls')) as Control[]).some(c=>c.id==='market-price-save'&&c.enabled)).toBe(false);
-  await tap(page,'resume');await tap(page,'market-price-cancel');
+  expect(((await data(page,'controls')) as Control[]).some(c=>c.id==='market-price-save'&&c.enabled)).toBe(true);
+  await tap(page,'market-price-cancel');
   expect((await data(page,'customer-progress')).prices.mushroom).toBe(65);
   await expect(page.locator('canvas')).toHaveAttribute('data-paused','');
 });

@@ -3,10 +3,10 @@ import { CozyRuntime } from './CozyRuntime';
 import { MainMenuSession } from './MainMenuSession';
 
 describe('MainMenuSession', () => {
-  it('retains session-owned foreground recovery across scene/menu replacement and releases it on disposal',()=>{
+  it('keeps visibility pause-free across scene/menu replacement and cleans up on disposal',()=>{
     const session=new MainMenuSession(()=>new CozyRuntime());const runtime=session.start();
     session.lifecycle!.setHidden(true);session.lifecycle!.setHidden(false);
-    session.returnToMenu();session.continue();expect(runtime.pauses).toEqual(['visibility']);
+    session.returnToMenu();session.continue();expect(runtime.pauses).toEqual([]);
     session.lifecycle!.continue();expect(runtime.pauses).toEqual([]);
     session.lifecycle!.viewportChanged();expect(runtime.pauses).toEqual([]);
     session.destroy();session.destroy();expect(runtime.pauses).toEqual([]);
