@@ -334,3 +334,17 @@ Chỉ mở rộng quán tăng sức chứa: mặc định4 khách, mở rộng l
 ![Bàn ghế tăng kiên nhẫn](ui-baseline/epic7-tables-patience.png)
 
 ![Mở rộng lần2 chưa có tác dụng](ui-baseline/epic7-expansion-no-second-effect.png)
+
+### Epic 8.1: tuyển theo nghề và lương cuối ngày — 2026-10-05
+
+Theo yêu cầu Epic8, kích hoạt đúng bốn thẻ Nhân viên hiện có, giữ khung (8,180,168,163), (184,180,168,163), (8,355,168,163), (184,355,168,163). Không đổi header/năm tab/sáu mục Quán/nền/footer hoặc bếp sáu ô. Thẻ hiển thị nghề, phí thuê 2.000 xu, lương 200 xu/ngày, mở ngày8/đã thuê; bấm thẻ dùng khung hai nút chung và lớp tối. Không có UI phân công vì nghề cố định.
+
+Dòng ghi chú hiện có hiển thị số người, tổng lương ngày và khoản chưa trả. Thiếu tiền cuối ngày dùng thông báo một nút Đã hiểu, nêu chính xác số xu thiếu và khoản lương chưa trả. Chi tiết tài chính thêm lương thực trả/khoản chưa trả trong vùng cuộn hiện có; không thêm thẻ hoặc tab. Hình thuê/nghề từ references, chữ và số từ runtime thật.
+
+![Bốn nghề cố định](ui-baseline/epic8-staff.png)
+
+![Xác nhận thuê](ui-baseline/epic8-hire-prep.png)
+
+![Thông báo thiếu lương](ui-baseline/epic8-wage-shortage.png)
+
+![Khoản lương chưa trả](ui-baseline/epic8-unpaid-staff.png)

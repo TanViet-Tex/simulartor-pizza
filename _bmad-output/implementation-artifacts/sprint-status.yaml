@@ -1,5 +1,5 @@
 # Only audited stories are marked done. Backlog does not imply absence of prototype code.
-last_updated: '2026-10-04'
+last_updated: '2026-10-05'
 development_status:
   epic-1: in-progress
   1-1-phaser-starter-scaffold: done
@@ -61,8 +61,10 @@ development_status:
   7-3-shop-renovation-and-expansion: in-progress
   7-4-placed-item-daily-gameplay-effects: review
   7-5-preparation-item-transactions-and-save-migration: review
-  epic-8: backlog
-  8-1-staff-hiring-assignment-and-wages: backlog
+  epic-8: in-progress
+  # Historical tracking key retained; roles are fixed, without assignment UI.
+  # Story8.1 implemented and verified; other Epic8 branches still need approved rules.
+  8-1-staff-hiring-assignment-and-wages: review
 
 
 # Epic4 implementation checks passed; Story4.6 five-person human playtest pending (epic-4-playtest.md).

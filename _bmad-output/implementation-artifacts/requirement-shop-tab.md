@@ -25,7 +25,7 @@ Có ảnh xem trước quán và sáu mục theo thứ tự:
 3. **Thiết bị:** lò, tủ lạnh, bàn làm pizza.
 4. **Tiện nghi:** ghế chờ, Wi-Fi, máy lạnh, loa.
 5. **Mở rộng quán:** tu sửa, tăng diện tích/chỗ ngồi.
-6. **Nhân viên:** thuê, phân công, xem tiền lương.
+6. **Nhân viên:** thuê theo nghề cố định, xem tiền lương và khoản chưa trả.
 
 Trang chính là phần đề xuất riêng cho tab Quán, không cho phép đổi các tab khác, bếp hoặc menu chính. Ảnh xem trước phản ánh sở hữu/bố trí thật khi phần đó đã triển khai; trạng thái chưa hỗ trợ phải thể hiện rõ.
 
@@ -61,7 +61,7 @@ Trang chính là phần đề xuất riêng cho tab Quán, không cho phép đ�
 | Thiết bị | Hỗ trợ công đoạn làm pizza |
 | Tiện nghi | Tăng kiên nhẫn, bàn ghế +10% kiên nhẫn, không tăng sức chứa |
 | Mở rộng | Tu sửa, tăng diện tích/chỗ ngồi theo thông số được chốt |
-| Nhân viên | Thuê, phân công và tiền lương theo hệ thống nhân sự |
+| Nhân viên | Thuê theo nghề cố định, tiền lương cuối ngày và khoản chưa trả |
 
 **Chỉ số, giá, điều kiện và tác dụng cụ thể cần chốt riêng.** Không tự cấp bonus kiên nhẫn, tốc độ nướng, sức chứa, doanh thu hoặc thưởng từ việc một vật xuất hiện trong ảnh.
 
@@ -86,3 +86,10 @@ Trang chính là phần đề xuất riêng cho tab Quán, không cho phép đ�
 Mua/đặt/cất/nâng cấp chuẩn bị staging trên candidate; commit thành công mới cập nhật chính runtime hiện tại, lỗi/retry không trừ trùng. Metadata lưu sở hữu/vị trí/giá thực trả; save cũ giữ tiền/kho/tiến độ và giá nâng cấp lịch sử. Không lưu giữa ca. Build, 110 unit và 7 E2E Chromium 360×640 đạt; ba review độc lập hoàn tất.
 
 Bàn ghế 4.000 tăng10% kiên nhẫn, mua/đặt/cất được; không tăng sức chứa. Chỉ mở rộng quán tăng4→6 khách, tối đa6; giữ6 ô khách cố định, không avatar cuộn. Mở rộng lần2 giá10.000 chưa có tác dụng được chốt và chưa bật mua. Thiết bị mới/quảng bá/hư hỏng chưa có luật. Toàn Epic7 vẫn in-progress. Ghi chú này thay các nhận định trước đây rằng đồ mới chưa có giá hoặc toàn bộ luồng mua chưa triển khai. Chi tiết: `_bmad-output/implementation-artifacts/spec-7-shop-development.md`.
+## Luật nhân viên đã chốt — 2026-10-05
+
+Epic 8.1 đã triển khai bốn loại phụ bếp/thợ nướng/đóng hộp/giao hàng theo bốn thẻ hiện có. Mở thuê ngày8, phí2000xu/người, mỗi loại tối đa1. Vai trò cố định theo loại thuê, không phân công lại. Lương200xu/người/ngày, thu cuối ngày. Thiếu tiền báo rõ số thiếu và giữ lương chưa trả; không tự sa thải, cho vay hoặc tính lãi. Công đoạn xử lý nhanh, thời gian đặt trong cấu hình; giữ cửa sổ chín của nâng cấp lò hiện có. Giao hàng1đơn/chuyến, chốt ngay lúc giao và trở về20s/mưa30s trước nhận đơn tiếp. Không tăng sức chứa hay đổi6ô khách.
+
+Mua thuê trong chuẩn bị dùng giao dịch tiền+roster atomic và checkpoint hiện có, không lưu giữa ca; save cũ chưa có nhân viên. Lương phát sinh là chi phí của ngày, tiền mặt chỉ trừ phần thực trả; khoản chưa trả đối soát qua báo cáo/metadata, thử trả cùng lương ngày mới vào cuối ngày sau. Khi thiếu tổng tiền lương thì chưa trả khoản đó, giữ toàn bộ nghĩa vụ và báo số tiền cần thêm. Những đề xuất cũ lương50xu/ca, phân công/nghỉ hoặc chỉ có một nhân viên giao được thay bởi luật này. Đào tạo/mệt/giữ người và truyện/nhiệm vụẩn/khách nổi tiếng vẫn chưa có luật, không coi8.1 là toànEpic8.
+
+Chi tiết trong `_bmad-output/implementation-artifacts/spec-8-1-delivery-staff.md`; build đạt, 121 unit hiện hành và 11 E2E tập trung 360×640 đạt; ba review độc lập không còn phát hiện cần sửa. Một test cũ giới hạn demo ba ngày thất bại cả ở baseline f65e737, ghi riêng trong deferred-work.md. Story 8.1 ở review; toàn Epic 8 còn in-progress.

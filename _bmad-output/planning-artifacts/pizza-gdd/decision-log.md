@@ -120,3 +120,10 @@ User-confirmed direction: **2D cartoon**, replacing the previous pixel-art direc
 ### Luật Epic 7 thay thế — 2026-10-04
 
 Chỉ mở rộng quán tăng sức chứa: mặc định4 khách, mở rộng lần1 lên6, tối đa6. Bàn ghế4000xu chỉ tăng10% kiên nhẫn khi đang đặt; không tăng khách hoặc chỗ chờ phụ. Tổng tiện nghi sau lấy max quạt/máy lạnh là38%, cap40%. Giữ6 ô khách cố định, loại bỏ đề xuất cap8/10 và hàng avatar cuộn. Mở rộng lần2 giá10000 chưa có tác dụng được chốt, chưa cho mua và không tự gán bonus. Các luật bàn ghế/chỗ chờ trước đây được thay bằng quyết định này. Xem spec-7-capacity-and-table-patience.md trong implementation-artifacts.
+## Luật nhân viên đã chốt — 2026-10-05
+
+Epic 8.1 đã triển khai bốn loại phụ bếp/thợ nướng/đóng hộp/giao hàng theo bốn thẻ hiện có. Mở thuê ngày8, phí2000xu/người, mỗi loại tối đa1. Vai trò cố định theo loại thuê, không phân công lại. Lương200xu/người/ngày, thu cuối ngày. Thiếu tiền báo rõ số thiếu và giữ lương chưa trả; không tự sa thải, cho vay hoặc tính lãi. Công đoạn xử lý nhanh, thời gian đặt trong cấu hình; giữ cửa sổ chín của nâng cấp lò hiện có. Giao hàng1đơn/chuyến, chốt ngay lúc giao và trở về20s/mưa30s trước nhận đơn tiếp. Không tăng sức chứa hay đổi6ô khách.
+
+Mua thuê trong chuẩn bị dùng giao dịch tiền+roster atomic và checkpoint hiện có, không lưu giữa ca; save cũ chưa có nhân viên. Lương phát sinh là chi phí của ngày, tiền mặt chỉ trừ phần thực trả; khoản chưa trả đối soát qua báo cáo/metadata, thử trả cùng lương ngày mới vào cuối ngày sau. Khi thiếu tổng tiền lương thì chưa trả khoản đó, giữ toàn bộ nghĩa vụ và báo số tiền cần thêm. Những đề xuất cũ lương50xu/ca, phân công/nghỉ hoặc chỉ có một nhân viên giao được thay bởi luật này. Đào tạo/mệt/giữ người và truyện/nhiệm vụẩn/khách nổi tiếng vẫn chưa có luật, không coi8.1 là toànEpic8.
+
+Chi tiết trong `_bmad-output/implementation-artifacts/spec-8-1-delivery-staff.md`; build đạt, 121 unit hiện hành và 11 E2E tập trung 360×640 đạt; ba review độc lập không còn phát hiện cần sửa. Một test cũ giới hạn demo ba ngày thất bại cả ở baseline f65e737, ghi riêng trong deferred-work.md. Story 8.1 ở review; toàn Epic 8 còn in-progress.

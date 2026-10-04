@@ -8,6 +8,8 @@ import {SHOP_CATALOG} from '../config/shopCatalog';
 import type {ShopItemId,ShopEffects} from '../domain/ShopEffects';
 import type {ShopAcquisition} from '../domain/ShopCheckpoint';
 import {SHOP_INSTALL_LOCATIONS} from './ShopPlacement';
+import {STAFF_CATALOG,STAFF_RULES,type StaffRole} from '../config/staffCatalog';
+import type {StaffAcquisition} from '../domain/StaffCheckpoint';
 
 export type ShopPage='home'|'menu'|'decoration'|'equipment'|'amenities'|'expansion'|'staff';
 export const SHOP_ART=[
@@ -20,14 +22,14 @@ export const SHOP_ART=[
   {key:'reference-shop-staff',url:'assets/references/Tuyển nhân viên tiệm pizza-6.png'},
 ] as const;
 type Crop=readonly [number,number,number,number];
-type Input={shop?:{acquired:ShopAcquisition[];effects:ShopEffects};item?:(id:ShopItemId)=>void;deliveryApp?:{available:boolean;enabled:boolean;eventName:string};app?:()=>void;day:number;cash:number;page:ShopPage;canAct:boolean;ovenLevel:number;queueCapacity:number;ovenPrice:number|null;queuePrice:number|null;menuPage:number;pageMenu:(page:number)=>void;buy:(recipe:StockRecipe)=>void;recipes:{id:StockRecipe;name:string;price:number;cost:number;enabled:boolean;owned:boolean;purchasePrice:number}[];open:(page:ShopPage)=>void;price:(recipe:StockRecipe)=>void;upgrade:(kind:'oven'|'queue')=>void;tab:(tab:HubTab)=>void;pause:()=>void;footer:{id:string;title:string;enabled:boolean;action:()=>void}};
+type Input={staff?:{acquired:StaffAcquisition[];dailyWages:number;arrears:number};employee?:(role:StaffRole)=>void;shop?:{acquired:ShopAcquisition[];effects:ShopEffects};item?:(id:ShopItemId)=>void;deliveryApp?:{available:boolean;enabled:boolean;eventName:string};app?:()=>void;day:number;cash:number;page:ShopPage;canAct:boolean;ovenLevel:number;queueCapacity:number;ovenPrice:number|null;queuePrice:number|null;menuPage:number;pageMenu:(page:number)=>void;buy:(recipe:StockRecipe)=>void;recipes:{id:StockRecipe;name:string;price:number;cost:number;enabled:boolean;owned:boolean;purchasePrice:number}[];open:(page:ShopPage)=>void;price:(recipe:StockRecipe)=>void;upgrade:(kind:'oven'|'queue')=>void;tab:(tab:HubTab)=>void;pause:()=>void;footer:{id:string;title:string;enabled:boolean;action:()=>void}};
 const sections=[
   {id:'menu',title:'Menu & giá bán',subtitle:'Chọn món · Chỉnh giá',crop:[95,752,270,143]},
   {id:'decoration',title:'Trang trí',subtitle:'Mua đồ · Đặt / Cất',crop:[513,750,323,145]},
   {id:'equipment',title:'Thiết bị',subtitle:'Nâng cấp lò hiện có',crop:[60,1000,339,150]},
   {id:'amenities',title:'Tiện nghi',subtitle:'Mua & đặt chưa mở',crop:[534,1007,326,143]},
   {id:'expansion',title:'Mở rộng quán',subtitle:'Nâng ô hàng chờ',crop:[58,1260,345,145]},
-  {id:'staff',title:'Nhân viên',subtitle:'Thuê & phân công chưa mở',crop:[571,1259,239,145]},
+  {id:'staff',title:'Nhân viên',subtitle:'Thuê theo nghề · Xem lương',crop:[571,1259,239,145]},
 ] as const;
 let serial=0;
 
@@ -60,7 +62,7 @@ export class ReferenceShop {
     }else{
       ui.button(8,133,120,36,'‹ Về Quán',true,14);this.hit('shop-back',8,130,120,43,true,()=>input.open('home'));
       if(input.page==='amenities'&&input.deliveryApp&&input.app){ui.button(140,133,212,36,'App giao hàng · '+(input.deliveryApp.available?(input.deliveryApp.enabled?'Bật':'Tắt'):'Ngày 5'),true,13);this.hit('shop-delivery-app',140,128,212,48,true,input.app);}
-      else if(input.page!=='menu')ui.text(140,145,'Ảnh minh họa',11,c.muted,false,205);
+      else if(input.page!=='menu')ui.text(140,145,input.page==='staff'?'Vai trò cố định':'Ảnh minh họa',11,c.muted,false,205);
       if(input.page==='menu'){
         const sources:Partial<Record<StockRecipe,Crop>>={cheese:[43,190,205,168],mushroom:[40,404,161,123],sausage:[40,551,162,123]};
         input.recipes.slice(input.menuPage*3,input.menuPage*3+3).forEach((recipe,i)=>{
@@ -104,13 +106,14 @@ export class ReferenceShop {
         const effects=input.shop?.effects;
         note([`Đang đặt: khách +${Math.round((effects?.visitors??0)*100)}% · Thời gian chờ +${Math.round((effects?.patience??0)*100)}%`,'Mua chưa đặt không cộng hiệu ứng; đổi trước ca.']);
       }else{
-        const catalog=[['Chuẩn bị nguyên liệu',[54,322,384,300]],['Phụ trách lò',[502,322,387,300]],['Đóng hộp pizza',[54,918,384,300]],['Giao tại quầy',[502,918,387,300]]] as const;
-        const six=false,height=163,step=175;
-        catalog.forEach(([name,source],i)=>{const x=8+i%2*176,y=180+Math.floor(i/2)*step;
-          ui.panel(x,y,168,height);art(`reference-shop-${input.page}`,source,x+10,y+5,148,six?65:110);
-          ui.text(x+84,y+(six?73:118),name,12,c.ink,true,153);ui.text(x+84,y+(six?91:140),'Chưa triển khai',10,c.muted,true);
+        const crops=[[54,322,384,300],[502,322,387,300],[54,918,384,300],[502,918,387,300]] as const;
+        STAFF_CATALOG.forEach((employee,i)=>{const x=8+i%2*176,y=180+Math.floor(i/2)*175,owned=input.staff?.acquired.some(entry=>entry.role===employee.role);
+          ui.panel(x,y,168,163);art('reference-shop-staff',crops[i],x+10,y+5,148,110);
+          if(owned||input.day<STAFF_RULES.unlockDay){ui.panel(x+77,y+6,84,18,c.inset);ui.text(x+119,y+10,owned?'Đã thuê':`Mở ngày ${employee.unlockDay}`,9,c.ink,true,79);}
+          ui.text(x+84,y+118,employee.name,12,c.ink,true,153);ui.text(x+84,y+140,`${employee.price.toLocaleString('vi-VN')} xu · ${employee.dailyWage} xu/ngày`,10,c.muted,true,154);
+          this.hit('shop-staff-'+employee.role,x,y,168,163,!!input.employee,()=>input.employee?.(employee.role));
         });
-        note([input.page==='staff'?'Chưa mở thuê / phân công.':'Chưa mở mua / đặt / cất đồ.','Thiếu bảng giá, cấu hình và lưu sở hữu.']);
+        note([`${input.staff?.acquired.length??0} người · Lương ${input.staff?.dailyWages??0} xu/ngày`,input.staff?.arrears?`Lương chưa trả: ${input.staff.arrears.toLocaleString('vi-VN')} xu`:'Nghề cố định · Thu lương cuối ngày.']);
       }
     }
     ui.footer(input.footer);texture.refresh();const image=this.scene.add.image(0,0,key).setOrigin(0);this.layer.add(image);illustrations.forEach(draw=>draw());

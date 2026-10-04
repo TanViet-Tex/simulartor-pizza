@@ -80,6 +80,7 @@ export class CozyCampaignSession {
   buyShopItem(id:import('../domain/ShopEffects').ShopItemId,commandId:string):boolean {return this.stageShop(r=>r.buyShopItem(id,commandId),commandId);}
   placeShopItem(id:import('../domain/ShopEffects').ShopItemId,placed:boolean,commandId:string):boolean {return this.stageShop(r=>r.placeShopItem(id,placed,commandId),commandId);}
   upgradeShop(kind:'oven'|'queue',commandId:string):boolean {return this.stageShop(r=>r.upgradeShop(kind,commandId),commandId);}
+  hireStaff(role:import('../config/staffCatalog').StaffRole,commandId:string):boolean {return this.stageShop(r=>r.hireStaff(role,commandId),commandId);}
   private stageShop(action:(candidate:CozyRuntime)=>boolean,commandId:string):boolean {
     if(!this.allowed()||!this.current||!this.current.canSetPrices||this.current.shopCommandUsed(commandId))return false;
     if(this.status==='temporary'){const accepted=action(this.current);if(accepted)this.publish();return accepted;}
