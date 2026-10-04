@@ -1,0 +1,35 @@
+import { afterEach, expect, it, vi } from 'vitest';
+import { BrowserPlayLifecycle } from './BrowserPlayLifecycle';
+import { PlayLifecycle } from '../runtime/PlayLifecycle';
+import { CozyRuntime } from '../runtime/CozyRuntime';
+afterEach(()=>vi.unstubAllGlobals());
+it('can detach a scene while leaving session-owned foreground recovery intact',()=>{
+  const doc=Object.assign(new EventTarget(),{hidden:false}),win=Object.assign(new EventTarget(),{innerWidth:360,innerHeight:640});
+  vi.stubGlobal('document',doc);vi.stubGlobal('window',win);
+  const runtime=new CozyRuntime(),lifecycle=new PlayLifecycle(runtime);
+  const adapter=new BrowserPlayLifecycle(lifecycle,()=>{});win.dispatchEvent(new Event('pagehide'));
+  adapter.destroy(false);expect(runtime.pauses).toEqual(['visibility']);
+  const replacement=new BrowserPlayLifecycle(lifecycle,()=>{});expect(runtime.pauses).toEqual(['visibility']);
+  lifecycle.continue();expect(runtime.pauses).toEqual([]);replacement.destroy();
+});
+it('wires hide/show, pagehide/pageshow and rotation, then removes all owned listeners',()=>{
+  const doc=Object.assign(new EventTarget(),{hidden:false});
+  const win=Object.assign(new EventTarget(),{innerWidth:360,innerHeight:640});
+  vi.stubGlobal('document',doc);vi.stubGlobal('window',win);
+  const runtime=new CozyRuntime(),lifecycle=new PlayLifecycle(runtime),changed=vi.fn();
+  const adapter=new BrowserPlayLifecycle(lifecycle,changed);
+  runtime.pause('user');
+  win.dispatchEvent(new Event('pagehide'));win.dispatchEvent(new Event('pageshow'));
+  expect(runtime.pauses).toEqual(['user','visibility']);
+  win.innerWidth=640;win.innerHeight=360;win.dispatchEvent(new Event('resize'));
+  expect(runtime.pauses).toEqual(['user','visibility']);
+  expect(lifecycle.continue()).toBe(true);
+  expect(runtime.pauses).toEqual(['user']);
+  win.innerWidth=360;win.innerHeight=640;win.dispatchEvent(new Event('resize'));
+  expect(lifecycle.continue()).toBe(false);expect(runtime.pauses).toEqual(['user']);
+  doc.hidden=true;doc.dispatchEvent(new Event('visibilitychange'));
+  adapter.destroy();adapter.destroy();expect(runtime.pauses).toEqual(['user']);
+  const calls=changed.mock.calls.length;
+  win.dispatchEvent(new Event('pagehide'));doc.dispatchEvent(new Event('visibilitychange'));
+  expect(changed).toHaveBeenCalledTimes(calls);
+});

@@ -1,0 +1,311 @@
+NO_VCS best-effort additions: new UI modules for Stock, Shop, Missions; scene routes them and owns new modal leases/commands, runtime/save/domain untouched.
+
++++ src/presentation/ReferenceStock.ts
+import Phaser from 'phaser';
+import type {CozyLot,StockIngredient} from '../domain/CozyStock';
+import {HubCanvasUI,type HubHit,type HubTab} from './HubCanvasUI';
+import {HUB_THEME} from './HubTheme';
+import {drawMarketIngredient} from './MarketIngredientArt';
+import type {MarketDrag} from './ReferenceMarket';
+
+export type StockFilter='all'|'low'|'expiry';
+export type StockRow={id:StockIngredient;name:string;usable:number;reserved:number;lots:readonly Readonly<CozyLot>[]};
+let serial=0;
+
+/** Read-only stock projection. The scene owns filters, criteria and all actions. */
+export class ReferenceStock{
+  constructor(private scene:Phaser.Scene,private layer:Phaser.GameObjects.Container,private hit:HubHit){}
+  draw(input:{day:number;cash:number;rows:readonly StockRow[];filter:StockFilter;low:number|null;expiryDays:number|null;offset:number;drag:MarketDrag;canScroll:()=>boolean;scroll:(n:number)=>void;setFilter:(f:StockFilter)=>void;detail:(id:StockIngredient)=>void;suggestions:()=>void;market:()=>void;tab:(tab:HubTab)=>void;pause:()=>void}):void{
+    const key=`stock-window-${serial++}`,texture=this.scene.textures.createCanvas(key,360,640)!,ctx=texture.context;
+    const ui=new HubCanvasUI(this.scene,ctx,this.hit),colors=HUB_THEME.colors;
+    const text=ui.text.bind(ui),panel=ui.panel.bind(ui);
+    const projected=input.rows.map(row=>{
+      const validLots=row.lots.filter(lot=>lot.quantity>0&&lot.day<=input.day&&lot.expiry>=input.day);
+      const nearestExpiry=validLots.length?Math.min(...validLots.map(lot=>lot.expiry)):null;
+      return {...row,validLots,nearestExpiry,low:input.low!==null&&row.usable<=input.low,expiring:input.expiryDays!==null&&nearestExpiry!==null&&nearestExpiry-input.day<=input.expiryDays};
+    });
+    const filtered=projected.filter(row=>input.filter==='all'||input.filter==='low'&&(input.low===null||row.low)||input.filter==='expiry'&&(input.expiryDays===null||row.expiring));
+    ui.background();ui.header({title:'Kho nguyên liệu',subtitle:`Chuẩn bị ngày ${input.day}`,cash:input.cash,pause:input.pause});ui.navigation('stock',input.tab);
+    ui.frame({x:8,y:133,width:344,height:46});
+    const stats=[{label:'Tổng nguyên liệu',value:`${projected.length} loại`,icon:'stock'},{label:'Sắp hết',value:input.low===null?'Chọn ngưỡng':`${projected.filter(row=>row.low).length} loại`,icon:'warning'},{label:'Sắp hết hạn',value:input.expiryDays===null?'Chọn ngưỡng':`${projected.filter(row=>row.expiring).length} loại`,icon:'clock'}];
+    stats.forEach((stat,i)=>{const x=16+i*110;panel(x,140,106,32,colors.highlight);text(x+53,144,stat.value,stat.value==='Chọn ngưỡng'?11:14,i?colors.danger:colors.ink,true);text(x+53,161,stat.label,10,colors.muted,true);});
+    ui.frame({x:8,y:185,width:344,height:394});
+    const filters=[['all','Tất cả'],['low','Sắp hết'],['expiry','Sắp hết hạn']] as const;
+    filters.forEach(([filter,label],i)=>{const x=17+i*108;panel(x,192,104,25,filter===input.filter?colors.active:colors.inset);text(x+52,198,label,12,filter===input.filter?colors.cream:colors.ink,true);this.hit(`stock-filter-${filter}`,x,188,104,31,true,()=>input.setFilter(filter));});
+    const viewport={x:17,y:223,width:321,height:312},rowHeight=53;
+    const max=Math.max(0,filtered.length*rowHeight-viewport.height),offset=Phaser.Math.Clamp(input.offset,0,max);
+    const rows=filtered.map((row,i)=>{const y=viewport.y+i*rowHeight-offset;return {...row,y,visible:y>=viewport.y&&y+rowHeight<=viewport.y+viewport.height};});
+    ctx.save();ctx.beginPath();ctx.rect(viewport.x,viewport.y,viewport.width,viewport.height);ctx.clip();
+    for(const row of rows){
+      const y=row.y;if(y+rowHeight<viewport.y||y>viewport.y+viewport.height)continue;
+      panel(17,y,321,50,colors.paper);drawMarketIngredient(this.scene,ctx,row.id,23,y+6,42,38);
+      text(73,y+6,row.name,HUB_THEME.typography.body,colors.ink,false,132);
+      text(73,y+25,row.usable===0?'Hết hàng':`Còn ${row.usable} phần`,11,row.usable===0?colors.danger:colors.muted,false,132);
+      if(row.reserved)text(73,y+38,`Giữ cho đơn: ${row.reserved} phần`,9,colors.muted,false,132);
+      panel(209,y+8,106,34,row.usable===0||row.expiring?colors.inset:colors.highlight);
+      text(262,y+14,row.nearestExpiry===null?'Chưa có lô dùng được':`Gần nhất: ngày ${row.nearestExpiry}`,9,row.expiring?colors.danger:colors.ink,true,100);
+      text(262,y+28,`${row.validLots.length} lô · Xem chi tiết`,9,colors.muted,true,100);text(326,y+17,'›',23,colors.muted,true);
+      if(row.visible)this.hit(`stock-item-${row.id}`,17,y,321,50,true,()=>{if(Math.abs(input.drag.startY-this.scene.input.activePointer.y)<8)input.detail(row.id);});
+    }
+    if(!rows.length){text(177,328,'Không có nguyên liệu phù hợp',14,colors.ink,true);text(177,352,'Chọn bộ lọc khác để xem Kho.',11,colors.muted,true);}
+    ctx.restore();
+    if(max){panel(342,223,3,312,colors.track,colors.track,1);panel(342,223+offset/max*(312-65),3,65,colors.thumb,colors.thumb,1);}
+    panel(17,541,321,28,colors.inset);ui.icon('market',24,546,18);text(49,548,'Gợi ý mua theo menu & số phần',12,colors.ink,false,269);text(324,545,'›',20,colors.muted,true);this.hit('stock-suggestions',17,539,321,31,true,input.suggestions);
+    text(180,571,'Ưu tiên lô gần hết hạn · Không dùng lô hết hạn',9,colors.muted,true,322);
+    ui.footer({id:'summary-stock-market',title:'Đi chợ mua thêm →',enabled:true,action:input.market});
+    texture.refresh();this.layer.add(this.scene.add.image(0,0,key).setOrigin(0));
+    const zone=this.scene.add.zone(viewport.x,viewport.y,viewport.width,viewport.height).setOrigin(0).setInteractive();this.layer.add(zone);
+    const wheel=(pointer:Phaser.Input.Pointer,_objects:unknown,_dx:number,dy:number)=>{if(input.canScroll()&&zone.input?.enabled&&pointer.x>=viewport.x&&pointer.x<=viewport.x+viewport.width&&pointer.y>=viewport.y&&pointer.y<=viewport.y+viewport.height)input.scroll(Phaser.Math.Clamp(offset+dy,0,max));};
+    const move=(pointer:Phaser.Input.Pointer)=>{if(input.canScroll()&&zone.input?.enabled&&pointer.isDown&&input.drag.active)input.scroll(Phaser.Math.Clamp(input.drag.offset+input.drag.startY-pointer.y,0,max));};
+    const up=()=>{input.drag.active=false;};
+    const down=(pointer:Phaser.Input.Pointer)=>{if(!input.canScroll()||!zone.input?.enabled||pointer.x<viewport.x||pointer.x>viewport.x+viewport.width||pointer.y<viewport.y||pointer.y>viewport.y+viewport.height)return;input.drag.active=true;input.drag.startY=pointer.y;input.drag.offset=offset;};
+    this.scene.input.on('pointerdown',down);this.scene.input.on('wheel',wheel);this.scene.input.on('pointermove',move);this.scene.input.on('pointerup',up);this.scene.input.on('pointerupoutside',up);
+    zone.once('destroy',()=>{this.scene.input.off('pointerdown',down);this.scene.input.off('wheel',wheel);this.scene.input.off('pointermove',move);this.scene.input.off('pointerup',up);this.scene.input.off('pointerupoutside',up);this.scene.textures.remove(key);});
+    this.scene.game.canvas.dataset.hubTheme='pizza-cartoon-v1';this.scene.game.canvas.dataset.stockRows=JSON.stringify(rows);this.scene.game.canvas.dataset.stockScroll=JSON.stringify({...viewport,offset,max});this.scene.game.canvas.dataset.stockFilter=input.filter;
+  }
+}
+
++++ src/presentation/ReferenceShop.ts
+import Phaser from 'phaser';
+import type {StockRecipe} from '../domain/CozyStock';
+import {HubCanvasUI,type HubHit,type HubTab} from './HubCanvasUI';
+import {HUB_THEME} from './HubTheme';
+
+export type ShopPage='home'|'menu'|'decoration'|'equipment'|'amenities'|'expansion'|'staff';
+export const SHOP_ART=[
+  {key:'reference-shop',url:'assets/references/Quán.png'},
+  {key:'reference-shop-menu',url:'assets/references/Menu và giá bán pizza-1.png'},
+  {key:'reference-shop-decoration',url:'assets/references/Trang trí quán pizza уют уют-1.png'},
+  {key:'reference-shop-equipment',url:'assets/references/Nâng cấp thiết bị quán pizza-2.png'},
+  {key:'reference-shop-amenities',url:'assets/references/Tiện nghi quán pizza-2.png'},
+  {key:'reference-shop-expansion',url:'assets/references/Mở rộng quán pizza ấm cúng-5.png'},
+  {key:'reference-shop-staff',url:'assets/references/Tuyển nhân viên tiệm pizza-6.png'},
+] as const;
+type Crop=readonly [number,number,number,number];
+type Input={day:number;cash:number;page:ShopPage;canAct:boolean;ovenLevel:number;queueCapacity:number;ovenPrice:number|null;queuePrice:number|null;recipes:{id:StockRecipe;name:string;price:number;cost:number;enabled:boolean}[];open:(page:ShopPage)=>void;price:(recipe:StockRecipe)=>void;upgrade:(kind:'oven'|'queue')=>void;tab:(tab:HubTab)=>void;pause:()=>void;footer:{id:string;title:string;enabled:boolean;action:()=>void}};
+const sections=[
+  {id:'menu',title:'Menu & giá bán',subtitle:'Chọn món · Chỉnh giá',crop:[95,752,270,143]},
+  {id:'decoration',title:'Trang trí',subtitle:'Đồ & vị trí chưa mở',crop:[513,750,323,145]},
+  {id:'equipment',title:'Thiết bị',subtitle:'Nâng cấp lò hiện có',crop:[60,1000,339,150]},
+  {id:'amenities',title:'Tiện nghi',subtitle:'Mua & đặt chưa mở',crop:[534,1007,326,143]},
+  {id:'expansion',title:'Mở rộng quán',subtitle:'Nâng ô hàng chờ',crop:[58,1260,345,145]},
+  {id:'staff',title:'Nhân viên',subtitle:'Thuê & phân công chưa mở',crop:[571,1259,239,145]},
+] as const;
+let serial=0;
+
+/** Only reference illustrations are sampled; all labels and actions use live state. */
+export class ReferenceShop {
+  constructor(private scene:Phaser.Scene,private layer:Phaser.GameObjects.Container,private hit:HubHit){}
+  draw(input:Input):void {
+    const key=`shop-window-${serial++}`,texture=this.scene.textures.createCanvas(key,360,640)!,ctx=texture.context;
+    const ui=new HubCanvasUI(this.scene,ctx,this.hit),c=HUB_THEME.colors;
+    const title=input.page==='home'?'Quản lý quán':sections.find(section=>section.id===input.page)!.title;
+    ui.background();ui.header({title,subtitle:`Chuẩn bị ngày ${input.day}`,cash:input.cash,pause:input.pause});ui.navigation('shop',input.tab);
+    const art=(artKey:string,source:Crop,x:number,y:number,w:number,h:number)=>{
+      if(!this.scene.textures.exists(artKey))return;
+      const [sx,sy,sw,sh]=source,scale=Math.min(w/sw,h/sh);
+      ctx.drawImage(this.scene.textures.get(artKey).getSourceImage() as HTMLImageElement,sx,sy,sw,sh,x+(w-sw*scale)/2,y+(h-sh*scale)/2,sw*scale,sh*scale);
+    };
+    const note=(lines:string[],y=541)=>{ui.panel(8,y,344,37,c.inset);lines.forEach((line,i)=>ui.text(18,y+6+i*14,line,11,c.muted,false,324));};
+    if(input.page==='home'){
+      ui.frame({x:8,y:133,width:344,height:151});
+      art('reference-shop',[40,354,865,308],15,140,330,117);
+      ui.text(180,263,`Minh họa · Lò cấp ${input.ovenLevel} · ${input.queueCapacity} ô chờ`,11,c.muted,true,323);
+      sections.forEach((section,i)=>{
+        const x=8+i%2*176,y=292+Math.floor(i/2)*95;
+        ui.panel(x,y,168,89);art('reference-shop',section.crop,x+15,y+4,137,48);
+        ui.text(x+84,y+54,section.title,14,c.ink,true,155);ui.text(x+84,y+72,section.subtitle,10,c.muted,true,155);
+        this.hit(`shop-section-${section.id}`,x,y,168,89,true,()=>input.open(section.id));
+      });
+    }else{
+      ui.button(8,133,120,36,'‹ Về Quán',true,14);this.hit('shop-back',8,130,120,43,true,()=>input.open('home'));
+      ui.text(140,145,'Ảnh minh họa',11,c.muted,false,205);
+      if(input.page==='menu'){
+        const sources:Record<StockRecipe,Crop>={cheese:[43,190,205,168],mushroom:[40,404,161,123],sausage:[40,551,162,123]};
+        input.recipes.forEach((recipe,i)=>{
+          const y=180+i*115;ui.frame({x:8,y,width:344,height:107});art('reference-shop-menu',sources[recipe.id],17,y+12,76,70);
+          ui.text(103,y+12,recipe.name,18,c.ink,false,225);ui.text(103,y+38,`Giá bán: ${recipe.price} xu`,14,c.ink);
+          ui.text(103,y+57,recipe.enabled?'Đang bán':'Đã tắt bán',11,recipe.enabled?'#345f28':c.muted);ui.text(103,y+80,`Vốn ~${recipe.cost} · Lãi ~${recipe.price-recipe.cost}`,10,c.muted,false,125);
+          ui.button(231,y+64,108,33,'Chỉnh món ›',input.canAct,12);
+          this.hit(`shop-price-${recipe.id}`,224,y+58,120,44,input.canAct,()=>input.price(recipe.id));
+        });
+        note(['Vốn tham chiếu giá mua ngày; chưa trừ phí chung.',input.canAct?`Áp dụng ca ngày ${input.day}; đơn đã nhận giữ giá.`:'Hiện chỉ xem · Không thể đổi giá hoặc món.']);
+      }else if(input.page==='equipment'){
+        const items:[string,Crop][]=[['Lò hiện có',[48,254,426,240]],['Lò thứ hai',[533,254,360,326]],['Tủ lạnh',[47,966,430,275]],['Bàn làm pizza',[533,966,360,275]]];
+        items.forEach(([name,source],i)=>{
+          const x=8+i%2*176,y=180+Math.floor(i/2)*174;ui.panel(x,y,168,166);art('reference-shop-equipment',source,x+8,y+8,152,91);
+          ui.text(x+84,y+104,name,14,c.ink,true,154);
+          if(i===0){ui.text(x+84,y+122,`Cấp ${input.ovenLevel} · ${['6–8','4–6','2–4'][Math.min(2,input.ovenLevel)]}s`,11,c.muted,true);
+            const enabled=input.canAct&&input.ovenPrice!==null;ui.button(x+7,y+140,154,23,input.ovenPrice===null?'Đã nâng tối đa':`Nâng cấp · ${input.ovenPrice} xu`,enabled,11);
+            this.hit('summary-upgrade-oven',x+4,y+125,160,41,enabled,()=>input.upgrade('oven'));
+          }else ui.text(x+84,y+135,'Chưa triển khai',12,c.muted,true);
+        });note(['Lò nâng tốc độ; vẫn chỉ một vị trí nướng.','Đồ mới chưa có bảng giá, cấu hình và lưu.']);
+      }else if(input.page==='expansion'){
+        ui.frame({x:8,y:180,width:344,height:249});art('reference-shop-expansion',[40,255,865,295],16,190,328,112);
+        ui.text(24,311,'Ô hàng chờ',20);ui.text(24,339,`Hiện có ${input.queueCapacity} ô`,15,c.ink);
+        const enabled=input.canAct&&input.queuePrice!==null;
+        ui.button(22,370,316,43,input.queuePrice===null?'Đã mở tối đa 6 ô':`Mở 6 ô · ${input.queuePrice} xu`,enabled,16);
+        this.hit('summary-upgrade-queue',20,368,320,48,enabled,()=>input.upgrade('queue'));
+        ui.panel(8,439,344,88);ui.text(23,452,'Tu sửa / mở rộng mặt bằng',16);ui.text(23,480,'Chưa triển khai · Chưa có giá và lưu.',12,c.muted,false,318);
+        note(['Nâng hàng chờ theo cấu hình hiện tại.','Ảnh không xác định diện tích hoặc đồ sở hữu.']);
+      }else{
+        const catalog=input.page==='decoration'?
+          [['Cây để bàn',[39,610,180,233]],['Tranh pizza',[494,620,185,225]],['Đèn trang trí',[46,879,173,241]],['Bảng hiệu',[493,900,188,212]],['Chậu cây lớn',[43,1170,169,239]],['Rèm cửa',[490,1175,199,230]]] as const:
+          input.page==='amenities'?
+          [['Ghế chờ',[43,533,220,139]],['Wi-Fi',[497,538,227,136]],['Quạt đứng',[47,835,197,154]],['Máy lạnh',[506,851,220,136]],['Loa nghe nhạc',[46,1177,190,150]],['Bàn ghế khách',[496,1165,228,157]]] as const:
+          [['Chuẩn bị nguyên liệu',[54,322,384,300]],['Phụ trách lò',[502,322,387,300]],['Đóng hộp pizza',[54,918,384,300]],['Giao tại quầy',[502,918,387,300]]] as const;
+        const six=catalog.length===6,height=six?109:163,step=six?116:175;
+        catalog.forEach(([name,source],i)=>{const x=8+i%2*176,y=180+Math.floor(i/2)*step;
+          ui.panel(x,y,168,height);art(`reference-shop-${input.page}`,source,x+10,y+5,148,six?65:110);
+          ui.text(x+84,y+(six?73:118),name,12,c.ink,true,153);ui.text(x+84,y+(six?91:140),'Chưa triển khai',10,c.muted,true);
+        });
+        note([input.page==='staff'?'Chưa mở thuê / phân công.':'Chưa mở mua / đặt / cất đồ.','Thiếu bảng giá, cấu hình và lưu sở hữu.']);
+      }
+    }
+    ui.footer(input.footer);texture.refresh();const image=this.scene.add.image(0,0,key).setOrigin(0);this.layer.add(image);
+    image.once('destroy',()=>this.scene.textures.remove(key));
+    this.scene.game.canvas.dataset.shopPage=input.page;
+    this.scene.game.canvas.dataset.hubTheme='pizza-cartoon-v1';
+  }
+}
+
++++ src/presentation/ReferenceMissions.ts
+import type Phaser from 'phaser';
+import type {CozyRuntime} from '../runtime/CozyRuntime';
+import {HubCanvasUI,type HubHit,type HubTab} from './HubCanvasUI';
+import {HUB_THEME} from './HubTheme';
+let serial=0;
+export class ReferenceMissions{
+  constructor(private scene:Phaser.Scene,private layer:Phaser.GameObjects.Container,private hit:HubHit){}
+  draw(input:{day:number;cash:number;progress:CozyRuntime['progression'];ending:boolean;tab:(id:HubTab)=>void;pause:()=>void;footer:{id:string;title:string;enabled:boolean;action:()=>void}}):void{
+    const key=`missions-${serial++}`,texture=this.scene.textures.createCanvas(key,360,640)!,ui=new HubCanvasUI(this.scene,texture.context,this.hit),p=input.progress,c=HUB_THEME.colors;
+    ui.background();ui.header({title:'Nhiệm vụ',subtitle:`Ngày ${input.day} · Cấp ${p.level}`,cash:input.cash,pause:input.pause});ui.navigation('missions',input.tab);
+    const status=(s:string)=>s==='completed'?'Hoàn thành':s==='expired'?'Đã hết hạn':'Đang thực hiện';
+    ui.frame({x:8,y:133,width:344,height:147});ui.text(22,145,`Mục tiêu ngày ${p.goal.day}`,19);ui.text(22,176,p.goal.description,14,c.ink,false,313);ui.text(22,204,p.goal.progress,18,c.muted);
+    ui.text(22,235,status(p.goal.status),13,p.goal.status==='completed'?'#345f28':c.muted);
+    ui.text(22,257,p.claims.includes(`goal.day-${p.goal.day}`)?'✓ Đã nhận 20 xu + 10 XP':p.goal.status==='expired'?'Không đạt thưởng ngày này':'Thưởng khi chốt ngày: 20 xu + 10 XP',11,c.muted,false,314);
+    ui.frame({x:8,y:287,width:344,height:129});ui.text(22,299,'Pizza phô mai được yêu thích',18);ui.text(22,330,`${p.cheeseSales}/8 món đúng công thức`,15,c.muted);ui.text(22,357,status(p.mission),13,p.mission==='completed'?'#345f28':c.muted);
+    ui.text(22,386,p.claims.includes('mission.cheese-8')?'✓ Đã nhận 30 xu + 20 XP + 2 uy tín':'Thưởng tự nhận: 30 xu + 20 XP + 2 uy tín',11,c.muted,false,314);
+    ui.frame({x:8,y:423,width:344,height:156});ui.text(22,436,`Cấp ${p.level} · ${p.xp} XP`,20);ui.text(22,471,'Mốc cấp: 0 / 60 / 150 XP',13,c.muted);
+    ui.text(22,498,p.unlockDay===null?'Xúc xích mở sau khi đạt cấp 2':p.unlockDay<=3?`Xúc xích mở từ ngày ${p.unlockDay}`:'Xúc xích mở sau chặng demo',12,c.muted,false,314);
+    ui.text(22,525,'Đơn thương mại: 10 XP; 4–5 sao thêm 5 XP.',11,c.muted,false,314);ui.text(22,550,input.ending?'Chặng đã chốt · Không tạo nhiệm vụ ngày 4':'Thưởng tự cộng đúng một lần; không cần bấm nhận.',10,c.muted,false,314);
+    ui.footer(input.footer);texture.refresh();const image=this.scene.add.image(0,0,key).setOrigin(0);this.layer.add(image);image.once('destroy',()=>this.scene.textures.remove(key));this.scene.game.canvas.dataset.missionsView=JSON.stringify(p);
+  }
+}
+
++++ src/presentation/StockPlanning.ts
+import {STOCK_INGREDIENTS,ingredientName,recipeIngredients,type CozyLot,type StockIngredient,type StockRecipe} from '../domain/CozyStock';
+
+export function stockRows(lots:readonly Readonly<CozyLot>[],day:number,reserved:(id:StockIngredient)=>number){
+  return STOCK_INGREDIENTS.map(id=>{const own=lots.filter(l=>l.ingredient===id),usable=own.filter(l=>l.day<=day&&l.expiry>=day).reduce((sum,l)=>sum+l.quantity,0),held=reserved(id);
+    return {id,name:ingredientName(id),usable:Math.max(0,usable-held),reserved:held,lots:own};});
+}
+/** Supported menu recipes only; viewing a plan never reserves or purchases stock. */
+export function stockForecast(menu:readonly StockRecipe[],portions:Partial<Record<StockRecipe,number>>,available:(id:StockIngredient)=>number){
+  const needs=new Map<StockIngredient,number>();
+  for(const recipe of new Set(menu)){const count=portions[recipe]??0;if(!Number.isSafeInteger(count)||count<0||count>100)throw new RangeError('Invalid preparation portions');
+    if(count)for(const id of recipeIngredients(recipe))needs.set(id,(needs.get(id)??0)+count);}
+  return STOCK_INGREDIENTS.filter(id=>needs.has(id)).map(id=>({id,name:ingredientName(id),need:needs.get(id)!,available:available(id),missing:Math.max(0,needs.get(id)!-available(id))}));
+}
+
++++ src/presentation/StockPlannerPanel.ts
+import type Phaser from 'phaser';
+import type {StockIngredient,StockRecipe} from '../domain/CozyStock';
+import {HubCanvasUI,type HubHit} from './HubCanvasUI';
+import {HUB_THEME} from './HubTheme';
+import {stockForecast} from './StockPlanning';
+let serial=0;
+const names={cheese:'Phô mai',mushroom:'Nấm',sausage:'Xúc xích'};
+export function drawStockPlanner(scene:Phaser.Scene,layer:Phaser.GameObjects.Container,hit:HubHit,input:{menu:readonly StockRecipe[];portions:Partial<Record<StockRecipe,number>>;available:(id:StockIngredient)=>number;change:(id:StockRecipe,delta:number)=>void;close:()=>void;market:()=>void;canEdit:boolean}):void{
+  const key=`stock-plan-${serial++}`,texture=scene.textures.createCanvas(key,360,640)!,ui=new HubCanvasUI(scene,texture.context,hit),c=HUB_THEME.colors;
+  ui.frame({x:12,y:35,width:336,height:570});ui.text(180,54,'Chuẩn bị theo thực đơn',21,c.ink,true);ui.text(180,87,'Chọn số phần mỗi món · Không tự mua',12,c.muted,true);
+  input.menu.forEach((id,i)=>{const y=115+i*49;ui.panel(23,y,314,44);ui.text(35,y+14,names[id],15);ui.button(183,y+4,42,35,'−',input.canEdit&&(input.portions[id]??0)>0,18);ui.text(252,y+14,String(input.portions[id]??0),16,c.ink,true);ui.button(282,y+4,42,35,'+',input.canEdit&&(input.portions[id]??0)<100,18);hit(`stock-plan-minus-${id}`,183,y+4,42,35,input.canEdit&&(input.portions[id]??0)>0,()=>input.change(id,-1));hit(`stock-plan-plus-${id}`,282,y+4,42,35,input.canEdit&&(input.portions[id]??0)<100,()=>input.change(id,1));});
+  const plan=stockForecast(input.menu,input.portions,input.available);let y=278;
+  ui.text(30,y,'Nguyên liệu       Cần / Có / Mua thêm',12,c.muted);y+=28;
+  if(!plan.length)ui.text(180,y+25,'Chọn số phần để tính lượng cần mua.',13,c.muted,true);
+  for(const row of plan){ui.text(30,y,row.name,13,c.ink,false,163);ui.text(266,y,`${row.need} / ${row.available} / ${row.missing}`,13,row.missing?c.danger:c.muted,true);y+=30;}
+  ui.text(180,478,'Tính theo công thức đang bán trong game.',11,c.muted,true);ui.text(180,500,'Loại hàng hết hạn và lượng đang giữ cho đơn.',11,c.muted,true);
+  ui.button(26,544,145,48,'Quay lại',true,15);hit('stock-plan-close',26,544,145,48,true,input.close);ui.button(188,544,145,48,'Đi chợ',true,15);hit('stock-plan-market',188,544,145,48,true,input.market);
+  texture.refresh();const image=scene.add.image(0,0,key).setOrigin(0);layer.add(image);image.once('destroy',()=>scene.textures.remove(key));scene.game.canvas.dataset.stockForecast=JSON.stringify(plan);
+}
+
++++ Scene new routing/modal methods
+  private dayHub():void{
+    const summary=this.runtime.daySummary,initial=this.preparationHub;
+    if(!summary&&!initial)return;
+    const canBuy=initial?this.runtime.canOpen:this.runtime.canPrepareNextDay;
+    this.layer.removeAll(true);this.controls=[];this.visibleActions=[];this.timers=[];this.heatBar=undefined;
+    for(const zone of this.hitZones.values())zone.disableInteractive();
+    {
+      const saveBlocked=this.campaignSession&&['error','recovery'].includes(this.campaignSession.view.state);
+      const footer=saveBlocked?{id:'save-show-status',title:'Xử lý lưu tiến độ',enabled:true,action:()=>{this.saveDismissed=false;this.dirty=true;}}:
+        initial?{id:'summary-open-first-day',title:`Mở quán — Ngày ${this.runtime.day}`,enabled:this.runtime.canOpen,action:()=>{this.runtime.openShop();this.inspectedOrderId=null;}}:
+        summary!.ending?{id:'summary-final-result',title:'Kết quả cuối',enabled:!this.campaignSession||['ready','temporary'].includes(this.campaignSession.view.state),action:()=>{this.finalOpen=true;this.dirty=true;}}:
+        {id:'summary-open-next-day',title:`Mở quán — Ngày ${summary!.day+1}`,enabled:this.runtime.canOpenNextDay,action:()=>{this.runtime.openNextDay();this.inspectedOrderId=null;}};
+      const reports=this.runtime.completedReports,previous=summary?reports.find(r=>r.day===summary.day-1):undefined;
+      const tab=(id:'summary'|'market'|'stock'|'shop'|'missions')=>{this.summaryTab=id;this.stockDrag.active=false;this.marketDrag.active=false;this.dirty=true;};
+      if(this.summaryTab==='stock'){
+        new ReferenceStock(this,this.layer,(...args)=>this.hit(...args)).draw({day:this.runtime.preparationDay,cash:this.runtime.state.cash,rows:stockRows(this.runtime.stockLots,this.runtime.preparationDay,id=>this.runtime.reserved(id)),filter:this.stockFilter,low:this.stockLow,expiryDays:this.stockExpiry,offset:this.stockOffset,drag:this.stockDrag,canScroll:()=>this.runtime.pauses.length===0,scroll:n=>{this.stockOffset=n;this.dirty=true;},setFilter:f=>this.setStockFilter(f),detail:id=>this.openStockLot(id),suggestions:()=>this.openStockPlanner(),market:()=>tab('market'),tab,pause:()=>this.hold('user')});return;
+      }
+      if(this.summaryTab==='shop'){
+        new ReferenceShop(this,this.layer,(...args)=>this.hit(...args)).draw({day:this.runtime.preparationDay,cash:this.runtime.state.cash,page:this.shopPage,canAct:this.runtime.canSetPrices,ovenLevel:this.runtime.ovenLevel,queueCapacity:this.runtime.queueCapacity,ovenPrice:this.runtime.upgradePrice('oven'),queuePrice:this.runtime.upgradePrice('queue'),recipes:this.runtime.availableRecipes.map(id=>({id,name:recipeName(id),price:this.runtime.customerProgress.prices[id],cost:recipeIngredients(id).reduce((n,item)=>n+datedIngredientPrice(item,this.runtime.preparationDay),0),enabled:this.runtime.menuRecipes.includes(id)})),open:page=>{this.shopPage=page;this.dirty=true;},price:id=>this.choosePrice(id),upgrade:kind=>this.openHubUpgrade(kind),tab,pause:()=>this.hold('user'),footer});return;
+      }
+      if(this.summaryTab==='missions'){
+        new ReferenceMissions(this,this.layer,(...args)=>this.hit(...args)).draw({day:this.runtime.preparationDay,cash:this.runtime.state.cash,progress:this.runtime.progression,ending:!!summary?.ending,tab,pause:()=>this.hold('user'),footer});return;
+      }
+      if(this.summaryTab==='market'){
+        new ReferenceMarket(this,this.layer,(...args)=>this.hit(...args)).draw({day:this.runtime.preparationDay,cash:this.runtime.state.cash,canBuy,readOnlyReason:summary?.ending?'Chặng bán hàng đã kết thúc · Chợ chỉ để xem':'Mua đang bị khóa · Hãy xử lý lưu tiến độ',canScroll:()=>this.runtime.pauses.length===0,filter:this.marketFilter,offset:this.marketOffset,drag:this.marketDrag,quantities:this.marketQuantities,available:id=>this.runtime.available(id),quantity:(id,delta)=>{this.marketQuantities[id]=Phaser.Math.Clamp((this.marketQuantities[id]??1)+delta,1,100);this.dirty=true;},buy:id=>this.openMarketPurchase(id),editQuantity:id=>this.openMarketQuantity(id),scroll:offset=>{this.marketOffset=offset;this.dirty=true;},setFilter:filter=>{this.marketFilter=filter;this.marketOffset=0;this.dirty=true;},tab:id=>{this.summaryTab=id;this.dirty=true;},pause:()=>this.hold('user'),price:()=>this.choosePrice(this.runtime.selectedRecipe),footer});
+        return;
+      }
+      this.referenceSummary().summary({report:summary,day:this.runtime.day,cash:this.runtime.state.cash,xp:summary?.progression.xp??this.runtime.progression.xp,previousXp:summary?(previous?.progression.xp??0):this.runtime.progression.xp,stockUnits:this.runtime.stockLots.reduce((n,lot)=>n+lot.quantity,0),ending:!!summary?.ending,paused:this.runtime.pauses.length>0,footer,tab:id=>{this.summaryTab=id;this.dirty=true;},pause:()=>this.hold('user'),finance:()=>this.openStatement(),reviews:()=>this.openReviews()});
+      return;
+    }
+  }
+  private resetModalControls(){this.controls=[];this.visibleActions=[];for(const zone of this.hitZones.values())zone.disableInteractive();}
+  private closeHubPanels():void{
+    this.stockCriteria?.input.destroy();this.stockCriteria?.lease.release();this.stockCriteria=undefined;
+    this.hubDetail?.lease.release();this.hubDetail=undefined;this.hubUpgrade?.lease.release();this.hubUpgrade=undefined;this.stockPlannerLease?.release();this.stockPlannerLease=undefined;this.dirty=true;
+  }
+  private openStockLot(id:StockIngredient):void{
+    if(this.runtime.pauses.length)return;
+    const day=this.runtime.preparationDay,lots=this.runtime.stockLots.filter(l=>l.ingredient===id).sort((a,b)=>a.expiry-b.expiry||a.id-b.id);
+    this.hubDetail={title:ingredientName(id),body:`Có thể dùng: ${this.runtime.available(id)} phần · Giữ cho đơn: ${this.runtime.reserved(id)} phần.\n\n`+(lots.length?lots.map(l=>`Lô ngày ${l.day}: ${l.quantity} phần\nDùng đến hết ngày ${l.expiry} · ${l.unitCost} xu/phần\n${l.expiry<day?'Đã hết hạn':l.day>day?'Chưa đến ngày sử dụng':'Còn dùng được'}`).join('\n\n'):'Chưa có lô nguyên liệu này.'),lease:this.runtime.acquirePause('order')};this.stockDrag.active=false;this.dirty=true;
+  }
+  private hubDetailDialog():void{
+    const detail=this.hubDetail!;this.summaryModalVeil();this.notice(detail.title,detail.body,'hub-detail-close','Đã hiểu',()=>this.closeHubPanels(),true,14);
+  }
+  private setStockFilter(filter:StockFilter):void{
+    if(this.runtime.pauses.length)return;
+    if(filter!=='all'&&(filter==='low'?this.stockLow:this.stockExpiry)===null){
+      const lease=this.runtime.acquirePause('order'),input=new MarketQuantityInput(this.game.canvas,0,()=>{this.dirty=true;},()=>this.closeStockCriteria(true),()=>this.closeStockCriteria(),{min:0,max:100,label:filter==='low'?'Ngưỡng sắp hết':'Số ngày sắp hết hạn'});
+      this.stockCriteria={kind:filter,input,lease};this.stockDrag.active=false;this.dirty=true;return;
+    }
+    this.stockFilter=filter;this.stockOffset=0;this.dirty=true;
+  }
+  private closeStockCriteria(apply=false):void{
+    const criteria=this.stockCriteria;if(!criteria)return;
+    if(apply){const value=criteria.input.quantity;if(value===null||this.runtime.pauses.some(p=>p!=='order'))return;if(criteria.kind==='low')this.stockLow=value;else this.stockExpiry=value;this.stockFilter=criteria.kind;this.stockOffset=0;}
+    criteria.input.destroy();criteria.lease.release();this.stockCriteria=undefined;this.dirty=true;
+  }
+  private stockCriteriaDialog():void{
+    const criteria=this.stockCriteria!,low=criteria.kind==='low';this.summaryModalVeil();this.notificationFrame(['stock-criteria-cancel','stock-criteria-apply'],250,420,340);
+    this.label(180,207,low?'Ngưỡng sắp hết':'Ngưỡng sắp hết hạn',21,ink);this.label(180,270,low?'Lượng khả dụng ≤ số phần bạn nhập':'Hết hạn trong số ngày bạn nhập, kể từ ngày chuẩn bị',14,wood,282);this.label(180,414,'Nhập số nguyên từ 0 đến 100.',12,wood,282);criteria.input.position();
+    this.button('stock-criteria-cancel',40,430,132,48,'Hủy',true,()=>this.closeStockCriteria(),UI.dark);this.button('stock-criteria-apply',188,430,132,48,'Áp dụng',criteria.input.quantity!==null&&!this.runtime.pauses.some(p=>p!=='order'),()=>this.closeStockCriteria(true));
+  }
+  private openStockPlanner():void{if(this.runtime.pauses.length)return;this.stockPlannerLease=this.runtime.acquirePause('order');this.stockDrag.active=false;this.dirty=true;}
+  private stockPlannerDialog():void{
+    this.summaryModalVeil();drawStockPlanner(this,this.layer,(...args)=>this.hit(...args),{menu:this.runtime.menuRecipes,portions:this.stockPortions,available:id=>this.runtime.available(id),canEdit:!this.runtime.pauses.some(p=>p!=='order'),change:(id,delta)=>{this.stockPortions[id]=Phaser.Math.Clamp((this.stockPortions[id]??0)+delta,0,100);this.dirty=true;},close:()=>this.closeHubPanels(),market:()=>{this.closeHubPanels();this.summaryTab='market';},});
+  }
+  private openHubUpgrade(kind:'oven'|'queue'):void{
+    if(!this.runtime.canSetPrices)return;const cost=this.runtime.upgradePrice(kind);if(cost===null)return;
+    this.hubUpgrade={kind,cost,commandId:`upgrade:${this.purchaseScope}:${kind}:${kind==='oven'?this.runtime.ovenLevel:this.runtime.queueCapacity}`,lease:this.runtime.acquirePause('order')};this.dirty=true;
+  }
+  private hubUpgradeDialog():void{
+    const upgrade=this.hubUpgrade!,canPay=this.runtime.state.cash>=upgrade.cost;
+    this.summaryModalVeil();this.notificationFrame(['hub-upgrade-cancel','hub-upgrade-confirm'],250,420,390);this.label(180,207,upgrade.kind==='oven'?'Nâng cấp lò':'Mở ô hàng chờ',21,ink);
+    this.label(180,278,`Giá: ${upgrade.cost} xu\n${canPay?'Còn lại: '+(this.runtime.state.cash-upgrade.cost):'Còn thiếu: '+(upgrade.cost-this.runtime.state.cash)} xu\nChỉ áp dụng từ ca bán sắp mở.`,15,ink,286);
+    this.button('hub-upgrade-cancel',40,430,132,48,'Hủy',true,()=>this.closeHubPanels(),UI.dark);
+    this.button('hub-upgrade-confirm',188,430,132,48,'Nâng cấp',canPay&&!this.runtime.pauses.some(p=>p!=='order'),()=>{
+      this.closeHubPanels();if(this.campaignSession)void this.campaignSession.upgradeShop(upgrade.kind,upgrade.commandId);else this.runtime.dispatch({type:'shop.upgrade',kind:upgrade.kind,commandId:upgrade.commandId});this.dirty=true;
+    });
+  }

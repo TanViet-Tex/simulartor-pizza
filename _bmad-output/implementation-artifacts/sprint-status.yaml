@@ -1,0 +1,59 @@
+﻿# Only audited stories are marked done. Backlog does not imply absence of prototype code.
+last_updated: '2026-10-04'
+development_status:
+  epic-1: in-progress
+  1-1-phaser-starter-scaffold: done
+  1-2-validated-portrait-boot: done
+  1-3-controlled-tutorial: done
+  1-4-buy-and-reserve-ingredients: done
+  # Reopened after 2026-10-01 automatic-customer-order requirement; docs updated, code pending.
+  1-5-offer-and-one-oven: review
+  1-6-box-and-deliver-once: review
+  1-7-mobile-hud-and-lifecycle: review
+  epic-2: done
+  2-1-distinct-customer-patience-and-price: done
+  2-2-stars-daily-rating-and-reputation: done
+  2-3-regular-relationship-and-referral-eligibility: done
+  epic-3: in-progress
+  3-1-preparation-market-and-pricing: review
+  3-2-dated-lot-reservations: review
+  3-3-daily-cash-flow-and-profit: review
+  # 2026-10-04: documentation-only additions; UI and its flows first.
+  # See epics.md; backlog scopes need detailed stories/remaining data decisions before implementation.
+  3-4-reference-hub-ui-and-flows: backlog
+  3-5-day-reviews-modal: backlog
+  3-6-day-finance-details-modal: backlog
+  3-7-stock-filters-and-lot-details: backlog
+  3-8-shop-tab-ui-and-navigation: backlog
+  3-9-next-day-menu-and-pricing: backlog
+
+
+
+
+
+
+  epic-4: in-progress
+  4-1-three-day-schedule: review
+  4-2-goals-mission-xp-unlocks: review
+  4-3-returning-regular-help: review
+  4-4-latest-checkpoint: review
+  4-5-atomic-day-commit: review
+  4-6-demo-boundary: review
+
+  # 2026-10-04: catalog/recipe ownership/full menu planner + supplier/day4+ continuity verified.
+  # Build, 75 unit tests, 18 focused E2E; balance provisional, no full 30-day story claim.
+  epic-5: done
+  5-1-expanded-ingredient-and-recipe-catalog: done
+  5-2-menu-based-purchase-suggestions: done
+
+  epic-7: backlog
+  7-1-decoration-ownership-and-placement: backlog
+  7-2-equipment-and-amenities: backlog
+  7-3-shop-renovation-and-expansion: backlog
+  7-4-placed-item-daily-gameplay-effects: backlog
+  7-5-preparation-item-transactions-and-save-migration: backlog
+  epic-8: backlog
+  8-1-staff-hiring-assignment-and-wages: backlog
+
+
+# Epic4 implementation checks passed; Story4.6 five-person human playtest pending (epic-4-playtest.md).

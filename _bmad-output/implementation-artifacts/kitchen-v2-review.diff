@@ -1,0 +1,1427 @@
+diff --git "a/_bmad-output\\implementation-artifacts\\kitchen-v2-before\\CozyStock.ts" b/src/domain/CozyStock.ts
+index dcb68cd..34c5da2 100644
+--- "a/_bmad-output\\implementation-artifacts\\kitchen-v2-before\\CozyStock.ts"
++++ b/src/domain/CozyStock.ts
+@@ -1,16 +1,20 @@
+ import { ingredients, recipes } from './demo';
+-export type StockIngredient = 'dough' | 'sauce' | 'cheese' | 'mushroom' | 'sausage';
++import { EXTRA_INGREDIENTS, EXPRESS_PRICE_MULTIPLIER } from '../config/kitchenEconomy';
++const catalog = [...ingredients, ...EXTRA_INGREDIENTS];
++export type StockIngredient = 'dough' | 'sauce' | 'cheese' | 'mushroom' | 'sausage' | typeof EXTRA_INGREDIENTS[number]['id'];
+ export type StockRecipe = 'cheese' | 'mushroom' | 'sausage';
+ export const STOCK_RECIPES:readonly StockRecipe[]=['cheese','mushroom','sausage'];
+-export const STOCK_INGREDIENTS: readonly StockIngredient[] = ['dough', 'sauce', 'cheese', 'mushroom','sausage'];
++export const STOCK_INGREDIENTS: readonly StockIngredient[] = catalog.map(item => item.id as StockIngredient);
+ export function recipeIngredients(recipe: StockRecipe): StockIngredient[] {
+   return [...recipes.find(item => item.id === recipe)!.ingredients] as StockIngredient[];
+ }
+-export function ingredientPrice(id: StockIngredient): number { return ingredients.find(item => item.id === id)!.basePrice; }
++export function ingredientPrice(id: StockIngredient): number { return catalog.find(item => item.id === id)!.basePrice; }
+ export function datedIngredientPrice(id: StockIngredient, day: number): number { return Math.round(ingredientPrice(id) * [1, 1.1, .9][day - 1]!); }
+ export function ingredientExpiry(id: StockIngredient, day: number): number { return day + (id === 'mushroom'||id==='sausage' ? 0 : 1); }
+ export function recipePrice(id: StockRecipe): number { return recipes.find(item => item.id === id)!.price; }
+-export function ingredientName(id: StockIngredient): string { return ingredients.find(item => item.id === id)!.name; }
++export function ingredientName(id: StockIngredient): string { return catalog.find(item => item.id === id)!.name; }
++export function expressIngredientPrice(id:StockIngredient,day:number) { return Math.ceil(datedIngredientPrice(id,day)*EXPRESS_PRICE_MULTIPLIER); }
++export interface ExpressReceipt { id:string; ingredient:StockIngredient; quantity:number; unitCost:number; total:number; day:number; expiry:number }
+ interface Allocation { lotId:number; ingredient:StockIngredient; quantity:number }
+ interface Reservation { allocations:Allocation[]; day:number; expiresAt:number }
+ export interface CozyLot { id: number; ingredient: StockIngredient; quantity: number; unitCost: number; day: number; expiry: number }
+@@ -20,7 +24,7 @@ export function validateStockSnapshot(value:unknown):CozyStockSnapshot|null {
+   if(!value||typeof value!=='object')return null;
+   const s=value as CozyStockSnapshot,whole=(n:unknown,min=0,max=1000000)=>Number.isSafeInteger(n)&&Number(n)>=min&&Number(n)<=max;
+   if(!whole(s.cash,-20)||!whole(s.nextLot,1,10000)||!whole(s.activeDay,1,3)||!Array.isArray(s.lots)||s.lots.length>300||!Array.isArray(s.books)||s.books.length>3||!Array.isArray(s.settlements)||s.settlements.length>3)return null;
+-  if(s.lots.some(l=>!l||!whole(l.id,1,9999)||l.id>=s.nextLot||!STOCK_INGREDIENTS.includes(l.ingredient)||!whole(l.quantity,1,100)||!whole(l.day,1,3)||l.unitCost!==datedIngredientPrice(l.ingredient,l.day)||l.expiry!==ingredientExpiry(l.ingredient,l.day))||new Set(s.lots.map(l=>l.id)).size!==s.lots.length)return null;
++  if(s.lots.some(l=>!l||!whole(l.id,1,9999)||l.id>=s.nextLot||!STOCK_INGREDIENTS.includes(l.ingredient)||!whole(l.quantity,1,100)||!whole(l.day,1,3)||![datedIngredientPrice(l.ingredient,l.day),expressIngredientPrice(l.ingredient,l.day)].includes(l.unitCost)||l.expiry!==ingredientExpiry(l.ingredient,l.day))||new Set(s.lots.map(l=>l.id)).size!==s.lots.length)return null;
+   if(s.books.some(b=>!b||!whole(b.day,1,3)||!whole(b.purchases)||!whole(b.consumed))||new Set(s.books.map(b=>b.day)).size!==s.books.length)return null;
+   if(s.settlements.some(b=>!b||!whole(b.day,1,3)||!whole(b.expired)||b.rent!==20)||new Set(s.settlements.map(b=>b.day)).size!==s.settlements.length)return null;
+   return {cash:s.cash,nextLot:s.nextLot,activeDay:s.activeDay,lots:s.lots.map(l=>({...l})),books:s.books.map(b=>({...b})),settlements:s.settlements.map(b=>({...b}))};
+@@ -35,11 +39,14 @@ export class CozyStock {
+   private books = new Map<number, { purchases:number; consumed:number }>();
+   private settlements=new Map<number,{expired:number;rent:number}>();
+   private activeDay=1;
++  private express = new Map<string,{receipt:ExpressReceipt;received:boolean}>();
+   exportCheckpoint():CozyStockSnapshot {return {cash:this.money,nextLot:this.nextLot,activeDay:this.activeDay,lots:this.inventory.map(l=>({...l})),books:[...this.books].map(([day,b])=>({day,...b})),settlements:[...this.settlements].map(([day,b])=>({day,...b}))};}
+   static restore(value:unknown):CozyStock|null {const s=validateStockSnapshot(value);if(!s)return null;const stock=new CozyStock();stock.money=s.cash;stock.nextLot=s.nextLot;stock.activeDay=s.activeDay;stock.inventory=s.lots;stock.books=new Map(s.books.map(({day,...b})=>[day,b]));stock.settlements=new Map(s.settlements.map(({day,...b})=>[day,b]));return stock;}
+   ledger(day:number) { return {...(this.books.get(day) ?? {purchases:0,consumed:0})}; }
+   private book(day:number) { if(!this.books.has(day))this.books.set(day,{purchases:0,consumed:0});return this.books.get(day)!; }
+   get cash() { return this.money; }
++  debit(amount:number):boolean { if(!Number.isSafeInteger(amount)||amount<0||amount>this.money)return false;this.money-=amount;return true; }
++  spend(amount:number):boolean { return this.debit(amount); }
+   get lots(): readonly Readonly<CozyLot>[] { return this.inventory.map(lot => ({ ...lot })); }
+   inventorySnapshot():CozyInventory {
+     return {units:this.inventory.reduce((sum,l)=>sum+l.quantity,0),value:this.inventory.reduce((sum,l)=>sum+l.quantity*l.unitCost,0),lots:this.inventory.map(l=>({...l}))};
+@@ -60,11 +67,31 @@ export class CozyStock {
+     return true;
+   }
+   missing(recipe: StockRecipe,day=this.activeDay): StockIngredient[] { return recipeIngredients(recipe).filter(id => this.available(id,day) < 1); }
++  orderExpress(commandId:string,id:StockIngredient,quantity:number,day=this.activeDay):ExpressReceipt|null {
++    const old=this.express.get(commandId);
++    if(old)return old.receipt.ingredient===id&&old.receipt.quantity===quantity&&old.receipt.day===day?{...old.receipt}:null;
++    if(typeof commandId!=='string'||!commandId.trim()||!STOCK_INGREDIENTS.includes(id)||!Number.isInteger(quantity)||quantity<1||quantity>100||!Number.isInteger(day)||day<1||day>3||this.settlements.has(day))return null;
++    const unitCost=expressIngredientPrice(id,day),total=unitCost*quantity;
++    if(!this.debit(total))return null;
++    const receipt={id:commandId,ingredient:id,quantity,unitCost,total,day,expiry:ingredientExpiry(id,day)};
++    this.book(day).purchases+=total;this.express.set(commandId,{receipt,received:false});return {...receipt};
++  }
++  receiveExpress(commandId:string):boolean {
++    const pending=this.express.get(commandId);
++    if(!pending||pending.received||this.settlements.has(pending.receipt.day))return false;
++    const {ingredient,quantity,unitCost,day,expiry}=pending.receipt;
++    this.inventory.push({id:this.nextLot++,ingredient,quantity,unitCost,day,expiry});pending.received=true;return true;
++  }
+   reserve(ticketId: string, recipe: StockRecipe, expiresAt: number,day=this.activeDay): boolean {
+     if(typeof ticketId!=='string'||!ticketId.trim()||this.tickets.has(ticketId)||!STOCK_RECIPES.includes(recipe)||!Number.isFinite(expiresAt)||!Number.isInteger(day)||day<1||day>3||this.settlements.has(day))return false;
++    return this.reserveIngredients(ticketId,recipeIngredients(recipe),expiresAt,day);
++  }
++  reserveIngredients(ticketId:string,actual:readonly StockIngredient[],expiresAt:number,day=this.activeDay):boolean {
++    if(typeof ticketId!=='string'||!ticketId.trim()||!Number.isFinite(expiresAt)||!Number.isInteger(day)||day<1||day>3||this.settlements.has(day)||new Set(actual).size!==actual.length||actual.some(id=>!STOCK_INGREDIENTS.includes(id)))return false;
++    const prior=this.tickets.get(ticketId);
+     const allocations:Allocation[]=[];
+-    for(const ingredient of recipeIngredients(recipe)){
+-      const lot=this.inventory.filter(l=>l.ingredient===ingredient&&this.usable(l,day)&&l.quantity>this.held(l.id)).sort((a,b)=>a.expiry-b.expiry||a.id-b.id)[0];
++    for(const ingredient of actual){
++      const lot=this.inventory.filter(l=>l.ingredient===ingredient&&this.usable(l,day)&&l.quantity>this.held(l.id)-(prior?.allocations.filter(a=>a.lotId===l.id).reduce((sum,a)=>sum+a.quantity,0)??0)).sort((a,b)=>a.expiry-b.expiry||a.id-b.id)[0];
+       if(!lot)return false;
+       allocations.push({lotId:lot.id,ingredient,quantity:1});
+     }
+diff --git "a/_bmad-output\\implementation-artifacts\\kitchen-v2-before\\CozyOrder.ts" b/src/domain/CozyOrder.ts
+index e422215..cb860cd 100644
+--- "a/_bmad-output\\implementation-artifacts\\kitchen-v2-before\\CozyOrder.ts"
++++ b/src/domain/CozyOrder.ts
+@@ -1,7 +1,7 @@
+ import { recipeIngredients, recipePrice, type StockRecipe,type StockIngredient } from './CozyStock';
+ export type CozyIngredient = StockIngredient;
+ export { BAKE_TIMING as COZY_BAKE } from '../config/bakeTiming';
+-import { BAKE_TIMING as COZY_BAKE } from '../config/bakeTiming';
++import { bakeTiming } from '../config/bakeTiming';
+ export type CozyStage = 'assembly' | 'baking' | 'raw' | 'burnt' | 'ready' | 'boxed' | 'delivered';
+ export type CozyIntent = { type: 'ingredient'; ingredient: CozyIngredient } | { type: 'deliver'; sourceId?: string; targetId?: string; commandId?: string } | { type: 'bake' | 'extract' | 'discard' | 'box' | 'reset' };
+ export interface CozyState {
+@@ -19,38 +19,42 @@ const fresh = (): CozyState => ({ stage: 'assembly', ingredients: [], ovenSecond
+ // This isolated fixture never reads or writes a campaign checkpoint.
+ export class CozyOrder {
+   private current = fresh();
+-  constructor(private readonly practice = false, private readonly recipe: StockRecipe = 'cheese', private readonly allowRaw = false) {}
+-  get bakeReady(): boolean { const required = recipeIngredients(this.recipe); return required.length === this.current.ingredients.length && required.every(id => this.current.ingredients.includes(id)); }
++  readonly timing;
++  constructor(private readonly practice = false, private readonly recipe: StockRecipe = 'cheese', private readonly allowRaw = false, level: number = 0) { this.timing = bakeTiming(level); }
++  get bakeReady(): boolean { return this.current.ingredients.includes('dough'); }
+   get state(): Readonly<CozyState> { return this.current; }
+   dispatch(intent: CozyIntent): boolean {
+     const s = this.current;
+     if (intent.type === 'reset') { this.current = fresh(); return true; }
+     if (intent.type === 'ingredient' && s.stage === 'assembly') {
+       s.ingredients = s.ingredients.includes(intent.ingredient) ? s.ingredients.filter(i => i !== intent.ingredient) : [...s.ingredients, intent.ingredient];
+-      s.feedback = this.bakeReady ? 'Đủ nguyên liệu rồi. Nướng thôi!' : 'Thêm đủ nguyên liệu theo đơn nhé.';
++      s.feedback = this.bakeReady ? 'Có đế bánh rồi. Chạm lò để nướng.' : 'Thêm đế bánh để nướng nhé.';
+       return true;
+     }
+     if (intent.type === 'bake' && s.stage === 'assembly' && this.bakeReady) {
+       s.stage = 'baking'; s.feedback = 'Lò đang nướng. Thơm quá!'; return true;
+     }
+-    if (intent.type === 'extract' && s.stage === 'baking' && (this.allowRaw || s.ovenSeconds >= COZY_BAKE.perfectStart) && s.ovenSeconds <= COZY_BAKE.perfectEnd) {
+-      s.stage = s.ovenSeconds < COZY_BAKE.perfectStart ? 'raw' : 'ready'; s.feedback = s.stage === 'raw' ? 'Bánh còn sống. Bỏ bánh để làm lại.' : 'Bánh chín vừa! Đóng hộp cho khách nhé.'; return true;
++    if (intent.type === 'extract' && s.stage === 'baking' && (this.allowRaw || s.ovenSeconds >= this.timing.perfectStart) && s.ovenSeconds <= this.timing.perfectEnd) {
++      s.stage = s.ovenSeconds < this.timing.perfectStart ? 'raw' : 'ready'; s.feedback = s.stage === 'raw' ? 'Bánh còn sống. Bỏ bánh để làm lại.' : 'Bánh chín vừa! Đóng hộp cho khách nhé.'; return true;
+     }
+     if (intent.type === 'discard' && (s.stage === 'burnt' || this.allowRaw && ['raw', 'ready'].includes(s.stage))) {
+       s.stage = 'assembly'; s.ingredients = []; s.ovenSeconds = 0; s.feedback = 'Làm lại một chiếc bánh mới nhé.'; return true;
+     }
+     if (intent.type === 'box' && s.stage === 'ready') { s.stage = 'boxed'; s.feedback = 'Đã đóng hộp, sẵn sàng giao Linh.'; return true; }
+     if (intent.type === 'deliver' && (s.stage === 'boxed' || this.allowRaw && ['raw','ready','burnt'].includes(s.stage))) {
++      const quality = s.stage;
+       s.stage = 'delivered';
+-      if (!this.practice) { s.cash += recipePrice(this.recipe); s.reputation++; s.energy -= 5; }
+-      s.feedback = 'Linh: “Thơm quá! Cảm ơn bạn nhé!”'; return true;
++      const required = recipeIngredients(this.recipe);
++      const correct = required.length === s.ingredients.length && required.every(id => s.ingredients.includes(id)) && quality !== 'raw' && quality !== 'burnt';
++      if (!this.practice) { if (correct) { s.cash += recipePrice(this.recipe); s.reputation++; } else { s.reputation = Math.max(0, s.reputation - 1); } s.energy -= 5; }
++      s.feedback = correct ? 'Linh: “Thơm quá! Cảm ơn bạn nhé!”' : 'Linh: “Bánh này không đúng món mình đặt.”'; return true;
+     }
+     return false;
+   }
+   tick(seconds: number): void {
+     if (this.current.stage !== 'baking' || !Number.isFinite(seconds) || seconds <= 0) return;
+-    this.current.ovenSeconds = Math.min(COZY_BAKE.gaugeEnd, Math.round((this.current.ovenSeconds + seconds) * 1e6) / 1e6);
+-    if (this.current.ovenSeconds > COZY_BAKE.perfectEnd) {
++    this.current.ovenSeconds = Math.min(this.timing.gaugeEnd, Math.round((this.current.ovenSeconds + seconds) * 1e6) / 1e6);
++    if (this.current.ovenSeconds > this.timing.perfectEnd) {
+       this.current.stage = 'burnt'; this.current.feedback = 'Bánh cháy rồi! Bỏ bánh để làm lại.';
+     }
+   }
+diff --git "a/_bmad-output\\implementation-artifacts\\kitchen-v2-before\\bakeTiming.ts" b/src/config/bakeTiming.ts
+index 8657789..387ee16 100644
+--- "a/_bmad-output\\implementation-artifacts\\kitchen-v2-before\\bakeTiming.ts"
++++ b/src/config/bakeTiming.ts
+@@ -1 +1,7 @@
+-export const BAKE_TIMING = Object.freeze({ perfectStart: 3, perfectEnd: 5, gaugeEnd: 7 });
++export type OvenLevel = 0 | 1 | 2;
++export function bakeTiming(level: number = 0) {
++  const upgrade = Number.isInteger(level) && level >= 0 && level <= 2 ? level : 0;
++  const perfectStart = 6 - upgrade * 2;
++  return Object.freeze({ perfectStart, perfectEnd: perfectStart + 2, gaugeEnd: perfectStart + 4 });
++}
++export const BAKE_TIMING = bakeTiming();
+diff --git "a/_bmad-output\\implementation-artifacts\\kitchen-v2-before\\CozyRuntime.ts" b/src/runtime/CozyRuntime.ts
+index 8f9dcc8..078e24c 100644
+--- "a/_bmad-output\\implementation-artifacts\\kitchen-v2-before\\CozyRuntime.ts"
++++ b/src/runtime/CozyRuntime.ts
+@@ -1,3 +1,6 @@
++import { bakeTiming } from '../config/bakeTiming';
++import { customerProfile } from '../config/customerCatalog';
++import {OVEN_UPGRADE_PRICES,QUEUE_UPGRADE_PRICE} from '../config/kitchenEconomy';
+ import { CUSTOMER_PROFILES, type CustomerKind } from '../config/ordinaryCustomers';
+ import { menuPrice, agreedPrice, priceAccepted, reputationResult, relationshipResult, referralEligibility } from '../domain/CustomerProgression';
+ import {threeDaySchedule,validateCozySchedule,resolveScheduleRecipe,type CozySchedule,type ScheduleFactory,type ScheduleSlot} from '../config/cozySchedule';
+@@ -10,12 +13,12 @@ import {CozyProgression,type ProgressEffects} from '../domain/CozyProgression';
+ import type { PauseLease } from './PlayLifecycle';
+ import { COZY_BAKE, CozyOrder, type CozyIntent } from '../domain/CozyOrder';
+ import { CozyStock,STOCK_RECIPES, datedIngredientPrice, ingredientExpiry, ingredientName, recipeIngredients, recipePrice, type StockIngredient, type StockRecipe } from '../domain/CozyStock';
+-export type CozyRuntimeIntent=CozyIntent|{type:'customer.price';recipe:StockRecipe;percent:number}|{type:'customer.bargain';accept:boolean}|{type:'customer.help';accept:boolean}|{type:'customer.thanks'}|{type:'market.buy';ingredient:StockIngredient;quantity:number;commandId:string}|{type:'menu.configure';recipe:StockRecipe;percent:number;enabled:boolean};
++export type CozyRuntimeIntent=CozyIntent|{type:'customer.price';recipe:StockRecipe;percent:number}|{type:'customer.bargain';accept:boolean}|{type:'customer.help';accept:boolean}|{type:'customer.thanks'}|{type:'market.buy';ingredient:StockIngredient;quantity:number;commandId:string}|{type:'menu.configure';recipe:StockRecipe;percent:number;enabled:boolean}|{type:'express.order';ingredient:StockIngredient;quantity:number;commandId:string}|{type:'shop.upgrade';kind:'oven'|'queue';commandId:string};
+ 
+ export type CozyPause = 'user' | 'visibility' | 'orientation' | 'order' | 'gap' | 'success' | 'tutorial' | 'discard' | 'delivery' | 'menu' | 'bargain' | 'help' | 'save';
+ export type CozyTutorialStep = 'dough' | 'sauce' | 'cheese' | 'bake' | 'warming' | 'extract' | 'box' | 'deliver' | 'complete';
+ const steps: readonly CozyTutorialStep[] = ['dough', 'sauce', 'cheese', 'bake', 'warming', 'extract', 'box', 'deliver', 'complete'];
+-type Ticket = { id: string; name: string; recipe: StockRecipe; kind: CustomerKind; help?:boolean; bakedCost?:number;giftBooked?:boolean; takeaway:boolean; finalPrice:number; patience: number; extraPenalty: number; deadline: number; committed: boolean; order: CozyOrder };
++type Ticket = { avatarIndex:number; bargainDecision?:'accepted'|'declined'; id: string; name: string; recipe: StockRecipe; kind: CustomerKind; help?:boolean; bakedCost?:number;giftBooked?:boolean; takeaway:boolean; finalPrice:number; patience: number; extraPenalty: number; deadline: number; committed: boolean; order: CozyOrder };
+ export type CozyHelpState={decision:'unseen'|'accepted'|'declined';outcome:null|'pending'|'succeeded'|'failed';ticketId:string|null;offer:{arrivalId:string;name:string}|null;giftCost:number;claims:string[];thanksPending:boolean};
+ export function validateHelpState(value:unknown):CozyHelpState|null {
+   if(!value||typeof value!=='object')return null;
+@@ -28,6 +31,22 @@ export function validateHelpState(value:unknown):CozyHelpState|null {
+ }
+ export type CozyScheduleDependencies=Readonly<{schedule?:ScheduleFactory;resolveRecipe?:(slot:ScheduleSlot,enabled:readonly StockRecipe[],selected:StockRecipe)=>StockRecipe|null}>;
+ export class CozyRuntime {
++  private ovenUpgrade:0|1|2=0;
++  private queueUpgrade=0;
++  private upgradeSpent=0;
++  private pendingUpgradeSpent=0;
++  private capitalPurchases=0;
++  private upgradeCommands=new Set<string>();
++  private customerDecisions={accepted:[] as number[],declined:[] as number[]};
++  private expressPending=new Map<string,{id:string;ingredient:StockIngredient;quantity:number;unitPrice:number;remaining:number;duration:number}>();
++  get ovenLevel(){return this.ovenUpgrade;}
++  get queueCapacity(){return this.queueUpgrade?6:4;}
++  get bakeTiming(){return bakeTiming(this.ovenUpgrade);}
++  get upgrades(){return {ovenLevel:this.ovenUpgrade,queueLevel:this.queueUpgrade,spent:this.upgradeSpent,pendingSpent:this.pendingUpgradeSpent};}
++  get customerMemory(){return structuredClone(this.customerDecisions);}
++  get expressOrders(){return [...this.expressPending.values()].map(order=>({...order}));}
++  expressPrice(id:StockIngredient){return Math.ceil(this.price(id)*1.6);}
++  upgradePrice(kind:'oven'|'queue'){return kind==='oven'?OVEN_UPGRADE_PRICES[this.ovenUpgrade]??null:this.queueUpgrade?null:QUEUE_UPGRADE_PRICE;}
+   private order = new CozyOrder();
+   private stock = new CozyStock();
+   private phase: 'preparation' | 'making' | 'delivered' | 'summary' = 'preparation';
+@@ -42,18 +61,18 @@ export class CozyRuntime {
+   get persistentMode(){return this.guarded;}
+   get completedReports(){return structuredClone(this.reports);}
+   exportCheckpoint():CozyCheckpoint {
+-    if(!this.production||this.shiftOpen||this.tutorialActive||this.phase!=='summary'&&this.currentDay!==1)throw new Error('Not a day boundary');
+-    const terminal=!!this.summary?.ending,day=this.summary?(terminal?this.currentDay:this.currentDay+1):1;
++    if(!this.production||this.shiftOpen||this.tutorialActive||!['preparation','summary'].includes(this.phase))throw new Error('Not a day boundary');
++    const terminal=!!this.summary?.ending,day=this.summary?(terminal?this.currentDay:this.currentDay+1):this.currentDay;
+     const recipe=this.progress.recipeAvailable(this.recipe,day)?this.recipe:this.menuFor(day)[0];
+-    const data:CozyCheckpoint={contentId:COZY_CONTENT_VERSION,day,terminal,stock:this.stock.exportCheckpoint(),progression:this.progress.snapshot,help:{decision:this.help.decision,outcome:this.help.outcome==='pending'?null:this.help.outcome,claims:[...this.help.claims]},menu:[...this.enabledMenu],prices:{...this.pricing},recipe,reports:structuredClone(this.reports),cumulativeProfit:this.cumulativeProfit,reputation:this.reputation,relationship:this.relationship,relationshipDays:[...this.relationshipDays],regularDay1Stars:this.regularDay1Stars,regularLatestStars:this.regularLatestStars,referral:this.referral?{...this.referral}:null};
++    const data:CozyCheckpoint={upgrades:this.upgrades,customerMemory:this.customerMemory,contentId:COZY_CONTENT_VERSION,day,terminal,stock:this.stock.exportCheckpoint(),progression:this.progress.snapshot,help:{decision:this.help.decision,outcome:this.help.outcome==='pending'?null:this.help.outcome,claims:[...this.help.claims]},menu:[...this.enabledMenu],prices:{...this.pricing},recipe,reports:structuredClone(this.reports),cumulativeProfit:this.cumulativeProfit,reputation:this.reputation,relationship:this.relationship,relationshipDays:[...this.relationshipDays],regularDay1Stars:this.regularDay1Stars,regularLatestStars:this.regularLatestStars,referral:this.referral?{...this.referral}:null};
+     const validated=validateCozyCheckpoint(data);if(!validated)throw new Error('Invalid day boundary');return validated;
+   }
+   static restoreCheckpoint(value:unknown,tutorial=false):CozyRuntime|null {
+     const s=validateCozyCheckpoint(value);if(!s)return null;
+     const r=new CozyRuntime(tutorial&&s.day===1&&!s.reports.length,true);
+-    r.stock=CozyStock.restore(s.stock)!;r.progress=CozyProgression.restore(s.progression)!;r.currentDay=s.day;r.enabledMenu=new Set(s.menu);r.pricing={...s.prices};r.recipe=s.recipe;r.order=new CozyOrder(false,s.recipe,true);r.reports=structuredClone(s.reports);r.closedDays=new Set(s.reports.map(x=>x.day));r.cumulativeProfit=s.cumulativeProfit;r.reputation=s.reputation;r.relationship=s.relationship;r.relationshipDays=new Set(s.relationshipDays);r.regularDay1Stars=s.regularDay1Stars;r.regularLatestStars=s.regularLatestStars;r.referral=s.referral?{...s.referral}:null;
++    r.ovenUpgrade=s.upgrades.ovenLevel as 0|1|2;r.queueUpgrade=s.upgrades.queueLevel;r.upgradeSpent=s.upgrades.spent;r.pendingUpgradeSpent=s.upgrades.pendingSpent;r.customerDecisions=structuredClone(s.customerMemory);r.stock=CozyStock.restore(s.stock)!;r.progress=CozyProgression.restore(s.progression)!;r.currentDay=s.day;r.enabledMenu=new Set(s.menu);r.pricing={...s.prices};r.recipe=s.recipe;r.order=new CozyOrder(false,s.recipe,true,r.ovenUpgrade);r.reports=structuredClone(s.reports);r.closedDays=new Set(s.reports.map(x=>x.day));r.cumulativeProfit=s.cumulativeProfit;r.reputation=s.reputation;r.relationship=s.relationship;r.relationshipDays=new Set(s.relationshipDays);r.regularDay1Stars=s.regularDay1Stars;r.regularLatestStars=s.regularLatestStars;r.referral=s.referral?{...s.referral}:null;
+     r.serial=s.progression.outcomes.reduce((n,id)=>Math.max(n,Number(id.replace('cozy-',''))||0),0)+s.reports.reduce((n,x)=>n+x.abandoned,0)+(s.help.decision==='accepted'?1:0);
+-    r.help={...s.help,ticketId:null,offer:null,giftCost:0,thanksPending:false};r.startingCash=s.stock.cash;r.openingInventoryValue=r.stock.inventorySnapshot().value;
++    r.help={...s.help,ticketId:null,offer:null,giftCost:0,thanksPending:false};r.startingCash=s.reports[s.reports.length-1]?.cash??300;r.openingInventoryValue=s.reports[s.reports.length-1]?.accounts.inventory.value??0;
+     if(s.terminal){r.summary=structuredClone(s.reports[s.reports.length-1]);r.phase='summary';}return r;
+   }
+   private reviews:CozyReview[]=[];
+@@ -90,7 +109,7 @@ export class CozyRuntime {
+   get helpState():CozyHelpState{return structuredClone(this.help);}
+   get helpPending(){return this.help.offer?{...this.help.offer,reason:this.helpUnavailableReason,canAccept:!this.helpUnavailableReason}:null;}
+   get thanksPending(){return this.help.thanksPending;}
+-  private get helpUnavailableReason(){return !this.menuFor(this.currentDay).includes('cheese')?'Linh thích pizza phô mai, món này chưa có trong thực đơn.':this.active.size>=3?'Đã đủ 3 phiếu đang chờ. Không còn chỗ nhận đơn giúp.':this.missingRecipeReason('cheese');}
++  private get helpUnavailableReason(){return !this.menuFor(this.currentDay).includes('cheese')?'Linh thích pizza phô mai, món này chưa có trong thực đơn.':this.active.size>=this.queueCapacity?'Hàng chờ đã đầy. Không còn chỗ nhận đơn giúp.':'';}
+   private helpChoiceBlocked(){return this.blocked('help')||(this.leases.get('help')?.size??0)>1;}
+   resolveHelp(accept:boolean):boolean {
+     if(typeof accept!=='boolean'||!this.help.offer||this.helpChoiceBlocked()||accept&&this.helpUnavailableReason)return false;
+@@ -114,7 +133,7 @@ export class CozyRuntime {
+   private priceRejections=0;
+   private pricing:Record<StockRecipe,number>={cheese:100,mushroom:100,sausage:100};
+   private referral:ReturnType<typeof referralEligibility>|null=null;
+-  private bargain:{arrivalId:string;name:string;recipe:StockRecipe;takeaway:boolean;originalPrice:number;finalPrice:number;patience:number;maxPricePercent:number;discountPercent:number}|null=null;
++  private bargain:{sourceId:string;targetId:string;commandId:string;arrivalId:string;name:string;recipe:StockRecipe;takeaway:boolean;originalPrice:number;finalPrice:number;patience:number;maxPricePercent:number;discountPercent:number}|null=null;
+   private bargainLease:PauseLease|null=null;
+   get bargainPending(){return this.bargain?{...this.bargain}:null;}
+   get customerProgress(){return {reputation:this.reputation,relationship:this.relationship,priceRejections:this.priceRejections,referral:this.referral?{...this.referral}:null,pricePercents:{...this.pricing},prices:{cheese:menuPrice(recipePrice('cheese'),this.pricing.cheese)!,mushroom:menuPrice(recipePrice('mushroom'),this.pricing.mushroom)!,sausage:menuPrice(recipePrice('sausage'),this.pricing.sausage)!}};}
+@@ -129,7 +148,7 @@ export class CozyRuntime {
+     const eligible=this.availableRecipes.filter(id=>next.has(id));
+     if(!eligible.length)return this.shopFeedback('Thực đơn cần ít nhất một món đang mở.');
+     this.enabledMenu=next;this.pricing[recipe]=percent;this.recipe=enabled?recipe:eligible[0];
+-    if(!this.active.size)this.order=new CozyOrder(false,this.recipe,true);
++    if(!this.active.size)this.order=new CozyOrder(false,this.recipe,true,this.ovenUpgrade);
+     this.message='Đã cập nhật thực đơn và giá trước mở cửa.';this.revision++;return true;
+   }
+   private applyProgress(effect:ProgressEffects){
+@@ -166,21 +185,30 @@ export class CozyRuntime {
+   }
+   private createTicket(kind:CustomerKind,name:string,recipe:StockRecipe,finalPrice:number,arrivalId:string,takeaway:boolean,help=false):boolean {
+     const profile=CUSTOMER_PROFILES[kind],id='cozy-'+(this.serial+1);
+-    if(this.stock.missing(recipe,this.currentDay).length)return this.shopFeedback('Khách chưa thể đặt món. Còn thiếu: '+this.stock.missing(recipe,this.currentDay).map(ingredientName).join(', '));
+     if(!priceAccepted(finalPrice,recipePrice(recipe),profile.maxPricePercent))return this.rejectPrice();
+-    if(!this.stock.reserve(id,recipe,this.elapsed+profile.patience,this.currentDay))return this.shopFeedback('Khách chưa thể đặt món. Còn thiếu: '+this.stock.missing(recipe,this.currentDay).map(ingredientName).join(', '));
++    const busy=new Set([...this.active.values()].map(t=>t.avatarIndex));
++    let avatarIndex=kind==='regular'?this.customerDecisions.accepted.find(index=>!busy.has(index)&&!this.customerDecisions.declined.includes(index)):undefined;
++    if(avatarIndex===undefined)avatarIndex=Array.from({length:150},(_,i)=>(this.serial*37+i)%150).find(index=>!busy.has(index)&&!this.customerDecisions.declined.includes(index));
++    if(avatarIndex===undefined)return this.shopFeedback('Không có khách mới phù hợp.');
++    if(!help)name=customerProfile(avatarIndex).name;
+     this.serial++;
+-    const t:Ticket={id,name,recipe,kind,help,takeaway,finalPrice,patience:profile.patience,extraPenalty:profile.extraPenalty,deadline:this.elapsed+profile.patience,committed:false,order:new CozyOrder(false,recipe,true)};
++    const t:Ticket={avatarIndex,id,name,recipe,kind,help,takeaway,finalPrice,patience:profile.patience,extraPenalty:profile.extraPenalty,deadline:this.elapsed+profile.patience,committed:false,order:new CozyOrder(false,recipe,true,this.ovenUpgrade)};
+     this.active.set(id,t);
+     if(!this.active.has(this.ticket)&&!this.abandoned.has(this.ticket)){this.ticket=id;this.order=t.order;}
+-    this.event('arrived:'+arrivalId+':'+id);this.message=name+' · '+profile.label+': đã tạo đơn và giữ nguyên liệu.';this.revision++;return true;
++    this.event('arrived:'+arrivalId+':'+id);this.message=name+' · '+profile.label+': đã đặt món.';this.revision++;return true;
+   }
+   resolveBargain(accept:boolean):boolean {
+-    if(!this.bargain||this.blocked('bargain'))return false;
+-    const pending=this.bargain;this.bargain=null;this.bargainLease?.release();this.bargainLease=null;
+-    this.revision++;
+-    if(!accept){this.message='Đã từ chối mặc cả. Không mất uy tín.';return true;}
+-    return this.createTicket('bargain',pending.name,pending.recipe,pending.finalPrice,pending.arrivalId,pending.takeaway);
++    if(typeof accept!=='boolean'||!this.bargain||this.blocked('bargain'))return false;
++    const pending=this.bargain,target=this.active.get(pending.targetId);
++    if(!target)return false;
++    target.bargainDecision=accept?'accepted':'declined';
++    target.finalPrice=accept?pending.finalPrice:pending.originalPrice;
++    const list=accept?this.customerDecisions.accepted:this.customerDecisions.declined;
++    const other=accept?'declined':'accepted';this.customerDecisions[other]=this.customerDecisions[other].filter(index=>index!==target.avatarIndex);
++    if(!list.includes(target.avatarIndex))list.push(target.avatarIndex);
++    this.bargain=null;this.bargainLease?.release();this.bargainLease=null;
++    const accepted=this.deliver(pending.sourceId,pending.targetId,pending.commandId,true);
++    this.revision++;return accepted;
+   }
+   private energy = 80;
+   private processedArrivals = new Set<string>();
+@@ -205,7 +233,7 @@ export class CozyRuntime {
+   get commercialState() { return this.production ? { ...this.order.state, cash: this.stock.cash, reputation:this.reputation, energy:this.energy } : this.order.state; }
+   get productionActive() { return this.production && !this.tutorialActive; }
+   get shopOpen() { return this.shiftOpen; }
+-  get simulationActive():boolean {return this.tutorialActive?this.step==='warming':this.production?this.shiftOpen&&this.phase==='making'&&this.shiftClock.phase!=='awaiting-close':this.state.stage==='baking';}
++  get simulationActive():boolean {return this.tutorialActive?this.step==='warming':this.production?this.shiftOpen&&this.phase!=='preparation'&&this.phase!=='summary'&&(this.shiftClock.phase!=='awaiting-close'||this.expressPending.size>0):this.state.stage==='baking';}
+   get shopPhase() { return this.phase; }
+   get postTutorialPreparation() {return this.guidedPreparation&&this.productionActive&&this.phase==='preparation'&&!this.shiftOpen&&this.currentDay===1;}
+   get day() {return this.currentDay;}
+@@ -220,21 +248,21 @@ export class CozyRuntime {
+   get preparationDay() {return this.canPrepareNextDay?this.currentDay+1:this.currentDay;}
+   price(id:StockIngredient) {return datedIngredientPrice(id,this.preparationDay);}
+   purchaseExpiry(id:StockIngredient) {return ingredientExpiry(id,this.preparationDay);}
+-  get canCloseDay() {return this.productionActive&&this.shiftOpen&&this.phase!=='summary'&&!this.blocked('user');}
++  get canCloseDay() {return this.productionActive&&this.shiftOpen&&this.phase!=='summary'&&!this.expressPending.size&&!this.blocked('user');}
+   get canPrepareNextDay() {return this.saveGuard()&&this.phase==='summary'&&!!this.summary&&!this.summary.ending;}
+-  get canOpenNextDay() {return this.canPrepareNextDay&&!this.reasons.size&&!this.stock.missing(this.recipe,this.preparationDay).length;}
++  get canOpenNextDay() {return this.canPrepareNextDay&&!this.reasons.size;}
+   closeDay():boolean {
+     if(!this.canCloseDay||this.closedDays.has(this.currentDay))return false;
+     for(const t of this.active.values()){this.stock.release(t.id);if(!t.help)this.abandonedCount++;this.terminal(t,1,['Quán đóng cửa trước khi giao món'],'closed');}
+     this.applyProgress(this.progress.closeDay(this.currentDay,this.goalStats()));
+     const ledger=this.stock.ledger(this.currentDay),settled=this.stock.settle(this.currentDay);
+-    const accounts=closeAccounts({startingCash:this.startingCash,openingInventoryValue:this.openingInventoryValue,sales:this.revenue,rewards:this.rewardCash,purchases:ledger.purchases,consumed:ledger.consumed,giftCost:this.dailyGiftCost,...settled,inventory:this.stock.inventorySnapshot(),previousProfit:this.cumulativeProfit});
++    const accounts=closeAccounts({startingCash:this.startingCash,openingInventoryValue:this.openingInventoryValue,sales:this.revenue,rewards:this.rewardCash,purchases:ledger.purchases,consumed:ledger.consumed,giftCost:this.dailyGiftCost,capitalPurchases:this.capitalPurchases,...settled,inventory:this.stock.inventorySnapshot(),previousProfit:this.cumulativeProfit});
+     this.cumulativeProfit=accounts.cumulativeProfit;
+     const viability=this.currentDay<3?cozyViability(this.stock.cash,this.currentDay+1,STOCK_RECIPES.filter(recipe=>this.progress.recipeAvailable(recipe,this.currentDay+1)),id=>this.stock.available(id,this.currentDay+1)):undefined;
+     if(this.currentDay===2&&!this.referral)this.referral=referralEligibility(this.reputation);
+     this.summary={progression:this.progress.snapshot,goal:this.progress.goal(this.currentDay),rewards:this.rewardCash,accounts,reputation:this.reputation,relationship:this.relationship,referral:this.referral?{...this.referral}:null,day:this.currentDay,revenue:this.revenue,purchases:ledger.purchases,cost:ledger.consumed,...settled,profit:accounts.profit,delivered:this.deliveredCount,abandoned:this.abandonedCount,rating:this.reviews.length?this.reviews.reduce((sum,r)=>sum+r.stars,0)/this.reviews.length:null,cash:this.stock.cash,reviews:structuredClone(this.reviews),ending:this.currentDay===3?'complete':viability&&!viability.viable?'insolvent':null,...(viability?{viability}:{})};
+     this.reports.push(structuredClone(this.summary));
+-    this.closedDays.add(this.currentDay);this.shiftOpen=false;this.phase='summary';this.active.clear();this.abandoned.clear();this.ovenId=null;this.ticket='';this.sourceId='';this.pendingDelivery=null;this.discardId=null;this.result=null;this.order=new CozyOrder(false,this.recipe,true);this.accumulator=0;
++    this.closedDays.add(this.currentDay);this.shiftOpen=false;this.phase='summary';this.active.clear();this.abandoned.clear();this.ovenId=null;this.ticket='';this.sourceId='';this.pendingDelivery=null;this.discardId=null;this.result=null;this.order=new CozyOrder(false,this.recipe,true,this.ovenUpgrade);this.accumulator=0;
+     this.message='Ngày đã chốt. Chuẩn bị cho ngày tiếp theo.';this.revision++;return true;
+   }
+   openNextDay():boolean {
+@@ -255,15 +283,15 @@ export class CozyRuntime {
+   missingRecipeReason(recipe:StockRecipe) { const missing = this.stock.missing(recipe,this.preparationDay); return missing.length ? `Còn thiếu: ${missing.map(id => `${ingredientName(id)} ×1`).join(', ')}.` : ''; }
+   get missingReason() {return this.missingRecipeReason(this.recipe);}
+   get stockLots() { return this.stock.lots; }
+-  get canOpen() { return this.saveGuard()&&this.productionActive && this.phase === 'preparation' && this.active.size < 3 && !this.stock.missing(this.recipe,this.preparationDay).length; }
++  get canOpen() { return this.saveGuard()&&this.productionActive && this.phase === 'preparation' && this.active.size < this.queueCapacity; }
+   get bakeReady() { return (this.tutorialActive ? this.practice : this.order).bakeReady && !this.needsRemake; }
+-  get tickets() { return [...this.active.values()].map(t => ({ id: t.id, name: t.name, recipe: t.recipe, kind: t.kind,help:!!t.help,takeaway:t.takeaway, kindLabel:t.help?'Giúp miễn phí':CUSTOMER_PROFILES[t.kind].label, finalPrice:t.finalPrice, maxPricePercent:CUSTOMER_PROFILES[t.kind].maxPricePercent, patience: t.patience, extraPenalty: t.extraPenalty, remaining: Math.max(0, t.deadline - this.elapsed), stage: t.order.state.stage })); }
++  get tickets() { return [...this.active.values()].map(t => ({ avatarIndex:t.avatarIndex,id: t.id, name: t.name, recipe: t.recipe, kind: t.kind,help:!!t.help,takeaway:t.takeaway, kindLabel:t.help?'Giúp miễn phí':CUSTOMER_PROFILES[t.kind].label, finalPrice:t.finalPrice, maxPricePercent:CUSTOMER_PROFILES[t.kind].maxPricePercent, patience: t.patience, extraPenalty: t.extraPenalty, remaining: Math.max(0, t.deadline - this.elapsed), stage: t.order.state.stage })); }
+   get selectedTicketId() { return this.ticket; }
+   get selectedTicket() { return this.tickets.find(t => t.id === this.ticket) ?? null; }
+   get ovenOwner() { return this.ovenId; }
+   get ovenState() { const s = this.ovenId ? (this.active.get(this.ovenId)??this.abandoned.get(this.ovenId))?.order.state : null; return s ? { ...s, ingredients: [...s.ingredients] } : null; }
+   get oven() { const t = this.ovenId ? this.active.get(this.ovenId)??this.abandoned.get(this.ovenId) : null; return t ? { ticketId: t.id, name: t.name, recipe: t.recipe, state: this.ovenState! } : null; }
+-  get bakeQuality() { const s = this.ovenState ?? this.state; return s.stage === 'burnt' ? 'burned' : s.ovenSeconds < COZY_BAKE.perfectStart ? 'raw' : s.ovenSeconds >= 4 ? 'warning' : 'ready'; }
++  get bakeQuality() { const s = this.ovenState ?? this.state; return s.stage === 'burnt' ? 'burned' : s.ovenSeconds < this.bakeTiming.perfectStart ? 'raw' : s.ovenSeconds >= this.bakeTiming.perfectEnd-.5 ? 'warning' : 'ready'; }
+   get discardPending() { return this.discardId !== null; }
+   get needsRemake() { return !!this.active.get(this.ticket)?.committed && this.order.state.stage === 'assembly'; }
+   get events(): readonly string[] { return [...this.history]; }
+@@ -275,17 +303,32 @@ export class CozyRuntime {
+   private blocked(except?: CozyPause) { return !this.saveGuard()||[...this.reasons].some(reason => reason !== except); }
+   buy(id: StockIngredient, quantity: number,commandId=`purchase-${++this.purchaseSerial}`): boolean {
+     if (!this.saveGuard() || !this.productionActive || this.reasons.size || !(this.phase === 'preparation'||this.canPrepareNextDay)) return false;
+-    if(id==='sausage'&&!this.progress.recipeAvailable('sausage',this.preparationDay))return this.shopFeedback('Xúc xích mở từ ngày sau khi đạt cấp 2.');
+     if(this.shiftOpen)return this.shopFeedback('Chỉ mua nguyên liệu trước khi mở cửa. Kho hiện tại chỉ để xem.');
+     if(typeof commandId!=='string'||!commandId.trim()||this.purchaseCommands.has(commandId))return false;
+     if (!this.stock.buy(id, quantity,this.preparationDay)) return this.shopFeedback('Số lượng không hợp lệ hoặc không đủ tiền.');
+     this.purchaseCommands.add(commandId);
+     this.message = `Đã mua ${quantity} ${ingredientName(id)}.`; this.revision++; return true;
+   }
++  orderExpress(id:StockIngredient,quantity:number,commandId:string):boolean {
++    if(!this.saveGuard()||!this.productionActive||!this.shiftOpen||this.phase==='summary'||this.blocked('order')||this.shiftClock.phase==='awaiting-close')return false;
++    if(typeof commandId!=='string'||!commandId.trim()||this.purchaseCommands.has(commandId))return false;
++    const receipt=this.stock.orderExpress(commandId,id,quantity,this.currentDay);
++    if(!receipt)return this.shopFeedback('Không đủ tiền hoặc số lượng đặt hỏa tốc không hợp lệ.');
++    this.purchaseCommands.add(commandId);
++    this.expressPending.set(commandId,{id:commandId,ingredient:id,quantity,unitPrice:receipt.unitCost,remaining:5,duration:5});
++    this.message=`Đang giao ${ingredientName(id)} ×${quantity}; nhận sau 5 giây.`;this.revision++;return true;
++  }
++  upgradeShop(kind:'oven'|'queue',commandId:string):boolean {
++    if(!['oven','queue'].includes(kind)||!this.canSetPrices||typeof commandId!=='string'||!commandId.trim()||this.upgradeCommands.has(commandId))return false;
++    const cost=this.upgradePrice(kind);if(cost===null||!this.stock.debit(cost))return this.shopFeedback('Không đủ tiền hoặc đã nâng cấp tối đa.');
++    if(kind==='oven')this.ovenUpgrade=(this.ovenUpgrade+1) as 1|2;else this.queueUpgrade=1;
++    this.upgradeSpent+=cost;this.pendingUpgradeSpent+=cost;
++    this.upgradeCommands.add(commandId);this.revision++;return true;
++  }
+   selectRecipe(recipe: StockRecipe): boolean {
+     if (!this.saveGuard() || !this.productionActive || this.reasons.size || !(this.phase === 'preparation'||this.canPrepareNextDay) || !this.menuRecipes.includes(recipe)) return false;
+     this.recipe = recipe;
+-    if (!this.active.size) this.order = new CozyOrder(false, recipe, true);
++    if (!this.active.size) this.order = new CozyOrder(false,recipe,true,this.ovenUpgrade);
+     this.message = this.missingReason || 'Đủ nguyên liệu cho món đã chọn.'; this.revision++; return true;
+   }
+   openShop(): boolean {
+@@ -294,6 +337,7 @@ export class CozyRuntime {
+     if (!this.canOpen) return this.shopFeedback(this.missingReason);
+     this.schedule=validateCozySchedule((this.scheduleDependencies.schedule??threeDaySchedule)(this.currentDay,{regularDay1Stars:this.regularDay1Stars,regularLatestStars:this.regularLatestStars,helpSucceeded:this.help.outcome==='succeeded',referral:!!this.referral?.eligible}));
+     this.shiftOpen = true; this.phase = 'making';
++    this.capitalPurchases=this.pendingUpgradeSpent;this.pendingUpgradeSpent=0;
+     const first=this.schedule.slots[0];if(first?.at===0)this.processArrival(first.id);
+     this.revision++; return true;
+   }
+@@ -309,16 +353,11 @@ export class CozyRuntime {
+     if(this.currentDay===3&&slot.kind==='regular'&&this.relationship>=2&&!this.help.claims.includes('regular.thanks-day-3')){
+       this.help.claims.push('regular.thanks-day-3');this.stock.receive(20);this.rewardCash+=20;this.help.thanksPending=true;this.helpLease=this.acquirePause('help');this.event('reward:regular.thanks-day-3');this.revision++;
+     }
+-    if(this.active.size>=3)return this.shopFeedback('Đã đủ 3 đơn đang chờ. Khách tiếp theo sẽ đến lượt sau.');
++    if(this.active.size>=this.queueCapacity)return this.shopFeedback('Hàng chờ đã đủ '+this.queueCapacity+' đơn.');
+     const kind=slot.kind,name=slot.opportunity==='referral'?'Khách giới thiệu':({regular:'Linh',hurry:'Minh',picky:'Lan',bargain:'Hùng'} as const)[kind];
+     const recipe=this.scheduleDependencies.resolveRecipe?this.scheduleDependencies.resolveRecipe(slot,this.eligibleMenuRecipes(),this.recipe):resolveScheduleRecipe(slot,this.eligibleMenuRecipes());
+     if(!recipe)return this.shopFeedback('Khách chưa thể đặt món. Món yêu cầu chưa có trong thực đơn.');
+     const originalPrice=menuPrice(recipePrice(recipe),this.pricing[recipe])!;
+-    if(kind==='bargain'){
+-      const profile=CUSTOMER_PROFILES.bargain;
+-      this.bargain={arrivalId,name,recipe,takeaway:slot.takeaway,originalPrice,finalPrice:agreedPrice(originalPrice,profile.discountPercent),patience:profile.patience,maxPricePercent:profile.maxPricePercent,discountPercent:profile.discountPercent};
+-      this.bargainLease=this.acquirePause('bargain');this.revision++;return true;
+-    }
+     return this.createTicket(kind,name,recipe,originalPrice,arrivalId,slot.takeaway);
+   }
+ 
+@@ -332,7 +371,7 @@ export class CozyRuntime {
+   }
+   continueShift(): boolean {
+     if (!this.saveGuard() || !this.productionActive || this.reasons.size || this.phase !== 'delivered') return false;
+-    this.phase = 'making'; this.ticket = ''; this.order = new CozyOrder(false, this.recipe, true);
++    this.phase = 'making'; this.ticket = ''; this.order = new CozyOrder(false,this.recipe,true,this.ovenUpgrade);
+     this.message = 'Ca tiếp tục. Khách tiếp theo sắp đến.'; this.revision++; return true;
+   }
+   selectTicket(id: string): boolean {
+@@ -343,7 +382,7 @@ export class CozyRuntime {
+     this.phase = 'making'; this.revision++; return true;
+   }
+   selectPizza(id:string): boolean {
+-    if (this.reasons.size) return false;
++    if (!this.saveGuard()||this.reasons.size) return false;
+     const t=this.active.get(id)??this.abandoned.get(id); if(!t)return false;
+     this.ticket=id;this.order=t.order;this.sourceId=id;this.revision++;return true;
+   }
+@@ -355,6 +394,12 @@ export class CozyRuntime {
+     const helpSuccess=!['raw','burnt'].includes(s.stage);
+     const result=deliveryResult({expected:recipeIngredients(target.recipe),actual:s.ingredients,takeaway:target.takeaway,boxed:s.stage==='boxed',quality:s.stage==='raw'?'raw':s.stage==='burnt'?'burnt':'good',remaining:target.deadline-this.elapsed,patience:target.patience,extraPenalty:target.extraPenalty});
+     if(result.mismatch&&!confirmed){this.pendingDelivery={sourceId,targetId,commandId,name:target.name,recipe:target.recipe,reasons:result.reasons};this.pause('delivery');this.revision++;return true;}
++    if(target.kind==='bargain'&&!target.bargainDecision){
++      const profile=CUSTOMER_PROFILES.bargain;
++      this.bargain={sourceId,targetId,commandId,arrivalId:target.id,name:target.name,recipe:target.recipe,takeaway:target.takeaway,originalPrice:target.finalPrice,finalPrice:agreedPrice(target.finalPrice,profile.discountPercent),patience:target.patience,maxPricePercent:profile.maxPricePercent,discountPercent:profile.discountPercent};
++      this.bargainLease=this.acquirePause('bargain');this.revision++;return true;
++    }
++    if(target.bargainDecision==='declined'){result.stars=Math.min(result.stars,2);result.reasons.push('Khách không được giảm giá và sẽ không quay lại');}
+     if(!source.order.dispatch({type:'deliver'}))return false;
+     if(!target.help&&source.giftBooked){const soldCost=source.bakedCost??0;this.dailyGiftCost-=soldCost;this.help.giftCost-=soldCost;source.giftBooked=false;}
+     if(target.help&&!source.giftBooked){const gift=source.bakedCost??0;this.dailyGiftCost+=gift;this.help.giftCost+=gift;source.giftBooked=true;}
+@@ -370,9 +415,11 @@ export class CozyRuntime {
+     this.energy-=5;
+     this.result={targetId,name:target.name,recipe:target.recipe,help:!!target.help,price,stars:result.stars,reasons:result.reasons,outcome:'delivered',...feedback,xpDelta:progress.xp,rewardCoins:progress.coins,rewardReputation};
+     this.completed={name:target.name,recipe:target.recipe,price};
+-    if(sourceId!==targetId)source.order=new CozyOrder(false,source.recipe,true);
++    if(sourceId!==targetId)source.order=new CozyOrder(false,source.recipe,true,this.ovenUpgrade);
+     this.order=source.order;this.ticket='';this.sourceId='';
+     this.phase=this.active.size?'making':'delivered';
++    const next=[...this.active.values()].find(t=>t.order.state.stage!=='delivered');
++    if(next){this.ticket=next.id;this.order=next.order;}
+     this.message=target.help?`Món tặng Linh · ${this.help.outcome==='succeeded'?'Giúp thành công':'Giúp chưa đạt'} · Quan hệ ${feedback.relationshipDelta>0?'+':''}${feedback.relationshipDelta} · Không doanh thu/XP/đánh giá thương mại.`:`Đã giao ${target.name}: ${result.stars} sao · +${price} xu${result.reasons.length?' · '+result.reasons.join(', '):''}`;
+     this.event(`delivered:${targetId}`);this.revision++;return true;
+   }
+@@ -395,7 +442,7 @@ export class CozyRuntime {
+     if (!this.discardId || this.blocked('discard')) return false;
+     const id = this.discardId, t = this.active.get(id)??this.abandoned.get(id);
+     if (!t) return false;
+-    if(t.order.state.stage==='boxed'||this.abandoned.has(id)&&t.order.state.stage==='baking')t.order=new CozyOrder(false,t.recipe,true);
++    if(t.order.state.stage==='boxed'||this.abandoned.has(id)&&t.order.state.stage==='baking')t.order=new CozyOrder(false,t.recipe,true,this.ovenUpgrade);
+     else if(!t.order.dispatch({ type: 'discard' }))return false;
+     if(this.ticket===id)this.order=t.order;
+     this.abandoned.delete(id);if(this.sourceId===id)this.sourceId='';
+@@ -407,8 +454,7 @@ export class CozyRuntime {
+     if (!this.saveGuard() || !this.productionActive || this.reasons.size || !this.needsRemake) return false;
+     const t = this.active.get(this.ticket)!;
+     if (t.deadline <= this.elapsed) return this.shopFeedback('Đơn đã hết thời gian, không thể làm lại.');
+-    if (!this.stock.reserve(t.id, t.recipe, t.deadline,this.currentDay)) return this.shopFeedback(`Không đủ nguyên liệu để làm lại. ${this.stock.missing(t.recipe,this.currentDay).map(id => `${ingredientName(id)} ×1`).join(', ')}.`);
+-    t.committed = false; this.message = `Đã giữ nguyên liệu mới cho ${t.name}.`; this.event(`remake:${t.id}`); this.revision++; return true;
++    t.committed = false; this.message = `Làm bánh mới cho ${t.name}.`; this.event(`remake:${t.id}`); this.revision++; return true;
+   }
+   get tutorialActive() { return this.step !== null; }
+   get tutorialStep() { return this.step; }
+@@ -443,6 +489,8 @@ export class CozyRuntime {
+   dispatch(intent: CozyRuntimeIntent): boolean {
+     if(!this.saveGuard()||this.guarded&&intent.type==='reset')return false;
+     if(intent.type==='menu.configure')return this.configureMenu(intent.recipe,intent.percent,intent.enabled);
++    if(intent.type==='express.order')return this.orderExpress(intent.ingredient,intent.quantity,intent.commandId);
++    if(intent.type==='shop.upgrade')return this.upgradeShop(intent.kind,intent.commandId);
+     if(intent.type==='market.buy')return this.buy(intent.ingredient,intent.quantity,intent.commandId);
+     if(intent.type==='customer.price')return this.setMenuPrice(intent.recipe,intent.percent);
+     if(intent.type==='customer.bargain')return this.resolveBargain(intent.accept);
+@@ -453,6 +501,7 @@ export class CozyRuntime {
+       if (!this.production) return this.order.dispatch(intent);
+       if (intent.type === 'reset') {
+         if(this.closedDays.size)return false;
++        this.ovenUpgrade=0;this.queueUpgrade=0;this.upgradeSpent=0;this.pendingUpgradeSpent=0;this.capitalPurchases=0;this.upgradeCommands.clear();this.customerDecisions={accepted:[],declined:[]};this.expressPending.clear();
+         this.stock = new CozyStock();this.progress=new CozyProgression();this.rewardCash=0;this.dailyGiftCost=0;this.help={decision:'unseen',outcome:null,ticketId:null,offer:null,giftCost:0,claims:[],thanksPending:false};this.enabledMenu=new Set(STOCK_RECIPES);this.startingCash=300;this.openingInventoryValue=0;this.cumulativeProfit=0; this.purchaseCommands.clear();this.purchaseSerial=0;this.order = new CozyOrder(); this.recipe = 'cheese'; this.phase = 'preparation';
+         this.active.clear(); this.processedArrivals.clear(); this.ovenId = null; this.discardId = null; this.ticket = ''; this.elapsed = 0; this.serial = 0; this.arrival = 0; this.schedule=null;this.regularDay1Stars=null;this.regularLatestStars=null; this.shiftOpen = false; this.history = [];
+         this.completed = null;this.summary=null;this.reports=[];this.currentDay=1;this.revenue=0;this.deliveredCount=0;this.abandonedCount=0;this.reviews=[];
+@@ -463,10 +512,11 @@ export class CozyRuntime {
+       if(intent.type==='deliver'&&this.phase==='making')return this.deliver(intent.sourceId??(this.sourceId||this.ticket),intent.targetId??this.ticket,intent.commandId??`deliver:${intent.sourceId??this.sourceId}:${intent.targetId??this.ticket}`);
+       if(intent.type==='discard')return this.requestDiscard();
+       if (this.phase !== 'making' || !t) return false;
+-      if (intent.type === 'ingredient' && (this.needsRemake || !recipeIngredients(t.recipe).includes(intent.ingredient))) return false;
++      if (intent.type === 'ingredient' && (this.needsRemake || !this.order.state.ingredients.includes(intent.ingredient)&&this.available(intent.ingredient)<1)) return false;
+       if (intent.type === 'bake') {
+         if (this.ovenId) return this.shopFeedback('Lò đang bận. Lấy hoặc bỏ bánh trong lò trước.');
+         if (!this.bakeReady || this.order.state.stage !== 'assembly') return false;
++        if(!this.stock.reserveIngredients(t.id,this.order.state.ingredients,t.deadline,this.currentDay))return this.shopFeedback('Không đủ nguyên liệu còn dùng được cho bánh này.');
+         const consumedBefore=this.stock.ledger(this.currentDay).consumed;
+         if (!this.stock.commit(t.id, this.order.state.ingredients,this.currentDay)) return this.shopFeedback('Nguyên liệu đã hết hoặc đơn đã hết thời gian.');
+         t.bakedCost=this.stock.ledger(this.currentDay).consumed-consumedBefore;t.giftBooked=!!t.help;
+@@ -502,7 +552,8 @@ export class CozyRuntime {
+         this.practice.tick(Math.min(.05, COZY_BAKE.perfectStart - this.state.ovenSeconds));
+         if (this.state.ovenSeconds >= COZY_BAKE.perfectStart) { this.setStep('extract'); break; }
+       } else if (!this.production) this.order.tick(.05);
+-      else if (this.shiftOpen && this.phase !== 'preparation' && this.phase !== 'delivered') {
++      else if (this.shiftOpen && this.phase !== 'preparation' && this.phase !== 'summary') {
++        for(const pending of this.expressPending.values()){pending.remaining=Math.max(0,Math.round((pending.remaining-.05)*1e6)/1e6);if(!pending.remaining&&this.stock.receiveExpress(pending.id)){this.expressPending.delete(pending.id);this.event('express-received:'+pending.id);this.revision++;}}
+         const end=this.schedule!.duration+this.schedule!.grace;
+         if(this.elapsed>=end)continue;
+         this.elapsed = Math.round((this.elapsed + .05) * 1e6) / 1e6;
+@@ -511,7 +562,7 @@ export class CozyRuntime {
+           const id=t.id;this.stock.release(id);
+           this.active.delete(id); this.event(`expired:${id}`); this.revision++;
+           if(t.committed&&t.order.state.stage!=='assembly')this.abandoned.set(id,t);
+-          if(id===this.ticket&&!t.committed){this.ticket='';this.order=new CozyOrder(false,this.recipe,true);}
++          if(id===this.ticket&&!t.committed){this.ticket='';this.order=new CozyOrder(false,this.recipe,true,this.ovenUpgrade);}
+ 
+           const reason=this.elapsed>=end?'Hết thời gian xử lý cuối ca':'Hết kiên nhẫn';
+           if(!t.help)this.abandonedCount++;const feedback=this.terminal(t,1,[reason],'expired');
+diff --git "a/_bmad-output\\implementation-artifacts\\kitchen-v2-before\\CozyScene.ts" b/src/scenes/CozyScene.ts
+index c16ce02..4431b2e 100644
+--- "a/_bmad-output\\implementation-artifacts\\kitchen-v2-before\\CozyScene.ts"
++++ b/src/scenes/CozyScene.ts
+@@ -1,6 +1,5 @@
+ import Phaser from 'phaser';
+ import { CozyRuntime } from '../runtime/CozyRuntime';
+-import { COZY_BAKE } from '../domain/CozyOrder';
+ import {recipePrice,recipeIngredients,STOCK_INGREDIENTS,type StockRecipe,type StockIngredient} from '../domain/CozyStock';
+ import {menuPrice} from '../domain/CustomerProgression';
+ import { CozyArt, UI } from '../presentation/CozyArt';
+@@ -19,9 +18,10 @@ import { modalText } from '../presentation/ModalText';
+ import { StaticGraphics } from '../presentation/StaticGraphics';
+ import { createOrderQueue, ORDER_DETAIL_PROMPT, type OrderQueueInput } from '../presentation/OrderQueue';
+ import type {CozyCampaignSession} from '../runtime/CozyCampaignSession';
++import {registerCustomerPortraitFrames,customerPortraitFrame,preloadCustomerPortraits} from '../presentation/CustomerPortraits';
+ 
+ type Control={id:string;x:number;y:number;width:number;height:number;enabled:boolean};
+-const {cream,ink,muted,accent,board,wood}=UI_THEME.text;
++const {cream,ink,muted,accent,wood}=UI_THEME.text;
+ const recipeName=(recipe:StockRecipe)=>recipe==='sausage'?'Pizza xúc xích':recipe==='mushroom'?'Pizza nấm':'Pizza phô mai';
+ 
+ export class CozyScene extends Phaser.Scene {
+@@ -31,11 +31,13 @@ export class CozyScene extends Phaser.Scene {
+   private dirty=true;
+   private signature='';
+   private motion?:MediaQueryList;
+-  private lastTap='';
+-  private heatMarker?:Phaser.GameObjects.Rectangle;
++  private heatBar?:Phaser.GameObjects.Graphics;
++  private expressIngredient:StockIngredient|null=null;
++  private expressQuantity=1;
++  private expressLease?:PauseLease;
+   private hitZones=new Map<string,Phaser.GameObjects.Zone>();
+   private visibleActions:{id:string;x:number;y:number;w:number;h:number;action:()=>void}[]=[];
+-  private quantities={dough:1,sauce:1,cheese:1,mushroom:1};
++  private tapRects=new Map<string,{x:number;y:number;w:number;h:number}>();
+   private restartConfirmation=false;
+   private endDayConfirmation=false;
+   private priceDraft:{recipe:StockRecipe;percent:number;enabled:boolean}|null=null;
+@@ -45,7 +47,6 @@ export class CozyScene extends Phaser.Scene {
+   private statementLease?:PauseLease;
+   private purchaseSerial=0;
+   private readonly purchaseScope=crypto.randomUUID();
+-  private lastPurchase:{key:string;at:number;id:string}|null=null;
+   private summaryTab:'summary'|'market'|'stock'|'shop'|'missions'='summary';
+   private initialHubShown=false;
+   private lifecycle!:PlayLifecycle;
+@@ -67,10 +68,12 @@ export class CozyScene extends Phaser.Scene {
+   constructor(private readonly runtime:CozyRuntime,private readonly preferences?:MenuPreferences,private readonly returnToMenu?:()=>void,private readonly audio=new PlayAudio(),private readonly sharedLifecycle?:PlayLifecycle,private readonly campaignSession?:CozyCampaignSession,private readonly replaceRuntime?:(runtime:CozyRuntime)=>void){super('CozyScene');}
+   preload():void{
+     preloadPizzaIcons(this);
++    preloadCustomerPortraits(this);
+     for(const asset of [...REFERENCE_KITCHEN_MANIFEST,PIZZA_BOX_ART])if(!this.textures.exists(asset.key))this.load.image(asset.key,`${import.meta.env.BASE_URL}${asset.url}`);
+   }
+   create():void{
+     registerReferenceKitchenFrames(this);
++    registerCustomerPortraitFrames(this);
+     this.dirty=true;this.signature='';this.inspectedOrderId=null;this.inspectedRecipe=null;this.inspectionMode='';this.priceDraft=null;this.statementOpen=false;this.layer=this.add.container();this.staticGraphics=new StaticGraphics(this);this.motion=window.matchMedia('(prefers-reduced-motion: reduce)');
+     this.motion.addEventListener('change',this.motionChange);
+     this.scale.on('resize',this.motionChange);
+@@ -78,6 +81,7 @@ export class CozyScene extends Phaser.Scene {
+     this.browserLifecycle=new BrowserPlayLifecycle(this.lifecycle,()=>{this.audio.silence();this.dirty=true;});
+     this.preferenceUnsubscribe=this.preferences?.subscribe(this.motionChange);
+     this.unsubscribeSave=this.campaignSession?.subscribe(()=>{this.saveDismissed=false;this.dirty=true;});
++    this.events.once('shutdown',()=>{this.expressLease?.release();this.expressLease=undefined;this.expressIngredient=null;});
+     this.events.once('shutdown',()=>{this.unsubscribeSave?.();this.unsubscribeSave=undefined;});
+     const cleanup=()=>{this.events.off('shutdown',cleanup);this.events.off('destroy',cleanup);this.priceLease?.release();this.priceLease=undefined;this.statementLease?.release();this.statementLease=undefined;this.motion?.removeEventListener('change',this.motionChange);this.preferenceUnsubscribe?.();this.scale.off('resize',this.motionChange);this.browserLifecycle.destroy(!this.sharedLifecycle);for(const lease of this.scenePauses.values())lease.release();this.scenePauses.clear();this.audio.silence();this.tweens.killAll();for(const zone of this.hitZones.values())zone.destroy();this.hitZones.clear();this.staticGraphics.destroy();};
+     this.events.once('shutdown',cleanup);this.events.once('destroy',cleanup);this.draw();
+@@ -91,12 +95,12 @@ export class CozyScene extends Phaser.Scene {
+     this.lifecycle.frame(performance.now(),this.runtime.pauses.length===0&&this.runtime.simulationActive);
+     this.runtime.advance(delta);const s=this.runtime.state;
+     this.game.canvas.dataset.shiftClock=JSON.stringify(this.runtime.shiftClock);
+-    const sig=[s.stage,s.ingredients.join(','),Math.floor(this.runtime.ovenState?.ovenSeconds??s.ovenSeconds),this.runtime.tickets.map(t=>`${t.id}:${Math.ceil(t.remaining)}`).join(','),this.runtime.selectedTicketId,this.runtime.tutorialActive,this.runtime.pauseRevision,this.runtime.shopRevision,this.runtime.shiftClock.phase].join('|');
++    const sig=[s.stage,s.ingredients.join(','),Math.floor(this.runtime.ovenState?.ovenSeconds??s.ovenSeconds),this.runtime.expressOrders.map(o=>`${o.id}:${Math.ceil(o.remaining*10)}`).join(','),this.runtime.tickets.map(t=>`${t.id}:${Math.ceil(t.remaining)}`).join(','),this.runtime.selectedTicketId,this.runtime.tutorialActive,this.runtime.pauseRevision,this.runtime.shopRevision,this.runtime.shiftClock.phase].join('|');
+     if(this.dirty||sig!==this.signature){this.signature=sig;this.draw();}
+     const oven=this.runtime.productionActive?this.runtime.ovenState:s;
+-    this.heatMarker?.setX(243+100*(oven?.ovenSeconds??0)/COZY_BAKE.gaugeEnd);
++    if(this.heatBar){const seconds=oven?.ovenSeconds??0,timing=this.runtime.bakeTiming;this.heatBar.clear().fillStyle(0x49372d,1).fillRoundedRect(243,357,100,6,3);if(seconds>0)this.heatBar.fillStyle(seconds>timing.perfectEnd?0xe54b3c:seconds>=timing.perfectStart?0x68bd58:0xfff1dc,1).fillRoundedRect(243,357,Math.max(6,100*Math.min(1,seconds/timing.gaugeEnd)),6,3);}
+     this.game.canvas.dataset.oven=String(oven?.ovenSeconds??0);
+-    this.game.canvas.dataset.heat=oven?.stage==='burnt'?'burnt':(oven?.ovenSeconds??0)>=COZY_BAKE.perfectStart?'perfect':'warming';
++    this.game.canvas.dataset.heat=oven?.stage==='burnt'?'burnt':(oven?.ovenSeconds??0)>=this.runtime.bakeTiming.perfectStart?'perfect':'warming';
+     this.timerElapsed+=delta;
+     if(this.timerElapsed>=100){this.timerElapsed=0;for(const timer of this.timers)timer.text.setText(timer.read());}
+   }
+@@ -120,7 +124,7 @@ export class CozyScene extends Phaser.Scene {
+   private kitchenAction(id:string,index:number,title:string,enabled:boolean,action:()=>void):void{
+     const {x,y,w,h}=KITCHEN.action(index);
+     if(!enabled){this.graphics();this.art.g.fillStyle(0x15110d,.45).fillRoundedRect(x+2,y+2,w-4,h-4,7);}
+-    this.label(x+w/2,y+8,title,12,enabled?cream:muted,w-8);
++    this.label(x+w/2,y+5,title,12,enabled?cream:muted,w-8);
+     this.hit(id,x,y,w,h,enabled,action);
+   }
+   private timer(x:number,y:number,read:()=>string,size=10,color:string=cream,width=0):void{
+@@ -131,6 +135,7 @@ export class CozyScene extends Phaser.Scene {
+     if(this.textScale>1)this.label(180,y+height+2,'Vuốt phần chữ để đọc tiếp',10,wood);
+   }
+   private hit(id:string,x:number,y:number,w:number,h:number,enabled:boolean,action:()=>void):void{
++    this.tapRects.set(id,{x,y,w,h});
+     if(this.campaignSession&&['loading','saving','error','recovery'].includes(this.campaignSession.view.state))enabled=enabled&&(['pause','mute'].includes(id)||id.startsWith('summary-tab-')||id.startsWith('summary-figure-')||id==='summary-statement-close'||id.startsWith('save-'));
+     if(this.runtime.productionActive&&!this.runtime.tutorialActive&&this.runtime.shopPhase!=='making'&&this.runtime.shopPhase!=='delivered'&&!this.runtime.pauses.length){
+       enabled=enabled&&(['pause','mute'].includes(id)||id.startsWith('market-')||id.startsWith('summary-'));
+@@ -150,13 +155,17 @@ export class CozyScene extends Phaser.Scene {
+     if(!zone){zone=this.add.zone(x,y,w,h).setOrigin(0).setDepth(10).setInteractive({useHandCursor:true});this.hitZones.set(id,zone);}
+     zone.setPosition(x,y).setSize(w,h);zone.input?.hitArea.setTo(0,0,w,h);
+     zone.removeAllListeners('pointerdown');
+-    if(!enabled){zone.disableInteractive();return;}
+     zone.setInteractive({useHandCursor:true});
+     zone.on('pointerdown',(pointer:Phaser.Input.Pointer)=>{
+       // On shorter portrait screens enlarged touch padding may overlap. The
+       // visible button beneath the finger always wins over a neighbour's padding.
+-      const visible=this.visibleActions.find(c=>this.controls.some(active=>active.id===c.id&&active.enabled)&&pointer.x>=c.x&&pointer.x<=c.x+c.w&&pointer.y>=c.y&&pointer.y<=c.y+c.h);
+-      (visible?.action??action)();void this.audio.interact().then(()=>{this.audio.cue();this.dirty=true;});this.lastTap=visible?.id??id;this.dirty=true;
++      const touched=[...this.tapRects].find(([key,c])=>this.controls.some(active=>active.id===key)&&pointer.x>=c.x&&pointer.x<=c.x+c.w&&pointer.y>=c.y&&pointer.y<=c.y+c.h);
++      const targetId=touched?.[0]??id,rect=touched?.[1]??this.tapRects.get(id)!;
++      const flash=this.add.rectangle(rect.x+rect.w/2,rect.y+rect.h/2,rect.w-4,rect.h-4,0xfff3dc,.23).setDepth(60);
++      if(this.reducedMotion)this.time.delayedCall(140,()=>flash.destroy());
++      else this.tweens.add({targets:flash,alpha:0,scaleX:.96,scaleY:.96,duration:190,onComplete:()=>flash.destroy()});
++      const visible=this.visibleActions.find(c=>c.id===targetId);
++      if(visible)visible.action();void this.audio.interact().then(()=>{this.audio.cue();this.dirty=true;});this.dirty=true;
+     });
+   }
+   private button(id:string,x:number,y:number,w:number,h:number,title:string,enabled:boolean,action:()=>void,fill:number=UI.green):void{
+@@ -165,13 +174,14 @@ export class CozyScene extends Phaser.Scene {
+     this.label(x+w/2,y+(title.includes('\n')?5:(h-20)/2),title,title.includes('\n')?12:16,enabled&&fill===UI.green?ink:cream,title.includes('\n')?w-12:0);this.hit(id,x,y,w,h,enabled,action);
+   }
+   private draw():void{
+-    this.dirty=false;this.game.canvas.dataset.modalScroll='[]';this.timers=[];this.heatMarker=undefined;this.tweens.killAll();this.layer.removeAll(true);this.controls=[];this.visibleActions=[];this.graphics();
++    this.dirty=false;this.game.canvas.dataset.modalScroll='[]';this.timers=[];this.heatBar=undefined;this.layer.removeAll(true);this.controls=[];this.visibleActions=[];this.tapRects.clear();this.graphics();
+     const backdrop=this.textures.get('reference-kitchen-background').getSourceImage();
+     const backdropScale=Math.min(KITCHEN.width/backdrop.width,KITCHEN.height/backdrop.height);
+     this.layer.add(this.add.image(KITCHEN.width/2,KITCHEN.height/2,'reference-kitchen-background').setScale(backdropScale));
+-    const s=this.runtime.state,assembly=s.stage==='assembly',perfect=s.stage==='baking'&&s.ovenSeconds>=COZY_BAKE.perfectStart;
++    const s=this.runtime.state,assembly=s.stage==='assembly';
+     const mode=this.runtime.productionActive?'live':this.runtime.tutorialActive?'practice':'freeplay';
+     if(mode!==this.inspectionMode){this.inspectedOrderId=null;this.inspectionMode=mode;}
++    this.inspectedOrderId=this.runtime.productionActive?this.runtime.selectedTicketId:'practice-linh';
+     this.orderQueue=createOrderQueue(this.queueInputs(),this.inspectedOrderId,this.runtime.productionActive?this.runtime.selectedTicketId:undefined);
+     this.orderQueue.slots=this.orderQueue.slots.map((slot,index)=>{
+       const {x,y,w,h,centerX,centerY}=KITCHEN.customer(index);
+@@ -187,24 +197,14 @@ export class CozyScene extends Phaser.Scene {
+       const source=this.textures.get(PIZZA_BOX_ART.key).getSourceImage();
+       const box=this.add.image(120,344,PIZZA_BOX_ART.key).setDisplaySize(108,108*source.height/source.width);
+       this.layer.add(box);
+-    }else if(s.stage!=='baking'&&s.stage!=='burnt'&&s.ingredients.includes('dough')){
+-      // Each image reflects ingredients already added; toggling cheese cannot add sauce visually.
+-      const sauce=s.ingredients.includes('sauce'),cheese=s.ingredients.includes('cheese');
+-      this.referenceSprite(sauce?(cheese?'pizza-cheese':'pizza-sauce'):'pizza-base',120,343,104);
+-      if(cheese&&!sauce)this.icon('cheese',120,343,81);
+-      if(s.ingredients.includes('mushroom'))this.icon('mushroom',120,343,65);
+-      if(s.ingredients.includes('sausage'))this.icon('sausage',120,343,65);
++    }else if(s.stage!=='baking'&&!(s.stage==='burnt'&&this.runtime.ovenState)&&s.ingredients.includes('dough')){
++      this.art.pizza(120,343,51,s.ingredients);
++      if(s.stage==='burnt')this.art.g.fillStyle(0x32140b,.65).fillEllipse(120,340,93,78);
+     }
+-    if(assembly&&!s.ingredients.includes('dough'))this.label(120,332,this.runtime.needsRemake?'Chạm thớt\nđể làm lại':this.runtime.productionActive&&!this.runtime.selectedTicket?'Chạm thớt\nđể xem kho':'Chạm “Đế bánh”\nđể bắt đầu',12,board,140);
+-    if(s.stage==='baking'||s.stage==='burnt')this.label(120,328,s.stage==='burnt'?'Bánh đã cháy!\nBỏ bánh để làm lại.':'Pizza đang trong lò →\nCanh vạch đỏ vào vùng xanh!',11,board,190);
+     if(this.runtime.needsRemake)this.hit('remake',18,298,204,80,true,()=>this.runtime.remake());
+-    else if(this.runtime.productionActive&&!this.runtime.selectedTicket&&!this.runtime.selectedExpired)this.hit('market-prepare',18,298,204,80,true,()=>this.runtime.prepareAgain());
+     else this.hit('dough-board',18,298,204,80,assembly,()=>this.runtime.dispatch({type:'ingredient',ingredient:'dough'}));
+     this.ovens();this.sauceShelf();
+-    const ready=this.runtime.bakeReady;
+     const counterReady=this.runtime.productionActive&&s.stage==='ready'&&this.runtime.selectedTicket?.takeaway===false;
+-    const hint=this.runtime.needsRemake?'Chạm thớt để giữ nguyên liệu và làm lại':assembly?(ready?'Đủ nguyên liệu · chạm Lò 1 để nướng':'Đặt đủ nguyên liệu theo đơn'):s.stage==='baking'?(perfect?(s.ovenSeconds>=4?'Sắp quá lửa! Chạm lò để lấy bánh.':'Chín vừa! Chạm lò để lấy bánh.'):'Dưới 3 giây: bánh vẫn còn sống'):s.stage==='raw'?'Bánh còn sống · chạm ô xóa để bỏ':s.stage==='burnt'?'Bánh cháy · chạm ô xóa để bỏ':s.stage==='ready'?(counterReady?'Bánh đã chín · giao tại quầy':'Bánh đã chín · cần đóng hộp'):'Pizza đã đóng hộp · giao cho khách';
+-    this.label(120,381,hint,9,board,208);
+     const source=this.runtime.deliverySource,target=this.runtime.selectedTicket;
+     const earlyDelivery=this.runtime.productionActive&&source?.id===target?.id&&!counterReady&&['raw','ready','burnt'].includes(s.stage);
+     this.kitchenAction('box',0,'Đóng hộp',s.stage==='ready'&&!this.runtime.selectedExpired,()=>this.runtime.dispatch({type:'box'}));
+@@ -214,7 +214,6 @@ export class CozyScene extends Phaser.Scene {
+       else this.runtime.dispatch({type:'deliver'});
+     });
+     this.inventory();
+-    if(this.lastTap&&!this.reducedMotion&&!this.runtime.pauses.length){const c=this.controls.find(control=>control.id===this.lastTap);if(c){const glow=this.add.rectangle(c.x+c.width/2,c.y+c.height/2,c.width-4,c.height-4,0xffe1a0,.2);this.layer.add(glow);this.tweens.add({targets:glow,alpha:0,duration:170,onComplete:()=>glow.destroy()});}}this.lastTap='';
+     if(this.runtime.shopPhase==='summary'||this.runtime.postTutorialPreparation){
+       if(this.runtime.postTutorialPreparation&&!this.initialHubShown){this.summaryTab='market';this.initialHubShown=true;}
+       this.dayHub();
+@@ -231,6 +230,7 @@ export class CozyScene extends Phaser.Scene {
+     else if(this.runtime.helpPending||this.runtime.thanksPending)this.helpDialog();
+     else if(this.runtime.productionActive&&this.runtime.shopPhase==='preparation')this.market();
+     else if(s.stage==='delivered'&&(!this.runtime.productionActive||this.runtime.shopPhase==='delivered'))this.success();
++    if(this.expressIngredient)this.expressDialog();
+     if(this.campaignSession&&(['saving','error','loading','recovery'].includes(this.campaignSession.view.state)&&!this.saveDismissed||this.reloadConfirmation))this.saveDialog();
+     else if(this.newCampaignConfirmation)this.newCampaignDialog();
+     else if(this.finalOpen)this.finalDialog();
+@@ -264,6 +264,8 @@ export class CozyScene extends Phaser.Scene {
+     canvas.dataset.preparationBudget=JSON.stringify(this.runtime.preparationBudget);
+     canvas.dataset.quality=this.runtime.bakeQuality;
+     canvas.dataset.stock=JSON.stringify(STOCK_INGREDIENTS.map(id=>({id,owned:this.runtime.owned(id),available:this.runtime.available(id),reserved:this.runtime.reserved(id)})));
++    canvas.dataset.expressOrders=JSON.stringify(this.runtime.expressOrders);
++    canvas.dataset.bakeTiming=JSON.stringify(this.runtime.bakeTiming);canvas.dataset.queueCapacity=String(this.runtime.queueCapacity);
+     canvas.dataset.progression=JSON.stringify(this.runtime.progression);canvas.dataset.menuRecipes=JSON.stringify(this.runtime.menuRecipes);
+     if(this.campaignSession)canvas.dataset.saveState=JSON.stringify(this.campaignSession.view);
+     // Read-only geometry makes canvas typography verifiable at every device scale.
+@@ -272,37 +274,37 @@ export class CozyScene extends Phaser.Scene {
+   private sauceShelf():void{
+     const s=this.runtime.state,assembly=s.stage==='assembly';
+     ['Cà chua','Kem trắng','BBQ','Pesto','Sốt cay'].forEach((name,i)=>{
+-      const {x,y,w,h}=KITCHEN.ingredient(i),available=i===0;
+-      this.label(x+w/2,y+31,name,9,available?cream:muted);
+-      this.ingredientState(x,y,w,h,available,available&&s.ingredients.includes('sauce'));
+-      if(available){this.hit('sauce',x,y,w,h,assembly,()=>this.runtime.dispatch({type:'ingredient',ingredient:'sauce'}));if(this.runtime.productionActive)this.stockBadge('sauce',x,y,w);}
++      const id=['sauce','sauce-white','sauce-bbq','sauce-pesto','sauce-hot'][i] as StockIngredient;
++      const {x,y,w,h}=KITCHEN.ingredient(i),available=!this.runtime.tutorialActive||i===0;
++      this.label(x+w/2,y+27,name,9,available?cream:muted);
++      this.ingredientState(x,y,w,h,available,available&&s.ingredients.includes(id));
++      this.hit(id,x,y,w,h,available&&(assembly||this.runtime.productionActive&&this.runtime.available(id)<=0),()=>this.useIngredient(id));if(this.runtime.productionActive)this.stockBadge(id,x,y,w);
+     });
+   }
+   private ingredientState(x:number,y:number,w:number,h:number,available:boolean,selected:boolean):void{
+     this.graphics();
+-    if(selected)this.art.g.lineStyle(2,UI.gold,1).strokeRoundedRect(x+1,y+1,w-2,h-2,8);
++    if(selected)this.art.g.fillStyle(0xf6ead4,.08).fillRoundedRect(x+2,y+2,w-4,h-4,8);
+     if(!available){this.art.g.fillStyle(0x19120d,.38).fillRoundedRect(x+2,y+2,w-4,h-4,8);this.icon('lock',x+w-8,y+9,12,.9);}
+   }
+   private stockBadge(id:StockIngredient,x:number,y:number,w:number):void{
+     this.graphics();this.art.circle(x+w-8,y+9,7,UI.dark);this.label(x+w-8,y+2,String(this.runtime.owned(id)),8,cream);
++    const order=this.runtime.expressOrders.find(order=>order.ingredient===id);
++    if(order){this.art.g.lineStyle(2,0x76cf6e,1).beginPath().arc(x+w/2,y+17,15,-Math.PI/2,-Math.PI/2+Math.PI*2*(1-order.remaining/order.duration)).strokePath();this.label(x+w/2,y+5,`${Math.ceil(order.remaining)}s`,10,cream);}
+   }
+   private ovens():void{
+     const s=this.runtime.productionActive?this.runtime.ovenState??this.runtime.state:this.runtime.state,occupied=this.runtime.productionActive?!!this.runtime.ovenState:s.stage==='baking'||s.stage==='burnt';
+     for(let i=0;i<2;i++){
+       const {x,y,w,h}=KITCHEN.oven(i);
+-      const frame=!i&&occupied?(s.stage==='burnt'?'oven-burnt':'oven-occupied'):'oven-empty';
++      const frame='oven-empty';
+       this.referenceSprite(frame,x+w/2,y+h/2,w,h)?.setTint(i?0x99877b:0xffffff);
+-      this.label(x+w/2,y-12,i?'Lò 2':'Lò 1',12,cream);
++      this.label(x+w/2,y-15,i?'Lò 2':'Lò 1',12,cream);
+       if(i){this.icon('lock',x+w/2,y+30,23,.85);this.label(x+w/2,y+48,'Chưa mở khóa',9,muted);}
+       else{
+-        this.graphics();const gx=243,gy=y+h-4,width=100;
+-        this.art.round(gx,gy,width,6,3,0xc49b52);
+-        this.art.rect(gx+width*COZY_BAKE.perfectStart/COZY_BAKE.gaugeEnd,gy,width*(COZY_BAKE.perfectEnd-COZY_BAKE.perfectStart)/COZY_BAKE.gaugeEnd,6,0x5bd06a);
+-        this.art.rect(gx+width*COZY_BAKE.perfectEnd/COZY_BAKE.gaugeEnd,gy,width*(1-COZY_BAKE.perfectEnd/COZY_BAKE.gaugeEnd),6,0x703d33);
+-        this.heatMarker=this.add.rectangle(gx+width*s.ovenSeconds/COZY_BAKE.gaugeEnd,gy+3,3,11,0xff3939).setStrokeStyle(1,UI.ink);this.layer.add(this.heatMarker);
++        if(occupied){this.graphics();this.art.pizza(x+w/2,y+h*.6,24,s.ingredients);if(s.stage==='burnt')this.art.g.fillStyle(0x32140b,.65).fillEllipse(x+w/2,y+h*.6,46,35);}
++        this.heatBar=this.add.graphics().setData('dynamic',true);this.layer.add(this.heatBar);
+         const active=this.runtime.state;
+         const baking=occupied&&s.stage==='baking';
+-        const canExtract=baking&&(this.runtime.productionActive||s.ovenSeconds>=COZY_BAKE.perfectStart);
++        const canExtract=baking&&(this.runtime.productionActive||s.ovenSeconds>=this.runtime.bakeTiming.perfectStart);
+         const canBake=!occupied&&active.stage==='assembly'&&this.runtime.bakeReady&&!this.runtime.selectedExpired;
+         this.hit(baking?'extract':occupied?'oven-1':'bake',x,y,w,h,canExtract||canBake||occupied&&this.runtime.productionActive,()=>{
+           const owner=this.runtime.ovenOwner;
+@@ -324,19 +326,22 @@ export class CozyScene extends Phaser.Scene {
+     return clock.phase==='awaiting-close'?'Chốt ngày':`${clock.phase==='grace'?'Chờ':'Ca'} ${timerText(clock.remaining)}`;
+   }
+   private customers():void{
++    if(this.runtime.productionActive&&this.runtime.queueCapacity===4)for(let i=4;i<6;i++){const {centerX,centerY}=KITCHEN.customer(i);this.graphics();this.art.circle(centerX,centerY,21,0xddc4a0);this.icon('lock',centerX,centerY,18);this.label(centerX,120,'Chưa mở',8,wood);}
+     this.orderQueue.slots.forEach((slot,i)=>{
+       const bounds=KITCHEN.customer(i),{centerX,centerY}=bounds;
+       if(slot.icon==='phone')this.icon('phone',centerX,centerY,37);
+       else {
+-        let hash=0;for(const c of slot.name)hash=(hash+c.charCodeAt(0))%6;
+-        const known=['Linh','Mai','Nam','Vy','Minh','An'].indexOf(slot.name);
+-        this.referenceSprite('avatar-'+(known>=0?known:hash),centerX,centerY,43);
++        const ticket=this.runtime.tickets.find(t=>t.id===slot.id),portrait=customerPortraitFrame(ticket?.avatarIndex??0);
++        if(this.textures.exists(portrait.key)){
++          const image=this.add.image(centerX,centerY,portrait.key,portrait.frame).setDisplaySize(43,43);this.layer.add(image);
++          const clip=this.make.graphics({x:0,y:0});clip.fillStyle(0xffffff).fillCircle(centerX,centerY,21);const mask=clip.createGeometryMask();image.setMask(mask);image.once('destroy',()=>{mask.destroy();clip.destroy();});
++        }
+       }
+       this.graphics();
+-      if(slot.selected)this.art.g.lineStyle(2,UI.gold,1).strokeCircle(centerX,centerY,24);
+-      if(slot.patienceRatio!==null)this.art.g.lineStyle(1.5,slot.patienceRatio<.25?0xffad85:0xa9774d,1).beginPath().arc(centerX,centerY,25,-Math.PI/2,-Math.PI/2+Math.PI*2*slot.patienceRatio).strokePath();
+-      this.label(centerX,122,slot.name,10,ink,51);
+-      if(this.runtime.productionActive)this.timer(centerX,134,()=>timerText(this.runtime.tickets.find(t=>t.id===slot.id)?.remaining??0),8,ink);
++      if(slot.selected)this.art.g.lineStyle(1.5,0x548b38,1).strokeCircle(centerX,centerY,23);
++      if(slot.patienceRatio!==null)this.art.g.lineStyle(2,0x65b74d,1).beginPath().arc(centerX,centerY,24,-Math.PI/2,-Math.PI/2+Math.PI*2*slot.patienceRatio).strokePath();
++      const name=this.label(centerX,119,slot.name,9,ink);
++      if(name.width>51){name.setText(slot.name);while(name.width>51&&name.text.length>2)name.setText(name.text.replace(/…$/,'').slice(0,-1)+'…');}
+       this.hit(this.runtime.productionActive?'ticket-'+slot.id:'customer-linh',bounds.x,bounds.y,bounds.w,bounds.h,true,()=>{
+         this.inspectedRecipe=null;
+         if(this.runtime.productionActive){if(this.runtime.selectTicket(slot.id)&&this.runtime.selectedTicketId===slot.id)this.inspectedOrderId=slot.id;}
+@@ -348,10 +353,11 @@ export class CozyScene extends Phaser.Scene {
+     const detail=this.orderQueue.detail,message=this.runtime.shopMessage;
+     const notice=this.runtime.productionActive&&['Khách từ chối giá','Khách chưa thể đặt món.','Đã đủ 3 đơn'].some(prefix=>message.startsWith(prefix))?message:'';
+     if(detail){
+-      this.referenceSprite('recipe-'+detail.recipe,33,164,28);
+-      this.label(53,146,detail.lines[0],10,ink,282,'left');
+-      this.label(53,158,detail.lines[1],9,accent,282,'left');
+-      this.label(53,170,notice||detail.lines[2],8,wood,282,'left');
++      this.graphics();this.art.pizza(33,164,13,recipeIngredients(detail.recipe));
++      const row=(y:number,value:string,size:number,color:string)=>{const text=this.label(53,y,value,size,color,0,'left');if(text.width>282)text.setScale(282/text.width,1);};
++      row(144,`#${detail.number} · ${detail.name}`,9,ink);
++      row(157,detail.lines[1],9,accent);
++      row(170,notice||detail.lines[2],9,wood);
+     }else {this.label(180,151,ORDER_DETAIL_PROMPT,13,ink,310);if(notice)this.label(180,170,notice,8,wood,310);}
+     const {x,y,w,h}=KITCHEN.order;
+     this.hit('order',x,y,w,h,!!detail||this.runtime.tutorialActive||!!notice,()=>{this.inspectedRecipe=null;if(this.orderQueue.detail||this.runtime.tutorialActive||notice)this.hold('order');});
+@@ -362,8 +368,9 @@ export class CozyScene extends Phaser.Scene {
+     recipes.forEach(([recipe,name],i)=>{
+       const {x,y,w,h}=KITCHEN.recipe(i);
+       const available=recipe==='cheese'||production&&this.runtime.availableRecipes.includes(recipe as StockRecipe);
+-      this.referenceSprite('recipe-'+recipe,x+w/2,y+15,38);
+-      this.label(x+w/2,y+31,name,10,available?cream:muted,w-6);
++      const preview:Record<string,string[]>={cheese:['dough','sauce','cheese'],mushroom:['dough','sauce','cheese','mushroom'],sausage:['dough','sauce','cheese','sausage'],pepperoni:['dough','sauce','cheese','pepperoni'],vegetable:['dough','sauce','cheese','pepper','onion','corn','olive'],bbq:['dough','sauce-bbq','cheese','chicken','onion'],seafood:['dough','sauce','cheese','shrimp','squid'],ham:['dough','sauce','cheese','ham','pineapple']};
++      this.graphics();this.art.pizza(x+w/2,y+15,18,preview[recipe]);
++      this.label(x+w/2,y+27,name,10,available?cream:muted,w-6);
+       this.ingredientState(x,y,w,h,available,recipe===this.runtime.selectedRecipe);
+       if(!production||i>=Math.min(3,this.runtime.abandonedPizzas.length))this.hit('recipe-'+i,x,y,w,h,available,()=>{this.inspectedRecipe=recipe as StockRecipe;this.hold('order');});
+     });
+@@ -378,15 +385,36 @@ export class CozyScene extends Phaser.Scene {
+     const s=this.runtime.state,production=this.runtime.productionActive&&!this.runtime.tutorialActive;
+     items.forEach(([id,name],i)=>{
+       const {x,y,w,h}=KITCHEN.ingredient(i+5);
+-      const available=id==='dough'||id==='cheese'||production&&(id==='mushroom'||id==='sausage'&&this.runtime.availableRecipes.includes('sausage'));
+-      this.label(x+w/2,y+31,name,9,available?cream:muted,w-3);
++      const available=!this.runtime.tutorialActive||id==='dough'||id==='cheese';
++      this.label(x+w/2,y+27,name,9,available?cream:muted,w-3);
+       this.ingredientState(x,y,w,h,available,available&&s.ingredients.includes(id as StockIngredient));
+-      if(available){this.hit(id,x,y,w,h,s.stage==='assembly',()=>this.runtime.dispatch({type:'ingredient',ingredient:id as StockIngredient}));if(production)this.stockBadge(id as StockIngredient,x,y,w);}
++      this.hit(id,x,y,w,h,available&&(s.stage==='assembly'||production&&this.runtime.available(id as StockIngredient)<=0),()=>this.useIngredient(id as StockIngredient));if(production)this.stockBadge(id as StockIngredient,x,y,w);
+     });
+     const {x,y,w,h}=KITCHEN.ingredient(19),discardable=this.runtime.selectedExpired||['raw','ready','burnt'].includes(s.stage);
+-    this.label(x+w/2,y+31,'Xóa tất cả',9,cream);
++    this.label(x+w/2,y+27,'Xóa tất cả',9,cream);
+     this.hit(discardable?'discard':'clear',x,y,w,h,discardable||s.stage==='assembly'&&s.ingredients.length>0,()=>{if(discardable){if(production)this.runtime.requestDiscard();else this.runtime.dispatch({type:'discard'});}else for(const ingredient of [...this.runtime.state.ingredients])this.runtime.dispatch({type:'ingredient',ingredient});});
+   }
++  private useIngredient(ingredient:StockIngredient):void{
++    if(this.runtime.productionActive&&this.runtime.available(ingredient)<=0&&(this.runtime.state.stage!=='assembly'||!this.runtime.state.ingredients.includes(ingredient))){
++      this.expressIngredient=ingredient;this.expressQuantity=1;this.expressLease=this.runtime.acquirePause('order');this.dirty=true;return;
++    }
++    this.runtime.dispatch({type:'ingredient',ingredient});
++  }
++  private closeExpress():void{this.expressIngredient=null;this.expressLease?.release();this.expressLease=undefined;this.dirty=true;}
++  private expressDialog():void{
++    const ingredient=this.expressIngredient!;this.resetModalControls();this.veil();this.graphics();this.art.panel(22,188,316,352,UI.paper,UI.border,20);
++    this.label(180,210,'Chợ · Đặt hỏa tốc',21,ink,280);
++    const name=catalog.find(item=>item.id===ingredient)?.name??ingredient,price=this.runtime.expressPrice(ingredient),total=price*this.expressQuantity;
++    this.label(180,252,name,18,ink,280);this.label(180,283,`${price} xu / phần · +60% giá chợ`,13,wood,280);
++    this.label(180,311,'Nhận sau 5 giây chạy ca',12,wood,280);
++    this.button('express-less',48,349,64,48,'−',this.expressQuantity>1,()=>{this.expressQuantity--;this.dirty=true;},UI.dark);
++    this.label(180,358,String(this.expressQuantity),22,ink);
++    this.button('express-more',248,349,64,48,'+',this.expressQuantity<20,()=>{this.expressQuantity++;this.dirty=true;},UI.dark);
++    const enough=this.runtime.state.cash>=total;
++    this.label(180,405,enough?`Tổng ${total} xu`:`Thiếu ${total-this.runtime.state.cash} xu`,13,enough?ink:accent,280);
++    this.button('express-confirm',48,436,264,48,'Xác nhận đặt hàng',enough,()=>{if(this.runtime.dispatch({type:'express.order',ingredient,quantity:this.expressQuantity,commandId:`express:${this.purchaseScope}:${++this.purchaseSerial}`}))this.closeExpress();else this.dirty=true;});
++    this.button('express-close',290,193,40,40,'×',true,()=>this.closeExpress(),UI.dark);
++  }
+   private veil():void{
+     this.visibleActions=[];for(const zone of this.hitZones.values())zone.disableInteractive();
+     this.graphics();this.art.rect(0,160,360,480,0x241810,.87);const blocker=this.add.zone(0,0,360,640).setOrigin(0).setInteractive();this.layer.add(blocker);this.controls=[];
+@@ -395,12 +423,6 @@ export class CozyScene extends Phaser.Scene {
+     const quality=oven.stage==='burnt'?'Bánh cháy':oven.stage==='baking'?(oven.ovenSeconds<3?'Đang nướng':oven.ovenSeconds>=4?'Sắp cháy':'Sẵn sàng'):oven.stage==='ready'?'Đã lấy bánh':'Lò trống';
+     this.label(180,175,`${this.runtime.pauses.length?'Đang dừng':'Đang chạy'} · ${quality} · ${timerText(Math.floor(oven.ovenSeconds))}`,12,cream,340);
+   }
+-  private purchase(ingredient:StockIngredient,quantity:number):void{
+-    const key=`${this.runtime.preparationDay}:${ingredient}:${quantity}`,at=performance.now();
+-    const commandId=this.lastPurchase?.key===key&&at-this.lastPurchase.at<350?this.lastPurchase.id:`ui-purchase-${this.purchaseScope}-${++this.purchaseSerial}`;
+-    this.lastPurchase={key,at,id:commandId};
+-    this.runtime.dispatch({type:'market.buy',ingredient,quantity,commandId});
+-  }
+   private choosePrice(recipe:StockRecipe):void{
+     if(this.runtime.canSetPrices){
+       if(!this.runtime.availableRecipes.includes(recipe))return;
+@@ -433,11 +455,7 @@ export class CozyScene extends Phaser.Scene {
+     this.button('market-price-plus',196,353,112,48,'+ 5%',draft.percent<140,()=>{draft.percent=Math.min(140,draft.percent+5);this.dirty=true;},UI.dark);
+     this.label(180,330,this.priceError||'Giá 80–140% · Giá cao có thể bị từ chối',10,wood,290);
+     this.button('market-price-enabled',188,408,132,48,draft.enabled?'Có trong\nthực đơn':'Bỏ khỏi\nthực đơn',true,()=>{draft.enabled=!draft.enabled;this.dirty=true;},draft.enabled?UI.green:UI.dark);
+-    if(draft.recipe==='sausage')this.button('market-buy-sausage',40,408,132,48,`Mua xúc xích\n${this.runtime.price('sausage')} xu · Có ${this.runtime.owned('sausage')}`,this.runtime.state.cash>=this.runtime.price('sausage'),()=>{
+-      this.priceLease?.release();this.priceLease=undefined;
+-      this.purchase('sausage',1);this.priceLease=this.runtime.acquirePause('order');this.dirty=true;
+-    });
+-    else this.label(106,413,'Chỉ đổi trước\nkhi mở cửa',11,wood,128);
++    this.label(106,413,'Chỉ đổi trước\nkhi mở cửa',11,wood,128);
+     this.button('market-price-cancel',40,462,132,48,'Hủy',true,()=>this.closePrice(),UI.dark);
+     this.button('market-price-save',188,462,132,48,'Lưu giá',true,()=>this.closePrice(true));
+   }
+@@ -461,6 +479,7 @@ export class CozyScene extends Phaser.Scene {
+       `Tiền đầu ngày: ${a.startingCash} xu`,
+       `Bán pizza: +${a.sales} xu · Thưởng: +${a.rewards} xu`,
+       `Mua nguyên liệu: −${a.purchases} xu`,
++      ...(a.capitalPurchases?[`Nâng cấp quán: −${a.capitalPurchases} xu (dòng tiền, không trừ lợi nhuận)`]:[]),
+       `Thuê: −${a.rent} xu · Lương: −${a.wages} xu`,
+       `Sửa chữa: −${a.repairs} xu · Khác: −${a.other} xu`,
+       `Tiền cuối ngày đã chốt: ${a.endingCash} xu`,
+@@ -488,25 +507,17 @@ export class CozyScene extends Phaser.Scene {
+       this.label(180,180,'Làm lại Ngày 1?',23,ink);
+       this.label(180,232,'Tiền và kho hiện tại sẽ được đặt lại\nvề 300 xu và kho trống.',14,ink,296);
+       this.button('market-cancel-reset',42,330,276,48,'Tiếp tục chuẩn bị',true,()=>{this.restartConfirmation=false;this.dirty=true;});
+-      this.button('market-confirm-reset',42,392,276,48,'Xác nhận làm lại',true,()=>{this.restartConfirmation=false;this.quantities={dough:1,sauce:1,cheese:1,mushroom:1};this.runtime.dispatch({type:'reset'});},UI.dark);return;
++      this.button('market-confirm-reset',42,392,276,48,'Xác nhận làm lại',true,()=>{this.restartConfirmation=false;this.runtime.dispatch({type:'reset'});},UI.dark);return;
+     }
+     this.label(180,76,'Chuẩn bị mở tiệm',23,ink);
+     this.label(180,109,`${this.runtime.state.cash} xu · Thuê 20 xu · Ngày ${this.runtime.day}`,13,wood);
+-    (['dough','sauce','cheese','mushroom'] as const).forEach((id,i)=>{
+-      const row=catalog.find(item=>item.id===id)!,y=143+i*71,qty=this.quantities[id];
+-      this.graphics();this.art.panel(20,y,320,64,UI.dark,UI.border,10);
+-      this.icon(id,42,y+21,30);this.label(66,y+5,row.name,11,cream,80,'left');
+-      this.label(66,y+24,`${this.runtime.price(id)} xu / phần`,10,cream,80,'left');
+-      this.label(30,y+46,`Có ${this.runtime.owned(id)} · HSD mới ${this.runtime.purchaseExpiry(id)}`,9,muted,118,'left');
+-      this.button(`market-minus-${id}`,148,y+7,48,48,'−',!this.runtime.shopOpen&&qty>1,()=>{this.quantities[id]--;this.dirty=true;},UI.dark);
+-      this.button(`market-plus-${id}`,201,y+7,48,48,'+',!this.runtime.shopOpen&&qty<100,()=>{this.quantities[id]++;this.dirty=true;},UI.dark);
+-      const affordable=qty*this.runtime.price(id)<=this.runtime.state.cash;
+-      this.button(`market-buy-${id}`,254,y+7,76,48,this.runtime.shopOpen?'Đã mở ca':affordable?`Mua ${qty}`:'Thiếu xu',!this.runtime.shopOpen&&affordable,()=>this.purchase(id,qty));
+-    });
++    this.graphics();this.art.panel(20,143,320,268,UI.paper,UI.border,12);
++    this.label(180,166,'Đặt nguyên liệu trong ca',21,ink,296);
++    this.explanation(220,150,'Mở quán rồi chạm ô nguyên liệu đã hết để vào Chợ hỏa tốc.\n\nGiá cao hơn 60%; nhận hàng sau 5 giây chạy ca. Vòng xanh ở ô nguyên liệu hiển thị tiến độ.\n\nKhông cần mua nguyên liệu trước khi mở cửa.',15);
+     for(const [i,id] of (['cheese','mushroom'] as const).entries()){
+       this.button(`market-recipe-${id}`,20+i*163,431,157,48,`${id==='cheese'?'Phô mai':'Nấm'} · ${this.runtime.customerProgress.prices[id]} xu`,true,()=>this.choosePrice(id),this.runtime.selectedRecipe===id?UI.green:UI.dark);
+     }
+-    this.label(180,487,this.runtime.shopOpen?'Đã mở ca: chỉ xem kho, không mua thêm.':this.runtime.preparationBudget.warning||this.runtime.shopMessage,11,ink,310);
++    this.label(180,487,this.runtime.shopOpen?'Chạm ô hết nguyên liệu để đặt hỏa tốc.':'Có thể mở ca ngay cả khi kho trống.',11,ink,310);
+     this.button('market-open',20,545,157,48,'Mở tiệm',this.runtime.canOpen,()=>this.runtime.openShop());
+     if(this.runtime.shopOpen)this.button('market-orders',183,545,157,48,'Trở lại đơn',true,()=>this.runtime.returnToOrders(),UI.dark);
+     else if(this.runtime.day===1)this.button('market-reset',183,545,157,48,this.campaignSession?'Chiến dịch mới':'Làm lại Ngày 1',true,()=>{if(this.campaignSession)this.newCampaignConfirmation=true;else this.restartConfirmation=true;this.dirty=true;},UI.dark);
+@@ -521,7 +532,7 @@ export class CozyScene extends Phaser.Scene {
+     const summary=this.runtime.daySummary,initial=this.runtime.postTutorialPreparation;
+     if(!summary&&!initial)return;
+     const canBuy=initial||this.runtime.canPrepareNextDay;
+-    this.layer.removeAll(true);this.controls=[];this.visibleActions=[];this.timers=[];this.heatMarker=undefined;
++    this.layer.removeAll(true);this.controls=[];this.visibleActions=[];this.timers=[];this.heatBar=undefined;
+     for(const zone of this.hitZones.values())zone.disableInteractive();
+     this.graphics();this.art.rect(0,0,360,640,0x9c5c35);
+     // Original code-drawn wood, brick and leaves keep the supplied reference's warm shop setting.
+@@ -559,28 +570,23 @@ export class CozyScene extends Phaser.Scene {
+       this.label(24,351,'Đánh giá của khách',17,ink,310,'left');
+       modalText(this,this.layer,25,380,310,55,(summary.reviews.length?summary.reviews.map(r=>`${r.name} · ${'★'.repeat(r.stars)}${'☆'.repeat(5-r.stars)}\n${r.reasons.join(', ')||'Đúng món và chín vừa.'}\nUy tín ${r.reputationDelta>0?'+':''}${r.reputationDelta} · Quan hệ +${r.relationshipDelta}`).join('\n\n'):'Chưa có đánh giá')+`\n\nUy tín ${summary.reputation}/100 · Quan hệ ${summary.relationship}/3\n${summary.referral?.reason??'Giới thiệu ngày 3: xét cuối ngày 2, uy tín ≥55.'}`,12,ink,this.textScale);
+       this.graphics();this.art.panel(9,453,342,127,UI.paper,0x75452c,14);this.label(24,458,'Chuẩn bị ngày mai',16,ink,300,'left');
+-      const tiles=[['market','Mua nguyên liệu','dough'],['stock','Kho nguyên liệu','cheese'],['shop','Trang trí · Chưa mở','lock'],['missions','Nhiệm vụ','checklist']] as const;
++      const tiles=[['market','Chợ hỏa tốc','dough'],['stock','Kho nguyên liệu','cheese'],['shop','Nâng cấp quán','lock'],['missions','Nhiệm vụ','checklist']] as const;
+       tiles.forEach(([tab,title],i)=>this.hubAction(`summary-prepare-${tab}`,17+(i%2)*166,481+Math.floor(i/2)*48,160,48,title,()=>{this.summaryTab=tab;this.dirty=true;}));
+     }else if(this.summaryTab==='market'){
+       this.graphics();this.art.panel(9,183,342,385,UI.paper,0x75452c,14);
+       this.label(180,195,`Chợ · Ngày ${this.runtime.preparationDay}`,22,ink);
+       if(!canBuy)this.label(180,265,'Ca bán đã kết thúc. Không thể nhập thêm.',14,wood,300);
+-      else (['dough','sauce','cheese','mushroom'] as const).forEach((id,i)=>{
+-        const y=231+i*68;this.graphics();this.art.round(18,y,324,61,10,0xf2e3cc);this.icon(id,43,y+27,37);
+-        this.label(69,y+8,catalog.find(row=>row.id===id)!.name,13,ink,162,'left');
+-        this.label(69,y+31,`${this.runtime.price(id)} xu · Có ${this.runtime.owned(id)}`,11,wood,164,'left');
+-        this.button(`summary-buy-${id}`,239,y+7,93,48,'Mua 1',this.runtime.price(id)<=this.runtime.state.cash,()=>this.purchase(id,1));
+-      });
++      else{this.label(180,256,'Đặt hỏa tốc khi đang bán',20,ink,302);modalText(this,this.layer,30,302,300,175,'Mở ca bán, rồi chạm ô nguyên liệu đã hết để đặt hàng.\n\nGiá cao hơn 60% so với giá chợ. Hàng tới sau 5 giây chạy ca.\n\nKhông cần mua trước để mở quán.',15,wood,this.textScale);}
+       if(canBuy){
+         for(const [i,recipe] of (['cheese','mushroom'] as const).entries())this.button('summary-recipe-'+recipe,18+i*165,505,159,48,recipe==='cheese'?'Pizza phô mai':'Pizza nấm',true,()=>this.choosePrice(recipe),this.runtime.selectedRecipe===recipe?UI.green:UI.dark);
+       }
+-      this.label(180,556,this.runtime.preparationBudget.warning||`Thuê 20 xu · Còn sau thuê ${this.runtime.preparationBudget.afterRent} xu`,9,wood,310);
++      this.label(180,556,'Hàng hỏa tốc chỉ đặt trong ca bán.',9,wood,310);
+     }else if(this.summaryTab==='stock'){
+       this.graphics();this.art.panel(9,183,342,385,UI.paper,0x75452c,14);this.label(180,196,'Kho nguyên liệu',22,ink);
+       const lots=this.runtime.stockLots;
+-      const text=lots.length?lots.map(l=>`${catalog.find(row=>row.id===l.ingredient)!.name} ×${l.quantity}\nLô ngày ${l.day} · Dùng đến hết ngày ${l.expiry} · ${l.unitCost} xu/phần`).join('\n\n'):'Kho đang trống. Mua thêm nguyên liệu ở Chợ.';
++      const text=lots.length?lots.map(l=>`${catalog.find(row=>row.id===l.ingredient)!.name} ×${l.quantity}\nLô ngày ${l.day} · Dùng đến hết ngày ${l.expiry} · ${l.unitCost} xu/phần`).join('\n\n'):'Kho đang trống. Mở ca rồi chạm ô nguyên liệu để đặt hỏa tốc.';
+       modalText(this,this.layer,28,243,304,258,text,14,ink,this.textScale);
+-      this.hubAction('summary-stock-market',24,508,312,48,'Đến Chợ mua nguyên liệu',()=>{this.summaryTab='market';this.dirty=true;});
++      this.hubAction('summary-stock-market',24,508,312,48,'Xem Chợ hỏa tốc',()=>{this.summaryTab='market';this.dirty=true;});
+     }else if(this.summaryTab==='summary'){
+       this.graphics();this.art.panel(9,183,342,151,UI.paper,0x75452c,14);
+       this.label(24,193,'Ngày 1 chưa bắt đầu',18,ink,313,'left');
+@@ -588,7 +594,7 @@ export class CozyScene extends Phaser.Scene {
+       this.graphics();this.art.panel(9,342,342,103,UI.paper,0x75452c,14);
+       this.label(24,351,'Đánh giá của khách',17,ink,310,'left');this.label(180,391,'Chưa có đánh giá',14,wood,310);
+       this.graphics();this.art.panel(9,453,342,127,UI.paper,0x75452c,14);this.label(24,458,'Chuẩn bị ngày 1',16,ink,300,'left');
+-      const tiles=[['market','Mua nguyên liệu'],['stock','Kho nguyên liệu'],['shop','Trang trí · Chưa mở'],['missions','Nhiệm vụ']] as const;
++      const tiles=[['market','Chợ hỏa tốc'],['stock','Kho nguyên liệu'],['shop','Nâng cấp quán'],['missions','Nhiệm vụ']] as const;
+       tiles.forEach(([tab,title],i)=>this.hubAction(`summary-prepare-${tab}`,17+(i%2)*166,481+Math.floor(i/2)*48,160,48,title,()=>{this.summaryTab=tab;this.dirty=true;}));
+     }else if(this.summaryTab==='missions'&&summary){
+       this.graphics();this.art.panel(9,183,342,385,UI.paper,0x75452c,14);this.label(180,196,'Mục tiêu & nhiệm vụ',22,ink);
+@@ -601,9 +607,19 @@ export class CozyScene extends Phaser.Scene {
+         `\nCấp ${p.level} · ${p.xp} XP (mốc 0 / 60 / 150)`,unlock,'Đơn thương mại: 10 XP; 4–5 sao thêm 5 XP.',
+         `Thưởng ngày đã chốt: ${summary.rewards} xu`, 'Thưởng ghi riêng, không cộng doanh thu hay lợi nhuận.'];
+       modalText(this,this.layer,28,243,304,301,lines.join('\n'),14,ink,this.textScale);
++    }else if(this.summaryTab==='shop'){
++      this.graphics();this.art.panel(9,183,342,385,UI.paper,0x75452c,14);this.label(180,196,'Quán · Nâng cấp',22,ink);
++      for(const [i,kind] of (['oven','queue'] as const).entries()){
++        const y=244+i*132,price=this.runtime.upgradePrice(kind),maxed=kind==='oven'?this.runtime.ovenLevel>=2:this.runtime.queueCapacity===6;
++        this.graphics();this.art.round(19,y,322,119,12,0xf2e3cc);
++        this.label(32,y+9,kind==='oven'?`Lò cấp ${this.runtime.ovenLevel}`:`Hàng chờ ${this.runtime.queueCapacity} đơn`,18,ink,294,'left');
++        this.label(32,y+38,kind==='oven'?(maxed?'Chín 2–4 giây':this.runtime.ovenLevel===0?'Nâng cấp: chín 4–6 giây':'Nâng cấp: chín 2–4 giây'):(maxed?'Đã mở tối đa 6 đơn':'Nâng cấp: nhận 6 đơn cùng lúc'),12,wood,294,'left');
++        this.button(`summary-upgrade-${kind}`,32,y+65,296,48,maxed?'Đã nâng tối đa':`Nâng cấp · ${price} xu`,!maxed&&canBuy&&price!==null&&this.runtime.state.cash>=price,()=>{const commandId=`upgrade:${this.purchaseScope}:${++this.purchaseSerial}`;if(this.campaignSession)void this.campaignSession.upgradeShop(kind,commandId);else this.runtime.dispatch({type:'shop.upgrade',kind,commandId});this.dirty=true;});
++      }
++      this.label(180,533,'Nâng cấp chỉ trước khi mở ca bán.',11,wood,310);
+     }else{
+       this.graphics();this.art.panel(9,183,342,385,UI.paper,0x75452c,14);this.icon('lock',180,265,58);
+-      this.label(180,326,this.summaryTab==='shop'?'Trang trí & nâng cấp':'Nhiệm vụ',22,ink,300);this.label(180,370,'Chưa mở',18,wood,300);
++      this.label(180,326,'Nhiệm vụ',22,ink,300);this.label(180,370,'Chưa mở',18,wood,300);
+       this.label(180,407,'Tính năng này chưa có trong bản chơi hiện tại.',13,wood,280);
+     }
+     this.graphics();this.art.rect(0,580,360,60,0x77442b);
+@@ -613,7 +629,7 @@ export class CozyScene extends Phaser.Scene {
+       return;
+     }
+     if(initial){
+-      this.label(68,587,this.runtime.canOpen?'Kiểm tra kho\ntrước khi mở quán':'Bổ sung đủ\nnguyên liệu ở Chợ',10,cream,117);
++      this.label(68,587,'Sẵn sàng\nmở ca bán',10,cream,117);
+       this.button('summary-open-first-day',133,587,214,48,'Mở quán — Ngày 1',this.runtime.canOpen,()=>{this.runtime.openShop();this.inspectedOrderId=null;},0x608341);
+     }
+     else if(summary!.ending){
+@@ -621,7 +637,7 @@ export class CozyScene extends Phaser.Scene {
+       this.button('summary-final-result',133,587,214,48,'Kết quả cuối',!this.campaignSession||['ready','temporary'].includes(this.campaignSession.view.state),()=>{this.finalOpen=true;this.dirty=true;},0x608341);
+     }
+     else{
+-      this.label(68,587,this.runtime.canOpenNextDay?'Kiểm tra kho\ntrước khi mở quán':'Bổ sung đủ\nnguyên liệu ở Chợ',10,cream,117);
++      this.label(68,587,'Chuẩn bị\nngày mới',10,cream,117);
+       this.button('summary-open-next-day',133,587,214,48,`Mở quán — Ngày ${summary!.day+1}`,this.runtime.canOpenNextDay,()=>{this.runtime.openNextDay();this.inspectedOrderId=null;},0x608341);
+     }
+   }
+@@ -676,9 +692,8 @@ export class CozyScene extends Phaser.Scene {
+     const pending=this.runtime.bargainPending!;
+     this.veil();this.graphics();this.art.panel(22,208,316,286,UI.paper,UI.border,20);
+     this.label(180,226,`${pending.name} · Mặc cả`,21,ink,280);
+-    const missing=this.runtime.missingRecipeReason(pending.recipe);
+-    this.explanation(264,68,`${missing?missing+'\n':''}Giá gốc ${pending.originalPrice} xu · Giảm ${pending.discountPercent}%\nGiá chốt ${pending.finalPrice} xu · Mức nhận ≤${pending.maxPricePercent}%\nKiên nhẫn ${pending.patience} giây, bắt đầu khi đồng ý.`,13);
+-    this.button('accept-bargain',64,352,232,48,'Đồng ý giá giảm',!missing,()=>this.runtime.dispatch({type:'customer.bargain',accept:true}));
++    this.explanation(260,86,`Bánh đã làm xong! Khách xin giảm ${pending.discountPercent}%.\nGiá gốc ${pending.originalPrice} xu → ${pending.finalPrice} xu.\nChấp nhận: thành khách quen, quay lại ủng hộ.\nTừ chối: đánh giá thấp, không quay lại lần hai.`,13);
++    this.button('accept-bargain',64,352,232,48,'Đồng ý · khách quen',true,()=>this.runtime.dispatch({type:'customer.bargain',accept:true}));
+     this.button('reject-bargain',64,410,232,48,'Từ chối giá',true,()=>this.runtime.dispatch({type:'customer.bargain',accept:false}),UI.dark);
+   }
+   private helpDialog():void{
+@@ -709,14 +724,12 @@ export class CozyScene extends Phaser.Scene {
+     if(step==='complete'){
+       this.veil();this.label(180,236,'Bạn đã biết làm pizza!',22,ink,280);
+       this.explanation(278,57,'Bánh tập đã hoàn thành.\nTiền và nguyên liệu của ca thật\nvẫn được giữ nguyên.',14);
+-      this.button('start-shift',64,355,232,54,'Đến Chợ mua hàng',true,()=>this.runtime.startShift());return;
++      this.button('start-shift',64,355,232,54,'Bắt đầu ca bán',true,()=>this.runtime.startShift());return;
+     }
+     const [title,detail]=messages[step??'dough'];
+     // Reuse the order area; guidance never hides the required kitchen controls.
+     this.graphics();this.art.g.fillStyle(UI.paper,1).fillRoundedRect(15,147,330,33,7);
+     this.label(26,148,title,12,ink,307,'left');this.label(26,165,detail,9,ink,307,'left');
+-    const target=this.controls.find(c=>c.id===this.runtime.expectedControl);
+-    if(target){this.graphics();this.art.g.lineStyle(3,UI.gold,1).strokeRoundedRect(target.x+2,target.y+2,target.width-4,target.height-4,9);}
+   }
+   private overlay():void{
+     this.veil();const pauses=this.runtime.pauses;
+diff --git "a/_bmad-output\\implementation-artifacts\\kitchen-v2-before\\CozyCheckpoint.ts" b/src/domain/CozyCheckpoint.ts
+index d00b67a..f9ccd4b 100644
+--- "a/_bmad-output\\implementation-artifacts\\kitchen-v2-before\\CozyCheckpoint.ts"
++++ b/src/domain/CozyCheckpoint.ts
+@@ -6,11 +6,12 @@ import {referralEligibility} from './CustomerProgression';
+ import type {CozyViability} from './CozyViability';
+ import {cozyViability} from './CozyViability';
+ import {CozyStock} from './CozyStock';
++import {OVEN_UPGRADE_PRICES,QUEUE_UPGRADE_PRICE} from '../config/kitchenEconomy';
+ export interface CozyReview {name:string;stars:number;reasons:readonly string[];outcome:'delivered'|'expired'|'closed';reputationDelta:number;relationshipDelta:number}
+ export interface CozyDaySummary {progression:ProgressionSnapshot;goal:GoalView;rewards:number;accounts:DayAccounts;day:number;revenue:number;purchases:number;cost:number;expired:number;rent:number;profit:number;delivered:number;abandoned:number;rating:number|null;cash:number;reviews:readonly CozyReview[];ending:'complete'|'insolvent'|null;reputation:number;relationship:number;referral:ReturnType<typeof referralEligibility>|null;viability?:CozyViability}
+ export const COZY_SCHEMA_VERSION=1;
+ export const COZY_CONTENT_VERSION='cozy-three-days-2026-10-03';
+-export type CozyCheckpoint={contentId:typeof COZY_CONTENT_VERSION;day:number;terminal:boolean;stock:CozyStockSnapshot;progression:ProgressionSnapshot;help:CozyHelpCheckpoint;menu:StockRecipe[];prices:Record<StockRecipe,number>;recipe:StockRecipe;reports:CozyDaySummary[];cumulativeProfit:number;reputation:number;relationship:number;relationshipDays:number[];regularDay1Stars:number|null;regularLatestStars:number|null;referral:ReturnType<typeof referralEligibility>|null};
++export type CozyCheckpoint={upgrades:{ovenLevel:number;queueLevel:number;spent:number;pendingSpent:number};customerMemory:{accepted:number[];declined:number[]};contentId:typeof COZY_CONTENT_VERSION;day:number;terminal:boolean;stock:CozyStockSnapshot;progression:ProgressionSnapshot;help:CozyHelpCheckpoint;menu:StockRecipe[];prices:Record<StockRecipe,number>;recipe:StockRecipe;reports:CozyDaySummary[];cumulativeProfit:number;reputation:number;relationship:number;relationshipDays:number[];regularDay1Stars:number|null;regularLatestStars:number|null;referral:ReturnType<typeof referralEligibility>|null};
+ const integer=(n:unknown,min=0,max=1000000):n is number=>Number.isSafeInteger(n)&&Number(n)>=min&&Number(n)<=max;
+ const stars=(n:unknown)=>n===null||integer(n,1,5);
+ const text=(v:unknown,max=512):v is string=>typeof v==='string'&&v.length<=max;
+@@ -20,7 +21,7 @@ function summaryValid(s:CozyDaySummary):boolean {
+   const rating=s.reviews.length?s.reviews.reduce((n,r)=>n+r.stars,0)/s.reviews.length:null;
+   if(s.rating!==rating||s.delivered!==s.reviews.filter(r=>r.outcome==='delivered').length||s.abandoned!==s.reviews.filter(r=>r.outcome!=='delivered').length)return false;
+   const a=s.accounts;
+-  if(!a||!integer(a.startingCash,-20)||!integer(a.openingInventoryValue)||!integer(a.cumulativeProfit,-1000000)||a.sales!==s.revenue||a.rewards!==s.rewards||a.purchases!==s.purchases||a.consumed!==s.cost||a.expired!==s.expired||a.rent!==20||a.profit!==s.profit||a.endingCash!==s.cash||s.profit!==s.revenue-s.cost-s.expired-20||s.cash!==a.startingCash+s.revenue+s.rewards-s.purchases-20||a.wages!==0||a.repairs!==0||a.other!==0||!integer(a.giftCost)||a.giftCost>s.cost)return false;
++  if(!a||!integer(a.startingCash,-20)||!integer(a.openingInventoryValue)||!integer(a.cumulativeProfit,-1000000)||a.sales!==s.revenue||a.rewards!==s.rewards||a.purchases!==s.purchases||a.consumed!==s.cost||a.expired!==s.expired||a.rent!==20||a.profit!==s.profit||a.endingCash!==s.cash||s.profit!==s.revenue-s.cost-s.expired-20||s.cash!==a.startingCash+s.revenue+s.rewards-s.purchases-20-(a.capitalPurchases??0)||!integer(a.capitalPurchases??0)||a.wages!==0||a.repairs!==0||a.other!==0||!integer(a.giftCost)||a.giftCost>s.cost)return false;
+   if(!a.inventory||!Array.isArray(a.inventory.lots)||a.inventory.lots.length>300)return false;
+   const lots=validateStockSnapshot({cash:s.cash,nextLot:10000,activeDay:Math.min(3,s.day+1),lots:a.inventory.lots,books:[],settlements:[]});
+   if(!lots||a.inventory.units!==lots.lots.reduce((n,l)=>n+l.quantity,0)||a.inventory.value!==lots.lots.reduce((n,l)=>n+l.quantity*l.unitCost,0))return false;
+@@ -36,6 +37,9 @@ function summaryValid(s:CozyDaySummary):boolean {
+ function validatedCheckpoint(value:unknown):CozyCheckpoint|null {
+   if(!value||typeof value!=='object')return null;
+   const s=value as CozyCheckpoint;
++  const upgrades=s.upgrades??{ovenLevel:0,queueLevel:0,spent:0,pendingSpent:0},memory=s.customerMemory??{accepted:[],declined:[]};
++  if(!integer(upgrades.ovenLevel,0,2)||!integer(upgrades.queueLevel,0,1)||!integer(upgrades.spent)||!integer(upgrades.pendingSpent,0,upgrades.spent)||upgrades.spent!==OVEN_UPGRADE_PRICES.slice(0,upgrades.ovenLevel).reduce((sum,price)=>sum+price,0)+upgrades.queueLevel*QUEUE_UPGRADE_PRICE)return null;
++  if(!memory||![memory.accepted,memory.declined].every(ids=>Array.isArray(ids)&&ids.length<=150&&ids.every(id=>integer(id,0,149))&&new Set(ids).size===ids.length)||memory.accepted.some(id=>memory.declined.includes(id)))return null;
+   if(JSON.stringify(value).length>131072||!s.progression||!Array.isArray(s.progression.outcomes)||s.progression.outcomes.length>40||s.progression.outcomes.some(id=>typeof id!=='string'||!/^cozy-\d{1,5}$/.test(id))||!Array.isArray(s.progression.claims)||s.progression.claims.length>4)return null;
+   const stock=validateStockSnapshot(s.stock),progress=CozyProgression.restore(s.progression),help=validateHelpCheckpoint(s.help);
+   if(s.contentId!==COZY_CONTENT_VERSION||!integer(s.day,1,3)||typeof s.terminal!=='boolean'||!stock||!progress||!help||!integer(s.cumulativeProfit,-1000000)||!integer(s.reputation,0,100)||!integer(s.relationship,0,3)||!stars(s.regularDay1Stars)||!stars(s.regularLatestStars))return null;
+@@ -49,10 +53,12 @@ function validatedCheckpoint(value:unknown):CozyCheckpoint|null {
+     cash=report.cash;inventoryValue=report.accounts.inventory.value;
+     if(report.day===3&&JSON.stringify(report.referral)!==JSON.stringify(s.reports[1].referral))return null;
+   }
+-  if(last&&JSON.stringify(stock.lots)!==JSON.stringify(last.accounts.inventory.lots))return null;
+-  if(!last&&(stock.lots.length||stock.books.length||stock.nextLot!==1||progress.snapshot.xp||progress.snapshot.outcomes.length||s.regularDay1Stars!==null||s.regularLatestStars!==null||s.relationshipDays.length))return null;
+-  if(s.day!==(s.terminal?closed:closed+1)||s.terminal!==!!last?.ending||closed===3&&!s.terminal||progress.snapshot.goals.length!==closed||stock.settlements.length!==closed||stock.settlements.some(b=>b.day>closed)||stock.books.some(b=>b.day>closed)||stock.lots.some(l=>l.day>closed||!s.terminal&&l.expiry<s.day)||stock.activeDay!==Math.min(3,closed+1))return null;
+-  if(s.cumulativeProfit!==s.reports.reduce((n,r)=>n+r.profit,0)||stock.cash!==(last?.cash??300)||s.reputation!==(last?.reputation??50)||s.relationship!==(last?.relationship??0)||last&&JSON.stringify(progress.snapshot)!==JSON.stringify(last.progression))return null;
++  const prepBook=stock.books.find(b=>b.day===s.day&&!s.terminal),prepPurchases=prepBook?.purchases??0;
++  if(prepBook?.consumed||stock.lots.filter(l=>l.day===s.day&&!s.terminal).reduce((sum,l)=>sum+l.quantity*l.unitCost,0)!==prepPurchases)return null;
++  if(last&&JSON.stringify(stock.lots.filter(l=>l.day<=closed))!==JSON.stringify(last.accounts.inventory.lots))return null;
++  if(!last&&(progress.snapshot.xp||progress.snapshot.outcomes.length||s.regularDay1Stars!==null||s.regularLatestStars!==null||s.relationshipDays.length))return null;
++  if(s.day!==(s.terminal?closed:closed+1)||s.terminal!==!!last?.ending||closed===3&&!s.terminal||progress.snapshot.goals.length!==closed||stock.settlements.length!==closed||stock.settlements.some(b=>b.day>closed)||stock.books.some(b=>b.day>(s.terminal?closed:s.day))||stock.lots.some(l=>l.day>(s.terminal?closed:s.day)||!s.terminal&&l.expiry<s.day)||stock.activeDay!==Math.min(3,closed+1))return null;
++  if(s.cumulativeProfit!==s.reports.reduce((n,r)=>n+r.profit,0)||stock.cash!==(last?.cash??300)-upgrades.pendingSpent-prepPurchases||s.reputation!==(last?.reputation??50)||s.relationship!==(last?.relationship??0)||last&&JSON.stringify(progress.snapshot)!==JSON.stringify(last.progression))return null;
+   for(const report of s.reports){const book=stock.books.find(b=>b.day===report.day)??{purchases:0,consumed:0},settled=stock.settlements.find(b=>b.day===report.day);if(book.purchases!==report.purchases||book.consumed!==report.cost||!settled||settled.expired!==report.expired||settled.rent!==report.rent)return null;}
+   if(!s.menu.some(id=>progress.recipeAvailable(id,s.day))||!progress.recipeAvailable(s.recipe,s.day))return null;
+   if(s.referral!==null&&(!s.referral||typeof s.referral.eligible!=='boolean'||JSON.stringify(s.referral)!==JSON.stringify(referralEligibility(s.reports.find(r=>r.day===2)?.reputation??s.reputation))))return null;
+@@ -65,9 +71,10 @@ function validatedCheckpoint(value:unknown):CozyCheckpoint|null {
+   }
+   const reports=s.reports.map(r=>{
+     const p=CozyProgression.restore(r.progression)!,a=r.accounts;
+-    const accounts=closeAccounts({startingCash:a.startingCash,openingInventoryValue:a.openingInventoryValue,sales:a.sales,purchases:a.purchases,consumed:a.consumed,expired:a.expired,rent:a.rent,inventory:a.inventory,previousProfit:a.cumulativeProfit-a.profit,rewards:a.rewards,giftCost:a.giftCost});
++    const accounts=closeAccounts({startingCash:a.startingCash,openingInventoryValue:a.openingInventoryValue,sales:a.sales,purchases:a.purchases,consumed:a.consumed,expired:a.expired,rent:a.rent,inventory:a.inventory,previousProfit:a.cumulativeProfit-a.profit,rewards:a.rewards,giftCost:a.giftCost,capitalPurchases:a.capitalPurchases??0});
+     return {progression:p.snapshot,goal:p.goal(r.day),rewards:r.rewards,accounts,day:r.day,revenue:r.revenue,purchases:r.purchases,cost:r.cost,expired:r.expired,rent:r.rent,profit:r.profit,delivered:r.delivered,abandoned:r.abandoned,rating:r.rating,cash:r.cash,reviews:r.reviews.map(review=>({name:review.name,stars:review.stars,reasons:[...review.reasons],outcome:review.outcome,reputationDelta:review.reputationDelta,relationshipDelta:review.relationshipDelta})),ending:r.ending,reputation:r.reputation,relationship:r.relationship,referral:r.referral?{...r.referral}:null,...(r.viability?{viability:{...r.viability}}:{})};
+   });
+-  return structuredClone({contentId:COZY_CONTENT_VERSION,day:s.day,terminal:s.terminal,stock,progression:progress.snapshot,help,menu:[...s.menu],prices:{cheese:s.prices.cheese,mushroom:s.prices.mushroom,sausage:s.prices.sausage},recipe:s.recipe,reports,cumulativeProfit:s.cumulativeProfit,reputation:s.reputation,relationship:s.relationship,relationshipDays:[...s.relationshipDays],regularDay1Stars:s.regularDay1Stars,regularLatestStars:s.regularLatestStars,referral:s.referral?{...s.referral}:null});
++  if(s.reports.reduce((sum,r)=>sum+(r.accounts.capitalPurchases??0),0)+upgrades.pendingSpent!==upgrades.spent)return null;
++  return structuredClone({upgrades:{...upgrades},customerMemory:{accepted:[...memory.accepted],declined:[...memory.declined]},contentId:COZY_CONTENT_VERSION,day:s.day,terminal:s.terminal,stock,progression:progress.snapshot,help,menu:[...s.menu],prices:{cheese:s.prices.cheese,mushroom:s.prices.mushroom,sausage:s.prices.sausage},recipe:s.recipe,reports,cumulativeProfit:s.cumulativeProfit,reputation:s.reputation,relationship:s.relationship,relationshipDays:[...s.relationshipDays],regularDay1Stars:s.regularDay1Stars,regularLatestStars:s.regularLatestStars,referral:s.referral?{...s.referral}:null});
+ }
+ export function validateCozyCheckpoint(value:unknown):CozyCheckpoint|null {try{return validatedCheckpoint(value);}catch{return null;}}
+NEW OR MODIFIED FILE src/config/customerCatalog.ts
+/** Stable identities follow sheet order, left to right, top to bottom. */
+const names = [
+ 'Linh Gánh Rau','Bếp Béo','Bác Sĩ Bơ','Tí Điện Đóm','Tèo Cờ Lê','Hoa Hòe','Bánh Mì Bự','Cô Giáo Mực','Tí Cặp Sách','Nơ Nhí',
+ 'Mọt Sách','Phượt Phờ','Kiến Trúc Kính','Nháy Máy','Code Cú','Game Gà','Ván Trượt Vèo','Bóng Rổ Bự','Ông Bảy Bảnh','Bà Tư Tươi',
+ 'Sếp Sốt','Chị Chốt Đơn','Mẹ Măm Măm','Ba Bế Bé','Cà Phê Cười','Chú Gác Cổng','Cá Cắn Câu','Lá Lém Lỉnh','Áo Dài Duyên','Anh Lãng Tử',
+ 'Ma Măm Pizza','Ma Mát Mẻ','Ma Má Hồng','Cương Thi Cười','Quỷ Quậy','Sừng Hồng','Chằn Chén','Xương Xí Xọn','Sọ Sành Điệu','Băng Bông',
+ 'Zombie Zui','Zombie Zẻ','Bí Bự','Bí Bé','Phù Thủy Phô Mai','Pháp Sư Phồng','Ma Cà Chớn','Ma Cà Chua','Sói Sốt','Dơi Dỗi',
+ 'Mèo Ma Mị','Bóng Bơ','Lửa Lém','Cương Thi Tím','Thần Đèn Đói','Băng Bụng Bự','Lửa Lẩu','Tử Thần Thèm','Búp Bê Bánh','Quỷ Đầu Bếp',
+ 'Cáo Cam','Cáo Bạc','Mèo Mướp','Hổ Háu','Thỏ Thèm','Hươu Hí Hửng','Hạc Hờn','Rắn Rau','Rồng Rộn','Rồng Riu',
+ 'Lá Lười','Sen Sốt','Trúc Tròn','Đào Đỏ','Núi Nóng','Nước Ngọt','Mây Mềm','Trăng Tròn','Phượng Phô Mai','Cây Cụ',
+ 'Khỉ Khều','Nấm Nũng','Gió Gà','Đá Đói','Nước Nham','Bướm Bơ','Sáo Sành','Lụa Lém','Băng Bé','Lá Lạ',
+ 'Si Sút Sốt','Bảy Bóng Bẩy','Ney Nhún Nhảy','Mập Bắp','Luka Lắc','Salah Sốt','Son Săn Bánh','Haaland Háu','Modric Măm','Bóng Vàng Véo',
+ 'Lewan Lẩu','Kylian Kem','Tiến Thèm','Hải Hăm','Toàn Topping','Sơn Sốt Cay','Tóc Tiên Tôm','Đen Đế Bánh','Mỹ Măm','Bin Bắp',
+ 'Bích BBQ','Trúc Trộn','Hòa Hành','Erik Ăn','Đức Dứa','Amee Ăn Mê','Soobin Sốt','Min Mực','Jack Giăm Bông','Vũ Vét Phô Mai',
+ 'Sắt Sốt','Nước Nướng','Cây Cay','Kiến Kem','Hoa Hồng Ham','Dơi Đế','Băng Bắp','Tím Topping','Lửa Lò','Robot Rau',
+ 'Sư Tử Sốt','Rồng Rau','Đỏ Đế','Thiên Thần Tôm','Cung Corn','Kiếm Kem','Phù Thủy Phô Mai II','Băng BBQ','Tim Tôm','Ninja Nấm',
+ 'Trăng Topping','Chớp Cheese','Kính Kem','Ong Ô Liu','Bọ Bắp','Quỷ Quế','Hổ Hành','Pháp Sư Pesto','Ninja Nướng','Alien Ăn',
+] as const;
+export const CUSTOMER_COUNT=names.length;
+export function customerProfile(index:number):{id:number;name:string}{const id=((Math.trunc(index)%CUSTOMER_COUNT)+CUSTOMER_COUNT)%CUSTOMER_COUNT;return {id,name:names[id]};}
+NEW OR MODIFIED FILE src/config/kitchenEconomy.ts
+/** Provisional new ingredient prices. Existing five prices remain in demo.ts. */
+export const EXTRA_INGREDIENTS = [
+  { id: 'sauce-white', name: 'Sốt kem trắng', basePrice: 4, color: 0xffe2b8 },
+  { id: 'sauce-bbq', name: 'Sốt BBQ', basePrice: 4, color: 0x873d28 },
+  { id: 'sauce-pesto', name: 'Sốt pesto', basePrice: 4, color: 0x75a631 },
+  { id: 'sauce-hot', name: 'Sốt cay', basePrice: 4, color: 0xdf582d },
+  { id: 'pepperoni', name: 'Pepperoni', basePrice: 10, color: 0xbd392f },
+  { id: 'pepper', name: 'Ớt chuông', basePrice: 5, color: 0x428e33 },
+  { id: 'onion', name: 'Hành tây', basePrice: 4, color: 0xc886be },
+  { id: 'corn', name: 'Bắp', basePrice: 4, color: 0xffce42 },
+  { id: 'olive', name: 'Ô liu', basePrice: 5, color: 0x333934 },
+  { id: 'chicken', name: 'Thịt gà', basePrice: 10, color: 0xdc9b58 },
+  { id: 'shrimp', name: 'Tôm', basePrice: 12, color: 0xf67851 },
+  { id: 'squid', name: 'Mực', basePrice: 12, color: 0xf4b5a7 },
+  { id: 'ham', name: 'Giăm bông', basePrice: 10, color: 0xf19792 },
+  { id: 'pineapple', name: 'Dứa', basePrice: 5, color: 0xfacf45 },
+] as const;
+export const EXPRESS_PRICE_MULTIPLIER = 1.6;
+export const EXPRESS_DELIVERY_SECONDS = 5;
+/** Temporary gameplay prices awaiting a balancing pass; never read from reference art. */
+export const OVEN_UPGRADE_PRICES=Object.freeze([150,250]);
+export const QUEUE_UPGRADE_PRICE=200;
+NEW OR MODIFIED FILE src/presentation/CustomerPortraits.ts
+import type Phaser from 'phaser';
+export const CUSTOMER_PORTRAIT_MANIFEST=Object.freeze(Array.from({length:5},(_,i)=>({key:`customer-sheet-${i+1}`,url:`assets/references/khách ${i+1}.png`,type:'image' as const})));
+export function preloadCustomerPortraits(scene:Phaser.Scene):void{for(const a of CUSTOMER_PORTRAIT_MANIFEST)if(!scene.textures.exists(a.key))scene.load.image(a.key,`${import.meta.env.BASE_URL}${a.url}`);}
+export function registerCustomerPortraitFrames(scene:Phaser.Scene):void{
+ for(let sheet=0;sheet<5;sheet++){
+  const key=CUSTOMER_PORTRAIT_MANIFEST[sheet].key;if(!scene.textures.exists(key))continue;
+  const texture=scene.textures.get(key),source=texture.getSourceImage();
+  const tall=sheet===0||sheet===4;
+  const width=source.width/5,height=tall?source.height*.148:source.height/6;
+  const top=tall?source.height*.019:0;
+  for(let row=0;row<6;row++)for(let col=0;col<5;col++){
+   const frame=`customer-${sheet*30+row*5+col}`;
+   if(!texture.has(frame))texture.add(frame,0,Math.round(col*width),Math.round(top+row*height),Math.floor(width),Math.floor(height));
+  }
+ }
+}
+export function customerPortraitFrame(index:number):{key:string;frame:string}{const id=((Math.trunc(index)%150)+150)%150;return {key:`customer-sheet-${Math.floor(id/30)+1}`,frame:`customer-${id}`};}
+NEW OR MODIFIED FILE src/domain/DayAccounts.ts
+import type {CozyInventory} from './CozyStock';
+
+export interface DayAccountsInput {
+  startingCash:number;openingInventoryValue:number;sales:number;purchases:number;
+  consumed:number;expired:number;rent:number;inventory:CozyInventory;previousProfit:number;
+  rewards?:number;giftCost?:number;capitalPurchases?:number;
+}
+
+/** Purchases move cash into stock; consumption and spoilage expense that stock once. */
+export function closeAccounts(input:DayAccountsInput){
+  const rewards=input.rewards??0,wages=0,repairs=0,other=0;
+  const operatingCosts=input.rent+wages+repairs+other;
+  const profit=input.sales-input.consumed-input.expired-operatingCosts;
+  const {previousProfit,...values}=input;
+  return {...values,inventory:structuredClone(input.inventory),rewards,giftCost:input.giftCost??0,wages,repairs,other,
+    capitalPurchases:input.capitalPurchases??0,
+    endingCash:input.startingCash+input.sales+rewards-input.purchases-operatingCosts-(input.capitalPurchases??0),
+    profit,cumulativeProfit:previousProfit+profit,
+    zeroReasons:{wages:'Chưa có nhân viên trong bản demo.',repairs:'Chưa có thiết bị hỏng trong bản demo.',rewards:rewards?'Thưởng mục tiêu/nhiệm vụ/lời cảm ơn đã nhận, tách khỏi bán pizza.':'Chưa có mục tiêu, nhiệm vụ hoặc lời cảm ơn đủ điều kiện nhận thưởng trong ca.',other:'Không có chi phí khác trong ca này.'}};
+}
+export type DayAccounts=ReturnType<typeof closeAccounts>;
+NEW OR MODIFIED FILE src/runtime/CozyCampaignSession.ts
+import {CozyRuntime} from './CozyRuntime';
+import {PlayLifecycle,type PauseLease} from './PlayLifecycle';
+import type {CozyLoadResult,CozySaveEnvelope,CozySavePort,CozyWriteRequest,SaveFailure} from '../infrastructure/CozySaveRepository';
+import {replacementToken} from '../infrastructure/CozySaveRepository';
+export type CozySaveState='loading'|'ready'|'saving'|'error'|'recovery'|'temporary';
+export interface CozySaveView {state:CozySaveState;message:string;code:string|null;day:number|null;revision:number;commitId:string|null;campaignId:string|null;pending:boolean;canRetry:boolean;canTemporary:boolean;canReload:boolean}
+/** Session owns persistence and its save/menu pauses. Domain outcomes remain runtime-owned. */
+export class CozyCampaignSession {
+  private current:CozyRuntime|null=null;
+  private interruption:PlayLifecycle|null=null;
+  private menuLease:PauseLease|null=null;
+  private saveLease:PauseLease|null=null;
+  private status:CozySaveState='loading';
+  private failure:SaveFailure|null=null;
+  private saved:CozySaveEnvelope|null=null;
+  private recovery:Extract<CozyLoadResult,{kind:'loaded'|'recovery'}>|null=null;
+  private replacement:string|undefined;
+  private pending:{request:CozyWriteRequest;kind:'create'|'day'|'upgrade';tutorial:boolean}|null=null;
+  private inFlight:Promise<CozyRuntime|null>|null=null;
+  private listeners=new Set<()=>void>();
+  private generation=0;
+  private confirmedRecovery=false;
+  constructor(private readonly repository:CozySavePort,private readonly id:()=>string=()=>crypto.randomUUID()){}
+  get runtime(){return this.current;}
+  get lifecycle(){return this.interruption;}
+  get hasSession(){return this.current!==null||this.saved!==null;}
+  get busy(){return this.status==='loading'||this.status==='saving';}
+  get view():CozySaveView {return {state:this.status,message:this.status==='loading'?'Đang đọc tiến độ…':this.status==='saving'?'Đang lưu ngày. Giữ trang này mở…':this.status==='recovery'?'Bản chính bị hỏng. Bản dự phòng cùng mốc mới nhất đã được kiểm tra. Xác nhận để tiếp tục; không quay lại ngày cũ.':this.status==='temporary'?'Chơi tạm không lưu. Đóng hoặc tải lại trang sẽ mất phiên này.':this.failure?this.failure.message+((this.pending?.kind==='day'||this.pending?.kind==='upgrade')?' Ngày này chưa lưu. Đóng trang sẽ mất kết quả chưa lưu.':''):'Lưu lúc tạo chiến dịch, mua nâng cấp và kết thúc ngày. Tải lại giữa ca trở về đầu ngày hiện tại.',code:this.failure?.code??null,day:this.current?(this.current.shopPhase==='summary'&&!this.current.daySummary?.ending?this.current.day+1:this.current.day):this.saved?.payload.day??null,revision:this.saved?.revision??0,commitId:this.pending?.request.commitId??this.saved?.commitId??null,campaignId:this.pending?.request.campaignId??this.saved?.campaignId??null,pending:this.pending!==null,canRetry:this.status==='error'&&this.pending!==null&&this.failure?.code!=='revision-conflict',canTemporary:this.status==='error'&&this.pending?.kind!=='day'&&this.pending?.kind!=='upgrade'&&this.failure?.code!=='revision-conflict'&&this.current===null&&['unavailable','timeout','write-failed'].includes(this.failure?.code??''),canReload:this.status==='error'&&(this.pending?.kind==='day'||this.pending?.kind==='upgrade')};}
+  subscribe(listener:()=>void){this.listeners.add(listener);return ()=>this.listeners.delete(listener);}
+  private publish(){for(const listener of this.listeners)listener();}
+  private allowed=()=>this.status==='ready'||this.status==='temporary';
+  private holdSave(){this.saveLease??=this.current?.acquirePause('save')??null;}
+  private releaseSave(){this.saveLease?.release();this.saveLease=null;}
+  private install(runtime:CozyRuntime){this.releaseSave();this.menuLease?.release();this.menuLease=null;this.interruption?.destroy();this.current=runtime;runtime.attachSaveGuard(()=>this.current===runtime&&this.allowed());this.interruption=new PlayLifecycle(runtime);}
+  async load():Promise<CozyRuntime|null>{
+    if(this.busy&&this.inFlight)return this.inFlight;
+    const generation=++this.generation;this.status='loading';this.failure=null;this.holdSave();this.publish();
+    const result=await this.repository.load();if(generation!==this.generation)return null;
+    if(!result.ok){this.status='error';this.failure=result;this.replacement=result.replacementToken;this.publish();return null;}
+    this.replacement=result.replacementToken;
+    if(result.kind==='empty'){this.releaseSave();this.menuLease?.release();this.menuLease=null;this.interruption?.destroy();this.interruption=null;this.current=null;this.saved=null;this.pending=null;this.recovery=null;this.confirmedRecovery=false;this.status='ready';this.publish();return null;}
+    if(result.kind==='recovery'){this.recovery=result;this.status='recovery';this.publish();return null;}
+    return this.acceptLoaded(result.envelope);
+  }
+  private acceptLoaded(envelope:CozySaveEnvelope,recovered=false):CozyRuntime|null {
+    const runtime=CozyRuntime.restoreCheckpoint(envelope.payload);if(!runtime){this.status='error';this.failure={ok:false,code:'corrupt',message:'Không thể mở tiến độ đã lưu.'};this.publish();return null;}
+    this.install(runtime);this.saved=structuredClone(envelope);this.confirmedRecovery=recovered;this.pending=null;this.recovery=null;this.status='ready';this.failure=null;this.publish();return runtime;
+  }
+  confirmRecovery():CozyRuntime|null {if(this.status!=='recovery'||!this.recovery)return null;return this.acceptLoaded(this.recovery.envelope,true);}
+  async start(tutorial=true):Promise<CozyRuntime|null> {
+    if(this.busy)return null;
+    if((this.pending?.kind==='day'||this.pending?.kind==='upgrade'))return null;
+    if(this.status==='temporary'){this.install(new CozyRuntime(tutorial,true));this.publish();return this.current;}
+    const runtime=new CozyRuntime(false,true),payload=runtime.exportCheckpoint();
+    this.pending={kind:'create',tutorial,request:{campaignId:this.id(),commitId:this.id(),sourceRevision:0,payload,...(this.replacement!==undefined?{replacementToken:this.replacement}:{})}};
+    return this.writePending();
+  }
+  closeDay():boolean {
+    if(!this.allowed()||!this.current||!this.current.closeDay())return false;
+    if(this.status==='temporary'){this.publish();return true;}
+    try{this.pending={kind:'day',tutorial:false,request:{campaignId:this.saved!.campaignId,commitId:this.id(),sourceRevision:this.saved!.revision,payload:this.current.exportCheckpoint(),...(this.confirmedRecovery?{confirmedRecovery:true}:{})}};}
+    catch{this.status='error';this.failure={ok:false,code:'invalid-payload',message:'Không chuẩn bị được mốc ngày hợp lệ. Kết quả vẫn ở phiên này; tải lại để mở bản lưu cũ.'};this.holdSave();this.publish();return true;}
+    void this.writePending();return true;
+  }
+  retry():Promise<CozyRuntime|null>{if(!this.view.canRetry)return Promise.resolve(null);return this.writePending();}
+  upgradeShop(kind:'oven'|'queue',commandId:string):boolean {
+    if(!this.allowed()||!this.current)return false;
+    const before=this.current.exportCheckpoint();
+    if(!this.current.upgradeShop(kind,commandId))return false;
+    if(this.status==='temporary'){this.publish();return true;}
+    try{this.pending={kind:'upgrade',tutorial:false,request:{campaignId:this.saved!.campaignId,commitId:this.id(),sourceRevision:this.saved!.revision,payload:this.current.exportCheckpoint(),...(this.confirmedRecovery?{confirmedRecovery:true}:{})}};}
+    catch{this.install(CozyRuntime.restoreCheckpoint(before)!);this.publish();return false;}
+    void this.writePending();return true;
+  }
+  private writePending():Promise<CozyRuntime|null> {
+    if(this.inFlight)return this.inFlight;
+    const pending=this.pending;if(!pending)return Promise.resolve(null);
+    const generation=this.generation;this.status='saving';this.failure=null;this.holdSave();this.publish();
+    this.inFlight=(async()=>{
+      const result=await this.repository.commit(structuredClone(pending.request));if(generation!==this.generation)return null;
+      if(!result.ok){this.status='error';this.failure=result;this.publish();return null;}
+      this.saved=structuredClone(result.envelope);this.replacement=replacementToken({campaignId:result.envelope.campaignId,checksum:result.envelope.checksum,commitId:result.envelope.commitId,revision:result.envelope.revision});this.confirmedRecovery=false;
+      if(pending.kind==='create')this.install(CozyRuntime.restoreCheckpoint(result.envelope.payload,pending.tutorial)!);
+      this.pending=null;this.status='ready';this.failure=null;this.releaseSave();this.publish();return this.current;
+    })().finally(()=>{this.inFlight=null;});return this.inFlight;
+  }
+  temporary(tutorial=true):CozyRuntime|null {
+    if(!this.view.canTemporary)return null;this.pending=null;this.saved=null;this.recovery=null;this.install(new CozyRuntime(tutorial,true));this.status='temporary';this.failure=null;this.publish();return this.current;
+  }
+  returnToMenu(){if(this.current)this.menuLease??=this.current.acquirePause('menu');}
+  continue():CozyRuntime|null {if(!this.allowed())return null;if(!this.current&&this.saved)this.install(CozyRuntime.restoreCheckpoint(this.saved.payload)!);this.menuLease?.release();this.menuLease=null;return this.current;}
+  destroy(){this.generation++;this.releaseSave();this.menuLease?.release();this.menuLease=null;this.interruption?.destroy();this.interruption=null;this.current=null;this.listeners.clear();}
+}
+NEW OR MODIFIED FILE src/presentation/CozyArt.ts
+import Phaser from 'phaser';
+import { UI_THEME } from './theme';
+export const UI = UI_THEME.colors;
+
+export class CozyArt {
+  constructor(readonly g:Phaser.GameObjects.Graphics){}
+  rect(x:number,y:number,w:number,h:number,c:number,a=1):void{this.g.fillStyle(c,a).fillRect(x,y,w,h);}
+  round(x:number,y:number,w:number,h:number,r:number,c:number,stroke=0,sw=0):void{
+    this.g.fillStyle(c,1).fillRoundedRect(x,y,w,h,r);
+    if(sw)this.g.lineStyle(sw,stroke,1).strokeRoundedRect(x,y,w,h,r);
+  }
+  circle(x:number,y:number,r:number,c:number):void{this.g.fillStyle(c,1).fillCircle(x,y,r);}
+  ellipse(x:number,y:number,w:number,h:number,c:number):void{this.g.fillStyle(c,1).fillEllipse(x,y,w,h);}
+  panel(x:number,y:number,w:number,h:number,c:number=UI.dark,border:number=UI.border,r:number=UI_THEME.radii.panel):void{
+    this.round(x,y+3,w,h,r,0x47281c);this.round(x,y,w,h,r,c,border,1.6);
+    this.g.lineStyle(1,0xffd5a5,.16).beginPath().moveTo(x+r,y+3).lineTo(x+w-r,y+3).strokePath();
+  }
+  background():void{
+    this.rect(0,0,360,640,UI.wood);
+    for(let y=0;y<640;y+=24){this.rect(0,y,360,12,y%48?0xb27340:0xa66637);this.rect(0,y+23,360,1,0x784428,.6);
+      for(let j=0;j<5;j++){const x=(j*83+y*7)%360;this.g.lineStyle(1,0xe5ad68,.2).lineBetween(x,y+7,x+48,y+9);}}
+    this.rect(0,44,360,247,0x462b22,.8);
+  }
+  awning():void{
+    this.rect(8,48,344,112,UI.customer);this.round(10,56,340,102,9,0x8f493d,0x7d4038,2);
+    // Six broad, softly sagging fabric spans share a thin continuous terracotta hem.
+    this.g.fillStyle(UI.paper,1).beginPath().moveTo(8,44).lineTo(352,44).lineTo(352,55);
+    for(let n=72;n>=0;n--){const x=8+n*344/72,y=55+8*Math.sin((n%12)*Math.PI/12);this.g.lineTo(x,y);}
+    this.g.closePath().fillPath();
+    this.g.lineStyle(3,0xad5947,1).beginPath().moveTo(8,55);
+    for(let n=1;n<=72;n++){const x=8+n*344/72,y=55+8*Math.sin((n%12)*Math.PI/12);this.g.lineTo(x,y);}
+    this.g.strokePath();
+    for(let i=0;i<6;i++){
+      const x=8+(i+.5)*344/6;
+      this.g.lineStyle(1,0xddc6a2,.5).lineBetween(x-7,45,x-4,53);
+      this.rect(x-1,65,2,7,0x5c3e2c);
+      this.g.fillStyle(0xffd966,.16).fillCircle(x,75,5);
+      this.circle(x,75,3.5,0xf9ce59);this.circle(x-1,74,1.3,0xffefa9);
+    }
+  }
+  board():void{
+    // Cropped checkered towel and bowls stay decorative at the left edge.
+    this.round(-18,294,58,150,7,0xffe2bd);
+    for(let y=296;y<440;y+=15)for(let x=-15;x<40;x+=15)if((x+15+y-296)/15%2===0)this.rect(x,y,15,15,0xd95c49,.8);
+    this.ellipse(-1,351,67,57,0xb2a293);this.ellipse(-2,346,61,51,UI.paper);this.ellipse(-2,345,49,38,0xb92f21);
+    this.g.lineStyle(7,0x965128,1).lineBetween(3,349,44,315);this.g.lineStyle(3,0xd38b40,1).lineBetween(4,347,43,315);
+    this.ellipse(1,407,52,43,0xbea887);this.ellipse(0,403,47,37,0xffd773);
+    this.panel(8,296,216,139,0xd99653,0x97542f,12);
+    for(let y=307;y<429;y+=14){this.g.lineStyle(1,0xffdc98,.32).lineBetween(17,y,214,y);this.g.lineStyle(1,0x9e6236,.22).lineBetween(20,y+5,203,y+6);}
+    for(let i=0;i<70;i++){const x=16+(i*37)%200,y=304+(i*23)%122;this.circle(x,y,i%3?.5:1,0xf9dab0);}
+  }
+  pizza(x:number,y:number,r:number,ingredients:readonly string[],boxed=false):void{
+    if(boxed){this.panel(x-r-7,y-r-5,r*2+14,r*2+10,0xe1b775,0x956235,5);this.round(x-r+1,y-r+3,r*2-2,r*2-6,4,0xf8db9b);}
+    if(!ingredients.includes('dough'))return;
+    this.ellipse(x+2,y+5,r*2+5,r*1.73,0x945029);
+    this.ellipse(x,y,r*2,r*1.78,0xe8a958);this.ellipse(x,y-2,r*1.9,r*1.67,0xffdfa0);
+    this.ellipse(x,y-3,r*1.72,r*1.48,0xefc281);
+    for(let i=0;i<28;i++){const a=i*Math.PI/14;this.ellipse(x+Math.cos(a)*r*.91,y-1+Math.sin(a)*r*.77,5,3,0xf7ca82);}
+    for(const ingredient of ingredients){
+    if(['sauce','sauce-white','sauce-bbq','sauce-pesto','sauce-hot'].includes(ingredient)){
+      const color:Record<string,number>={sauce:0xda4524,'sauce-white':0xffecd0,'sauce-bbq':0x763122,'sauce-pesto':0x668c25,'sauce-hot':0xed6320};
+      if(ingredient!=='sauce'){this.ellipse(x,y-3,r*1.64,r*1.39,color[ingredient]);continue;}
+      this.ellipse(x,y-3,r*1.64,r*1.39,0xda4524);this.ellipse(x,y-5,r*1.5,r*1.25,0xed5830);
+      for(let i=0;i<4;i++)this.g.lineStyle(2,0xb73323,.45).strokeEllipse(x+2,y-3,r*(.35+i*.29),r*(.26+i*.25));
+      for(let i=0;i<29;i++){const a=i*2.4,d=Math.sqrt(i/29)*r*.7;this.ellipse(x+Math.cos(a)*d,y-3+Math.sin(a)*d*.8,3,2,0xff9d48);}
+    }
+    if(ingredient==='cheese')for(let i=0;i<82;i++){const a=i*2.4,d=Math.sqrt(i/82)*r*.72,px=x+Math.cos(a)*d,py=y-3+Math.sin(a)*d*.8;this.g.lineStyle(Math.max(1,r/23),i%3?0xffe7a0:0xf6bf53,1).lineBetween(px-2,py-2,px+4,py+2);}
+    if(ingredient==='sausage'||ingredient==='pepperoni')for(let i=0;i<7;i++){const a=i*2.4;this.ellipse(x+Math.cos(a)*r*.49,y-3+Math.sin(a)*r*.4,r*.3,r*.25,ingredient==='sausage'?0xcb3d2d:0xa52c24);}
+    if(ingredient==='mushroom')for(let i=0;i<7;i++){
+      const a=i*2.4,px=x+Math.cos(a)*r*.5,py=y-3+Math.sin(a)*r*.42;
+      this.round(px-r*.035,py,r*.07,r*.13,r*.02,0xffe2b5);this.ellipse(px,py,r*.23,r*.15,0xbc8967);
+    }
+    const colors:Record<string,number>={pepper:0x5baa28,onion:0xc49add,corn:0xffd04b,olive:0x302e24,chicken:0xeeb480,shrimp:0xfc8055,squid:0xffd3c1,ham:0xe88587,pineapple:0xffd85a};
+    if(ingredient in colors)for(let i=0;i<9;i++){
+      const seed=ingredient.length*1.37,a=i*2.4+seed,d=Math.sqrt((i+.5)/10)*r*.65,px=x+Math.cos(a)*d,py=y-3+Math.sin(a)*d*.8,size=r*.15;
+      if(['onion','olive','squid'].includes(ingredient)){this.g.lineStyle(Math.max(1,r*.045),colors[ingredient],1).strokeEllipse(px,py,size*1.5,size);}
+      else if(ingredient==='pepper'){this.g.lineStyle(Math.max(1,r*.045),colors[ingredient],1).strokeRoundedRect(px-size/2,py-size/2,size,size*.8,size*.22);}
+      else if(['ham','pineapple','chicken'].includes(ingredient))this.round(px-size/2,py-size/2,size,size*.7,size*.15,colors[ingredient]);
+      else this.ellipse(px,py,size,ingredient==='corn'?size*.6:size*.85,colors[ingredient]);
+    }
+    }
+  }
+  leaves():void{
+    for(const side of [0,360])for(let i=0;i<5;i++){this.g.fillStyle(i%2?0x557d2d:0x719d39,1);this.g.fillEllipse(side+(side? -1:1)*(i%2?9:2),641-i*8,19,31);}
+  }
+}
+NEW OR MODIFIED FILE src/presentation/StaticGraphics.ts
+import Phaser from 'phaser';
+
+/** Cache unchanged vector decoration; preserve text, dynamic markers and input objects. */
+export class StaticGraphics {
+  private serial=0;
+  private entries=new Map<string,{key:string;x:number;y:number;width:number;height:number}>();
+  constructor(private readonly scene:Phaser.Scene){}
+  bake(layer:Phaser.GameObjects.Container):void{
+    const used=new Set<string>();
+    for(const object of [...layer.list]){
+      if(!(object instanceof Phaser.GameObjects.Graphics)||object.getData('dynamic'))continue;
+      const signature=JSON.stringify(object.commandBuffer);used.add(signature);
+      let entry=this.entries.get(signature);
+      if(!entry){
+        const staging='cozy-static-staging',key=`cozy-static-${this.serial++}`;object.generateTexture(staging,360,640);
+        const canvas=this.scene.textures.get(staging).getSourceImage() as HTMLCanvasElement;
+        const context=canvas.getContext('2d')!,pixels=context.getImageData(0,0,360,640).data;
+        let left=360,top=640,right=0,bottom=0;
+        for(let y=0;y<640;y++)for(let x=0;x<360;x++)if(pixels[(y*360+x)*4+3]){left=Math.min(left,x);top=Math.min(top,y);right=Math.max(right,x);bottom=Math.max(bottom,y);}
+        entry={key,x:left,y:top,width:Math.max(1,right-left+1),height:Math.max(1,bottom-top+1)};
+        const texture=this.scene.textures.createCanvas(key,entry.width,entry.height)!;
+        texture.context.putImageData(context.getImageData(entry.x,entry.y,entry.width,entry.height),0,0);texture.refresh();
+        this.scene.textures.remove(staging);
+        this.entries.set(signature,entry);
+      }
+      const image=this.scene.add.image(entry.x,entry.y,entry.key).setOrigin(0);
+      const index=layer.getIndex(object);layer.remove(object,true);layer.addAt(image,index);
+    }
+    // Never evict a texture used by the currently displayed layer.
+    for(const [signature,entry] of this.entries){if(this.entries.size<=96)break;if(!used.has(signature)){this.scene.textures.remove(entry.key);this.entries.delete(signature);}}
+    this.scene.game.canvas.dataset.staticTextureCount=String(this.entries.size);
+    this.scene.game.canvas.dataset.staticTextureBytes=String([...this.entries.values()].reduce((bytes,e)=>bytes+e.width*e.height*8,0));
+  }
+  destroy():void{for(const entry of this.entries.values())this.scene.textures.remove(entry.key);this.entries.clear();}
+}

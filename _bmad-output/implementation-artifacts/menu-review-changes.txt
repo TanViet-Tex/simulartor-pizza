@@ -1,0 +1,568 @@
+Best-effort change snapshot. Baseline NO_VCS; only new menu-related changes.
+FILE src/main.ts
+import Phaser from 'phaser';
+import { GAME_HEIGHT, GAME_WIDTH } from './config/viewport';
+import { BootScene } from './scenes/BootScene';
+import { CozyScene } from './scenes/CozyScene';
+import { CozyRuntime } from './runtime/CozyRuntime';
+import { StartupScene } from './scenes/StartupScene';
+import { MainMenuScene } from './scenes/MainMenuScene';
+import { MenuPreferences } from './presentation/MenuPreferences';
+import { MainMenuSession } from './runtime/MainMenuSession';
+import './style.css';
+
+const campaign = new URLSearchParams(window.location.search).get('mode') === 'campaign';
+const mode = new URLSearchParams(window.location.search).get('mode');
+const guided = mode !== 'freeplay' && mode !== 'shop';
+const direct = mode === 'campaign' || mode === 'shop' || mode === 'freeplay' || mode === 'tutorial';
+function mainMenu(): Phaser.Scene {
+  const preferences = new MenuPreferences();
+  const session = new MainMenuSession();
+  const enterPlay = (runtime:CozyRuntime | null) => {
+    if (!runtime) return;
+    game.scene.stop('MainMenuScene');
+    if (game.scene.getScene('CozyScene')) game.scene.remove('CozyScene');
+    game.scene.add('CozyScene',new CozyScene(runtime,preferences,() => {
+      session.returnToMenu();
+      game.scene.stop('CozyScene');
+      game.scene.start('MainMenuScene');
+    }),true);
+  };
+  game.events.once(Phaser.Core.Events.DESTROY,() => preferences.destroy());
+  return new MainMenuScene(preferences,{
+    hasSession:() => session.hasSession,
+    start:() => enterPlay(session.start()),
+    continue:() => enterPlay(session.continue()),
+  });
+}
+const game = new Phaser.Game({
+  type: Phaser.AUTO,
+  parent: 'game-container',
+  width: GAME_WIDTH,
+  height: GAME_HEIGHT,
+  backgroundColor: '#382019',
+  pixelArt: false,
+  roundPixels: false,
+  scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH },
+  scene: [new StartupScene(campaign, () => campaign
+    ? new BootScene()
+    : direct ? new CozyScene(new CozyRuntime(guided,mode !== 'freeplay')) : mainMenu(), !direct)],
+});
+
+if (import.meta.hot) {
+  import.meta.hot.dispose(() => game.destroy(true));
+}
+
+FILE src/presentation/MenuPreferences.ts
+type MotionSource = Pick<MediaQueryList, 'matches' | 'addEventListener' | 'removeEventListener'>;
+
+/** A shared presentation preference. Sessions and gameplay remain independent. */
+export class MenuPreferences {
+  private override?: boolean;
+  private readonly listeners = new Set<() => void>();
+  constructor(private readonly systemMotion: MotionSource | undefined = typeof window === 'undefined'
+    ? undefined : window.matchMedia('(prefers-reduced-motion: reduce)')) {}
+
+  get reducedMotion(): boolean { return this.override ?? this.systemMotion?.matches ?? false; }
+
+  setReducedMotion(value: boolean | undefined): void {
+    const previous = this.reducedMotion;
+    this.override = value;
+    if (previous !== this.reducedMotion) this.notify();
+  }
+
+  subscribe(listener: () => void): () => void {
+    if (!this.listeners.size) this.systemMotion?.addEventListener('change', this.systemChanged);
+    this.listeners.add(listener);
+    return () => {
+      this.listeners.delete(listener);
+      if (!this.listeners.size) this.systemMotion?.removeEventListener('change', this.systemChanged);
+    };
+  }
+
+  destroy(): void {
+    this.systemMotion?.removeEventListener('change', this.systemChanged);
+    this.listeners.clear();
+  }
+
+  private systemChanged = (): void => { if (this.override === undefined) this.notify(); };
+  private notify(): void { for (const listener of this.listeners) listener(); }
+}
+
+FILE src/presentation/MenuPreferences.test.ts
+import { describe, expect, it, vi } from 'vitest';
+import { MenuPreferences } from './MenuPreferences';
+
+describe('MenuPreferences', () => {
+  it('follows the system until an explicit preference is chosen and can restore system behavior', () => {
+    const source = { matches: false, addEventListener: vi.fn(), removeEventListener: vi.fn() };
+    const preferences = new MenuPreferences(source);
+    const changed = vi.fn();
+    const release = preferences.subscribe(changed);
+    const systemChanged = source.addEventListener.mock.calls[0][1] as () => void;
+    expect(preferences.reducedMotion).toBe(false);
+    source.matches = true; systemChanged();
+    expect(preferences.reducedMotion).toBe(true);
+    expect(changed).toHaveBeenCalledTimes(1);
+    preferences.setReducedMotion(false);
+    expect(preferences.reducedMotion).toBe(false);
+    systemChanged();
+    expect(changed).toHaveBeenCalledTimes(2);
+    preferences.setReducedMotion(undefined);
+    expect(preferences.reducedMotion).toBe(true);
+    expect(changed).toHaveBeenCalledTimes(3);
+    release();
+    expect(source.removeEventListener).toHaveBeenCalledWith('change', systemChanged);
+  });
+
+  it('uses one system listener and cleans it after all subscribers leave or the game is destroyed', () => {
+    const source = { matches: true, addEventListener: vi.fn(), removeEventListener: vi.fn() };
+    const preferences = new MenuPreferences(source);
+    const changed = vi.fn();
+    const releaseA = preferences.subscribe(changed);
+    const releaseB = preferences.subscribe(() => undefined);
+    expect(source.addEventListener).toHaveBeenCalledTimes(1);
+    releaseA(); expect(source.removeEventListener).not.toHaveBeenCalled();
+    releaseB(); expect(source.removeEventListener).toHaveBeenCalledTimes(1);
+    preferences.subscribe(changed);
+    preferences.destroy();
+    source.matches = false;
+    (source.addEventListener.mock.calls[1][1] as () => void)();
+    expect(changed).not.toHaveBeenCalled();
+  });
+});
+
+FILE src/runtime/MainMenuSession.ts
+import { CozyRuntime } from './CozyRuntime';
+
+/** Owns only the current RAM session and the menu's simulation pause. */
+export class MainMenuSession {
+  private current: CozyRuntime | null = null;
+  constructor(private readonly createRuntime = () => new CozyRuntime(true, true)) {}
+  get hasSession(): boolean { return this.current !== null; }
+  start(): CozyRuntime { this.current = this.createRuntime(); return this.current; }
+  returnToMenu(): void {
+    if (!this.current) return;
+    this.current.pause('menu');
+    // The explicit pause-menu action transfers its user pause to the menu.
+    this.current.resume('user');
+  }
+  continue(): CozyRuntime | null {
+    this.current?.resume('menu');
+    return this.current;
+  }
+}
+
+FILE src/runtime/MainMenuSession.test.ts
+import { describe, expect, it } from 'vitest';
+import { CozyRuntime } from './CozyRuntime';
+import { MainMenuSession } from './MainMenuSession';
+
+describe('MainMenuSession', () => {
+  it('has no fabricated saved session and starts the guided main game', () => {
+    const session = new MainMenuSession();
+    expect(session.hasSession).toBe(false);
+    expect(session.continue()).toBeNull();
+    expect(session.start().tutorialStep).toBe('dough');
+    expect(session.hasSession).toBe(true);
+  });
+  it('preserves a baking pizza and releases only the menu pause on continue', () => {
+    const session = new MainMenuSession(() => new CozyRuntime());
+    const runtime = session.start();
+    for (const ingredient of ['dough', 'sauce', 'cheese'] as const) runtime.dispatch({type:'ingredient',ingredient});
+    runtime.dispatch({type:'bake'});runtime.advance(200);
+    const state = {...runtime.state,ingredients:[...runtime.state.ingredients]};
+    runtime.pause('user');session.returnToMenu();
+    runtime.pause('visibility');runtime.advance(200);
+    expect(runtime.state).toEqual(state);
+    expect(session.continue()).toBe(runtime);
+    expect(runtime.pauses).toEqual(['visibility']);
+    runtime.advance(200);expect(runtime.state).toEqual(state);
+    runtime.resume('visibility');runtime.advance(200);
+    expect(runtime.state.ovenSeconds).toBeGreaterThan(state.ovenSeconds);
+  });
+  it('replaces a session only when explicitly starting another', () => {
+    const session = new MainMenuSession();const old = session.start();
+    session.returnToMenu();expect(session.continue()).toBe(old);
+    expect(session.start()).not.toBe(old);
+  });
+});
+
+FILE src/scenes/MainMenuScene.ts
+import Phaser from 'phaser';
+import { MenuPreferences } from '../presentation/MenuPreferences';
+import { UI_THEME } from '../presentation/theme';
+
+export const MAIN_MENU_BACKGROUND = { key: 'main-menu-background', url: 'assets/main-menu-background.png', type: 'image' as const };
+type MenuActions = { hasSession: () => boolean; start: () => void; continue: () => void };
+type MenuTarget = { id: string; x: number; y: number; width: number; height: number; disabled: boolean; action: () => void };
+type Dialog = 'none' | 'settings' | 'new-session';
+const PAPER = 0xfff0d5, BROWN = 0x985025, SAGE = 0x738d50;
+
+export class MainMenuScene extends Phaser.Scene {
+  private interfaceLayer!: Phaser.GameObjects.Container;
+  private focusRing!: Phaser.GameObjects.Graphics;
+  private glow!: Phaser.GameObjects.Ellipse;
+  private steam: Phaser.GameObjects.Graphics[] = [];
+  private targets: MenuTarget[] = [];
+  private dialog: Dialog = 'none';
+  private focusId = '';
+  private elapsed = 0;
+  private unsubscribe?: () => void;
+  private animationsRunning = false;
+
+  constructor(private readonly preferences: MenuPreferences, private readonly actions: MenuActions) { super('MainMenuScene'); }
+
+  create(): void {
+    this.dialog = 'none'; this.focusId = ''; this.elapsed = 0; this.steam = [];
+    this.add.image(180, 320, MAIN_MENU_BACKGROUND.key).setDisplaySize(360, 640);
+    this.glow = this.add.ellipse(278, 270, 70, 70, 0xffad42, .11).setBlendMode(Phaser.BlendModes.ADD);
+    for (let i = 0; i < 3; i++) {
+      const steam = this.add.graphics().setPosition(145 + i * 34, 334);
+      steam.lineStyle(2.5, 0xfff6de, .72).beginPath();
+      for (let j = 0; j <= 30; j++) {
+        const x = Math.sin(j / 5) * 5, y = -j * 1.8;
+        if (!j) steam.moveTo(x, y); else steam.lineTo(x, y);
+      }
+      steam.strokePath(); this.steam.push(steam);
+    }
+    this.interfaceLayer = this.add.container().setDepth(5);
+    this.focusRing = this.add.graphics().setDepth(20);
+    this.unsubscribe = this.preferences.subscribe(this.preferenceChanged);
+    document.addEventListener('visibilitychange', this.visibilityChanged);
+    this.scale.on('resize', this.resized);
+    this.input.keyboard?.on('keydown', this.keyDown);
+    const canvas = this.game.canvas;
+    canvas.setAttribute('tabindex', '0');
+    canvas.dataset.screen = 'menu';
+    canvas.dataset.booted = 'true';
+    this.draw(true); this.refreshMotion();
+    this.events.once('shutdown', this.cleanup);
+    this.events.once('destroy', this.cleanup);
+  }
+
+  update(_time: number, delta: number): void {
+    if (!this.animationsRunning) return;
+    this.elapsed += Math.min(delta, 50);
+    this.glow.setAlpha(.10 + Math.sin(this.elapsed / 470) * .025 + Math.sin(this.elapsed / 177) * .014);
+    for (let i = 0; i < this.steam.length; i++) {
+      const phase = (this.elapsed / 3400 + i / 3) % 1;
+      this.steam[i].setPosition(145 + i * 34 + Math.sin(phase * Math.PI * 2) * 5, 343 - phase * 48)
+        .setAlpha(Math.sin(phase * Math.PI) * .4);
+    }
+  }
+
+  private cleanup = (): void => {
+    this.events.off('shutdown', this.cleanup);
+    this.events.off('destroy', this.cleanup);
+    this.unsubscribe?.(); this.unsubscribe = undefined;
+    document.removeEventListener('visibilitychange', this.visibilityChanged);
+    this.scale.off('resize', this.resized);
+    this.input.keyboard?.off('keydown', this.keyDown);
+    this.tweens.killAll(); this.animationsRunning = false; this.targets = []; this.steam = [];
+    if (this.game.canvas.dataset.screen === 'menu') this.game.canvas.dataset.menuTargets = '[]';
+  };
+  private resized = (): void => { this.draw(); };
+  private visibilityChanged = (): void => { this.refreshMotion(); };
+  private preferenceChanged = (): void => { this.tweens.killAll(); this.draw(); this.refreshMotion(); };
+  private refreshMotion(): void {
+    this.animationsRunning = !document.hidden && !this.preferences.reducedMotion;
+    this.glow.setAlpha(.10);
+    for (const steam of this.steam) steam.setVisible(this.animationsRunning);
+    if (document.hidden) this.tweens.pauseAll(); else this.tweens.resumeAll();
+    this.game.canvas.dataset.menuAnimations = document.hidden ? 'hidden' : this.preferences.reducedMotion ? 'reduced' : 'running';
+    this.game.canvas.dataset.menuReducedMotion = String(this.preferences.reducedMotion);
+    this.game.canvas.dataset.reducedMotion = String(this.preferences.reducedMotion);
+  }
+
+  private text(layer: Phaser.GameObjects.Container, x: number, y: number, value: string, size: number, color = '#985025', width?: number): Phaser.GameObjects.Text {
+    const text = this.add.text(x, y, value, {
+      fontFamily: UI_THEME.typography.fontFamily, fontSize: `${size}px`, fontStyle: 'bold', color,
+      align: 'center', ...(width ? { wordWrap: { width, useAdvancedWrap: true } } : {}), padding: { top: 2, bottom: 2 },
+    }).setOrigin(.5);
+    layer.add(text); return text;
+  }
+
+  private draw(entrance = false): void {
+    this.tweens.killAll(); this.interfaceLayer.removeAll(true); this.targets = [];
+    this.text(this.interfaceLayer, 128, 104, 'Tiệm', 34, '#4e6335');
+    this.text(this.interfaceLayer, 220, 104, 'Pizza', 34, '#c45b32');
+    this.text(this.interfaceLayer, 180, 148, 'Ấm Áp', 38, '#b66325');
+    const hasSession = this.actions.hasSession(), mainEnabled = this.dialog === 'none';
+    this.button('menu-start', 58, 455, 244, 50, 'Bắt đầu', 'play', SAGE, '#fff6df', mainEnabled,
+      () => { if (this.actions.hasSession()) { this.dialog = 'new-session'; this.focusId = ''; this.draw(); } else this.actions.start(); }, entrance);
+    this.button('menu-continue', 58, 515, 244, 50, 'Tiếp tục', 'continue', PAPER, '#985025', mainEnabled && hasSession,
+      () => this.actions.continue(), entrance, hasSession ? undefined : 'Chưa có phiên đang chơi');
+    this.button('menu-settings', 58, 575, 244, 50, 'Cài đặt', 'settings', 0xf5c6a5, '#985025', mainEnabled,
+      () => { this.dialog = 'settings'; this.focusId = ''; this.draw(); }, entrance);
+    if (this.dialog !== 'none') this.drawDialog();
+    this.drawFocus(); this.publish();
+  }
+
+  private button(id: string, x: number, y: number, width: number, height: number, title: string, icon: 'play' | 'continue' | 'settings' | 'none', fill: number, color: string, enabled: boolean, action: () => void, entrance = false, subtitle?: string, textSize = 23): void {
+    const container = this.add.container(x + width / 2, y + height / 2);
+    this.interfaceLayer.add(container);
+    const g = this.add.graphics(); container.add(g);
+    g.fillStyle(0x623c22, .18).fillRoundedRect(-width / 2 + 1, -height / 2 + 4, width, height, height / 2);
+    g.fillStyle(enabled ? fill : 0xd5c7ac).fillRoundedRect(-width / 2, -height / 2, width, height, height / 2);
+    g.lineStyle(2, enabled ? (fill === SAGE ? 0x536b36 : 0xc27c50) : 0xa99a80).strokeRoundedRect(-width / 2, -height / 2, width, height, height / 2);
+    g.lineStyle(1, 0xfff8dc, .45).strokeRoundedRect(-width / 2 + 3, -height / 2 + 3, width - 6, height - 7, height / 2 - 3);
+    this.icon(g, icon, -width / 2 + 51, subtitle ? -4 : 0, enabled ? color : '#786b54');
+    this.text(container, icon === 'none' ? 0 : 15, subtitle ? -7 : 0, title, subtitle ? 21 : textSize, enabled ? color : '#786b54');
+    if (subtitle) this.text(container, 14, 13, subtitle, 10, '#655c4e');
+    const scale = (this.game.canvas.getBoundingClientRect().width || 360) / 360;
+    const hitWidth = Math.max(width, 48 / scale), hitHeight = Math.max(height, 48 / scale);
+    const target: MenuTarget = { id, x: x - (hitWidth - width) / 2, y: y - (hitHeight - height) / 2, width: hitWidth, height: hitHeight, disabled: !enabled, action };
+    this.targets.push(target);
+    if (enabled) {
+      const zone = this.add.zone(target.x, target.y, target.width, target.height).setOrigin(0).setInteractive({ useHandCursor: true });
+      // Zones are siblings so entrance/press motion never moves the touch target.
+      this.interfaceLayer.add(zone);
+      zone.on('pointerdown', () => { this.focusId = id; this.drawFocus(); if (!this.preferences.reducedMotion) container.setAlpha(.85); action(); });
+      zone.on('pointerup', () => { if (container.active) container.setAlpha(1); });
+      zone.on('pointerout', () => { if (container.active) container.setAlpha(1); });
+    }
+    if (entrance && !this.preferences.reducedMotion && !document.hidden) {
+      container.setAlpha(0).setY(y + height / 2 + 7);
+      this.tweens.add({ targets: container, alpha: 1, y: y + height / 2, duration: 360, delay: (y - 455) * 1.3, ease: 'Sine.easeOut' });
+    }
+  }
+
+  private icon(g: Phaser.GameObjects.Graphics, icon: 'play' | 'continue' | 'settings' | 'none', x: number, y: number, color: string): void {
+    const tint = Phaser.Display.Color.HexStringToColor(color).color;
+    g.fillStyle(tint, 1); g.lineStyle(3, tint, 1);
+    if (icon === 'play') g.fillTriangle(x - 6, y - 10, x - 6, y + 10, x + 10, y);
+    else if (icon === 'continue') {
+      g.beginPath().arc(x, y, 11, -.6, Math.PI * 1.6, false).strokePath();
+      g.fillTriangle(x - 8, y - 13, x + 2, y - 14, x - 4, y - 4);
+    } else if (icon === 'settings') {
+      for (let i = 0; i < 8; i++) { const angle = i * Math.PI / 4; g.lineBetween(x + Math.cos(angle) * 8, y + Math.sin(angle) * 8, x + Math.cos(angle) * 13, y + Math.sin(angle) * 13); }
+      g.strokeCircle(x, y, 9); g.fillCircle(x, y, 3);
+    }
+  }
+
+  private drawDialog(): void {
+    const g = this.add.graphics(); this.interfaceLayer.add(g);
+    g.fillStyle(0x382119, .64).fillRect(0, 0, 360, 640);
+    g.fillStyle(PAPER).fillRoundedRect(23, 219, 314, 226, 23);
+    g.lineStyle(3, 0xc17f53).strokeRoundedRect(23, 219, 314, 226, 23);
+    if (this.dialog === 'settings') {
+      this.text(this.interfaceLayer, 180, 250, 'Cài đặt', 27);
+      this.text(this.interfaceLayer, 180, 289, 'Tắt khói, ánh lò dao động\nvà chuyển động của nút.', 14, '#70583b', 270);
+      this.button('menu-motion', 48, 319, 264, 50, `Giảm chuyển động: ${this.preferences.reducedMotion ? 'Bật' : 'Tắt'}`, 'none', SAGE, '#fff6df', true,
+        () => this.preferences.setReducedMotion(!this.preferences.reducedMotion), false, undefined, 19);
+      this.button('menu-settings-close', 84, 383, 192, 48, 'Đóng', 'none', 0xf5c6a5, '#985025', true,
+        () => { this.dialog = 'none'; this.focusId = 'menu-settings'; this.draw(); });
+    } else {
+      this.text(this.interfaceLayer, 180, 251, 'Bắt đầu phiên mới?', 24);
+      this.text(this.interfaceLayer, 180, 290, 'Phiên đang chơi sẽ được thay thế.\nTiếp tục để giữ phiên hiện tại.', 14, '#70583b', 278);
+      this.button('menu-new-confirm', 48, 321, 264, 48, 'Bắt đầu mới', 'none', SAGE, '#fff6df', true, () => this.actions.start());
+      this.button('menu-new-cancel', 84, 383, 192, 48, 'Hủy', 'none', 0xf5c6a5, '#985025', true,
+        () => { this.dialog = 'none'; this.focusId = 'menu-start'; this.draw(); });
+    }
+  }
+
+  private keyDown = (event: KeyboardEvent): void => {
+    if (event.key === 'Escape' && this.dialog !== 'none') { event.preventDefault(); this.dialog = 'none'; this.focusId = ''; this.draw(); return; }
+    const enabled = this.targets.filter(target => !target.disabled);
+    if (!enabled.length) return;
+    if (event.key === 'Tab' || event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+      event.preventDefault();
+      const current = enabled.findIndex(target => target.id === this.focusId);
+      const direction = event.key === 'ArrowUp' || event.shiftKey ? -1 : 1;
+      this.focusId = enabled[current === -1 ? direction === 1 ? 0 : enabled.length - 1 : (current + direction + enabled.length) % enabled.length].id;
+      this.drawFocus();
+    } else if (event.key === 'Enter' || event.key === ' ') {
+      const target = enabled.find(item => item.id === this.focusId);
+      if (target) { event.preventDefault(); target.action(); }
+    }
+  };
+  private drawFocus(): void {
+    this.focusRing.clear();
+    const target = this.targets.find(item => item.id === this.focusId && !item.disabled);
+    if (target) this.focusRing.lineStyle(3, BROWN).strokeRoundedRect(target.x - 3, target.y - 3, target.width + 6, target.height + 6, 27);
+  }
+  private publish(): void {
+    const canvas = this.game.canvas;
+    canvas.dataset.menuDialog = this.dialog;
+    canvas.dataset.menuHasSession = String(this.actions.hasSession());
+    canvas.dataset.menuReducedMotion = String(this.preferences.reducedMotion);
+    canvas.dataset.menuTargets = JSON.stringify(this.targets.map(({ action: _action, ...geometry }) => geometry));
+    canvas.dataset.controls = JSON.stringify(this.targets.map(({ action: _action, disabled, ...geometry }) => ({ ...geometry, enabled: !disabled })));
+    const labels: Phaser.GameObjects.Text[] = [];
+    const collect = (container: Phaser.GameObjects.Container): void => {
+      for (const item of container.list) {
+        if (item instanceof Phaser.GameObjects.Text) labels.push(item);
+        else if (item instanceof Phaser.GameObjects.Container) collect(item);
+      }
+    };
+    collect(this.interfaceLayer);
+    canvas.dataset.labels = JSON.stringify(labels.map(text => {
+      const bounds = text.getBounds();
+      return { text: text.text, x: bounds.x, y: bounds.y, width: bounds.width, height: bounds.height,
+        font: text.style.fontFamily, size: text.style.fontSize, spacing: text.letterSpacing, color: text.style.color };
+    }));
+    canvas.setAttribute('aria-label', `Tiệm Pizza Ấm Áp. ${this.dialog === 'settings' ? `Cài đặt. Giảm chuyển động ${this.preferences.reducedMotion ? 'bật' : 'tắt'}.` : this.dialog === 'new-session' ? 'Xác nhận bắt đầu phiên mới. Phiên đang chơi sẽ được thay thế.' : `Bắt đầu. ${this.actions.hasSession() ? 'Tiếp tục phiên đang chơi.' : 'Tiếp tục chưa khả dụng vì chưa có phiên đang chơi.'} Cài đặt.`}`);
+  }
+}
+
+FILE tests/menu.spec.ts
+import { expect, test, type Page } from '@playwright/test';
+
+async function tap(page:Page,id:string,menu=true) {
+  const canvas=page.locator('canvas');
+  const attr=menu?'data-menu-targets':'data-controls';
+  await expect.poll(async()=>JSON.parse((await canvas.getAttribute(attr))??'[]').some((c:{id:string;disabled?:boolean;enabled?:boolean})=>c.id===id&&(menu?!c.disabled:c.enabled))).toBe(true);
+  const c=JSON.parse((await canvas.getAttribute(attr))!).find((c:{id:string})=>c.id===id),b=(await canvas.boundingBox())!;
+  expect(c.width*b.width/360).toBeGreaterThanOrEqual(47.99);expect(c.height*b.height/640).toBeGreaterThanOrEqual(47.99);
+  await page.touchscreen.tap(b.x+(c.x+c.width/2)*b.width/360,b.y+(c.y+c.height/2)*b.height/640);
+}
+
+test('reference menu opens, settings reduce animation and start enters the real guided game',async({page},info)=>{
+  const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));
+  await page.emulateMedia({reducedMotion:'no-preference'});await page.goto('/');const canvas=page.locator('canvas');
+  await expect(canvas).toHaveAttribute('data-screen','menu');
+  await expect(canvas).toHaveAttribute('data-menu-has-session','false');
+  await expect(canvas).toHaveAttribute('data-menu-animations','running');
+  expect(JSON.parse((await canvas.getAttribute('data-menu-targets'))!).find((c:{id:string})=>c.id==='menu-continue').disabled).toBe(true);
+  // Capture the completed 516ms entrance rather than its transparent first frame.
+  await page.waitForTimeout(600);
+  await page.screenshot({path:info.outputPath('main-menu.png')});
+  await tap(page,'menu-settings');await expect(canvas).toHaveAttribute('data-menu-dialog','settings');
+  await tap(page,'menu-motion');await expect(canvas).toHaveAttribute('data-menu-reduced-motion','true');
+  await expect(canvas).toHaveAttribute('data-menu-animations','reduced');
+  await page.screenshot({path:info.outputPath('menu-settings.png')});
+  await tap(page,'menu-settings-close');await tap(page,'menu-start');
+  await expect(canvas).toHaveAttribute('data-screen','game');await expect(canvas).toHaveAttribute('data-tutorial','dough');
+  await expect(canvas).toHaveAttribute('data-reduced-motion','true');expect(errors).toEqual([]);
+});
+
+test('return and continue retain ingredients; cancel new session and visibility retain ownership',async({page},info)=>{
+  await page.goto('/');const canvas=page.locator('canvas');await tap(page,'menu-start');
+  await tap(page,'dough',false);await tap(page,'pause',false);await tap(page,'main-menu',false);
+  await expect(canvas).toHaveAttribute('data-screen','menu');await expect(canvas).toHaveAttribute('data-menu-has-session','true');
+  await tap(page,'menu-start');await expect(canvas).toHaveAttribute('data-menu-dialog','new-session');
+  await tap(page,'menu-new-cancel');await tap(page,'menu-continue');
+  await expect(canvas).toHaveAttribute('data-screen','game');await expect(canvas).toHaveAttribute('data-ingredients','dough');await expect(canvas).toHaveAttribute('data-tutorial','sauce');
+  await tap(page,'pause',false);
+  await page.evaluate(()=>{Object.defineProperty(document,'hidden',{configurable:true,value:true});document.dispatchEvent(new Event('visibilitychange'));Object.defineProperty(document,'hidden',{configurable:true,value:false});document.dispatchEvent(new Event('visibilitychange'));});
+  await tap(page,'main-menu',false);await tap(page,'menu-continue');
+  await expect(canvas).toHaveAttribute('data-paused','tutorial,visibility');
+  await tap(page,'resume',false);await expect(canvas).toHaveAttribute('data-paused','tutorial');
+  await tap(page,'pause',false);await tap(page,'main-menu',false);await tap(page,'menu-start');await tap(page,'menu-new-confirm');
+  await expect(canvas).toHaveAttribute('data-tutorial','dough');await expect(canvas).toHaveAttribute('data-ingredients','');
+  await tap(page,'pause',false);await tap(page,'main-menu',false);await page.reload();
+  await expect(canvas).toHaveAttribute('data-menu-has-session','false');await page.screenshot({path:info.outputPath('menu-fresh-after-reload.png')});
+});
+
+test('hidden and reduced-motion menu stops effects; missing background blocks entry and retry recovers',async({page})=>{
+  await page.emulateMedia({reducedMotion:'reduce'});let broken=true;
+  await page.route('**/assets/main-menu-background.png',route=>broken?route.abort():route.continue());
+  await page.goto('/');await expect(page.locator('html')).toHaveAttribute('data-startup-error','assets');
+  await expect(page.locator('canvas')).not.toHaveAttribute('data-screen','menu');
+  broken=false;await page.getByRole('button',{name:'Thử lại'}).click();const canvas=page.locator('canvas');
+  await expect(canvas).toHaveAttribute('data-menu-animations','reduced');
+  await page.evaluate(()=>{Object.defineProperty(document,'hidden',{configurable:true,value:true});document.dispatchEvent(new Event('visibilitychange'));});
+  await expect(canvas).toHaveAttribute('data-menu-animations','hidden');
+  await page.evaluate(()=>{Object.defineProperty(document,'hidden',{configurable:true,value:false});document.dispatchEvent(new Event('visibilitychange'));});
+  await expect(canvas).toHaveAttribute('data-menu-animations','reduced');
+});
+
+Existing StartupScene: constructor gains menu=false argument; required manifest becomes campaign?[]:[...PIZZA_ICON_MANIFEST,...(this.menu?[MAIN_MENU_BACKGROUND]:[])]. Other boot retry/cleanup unchanged. Existing CozyRuntime: CozyPause union gains menu only.
+Existing CozyScene changed regions:
+import Phaser from 'phaser';
+import { CozyRuntime } from '../runtime/CozyRuntime';
+import { COZY_BAKE } from '../domain/CozyOrder';
+import { CozyArt, UI } from '../presentation/CozyArt';
+import { preloadPizzaIcons } from '../presentation/PizzaIcons';
+import { UI_THEME } from '../presentation/theme';
+import { ingredients as catalog } from '../domain/demo';
+import { MenuPreferences } from '../presentation/MenuPreferences';
+
+type Control={id:string;x:number;y:number;width:number;height:number;enabled:boolean};
+const {cream,ink,muted,accent,board,wood}=UI_THEME.text;
+
+export class CozyScene extends Phaser.Scene {
+  private layer!:Phaser.GameObjects.Container;
+  private art!:CozyArt;
+  private controls:Control[]=[];
+  private dirty=true;
+  private signature='';
+  private motion?:MediaQueryList;
+  private lastTap='';
+  private heatMarker?:Phaser.GameObjects.Rectangle;
+  private hitZones=new Map<string,Phaser.GameObjects.Zone>();
+  private visibleActions:{id:string;x:number;y:number;w:number;h:number;action:()=>void}[]=[];
+  private quantities={dough:1,sauce:1,cheese:1,mushroom:1};
+  private restartConfirmation=false;
+  constructor(private readonly runtime:CozyRuntime,private readonly preferences?:MenuPreferences,private readonly returnToMenu?:()=>void){super('CozyScene');}
+  preload():void{preloadPizzaIcons(this);}
+  create():void{
+    this.dirty=true;this.signature='';this.layer=this.add.container();this.motion=window.matchMedia('(prefers-reduced-motion: reduce)');
+    this.motion.addEventListener('change',this.motionChange);
+    this.scale.on('resize',this.motionChange);
+    document.addEventListener('visibilitychange',this.visibility);window.addEventListener('resize',this.orientation);
+    this.orientation();if(document.hidden)this.runtime.pause('visibility');
+    const cleanup=()=>{this.events.off('shutdown',cleanup);this.events.off('destroy',cleanup);this.motion?.removeEventListener('change',this.motionChange);this.scale.off('resize',this.motionChange);document.removeEventListener('visibilitychange',this.visibility);window.removeEventListener('resize',this.orientation);this.tweens.killAll();for(const zone of this.hitZones.values())zone.destroy();this.hitZones.clear();};
+    this.events.once('shutdown',cleanup);this.events.once('destroy',cleanup);this.draw();
+  }
+  private motionChange=():void=>{this.dirty=true;};
+  private visibility=():void=>{if(document.hidden)this.runtime.pause('visibility');this.dirty=true;};
+  private orientation=():void=>{if(window.innerWidth>window.innerHeight)this.runtime.pause('orientation');else this.runtime.resume('orientation');this.dirty=true;};
+  update(_time:number,delta:number):void{
+    this.runtime.advance(delta);const s=this.runtime.state;
+    const sig=[s.stage,s.ingredients.join(','),Math.floor(this.runtime.ovenState?.ovenSeconds??s.ovenSeconds),this.runtime.tickets.map(t=>Math.ceil(t.remaining)).join(','),this.runtime.pauseRevision,this.runtime.shopRevision].join('|');
+    if(this.dirty||sig!==this.signature){this.signature=sig;this.draw();}
+    const oven=this.runtime.productionActive?this.runtime.ovenState:s;
+    this.heatMarker?.setX(244+100*(oven?.ovenSeconds??0)/COZY_BAKE.gaugeEnd);
+    this.game.canvas.dataset.oven=String(oven?.ovenSeconds??0);
+    this.game.canvas.dataset.heat=oven?.stage==='burnt'?'burnt':(oven?.ovenSeconds??0)>=COZY_BAKE.perfectStart?'perfect':'warming';
+  }
+    if(id==='deliver')this.icon('bell',29,435,25)?.setTint(UI.ink);
+    this.inventory();
+    if(this.lastTap&&!(this.preferences?.reducedMotion??this.motion?.matches)&&!this.runtime.pauses.length){const c=this.controls.find(control=>control.id===this.lastTap);if(c){const glow=this.add.rectangle(c.x+c.width/2,c.y+c.height/2,c.width-4,c.height-4,0xffe1a0,.2);this.layer.add(glow);this.tweens.add({targets:glow,alpha:0,duration:170,onComplete:()=>glow.destroy()});}}this.lastTap='';
+    if(this.runtime.pauses.some(p=>p!=='tutorial'&&p!=='discard'&&p!=='delivery'))this.overlay();
+    else if(this.runtime.discardPending)this.discardDialog();
+    else if(this.runtime.deliveryPending)this.deliveryDialog();
+    else if(this.runtime.tutorialActive)this.tutorial();
+    else if(this.runtime.productionActive&&this.runtime.shopPhase==='preparation')this.market();
+    else if(s.stage==='delivered'&&(!this.runtime.productionActive||this.runtime.shopPhase==='delivered'))this.success();
+    for(const [id,zone] of this.hitZones)if(!this.controls.some(control=>control.id===id)){zone.destroy();this.hitZones.delete(id);}
+    const canvas=this.game.canvas;canvas.dataset.screen='game';canvas.dataset.stage=s.stage;canvas.dataset.ingredients=s.ingredients.join(',');canvas.dataset.oven=String(s.ovenSeconds);canvas.dataset.cash=String(s.cash);canvas.dataset.paused=this.runtime.pauses.join(',');canvas.dataset.controls=JSON.stringify(this.controls);canvas.dataset.booted='true';
+    canvas.setAttribute('aria-label',`Tiệm pizza. Ngày 1. ${s.cash} xu. ${this.runtime.productionActive?this.runtime.shopMessage:s.feedback}`);
+    canvas.dataset.tutorial=this.runtime.tutorialStep??'off';
+    canvas.dataset.commercialCash=String(this.runtime.commercialState.cash);
+    canvas.dataset.reducedMotion=String(this.preferences?.reducedMotion??!!this.motion?.matches);
+    canvas.dataset.shop=this.runtime.productionActive?this.runtime.shopPhase:'freeplay';
+    canvas.dataset.recipe=this.runtime.selectedRecipe;
+    canvas.dataset.tickets=JSON.stringify(this.runtime.tickets);
+    canvas.dataset.selectedTicket=this.runtime.selectedTicketId;
+    canvas.dataset.ovenOwner=this.runtime.ovenOwner??'';
+    canvas.dataset.discardPending=String(this.runtime.discardPending);
+    canvas.dataset.deliveryPending=JSON.stringify(this.runtime.deliveryPending);
+    canvas.dataset.result=JSON.stringify(this.runtime.lastResult);
+    canvas.dataset.quality=this.runtime.bakeQuality;
+    canvas.dataset.stock=JSON.stringify((['dough','sauce','cheese','mushroom'] as const).map(id=>({id,owned:this.runtime.owned(id),available:this.runtime.available(id),reserved:this.runtime.reserved(id)})));
+    // Read-only geometry makes canvas typography verifiable at every device scale.
+  private overlay():void{
+    this.veil();const pauses=this.runtime.pauses;
+    this.label(180,326,`Đang dừng: ${pauses.map(p=>({tutorial:'hướng dẫn',user:'nghỉ tay',visibility:'ẩn màn hình',orientation:'xoay ngang',order:'đọc đơn',gap:'gián đoạn',success:'hoàn thành',discard:'xác nhận bỏ bánh',delivery:'xác nhận giao món',menu:'menu chính'}[p])).join(', ')}`,10,wood,280);
+    if(pauses.includes('orientation')){this.label(180,245,'Xoay điện thoại về chiều dọc',17,ink,290);this.label(180,295,'Bánh và lò đang được giữ nguyên.',12,ink);return;}
+    const blocking=pauses.some(p=>p==='user'||p==='visibility'||p==='gap');
+    if(!blocking&&this.runtime.productionActive){
+      this.graphics();this.art.panel(22,208,316,330,UI.paper,UI.border,20);
+      this.label(180,232,`Đơn của ${this.runtime.selectedTicket?.name??'Linh'}`,22,ink);
+      this.label(180,272,this.runtime.selectedRecipe==='mushroom'?'1 pizza nấm · Mang đi':'1 pizza phô mai · Mang đi',14,ink);
+      const rows=this.runtime.selectedRecipe==='mushroom'?(['dough','sauce','cheese','mushroom'] as const):(['dough','sauce','cheese'] as const);
+      rows.forEach((id,i)=>this.label(180,306+i*22,`${catalog.find(item=>item.id===id)!.name}: có ${this.runtime.owned(id)} · rảnh ${this.runtime.available(id)} · giữ ${this.runtime.reserved(id)}`,11,ink,286));
+      this.label(180,411,'Nguyên liệu đã giữ chỉ dùng cho đơn này.',10,wood,280);
+      this.button('close-order',64,460,232,54,'Tiếp tục làm bánh',true,()=>this.runtime.resume('order'));return;
+    }
+    this.label(180,234,blocking?'Nghỉ tay một chút':'Đơn của Linh',22,ink);
+    this.label(180,277,blocking?'Tiệm vẫn ở đây, đợi bạn quay lại.':'1 pizza phô mai · Mang đi',13,ink,282);
+    if(!blocking)this.label(180,307,this.runtime.productionActive&&this.runtime.selectedRecipe==='mushroom'?'Đế bánh + sốt + phô mai + nấm':'Đế bánh + sốt cà chua + phô mai',12,wood);
+    this.button(blocking?'resume':'close-order',64,350,232,54,blocking?'Tiếp tục làm bánh':'Làm bánh thôi',true,()=>{this.runtime.resume(blocking?(pauses.includes('visibility')?'visibility':pauses.includes('gap')?'gap':'user'):'order');});
+    if(pauses.includes('user')&&this.returnToMenu)this.button('main-menu',64,418,232,54,'Về menu chính',true,this.returnToMenu,UI.dark);
+  }
+  private success():void{
+Tests tutorial.spec.ts: default URL changed to ?mode=tutorial for focused existing tests. boot.spec.ts: recovery expected menu screen, short-screen gameplay uses ?mode=tutorial. smoke.spec.ts: expects menu screen and drops kitchen-specific corner color assertion. Added 1.97MB generated PNG background with blank sign/no baked text or buttons and prompt metadata. Spec tasks complete; reviewed entry/settings screenshots.

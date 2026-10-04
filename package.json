@@ -1,0 +1,24 @@
+{
+  "name": "pizza-demo",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": { "node": "24.21.0", "npm": "11.19.0" },
+  "packageManager": "npm@11.19.0",
+  "scripts": {
+    "dev-nolog": "vite --config vite/config.dev.mjs",
+    "build-nolog": "tsc --noEmit && vite build --config vite/config.prod.mjs",
+    "preview": "vite preview --host 127.0.0.1",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest",
+    "test:e2e": "playwright test"
+  },
+  "dependencies": { "phaser": "4.2.1" },
+  "devDependencies": {
+    "@playwright/test": "1.63.0",
+    "terser": "5.39.0",
+    "typescript": "5.7.2",
+    "vite": "6.3.1",
+    "vitest": "4.1.11"
+  }
+}

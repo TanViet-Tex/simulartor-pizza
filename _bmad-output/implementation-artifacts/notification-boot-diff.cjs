@@ -1,0 +1,1 @@
+const fs=require('fs'),cp=require('child_process');const r=cp.spawnSync('git',['diff','--no-index','--','tmp/BootScene-before-notifications.ts','src/scenes/BootScene.ts'],{encoding:'utf8'});fs.appendFileSync('_bmad-output/implementation-artifacts/notification-frames.diff',r.stdout);

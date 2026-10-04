@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Pizza Demo Mobile UX — Validation</title>
+<style>
+:root{--bg:#fafaf9;--surface:#fff;--border:#e7e5e4;--text:#1c1917;--muted:#78716c;--strong:#16a34a;--adequate:#65a30d;--thin:#d97706;--broken:#dc2626;--high:#ea580c}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:15px/1.6 system-ui,sans-serif}.container{max-width:960px;margin:auto;padding:32px 24px 64px}header{border-bottom:1px solid var(--border);margin-bottom:24px}h1{font-size:22px}.synthesis,details{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:16px 20px;margin:12px 0}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px}.card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px}.strong{color:var(--strong)}.adequate{color:var(--adequate)}.thin{color:var(--thin)}.broken{color:var(--broken)}summary{cursor:pointer;font-weight:700}.sev{font-size:12px;font-weight:700;color:var(--high)}footer{margin-top:32px;border-top:1px solid var(--border);padding-top:12px;color:var(--muted);font-family:monospace}
+</style>
+</head>
+<body><main class="container">
+<header><h1>Pizza Demo Mobile UX — Validation Report</h1><p>DESIGN.md + EXPERIENCE.md · 2026-09-29</p></header>
+<div class="synthesis"><p>The reviewed draft was coherent but not yet a dependable implementation contract. Broken source paths, incomplete component parity, contrast, E04 flow coverage and 360×640 HUD behavior required correction. Accessibility and touch/HUD received conditional passes.</p></div>
+<div class="grid">
+<div class="card">Flow coverage<br><b class="thin">thin</b></div><div class="card">Token completeness<br><b class="adequate">adequate</b></div><div class="card">Component coverage<br><b class="broken">broken</b></div><div class="card">State coverage<br><b class="thin">thin</b></div><div class="card">Visual references<br><b class="strong">strong</b></div><div class="card">Bloat<br><b class="adequate">adequate</b></div><div class="card">Inheritance<br><b class="broken">broken</b></div><div class="card">Shape fit<br><b class="strong">strong</b></div>
+</div>
+<details open><summary>Rubric findings</summary><p><span class="sev">2 critical · 7 high · 7 medium · 3 low</span></p><ul><li>Correct six broken source paths.</li><li>Commit contrast targets and canonical component inventory.</li><li>Add E04 help flow, surface states and exact epic names.</li></ul></details>
+<details><summary>Accessibility review</summary><p><span class="sev">2 high · 5 medium · 2 low</span></p><ul><li>Scope canvas semantics honestly or add a DOM accessibility layer.</li><li>Fix action-button contrast.</li><li>Honor reduced motion and test zoom, safe area, Vietnamese fixtures and timer redundancy.</li></ul></details>
+<details><summary>Touch/HUD review</summary><p><span class="sev">3 high · 5 medium · 3 low</span></p><ul><li>Define compact three-ticket anatomy and vertical budget.</li><li>Echo delivery target and confirm known-invalid delivery.</li><li>Separate tutorial training time from commercial time.</li><li>Define overlay priority, phase-based actions and scrollable summary.</li></ul></details>
+<details><summary>Resolution outcome</summary><p>All critical/high and implementation-relevant medium findings were rolled into both spines, which are now final. Screen-reader/keyboard support is explicitly outside this canvas-only demo; visual mockups remain intentionally absent.</p></details>
+<footer>review-rubric.md · review-accessibility.md · review-touch-hud.md</footer>
+</main></body></html>

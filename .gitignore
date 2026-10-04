@@ -1,0 +1,17 @@
+node_modules/
+dist/
+.scaffold/
+.tools/
+test-results/
+playwright-report/
+*.local
+
+# Local tooling, temporary files, and logs
+.codex/
+.iis/
+.tmp*/
+tmp/
+*.log
+.env
+.env.*
+!.env.example

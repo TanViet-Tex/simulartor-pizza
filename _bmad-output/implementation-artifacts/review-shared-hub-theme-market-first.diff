@@ -1,0 +1,218 @@
+Best-effort change record (NO_VCS). New HubTheme/HubCanvasUI; Market delegates shared background/header/nav/frames/text/buttons/footer. Vector scalable frames prevent baked source text leaking. Existing business/input/scroll/lifetime unchanged. Quantity input adopts shared colors/font. Metadata body14/meta11 with shortened totals prevents lost shortfall digits. New actual canvas regression test for100 chicken. Full resulting sources:
+
++++ src/presentation/HubTheme.ts
+import {UI_THEME} from './theme';
+
+/** Scoped management-screen tokens. Kitchen/menu keep their approved global theme. */
+export const HUB_THEME = Object.freeze({
+  colors: Object.freeze({
+    ink:'#442412', paper:'#fff3de', border:'#bd8b55', cream:'#fff0d5',
+    muted:'#86502b', active:'#b85b37', activeEdge:'#8c4229', wood:'#9c5c35', woodEdge:'#714125',
+    action:'#282a28', actionEdge:'#cda974', disabled:'#706659',
+    highlight:'#fff9ed', shadow:'#754221', danger:'#b3482c', inset:'#f5dfbe',
+    quantity:'#efd2a9', stepperInk:'#6f4023', field:'#fff7e4', track:'#edd4b0', thumb:'#9d7955',
+  }),
+  typography: Object.freeze({fontFamily:UI_THEME.typography.fontFamily,
+    title:23, subtitle:13, section:19, body:14, meta:11, action:13, navigation:11}),
+  spacing: Object.freeze({small:4, medium:8, large:12, panel:16}),
+  radii: Object.freeze({tile:8, panel:16, button:10}),
+  geometry: Object.freeze({width:360, height:640,
+    header:Object.freeze({x:77,y:8,width:205,height:65}),
+    cash:Object.freeze({x:290,y:14,width:65,height:27}),
+    navigation:Object.freeze({x:8,y:78,width:344,height:49}),
+    footer:Object.freeze({x:10,y:590,width:340,height:43}),
+  }),
+});
+
++++ src/presentation/HubCanvasUI.ts
+import Phaser from 'phaser';
+import {HUB_THEME} from './HubTheme';
+
+export const HUB_ART = {key:'reference-market',url:'assets/references/chợ.png'};
+export type HubTab = 'summary'|'market'|'stock'|'shop'|'missions';
+export type HubRect = {x:number;y:number;width:number;height:number};
+export type HubHit = (id:string,x:number,y:number,w:number,h:number,enabled:boolean,action:()=>void)=>void;
+
+/** Canvas painter only: the caller owns its texture, input zones and cleanup. */
+export class HubCanvasUI {
+  constructor(private scene:Phaser.Scene,private ctx:CanvasRenderingContext2D,private hit:HubHit){}
+
+  text(x:number,y:number,value:string,size:number=12,color:string=HUB_THEME.colors.ink,center=false,max=0):void {
+    const ctx=this.ctx;ctx.save();
+    ctx.font=`bold ${size}px ${HUB_THEME.typography.fontFamily}`;
+    ctx.fillStyle=color;ctx.textAlign=center?'center':'left';ctx.textBaseline='top';
+    if(max&&ctx.measureText(value).width>max){
+      const characters=Array.from(value);
+      while(characters.length&&ctx.measureText(characters.join('')+'…').width>max)characters.pop();
+      value=characters.join('')+'…';
+    }
+    ctx.fillText(value,x,y);ctx.restore();
+  }
+
+  panel(x:number,y:number,w:number,h:number,fill:string=HUB_THEME.colors.paper,stroke:string=HUB_THEME.colors.border,r:number=HUB_THEME.radii.tile):void {
+    const ctx=this.ctx;ctx.save();
+    ctx.fillStyle=HUB_THEME.colors.shadow;ctx.globalAlpha=.22;
+    ctx.beginPath();ctx.roundRect(x+.5,y+2,w-1,h-2,r);ctx.fill();ctx.globalAlpha=1;
+    ctx.beginPath();ctx.roundRect(x+.5,y+.5,w-1,h-2,r);ctx.fillStyle=fill;ctx.fill();
+    ctx.save();ctx.clip();
+    const light=ctx.createLinearGradient(0,y,0,y+h);
+    light.addColorStop(0,'rgba(255,255,255,.22)');light.addColorStop(.45,'rgba(255,255,255,0)');light.addColorStop(1,'rgba(82,40,15,.12)');
+    ctx.fillStyle=light;ctx.fillRect(x,y,w,h);ctx.restore();
+    ctx.strokeStyle=stroke;ctx.lineWidth=1.2;ctx.stroke();
+    ctx.beginPath();ctx.roundRect(x+2,y+2,w-4,h-5,Math.max(1,r-2));
+    ctx.strokeStyle='rgba(255,244,212,.32)';ctx.lineWidth=1;ctx.stroke();ctx.restore();
+  }
+
+  icon(name:string,x:number,y:number,size:number):void {
+    const key=`pizza-icon-${name}`;
+    if(!this.scene.textures.exists(key))return;
+    const texture=this.scene.textures.get(key),frame=texture.get();
+    this.ctx.drawImage(texture.getSourceImage() as HTMLImageElement,frame.cutX,frame.cutY,frame.cutWidth,frame.cutHeight,x,y,size,size);
+  }
+
+  crop(source:HubRect,target:HubRect):void {
+    if(!this.scene.textures.exists(HUB_ART.key))return;
+    const image=this.scene.textures.get(HUB_ART.key).getSourceImage() as HTMLImageElement;
+    this.ctx.drawImage(image,source.x,source.y,source.width,source.height,target.x,target.y,target.width,target.height);
+  }
+
+  frame(target:HubRect):void {
+    const ctx=this.ctx,{x,y,width:w,height:h}=target,r=Math.min(HUB_THEME.radii.panel,w/2,h/2);
+    this.panel(x,y,w,h,HUB_THEME.colors.paper,HUB_THEME.colors.shadow,r);
+    ctx.save();ctx.beginPath();ctx.roundRect(x+1.5,y+1.5,w-3,h-3,r-1);
+    ctx.strokeStyle=HUB_THEME.colors.shadow;ctx.lineWidth=3;ctx.stroke();
+    ctx.beginPath();ctx.roundRect(x+4,y+4,w-8,h-8,r-3);
+    ctx.strokeStyle=HUB_THEME.colors.border;ctx.lineWidth=1.5;ctx.stroke();ctx.restore();
+  }
+
+  button(x:number,y:number,w:number,h:number,title:string,enabled=true,size=13):void {
+    this.panel(x,y,w,h,enabled?HUB_THEME.colors.action:HUB_THEME.colors.disabled,HUB_THEME.colors.actionEdge,HUB_THEME.radii.button);
+    this.text(x+w/2,y+(h-size)/2-1,title,size,HUB_THEME.colors.cream,true,w-8);
+  }
+
+  background():void {
+    const ctx=this.ctx;ctx.save();ctx.fillStyle=HUB_THEME.colors.wood;ctx.fillRect(0,0,360,640);
+    for(let y=0;y<640;y+=27){
+      const grain=ctx.createLinearGradient(0,y,0,y+27);
+      grain.addColorStop(0,'rgba(255,202,127,.10)');grain.addColorStop(1,'rgba(73,32,13,.12)');
+      ctx.fillStyle=grain;ctx.fillRect(0,y,360,27);
+      ctx.strokeStyle=HUB_THEME.colors.woodEdge;ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(360,y);ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  header(input:{title:string;subtitle:string;cash:number;pause:()=>void}):void {
+    this.crop({x:0,y:0,width:185,height:195},{x:0,y:0,width:71,height:75});
+    this.frame(HUB_THEME.geometry.header);
+    let titleSize:number=HUB_THEME.typography.title;
+    this.ctx.save();
+    this.ctx.font=`bold ${titleSize}px ${HUB_THEME.typography.fontFamily}`;
+    while(titleSize>HUB_THEME.typography.body&&this.ctx.measureText(input.title).width>195){
+      titleSize--;this.ctx.font=`bold ${titleSize}px ${HUB_THEME.typography.fontFamily}`;
+    }
+    this.ctx.restore();
+    this.text(180,23,input.title,titleSize,HUB_THEME.colors.ink,true,195);
+    this.text(180,52,input.subtitle,HUB_THEME.typography.subtitle,HUB_THEME.colors.muted,true,196);
+    this.frame(HUB_THEME.geometry.cash);
+    this.text(322,23,`${input.cash} xu`,12,HUB_THEME.colors.ink,true,59);
+    this.hit('pause',7,9,52,61,true,input.pause);
+  }
+
+  navigation(active:HubTab,tab:(id:HubTab)=>void):void {
+    this.frame(HUB_THEME.geometry.navigation);
+    const tabs=[['summary','Tổng kết','ledger'],['market','Chợ','basket'],['stock','Kho','crate'],['shop','Quán','storefront'],['missions','Nhiệm vụ','checklist']] as const;
+    tabs.forEach(([id,title,picture],i)=>{
+      const x=11+68*i,selected=id===active;
+      this.panel(x,82,64,40,selected?HUB_THEME.colors.active:HUB_THEME.colors.paper,selected?HUB_THEME.colors.activeEdge:HUB_THEME.colors.border);
+      this.icon(picture,x+22,84,21);
+      this.text(x+32,108,title,HUB_THEME.typography.navigation,selected?HUB_THEME.colors.cream:HUB_THEME.colors.ink,true,60);
+      this.hit(`summary-tab-${id}`,x,80,64,45,true,()=>tab(id));
+    });
+  }
+
+  footer(input:{id:string;title:string;enabled:boolean;action:()=>void}):void {
+    this.frame(HUB_THEME.geometry.footer);
+    this.button(15,595,330,32,input.title,input.enabled,18);
+    this.hit(input.id,12,587,336,48,input.enabled,input.action);
+  }
+}
+
++++ src/presentation/ReferenceMarket.ts
+import Phaser from 'phaser';
+import {STOCK_INGREDIENTS,ingredientName,datedIngredientPrice,type StockIngredient} from '../domain/CozyStock';
+import {HUB_THEME} from './HubTheme';
+import {HUB_ART,HubCanvasUI} from './HubCanvasUI';
+import {MARKET_INGREDIENT_ART,drawMarketIngredient} from './MarketIngredientArt';
+
+export type MarketFilter='all'|'sauce'|'topping'|'base';
+export type MarketDrag={active:boolean;startY:number;offset:number};
+type Hit=(id:string,x:number,y:number,w:number,h:number,enabled:boolean,action:()=>void)=>void;
+export const MARKET_ART=HUB_ART;
+export function preloadMarketArt(scene:Phaser.Scene):void{for(const art of [MARKET_ART,MARKET_INGREDIENT_ART])if(!scene.textures.exists(art.key))scene.load.image(art.key,`${import.meta.env.BASE_URL}${art.url}`);}
+let serial=0;
+/** A bounded canvas window keeps native borders and row artwork clipped in WebGL. */
+export class ReferenceMarket{
+  constructor(private scene:Phaser.Scene,private layer:Phaser.GameObjects.Container,private hit:Hit){}
+  draw(input:{day:number;cash:number;canBuy:boolean;readOnlyReason:string;canScroll:()=>boolean;filter:MarketFilter;offset:number;drag:MarketDrag;quantities:Partial<Record<StockIngredient,number>>;available:(id:StockIngredient)=>number;quantity:(id:StockIngredient,delta:number)=>void;buy:(id:StockIngredient)=>void;editQuantity:(id:StockIngredient)=>void;scroll:(offset:number)=>void;setFilter:(filter:MarketFilter)=>void;tab:(id:'summary'|'market'|'stock'|'shop'|'missions')=>void;pause:()=>void;price:()=>void;footer:{id:string;title:string;enabled:boolean;action:()=>void}}):void{
+    const key=`market-window-${serial++}`,texture=this.scene.textures.createCanvas(key,360,640)!,ctx=texture.context;
+    const ui=new HubCanvasUI(this.scene,ctx,this.hit),colors=HUB_THEME.colors;
+    const frame=ui.frame.bind(ui),text=ui.text.bind(ui),panel=ui.panel.bind(ui);
+    ui.background();ui.header({title:'Chợ nguyên liệu',subtitle:`Chuẩn bị ngày ${input.day}`,cash:input.cash,pause:input.pause});
+    ui.navigation('market',input.tab);
+    frame({x:8,y:133,width:344,height:40});
+    const filters=[['all','Tất cả'],['sauce','Sốt'],['topping','Topping'],['base','Đế & phô mai']] as const;
+    filters.forEach(([id,title],i)=>{const x=15+i*84;panel(x,139,78,28,id===input.filter?colors.active:colors.inset);text(x+39,148,title,i===3?10:12,id===input.filter?colors.cream:colors.ink,true);this.hit(`market-filter-${id}`,x,136,78,34,true,()=>input.setFilter(id));});
+    frame({x:8,y:180,width:344,height:399});text(24,190,`Mua cho ngày ${input.day}`,19);text(306,194,'Giá món ›',11,colors.muted,true);this.hit('market-price-open',269,184,67,29,input.canBuy,input.price);
+    const viewport={x:17,y:219,width:321,height:318},rowHeight=53;
+    const ids=[...STOCK_INGREDIENTS].sort((a,b)=>{const order:StockIngredient[]=['dough','cheese','sauce','mushroom','sausage','chicken'];return (order.includes(a)?order.indexOf(a):6+STOCK_INGREDIENTS.indexOf(a))-(order.includes(b)?order.indexOf(b):6+STOCK_INGREDIENTS.indexOf(b));}).filter(id=>input.filter==='all'||input.filter==='sauce'&&id.startsWith('sauce')||input.filter==='base'&&['dough','cheese'].includes(id)||input.filter==='topping'&&!id.startsWith('sauce')&&!['dough','cheese'].includes(id));
+    const max=Math.max(0,ids.length*rowHeight-viewport.height),offset=Phaser.Math.Clamp(input.offset,0,max);
+    const rows=ids.map((id,i)=>{const quantity=input.quantities[id]??1,unitPrice=datedIngredientPrice(id,input.day),total=quantity*unitPrice,y=viewport.y+i*rowHeight-offset;return {id,name:ingredientName(id),quantity,unitPrice,total,available:input.available(id),remainingCash:input.cash-total,y,visible:y>=viewport.y&&y+rowHeight<=viewport.y+viewport.height};});
+    ctx.save();ctx.beginPath();ctx.rect(viewport.x,viewport.y,viewport.width,viewport.height);ctx.clip();
+    for(const row of rows){const {id,y}=row;if(y+rowHeight<viewport.y||y>viewport.y+viewport.height)continue;
+      panel(17,y,321,50,colors.paper);drawMarketIngredient(this.scene,ctx,id,23,y+6,42,38);
+      text(73,y+6,row.name,HUB_THEME.typography.body,colors.ink,false,120);text(73,y+24,`${row.unitPrice} xu · Kho: ${row.available}`,HUB_THEME.typography.meta,colors.muted,false,120);text(73,y+37,`${row.total} xu · ${row.remainingCash>=0?'Còn '+row.remainingCash:'Thiếu '+(-row.remainingCash)}`,HUB_THEME.typography.meta,row.remainingCash<0?colors.danger:colors.muted,false,120);
+      panel(196,y+10,80,30,colors.quantity,colors.quantity,6);text(209,y+16,'−',18,colors.stepperInk,true);panel(222,y+11,27,28,colors.field,colors.field,3);text(235,y+17,String(row.quantity),14,colors.ink,true);text(262,y+16,'+',18,colors.stepperInk,true);
+      ui.button(282,y+8,49,34,'Mua',input.canBuy,HUB_THEME.typography.action);
+      if(row.visible){this.hit(`market-quantity-${id}`,222,y+11,27,28,input.canBuy,()=>input.editQuantity(id));this.hit(`market-minus-${id}`,196,y+10,26,30,input.canBuy&&row.quantity>1,()=>input.quantity(id,-1));this.hit(`market-plus-${id}`,249,y+10,27,30,input.canBuy&&row.quantity<100,()=>input.quantity(id,1));this.hit(`market-buy-${id}`,282,y+8,49,34,input.canBuy,()=>input.buy(id));}
+    }ctx.restore();
+    if(max){panel(342,219,3,318,colors.track,colors.track,1);panel(342,219+offset/max*(318-65),3,65,colors.thumb,colors.thumb,1);}
+    text(23,546,input.canBuy?'Mua nhập Kho ngay · Hỏa tốc chỉ dùng trong ca':input.readOnlyReason,10,colors.muted,false,316);text(23,561,'14 giá mới tạm tính theo cấu hình hiện tại.',10,colors.muted);
+    ui.footer(input.footer);
+    this.scene.game.canvas.dataset.hubTheme='pizza-cartoon-v1';
+    texture.refresh();this.layer.add(this.scene.add.image(0,0,key).setOrigin(0));
+    const zone=this.scene.add.zone(viewport.x,viewport.y,viewport.width,viewport.height).setOrigin(0).setInteractive();this.layer.add(zone);
+    const wheel=(p:Phaser.Input.Pointer,_objects:unknown,_dx:number,dy:number)=>{if(input.canScroll()&&zone.input?.enabled&&p.x>=viewport.x&&p.x<=viewport.x+viewport.width&&p.y>=viewport.y&&p.y<=viewport.y+viewport.height)input.scroll(Phaser.Math.Clamp(offset+dy,0,max));};this.scene.input.on('wheel',wheel);
+    zone.on('pointerdown',(p:Phaser.Input.Pointer)=>{if(!input.canScroll())return;input.drag.active=true;input.drag.startY=p.y;input.drag.offset=offset;});
+    const move=(p:Phaser.Input.Pointer)=>{if(input.canScroll()&&zone.input?.enabled&&p.isDown&&input.drag.active)input.scroll(Phaser.Math.Clamp(input.drag.offset+input.drag.startY-p.y,0,max));};
+    const up=()=>input.drag.active=false;this.scene.input.on('pointermove',move);this.scene.input.on('pointerup',up);this.scene.input.on('pointerupoutside',up);
+    zone.once('destroy',()=>{this.scene.input.off('wheel',wheel);this.scene.input.off('pointermove',move);this.scene.input.off('pointerup',up);this.scene.input.off('pointerupoutside',up);this.scene.textures.remove(key);});
+    this.scene.game.canvas.dataset.marketRows=JSON.stringify(rows);this.scene.game.canvas.dataset.marketScroll=JSON.stringify({...viewport,offset,max});this.scene.game.canvas.dataset.marketFilter=input.filter;
+  }
+}
+
++++ src/presentation/MarketQuantityInput.ts
+import {HUB_THEME} from './HubTheme';
+
+/** Native numeric keyboard without adding a Phaser DOM plugin or changing game config. */
+export class MarketQuantityInput {
+  readonly element=document.createElement('input');
+  constructor(private canvas:HTMLCanvasElement,value:number,change:()=>void,accept:()=>void,cancel:()=>void){
+    const input=this.element;
+    input.type='text';input.inputMode='numeric';input.autocomplete='off';input.maxLength=10;
+    input.setAttribute('aria-label','Số lượng nguyên liệu');input.setAttribute('data-market-quantity-input','true');
+    input.value=String(value);
+    Object.assign(input.style,{position:'fixed',zIndex:'1000',boxSizing:'border-box',border:`2px solid ${HUB_THEME.colors.border}`,outlineColor:HUB_THEME.colors.border,borderRadius:'10px',background:HUB_THEME.colors.field,color:HUB_THEME.colors.ink,textAlign:'center',fontFamily:HUB_THEME.typography.fontFamily,fontWeight:'bold'});
+    input.addEventListener('input',change);
+    input.addEventListener('keydown',event=>{if(event.key==='Enter'){event.preventDefault();accept();}else if(event.key==='Escape'){event.preventDefault();cancel();}});
+    document.body.append(input);this.position();input.focus();input.select();
+  }
+  get quantity():number|null {
+    const value=this.element.value.trim();if(!/^\d{1,3}$/.test(value))return null;
+    const quantity=Number(value);return quantity>=1&&quantity<=100?quantity:null;
+  }
+  position():void {
+    const b=this.canvas.getBoundingClientRect(),scale=Math.min(b.width/360,b.height/640);
+    Object.assign(this.element.style,{left:`${b.left+80*b.width/360}px`,top:`${b.top+326*b.height/640}px`,width:`${200*b.width/360}px`,height:`${Math.max(48,48*b.height/640)}px`,fontSize:`${Math.max(16,24*scale)}px`});
+  }
+  destroy():void{this.element.remove();}
+}

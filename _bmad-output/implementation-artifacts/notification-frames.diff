@@ -1,0 +1,525 @@
+diff --git a/_bmad-output/implementation-artifacts/notification-originals/CozyScene.ts b/src/scenes/CozyScene.ts
+index 108bbc3..217d973 100644
+--- a/_bmad-output/implementation-artifacts/notification-originals/CozyScene.ts
++++ b/src/scenes/CozyScene.ts
+@@ -19,6 +19,7 @@ import { StaticGraphics } from '../presentation/StaticGraphics';
+ import { createOrderQueue, ORDER_DETAIL_PROMPT, type OrderQueueInput } from '../presentation/OrderQueue';
+ import type {CozyCampaignSession} from '../runtime/CozyCampaignSession';
+ import {registerCustomerPortraitFrames,customerPortraitFrame,preloadCustomerPortraits,customerPortraitFit} from '../presentation/CustomerPortraits';
++import {drawNotificationFrame,preloadNotificationFrames,type NotificationLayout} from '../presentation/NotificationFrame';
+ 
+ type Control={id:string;x:number;y:number;width:number;height:number;enabled:boolean};
+ const {cream,ink,muted,accent,wood}=UI_THEME.text;
+@@ -67,8 +68,11 @@ export class CozyScene extends Phaser.Scene {
+   private finalOpen=false;
+   private newCampaignConfirmation=false;
+   private reloadConfirmation=false;
++  private notification?:{layout:NotificationLayout;ids:string[];start:number;end:number;title:boolean};
++  private notificationButtonLabel=false;
+   constructor(private readonly runtime:CozyRuntime,private readonly preferences?:MenuPreferences,private readonly returnToMenu?:()=>void,private readonly audio=new PlayAudio(),private readonly sharedLifecycle?:PlayLifecycle,private readonly campaignSession?:CozyCampaignSession,private readonly replaceRuntime?:(runtime:CozyRuntime)=>void){super('CozyScene');}
+   preload():void{
++    preloadNotificationFrames(this);
+     preloadPizzaIcons(this);
+     preloadCustomerPortraits(this);
+     for(const asset of [...REFERENCE_KITCHEN_MANIFEST,PIZZA_BOX_ART])if(!this.textures.exists(asset.key))this.load.image(asset.key,`${import.meta.env.BASE_URL}${asset.url}`);
+@@ -108,8 +112,16 @@ export class CozyScene extends Phaser.Scene {
+   }
+   private graphics(dynamic=false):void{const g=this.add.graphics();if(dynamic)g.setData('dynamic',true);this.layer.add(g);this.art=new CozyArt(g);}
+   private label(x:number,y:number,value:string,size=12,color:string=cream,width=0,align:'left'|'center'='center'):Phaser.GameObjects.Text{
++    let notificationTitle=false;
++    if(this.notification&&!this.notificationButtonLabel){
++      const n=this.notification;
++      if(n.title){notificationTitle=true;n.title=false;x=180;y=n.layout.titleY;size=Math.min(size,20);width=276;}
++      else {y=this.notificationY(y);width=Math.min(width||284,284);}
++    }
+     const text=this.add.text(x,y,value,{fontFamily:UI_THEME.typography.fontFamily,fontSize:`${Math.max(size,UI_THEME.typography.minSize)}px`,fontStyle:'bold',color,align,lineSpacing:UI_THEME.typography.lineSpacing,padding:{top:1,bottom:1},...(width?{wordWrap:{width,useAdvancedWrap:true}}:{})}).setLetterSpacing(UI_THEME.typography.letterSpacing);
+-    if(align==='center')text.setOrigin(.5,0);this.layer.add(text);return text;
++    if(align==='center')text.setOrigin(.5,0);
++    if(this.notification&&!this.notificationButtonLabel&&!notificationTitle){const body=this.notification.layout.body;text.setY(Math.min(y,body.y+body.height-text.height));}
++    this.layer.add(text);return text;
+   }
+   private icon(name:string,x:number,y:number,size:number,alpha=1):Phaser.GameObjects.Image|undefined{
+     const key=`pizza-icon-${name}`;
+@@ -138,8 +150,9 @@ export class CozyScene extends Phaser.Scene {
+     const text=this.label(x,y,read(),size,color,width);text.setFontFamily('monospace');this.timers.push({text,read});
+   }
+   private explanation(y:number,height:number,value:string,size=13,color:string=ink):void{
++    if(this.notification){const bottom=this.notificationY(y+height);y=this.notificationY(y);height=Math.max(18,Math.min(bottom-y,this.notification.layout.body.y+this.notification.layout.body.height-y));}
+     modalText(this,this.layer,40,y,280,height,value,size,color,this.textScale);
+-    if(this.textScale>1)this.label(180,y+height+2,'Vuốt phần chữ để đọc tiếp',10,wood);
++    if(this.textScale>1&&!this.notification)this.label(180,y+height+2,'Vuốt phần chữ để đọc tiếp',10,wood);
+   }
+   private hit(id:string,x:number,y:number,w:number,h:number,enabled:boolean,action:()=>void):void{
+     this.tapRects.set(id,{x,y,w,h});
+@@ -176,12 +189,29 @@ export class CozyScene extends Phaser.Scene {
+     });
+   }
+   private button(id:string,x:number,y:number,w:number,h:number,title:string,enabled:boolean,action:()=>void,fill:number=UI.green):void{
++    const footerIndex=this.notification?.ids.indexOf(id)??-1;
++    if(footerIndex>=0){
++      const rect=this.notification!.layout.footer[footerIndex];({x,y,width:w,height:h}=rect);
++      if(!enabled){this.graphics();this.art.g.fillStyle(0x000000,.45).fillRoundedRect(x,y,w,h,h/2);}
++      this.notificationButtonLabel=true;
++      const text=this.label(x+w/2,y,title,16,enabled?cream:muted,w-14);
++      const fit=Math.min(1,(h-8)/text.height);text.setScale(fit).setPosition(x+w/2,y+(h-text.displayHeight)/2);
++      this.notificationButtonLabel=false;this.hit(id,x,y,w,h,enabled,action);return;
++    }
++    if(this.notification){y=this.notificationY(y);w=Math.min(w,284);x=Math.max(38,Math.min(322-w,x));}
+     this.graphics();this.art.panel(x,y,w,h,enabled?fill:fill===UI.green?0x527f42:0x615449,fill===UI.green?UI.greenEdge:UI.border,11);
+     if(enabled)this.art.round(x+4,y+3,w-8,5,3,fill===UI.green?0x72d762:0xb77b61);
+-    this.label(x+w/2,y+(title.includes('\n')?5:(h-20)/2),title,title.includes('\n')?12:16,enabled&&fill===UI.green?ink:cream,title.includes('\n')?w-12:0);this.hit(id,x,y,w,h,enabled,action);
++    this.notificationButtonLabel=true;
++    const text=this.label(x+w/2,y+(title.includes('\n')?5:(h-20)/2),title,title.includes('\n')?12:16,enabled&&fill===UI.green?ink:cream,w-12);
++    if(text.height>h-8){text.setScale((h-8)/text.height);text.setY(y+(h-text.displayHeight)/2);}
++    this.notificationButtonLabel=false;this.hit(id,x,y,w,h,enabled,action);
++  }
++  private notificationY(y:number):number{const n=this.notification!;return n.layout.body.y+Math.max(0,Math.min(1,(y-n.start)/(n.end-n.start)))*n.layout.body.height;}
++  private notificationFrame(ids:string[],start:number,end:number,height=420):void{
++    this.veil();this.notification={layout:drawNotificationFrame(this,this.layer,ids.length===2?'two':'one',(640-height)/2,height),ids,start,end,title:true};
+   }
+   private draw():void{
+-    this.dirty=false;this.game.canvas.dataset.modalScroll='[]';this.timers=[];this.heatBar=undefined;this.layer.removeAll(true);this.controls=[];this.visibleActions=[];this.tapRects.clear();this.graphics();
++    this.dirty=false;this.notification=undefined;this.game.canvas.dataset.notificationFrame='';this.game.canvas.dataset.modalScroll='[]';this.timers=[];this.heatBar=undefined;this.layer.removeAll(true);this.controls=[];this.visibleActions=[];this.tapRects.clear();this.graphics();
+     const backdrop=this.textures.get('reference-kitchen-background').getSourceImage();
+     const backdropScale=Math.min(KITCHEN.width/backdrop.width,KITCHEN.height/backdrop.height);
+     this.layer.add(this.add.image(KITCHEN.width/2,KITCHEN.height/2,'reference-kitchen-background').setScale(backdropScale));
+@@ -431,13 +461,13 @@ export class CozyScene extends Phaser.Scene {
+     this.queueUpgradeNotice=false;this.queueUpgradeLease?.release();this.queueUpgradeLease=undefined;this.dirty=true;
+   }
+   private queueUpgradeDialog():void{
+-    this.resetModalControls();this.veil();this.graphics();this.art.panel(22,208,316,252,UI.paper,UI.border,20);
++    this.resetModalControls();this.notificationFrame(["queue-upgrade-close"],281,355,420);
+     this.label(180,231,'Ô hàng chờ đang khóa',20,ink,280);
+     this.explanation(281,74,'Hãy nâng cấp cửa hàng để được mở ô hàng chờ.',16);
+     this.button('queue-upgrade-close',64,383,232,48,'Đã hiểu',true,()=>this.closeQueueUpgradeNotice());
+   }
+   private expressDialog():void{
+-    const ingredient=this.expressIngredient!;this.resetModalControls();this.veil();this.graphics();this.art.panel(22,188,316,352,UI.paper,UI.border,20);
++    const ingredient=this.expressIngredient!;this.resetModalControls();this.notificationFrame(["express-confirm","express-close"],252,433,470);
+     this.label(180,210,'Chợ · Đặt hỏa tốc',21,ink,280);
+     const name=catalog.find(item=>item.id===ingredient)?.name??ingredient,price=this.runtime.expressPrice(ingredient),total=price*this.expressQuantity;
+     this.label(180,252,name,18,ink,280);this.label(180,283,`${price} xu / phần · +60% giá chợ`,13,wood,280);
+@@ -452,11 +482,7 @@ export class CozyScene extends Phaser.Scene {
+   }
+   private veil():void{
+     this.visibleActions=[];for(const zone of this.hitZones.values())zone.disableInteractive();
+-    this.graphics();this.art.rect(0,160,360,480,0x241810,.87);const blocker=this.add.zone(0,0,360,640).setOrigin(0).setInteractive();this.layer.add(blocker);this.controls=[];
+-    this.graphics();this.art.panel(22,208,316,225,UI.paper,0x754934,UI_THEME.radii.modal);
+-    const oven=this.runtime.ovenState??this.runtime.state;
+-    const quality=oven.stage==='burnt'?'Bánh cháy':oven.stage==='baking'?(oven.ovenSeconds<3?'Đang nướng':oven.ovenSeconds>=4?'Sắp cháy':'Sẵn sàng'):oven.stage==='ready'?'Đã lấy bánh':'Lò trống';
+-    this.label(180,175,`${this.runtime.pauses.length?'Đang dừng':'Đang chạy'} · ${quality} · ${timerText(Math.floor(oven.ovenSeconds))}`,12,cream,340);
++    this.graphics();this.art.rect(0,0,360,640,0x000000,1);const blocker=this.add.zone(0,0,360,640).setOrigin(0).setInteractive();this.layer.add(blocker);this.controls=[];
+   }
+   private choosePrice(recipe:StockRecipe):void{
+     if(this.runtime.canSetPrices){
+@@ -479,7 +505,7 @@ export class CozyScene extends Phaser.Scene {
+   private priceDialog():void{
+     const draft=this.priceDraft;if(!draft)return;
+     for(const zone of this.hitZones.values())zone.disableInteractive();this.controls=[];this.visibleActions=[];
+-    this.veil();this.graphics();this.art.panel(22,188,316,342,UI.paper,UI.border,20);
++    this.notificationFrame(["market-price-cancel","market-price-save"],246,458,500);
+     this.label(180,207,recipeName(draft.recipe),22,ink);
+     this.button('market-price-recipe',42,246,276,48,'Đổi món · '+recipeName(draft.recipe),true,()=>{
+       const recipes=this.runtime.availableRecipes,next=recipes[(recipes.indexOf(draft.recipe)+1)%recipes.length];
+@@ -508,7 +534,7 @@ export class CozyScene extends Phaser.Scene {
+     for(const zone of this.hitZones.values())zone.disableInteractive();
+     for(const item of this.layer.list)if(item instanceof Phaser.GameObjects.Zone)item.disableInteractive();
+     this.controls=[];this.visibleActions=[];this.game.canvas.dataset.modalScroll='[]';
+-    this.veil();this.graphics();this.art.panel(22,142,316,432,UI.paper,UI.border,20);
++    this.notificationFrame(["summary-statement-close"],207,492,520);
+     this.label(180,159,`Sổ thu chi · Ngày ${summary.day}`,22,ink,292);
+     const lines=[
+       `Tiền đầu ngày: ${a.startingCash} xu`,
+@@ -539,6 +565,7 @@ export class CozyScene extends Phaser.Scene {
+     this.button('pause',6,0,48,48,'Ⅱ',true,()=>this.hold('user'),UI.dark);
+     this.button('mute',62,0,70,48,this.audio.muted?'Âm: tắt':'Âm: bật',true,()=>this.audio.toggleMute(),UI.dark);
+     if(this.restartConfirmation){
++      this.notificationFrame(['market-cancel-reset','market-confirm-reset'],232,290);
+       this.label(180,180,'Làm lại Ngày 1?',23,ink);
+       this.label(180,232,'Tiền và kho hiện tại sẽ được đặt lại\nvề 300 xu và kho trống.',14,ink,296);
+       this.button('market-cancel-reset',42,330,276,48,'Tiếp tục chuẩn bị',true,()=>{this.restartConfirmation=false;this.dirty=true;});
+@@ -679,14 +706,16 @@ export class CozyScene extends Phaser.Scene {
+   }
+   private resetModalControls(){this.controls=[];this.visibleActions=[];for(const zone of this.hitZones.values())zone.disableInteractive();}
+   private saveDialog():void {
+-    const session=this.campaignSession!;const save=session.view;this.resetModalControls();this.veil();this.graphics();this.art.panel(22,188,316,370,UI.paper,UI.border,20);
++    const session=this.campaignSession!;const save=session.view;this.resetModalControls();this.notificationFrame(this.reloadConfirmation?['save-reload-confirm','save-reload-cancel']:[save.state==='recovery'?'save-recover-confirm':save.canRetry?'save-retry':'save-read-again'],250,510,490);
+     this.label(180,210,this.reloadConfirmation?'Tải mốc mới nhất?':save.state==='saving'?'Đang lưu ngày…':'Tiến độ chưa lưu',22,ink,284);
+     this.explanation(250,115,this.reloadConfirmation?'Kết quả và thay đổi RAM sau lần chốt trước sẽ mất. Chỉ mở đầu ngày hiện tại trong bản lưu mới nhất; ngày cũ không mở lại.':save.message,13);
+     if(this.reloadConfirmation){
+       this.button('save-reload-confirm',48,388,264,48,'Tải bản mới nhất',true,()=>{this.reloadConfirmation=false;void session.load().then(runtime=>{if(runtime)this.replaceRuntime?.(runtime);else if(session.view.state==='ready')this.returnToMenu?.();});});
+       this.button('save-reload-cancel',48,452,264,48,'Giữ kết quả ở đây',true,()=>{this.reloadConfirmation=false;this.dirty=true;},UI.dark);return;
+     }
+-    if(save.state==='loading'||save.state==='saving')return;
++    if(save.state==='loading'||save.state==='saving'){
++      this.button(this.notification!.ids[0],0,0,0,0,save.state==='saving'?'Đang lưu…':'Đang đọc…',false,()=>{});return;
++    }
+     if(save.state==='recovery')this.button('save-recover-confirm',48,380,264,48,'Dùng bản cùng mốc',true,()=>{const runtime=session.confirmRecovery();if(runtime)this.replaceRuntime?.(runtime);});
+     else if(save.canRetry)this.button('save-retry',48,380,264,48,'Thử lưu lại',true,()=>{void session.retry().then(runtime=>{if(runtime&&runtime!==this.runtime)this.replaceRuntime?.(runtime);});});
+     else this.button('save-read-again',48,380,264,48,'Thử đọc lại',true,()=>{this.reloadConfirmation=true;this.dirty=true;});
+@@ -695,7 +724,7 @@ export class CozyScene extends Phaser.Scene {
+     this.label(180,514,'Chuẩn bị và mở ngày sau đang bị khóa.',11,wood,278);
+   }
+   private finalDialog():void {
+-    const s=this.runtime.daySummary!;this.resetModalControls();this.veil();this.graphics();this.art.panel(22,168,316,408,UI.paper,UI.border,20);
++    const s=this.runtime.daySummary!;this.resetModalControls();this.notificationFrame(["summary-final-close"],236,490,490);
+     this.label(180,191,s.ending==='complete'?'Hoàn thành demo 3 ngày':'Không đủ vốn',22,ink,280);
+     const p=s.progression;
+     this.explanation(236,170,[s.viability?.message??'',`Tiền cuối: ${s.cash} xu`,`Lợi nhuận cộng dồn: ${s.accounts.cumulativeProfit} xu`,`Cấp ${p.xp>=150?3:p.xp>=60?2:1} · ${p.xp} XP`,`Uy tín ${s.reputation}/100 · Quan hệ Linh ${s.relationship}/3`,`Nhiệm vụ phô mai: ${p.cheeseSales}/8 · ${p.mission==='completed'?'hoàn thành':p.mission==='expired'?'đã hết hạn':'chưa hoàn thành'}`,this.campaignSession?.view.state==='temporary'?'Phiên tạm không lưu.':this.campaignSession?'Kết quả đã lưu. Không có Ngày 4 trong demo.':'Kết quả chỉ giữ trong phiên này.'].filter(Boolean).join('\n'),14);
+@@ -703,14 +732,14 @@ export class CozyScene extends Phaser.Scene {
+     this.button('summary-final-close',48,500,264,48,'Xem tổng kết',true,()=>{this.finalOpen=false;this.dirty=true;},UI.dark);
+   }
+   private newCampaignDialog():void {
+-    this.resetModalControls();this.veil();this.graphics();this.art.panel(22,208,316,310,UI.paper,UI.border,20);
++    this.resetModalControls();this.notificationFrame(["market-new-cancel","market-new-confirm"],278,350,420);
+     this.label(180,231,this.campaignSession?'Chiến dịch mới?':'Làm lại Ngày 1?',23,ink);
+     this.explanation(278,72,this.campaignSession?'Tiến độ hiện tại sẽ được thay bằng Ngày 1, 300 xu và kho trống. Các ngày đã chốt không thể mở lại. Chỉ thay bản cũ sau khi lưu mới thành công.':'Tiền và kho hiện tại sẽ được đặt lại về 300 xu và kho trống.',14);
+     this.button('market-new-cancel',48,377,264,48,'Giữ chiến dịch hiện tại',true,()=>{this.newCampaignConfirmation=false;this.dirty=true;},UI.dark);
+     this.button('market-new-confirm',48,442,264,48,this.campaignSession?'Tạo chiến dịch mới':'Xác nhận làm lại',true,()=>{this.newCampaignConfirmation=false;if(this.campaignSession)void this.campaignSession.start(false).then(runtime=>{if(runtime)this.replaceRuntime?.(runtime);});else {this.release('user');this.runtime.dispatch({type:'reset'});this.dirty=true;}});
+   }
+   private discardDialog():void{
+-    this.veil();this.graphics();this.art.panel(22,208,316,286,UI.paper,UI.border,20);
++    this.notificationFrame(["confirm-discard","cancel-discard"],276,332,420);
+     this.label(180,232,'Bỏ chiếc pizza này?',22,ink);
+     this.explanation(276,56,'Nguyên liệu đã dùng không được hoàn lại.\nLàm lại sẽ giữ nguyên liệu mới từ kho.');
+     this.button('confirm-discard',64,352,232,48,'Xác nhận bỏ bánh',true,()=>this.runtime.confirmDiscard(),UI.dark);
+@@ -718,7 +747,7 @@ export class CozyScene extends Phaser.Scene {
+   }
+   private deliveryDialog():void{
+     const pending=this.runtime.deliveryPending!;
+-    this.veil();this.graphics();this.art.panel(22,208,316,286,UI.paper,UI.border,20);
++    this.notificationFrame(["confirm-delivery","cancel-delivery"],264,332,420);
+     this.label(180,226,`Giao cho ${pending.name}?`,21,ink,280);
+     this.explanation(264,68,`${recipeName(pending.recipe)}\n${pending.reasons.join('\n')}\nVẫn giao sẽ bị trừ sao.`);
+     this.button('confirm-delivery',64,352,232,48,'Vẫn giao món',true,()=>this.runtime.confirmDelivery(),UI.dark);
+@@ -726,7 +755,7 @@ export class CozyScene extends Phaser.Scene {
+   }
+   private bargainDialog():void{
+     const pending=this.runtime.bargainPending!;
+-    this.veil();this.graphics();this.art.panel(22,208,316,286,UI.paper,UI.border,20);
++    this.notificationFrame(["accept-bargain","reject-bargain"],260,346,420);
+     this.label(180,226,`${pending.name} · Mặc cả`,21,ink,280);
+     this.explanation(260,86,`Bánh đã làm xong! Khách xin giảm ${pending.discountPercent}%.\nGiá gốc ${pending.originalPrice} xu → ${pending.finalPrice} xu.\nChấp nhận: thành khách quen, quay lại ủng hộ.\nTừ chối: đánh giá thấp, không quay lại lần hai.`,13);
+     this.button('accept-bargain',64,352,232,48,'Đồng ý · khách quen',true,()=>this.runtime.dispatch({type:'customer.bargain',accept:true}));
+@@ -734,7 +763,7 @@ export class CozyScene extends Phaser.Scene {
+   }
+   private helpDialog():void{
+     const pending=this.runtime.helpPending;
+-    this.veil();this.graphics();this.art.panel(22,208,316,286,UI.paper,UI.border,20);
++    this.notificationFrame(pending?['accept-help','decline-help']:['continue-thanks'],264,332,420);
+     this.label(180,226,pending?'Linh · Nhờ giúp':'Linh · Lời cảm ơn',21,ink,280);
+     if(pending){
+       this.explanation(264,68,`${pending.reason?pending.reason+'\n':''}Linh cần một pizza phô mai miễn phí, tại quầy, trong 120 giây.\nĐúng món chín vừa trước hạn: quan hệ +1. Nhận rồi giao sai/trễ: −1.\nDùng nguyên liệu thật; không doanh thu, XP, uy tín hay đánh giá thương mại. Từ chối không mất gì.`,13);
+@@ -758,7 +787,7 @@ export class CozyScene extends Phaser.Scene {
+       deliver:['7/7 · Giao bánh tập','Bấm “Giao bánh”. Bánh tập không tạo tiền thưởng.'],
+     };
+     if(step==='complete'){
+-      this.veil();this.label(180,236,'Bạn đã biết làm pizza!',22,ink,280);
++      this.notificationFrame(['start-shift'],278,335);this.label(180,236,'Bạn đã biết làm pizza!',22,ink,280);
+       this.explanation(278,57,'Bánh tập đã hoàn thành.\nTiền và nguyên liệu của ca thật\nvẫn được giữ nguyên.',14);
+       this.button('start-shift',64,355,232,54,'Bắt đầu ca bán',true,()=>this.runtime.startShift());return;
+     }
+@@ -768,12 +797,11 @@ export class CozyScene extends Phaser.Scene {
+     this.label(26,148,title,12,ink,307,'left');this.label(26,165,detail,9,ink,307,'left');
+   }
+   private overlay():void{
+-    this.veil();const pauses=this.runtime.pauses;
+-    if(this.scenePauses.has('user'))this.button('mute',62,0,70,48,this.audio.muted?'Âm: tắt':'Âm: bật',true,()=>this.audio.toggleMute(),UI.dark);
+-    if(this.scenePauses.has('user')&&this.runtime.shopOpen){this.graphics();this.art.panel(22,208,316,334,UI.paper,UI.border,20);}
++    const pauses=this.runtime.pauses;this.notificationFrame([pauses.some(p=>p==='user'||p==='visibility'||p==='gap')?'resume':'close-order'],272,537,500);
++    if(this.scenePauses.has('user'))this.button('mute',62,350,70,48,this.audio.muted?'Âm: tắt':'Âm: bật',true,()=>this.audio.toggleMute(),UI.dark);
+     const reasons=`Đang dừng: ${pauses.map(p=>({tutorial:'hướng dẫn',user:'nghỉ tay',visibility:'ẩn màn hình',orientation:'xoay ngang',order:'đọc đơn',gap:'gián đoạn',success:'hoàn thành',discard:'xác nhận bỏ bánh',delivery:'xác nhận giao món',menu:'menu chính',bargain:'mặc cả',help:'lựa chọn giúp đỡ/lời cảm ơn',save:'lưu tiến độ'}[p])).join(', ')}`;
+     if(this.endDayConfirmation&&this.scenePauses.has('user')){
+-      this.graphics();this.art.panel(22,208,316,310,UI.paper,UI.border,20);
++      this.notificationFrame(['cancel-end-day','confirm-end-day'],270,365,450);
+       this.label(180,231,`Kết thúc ngày ${this.runtime.day}?`,21,ink);
+       this.explanation(270,95,`${this.runtime.tickets.filter(ticket=>!ticket.help).length} đơn thương mại chưa giao sẽ tính là khách bỏ đi.${this.runtime.tickets.some(ticket=>ticket.help)?'\nMón giúp chưa giao: quan hệ −1, không phạt uy tín.':''}\nBánh đang làm sẽ bỏ; nguyên liệu đã dùng không hoàn lại.\nTiền thuê: 20 xu.`,13);
+       this.button('cancel-end-day',48,382,264,48,'Tiếp tục ca này',true,()=>{this.endDayConfirmation=false;this.dirty=true;},UI.dark);
+@@ -781,14 +809,14 @@ export class CozyScene extends Phaser.Scene {
+     }
+     const blocking=pauses.some(p=>p==='user'||p==='visibility'||p==='gap');
+     if(!blocking&&this.inspectedRecipe){
+-      this.graphics();this.art.panel(22,208,316,286,UI.paper,UI.border,20);
++      this.notificationFrame(['close-order'],272,398,460);
+       const recipe=this.inspectedRecipe;
+       this.label(180,232,recipeName(recipe),22,ink);
+       this.explanation(272,126,recipeIngredients(recipe).map(id=>catalog.find(item=>item.id===id)!.name).join(' + ')+'\n'+(this.runtime.productionActive?`Giá bán: ${this.runtime.customerProgress.prices[recipe]} xu\n`:'')+'Xem công thức không đổi món đang làm.\n'+reasons,13);
+       this.button('close-order',64,422,232,54,'Tiếp tục làm bánh',this.scenePauses.has('order'),()=>{this.inspectedRecipe=null;this.release('order');});return;
+     }
+     if(!blocking&&this.runtime.productionActive){
+-      this.graphics();this.art.panel(22,208,316,330,UI.paper,UI.border,20);
++      this.notificationFrame(['close-order'],272,438,480);
+       if(!this.runtime.selectedTicket){
+         this.label(180,232,'Thông báo của quán',22,ink);
+         this.explanation(272,166,`${this.runtime.shopMessage}\nUy tín ${this.runtime.customerProgress.reputation}/100\n${reasons}`,12);
+@@ -809,9 +837,8 @@ export class CozyScene extends Phaser.Scene {
+     if(this.scenePauses.has('user')&&this.runtime.shopOpen)this.button('end-day',64,482,232,48,'Kết thúc ngày',this.runtime.canCloseDay,()=>{this.endDayConfirmation=true;this.dirty=true;},0xa65547);
+   }
+   private success():void{
+-    this.veil();
++    this.notificationFrame([this.runtime.productionActive?'continue-shift':'replay'],285,470,460);
+     if(this.runtime.productionActive){
+-      this.graphics();this.art.panel(22,208,316,300,UI.paper,UI.border,20);
+       this.label(180,240,'Đã giao pizza!',21,ink);this.label(180,285,`${this.runtime.lastDelivery?.name??'Khách'} đã nhận món. Cảm ơn bạn!`,13,ink);
+       this.explanation(309,36,this.runtime.lastResult?.help?this.runtime.shopMessage:`${this.runtime.lastResult?.stars??5} sao · +${this.runtime.lastDelivery?.price??0} xu · +${this.runtime.lastResult?.xpDelta??0} XP\n${this.runtime.lastResult?.reasons.join(', ')||'Đúng món và chín vừa.'}\nUy tín ${(this.runtime.lastResult?.reputationDelta??0)>0?'+':''}${this.runtime.lastResult?.reputationDelta??0} · Quan hệ +${this.runtime.lastResult?.relationshipDelta??0}\nThưởng nhiệm vụ: +${this.runtime.lastResult?.rewardCoins??0} xu · +${this.runtime.lastResult?.rewardReputation??0} uy tín`,12,wood);
+       this.button('continue-shift',64,355,232,48,'Tiếp tục ca',true,()=>this.runtime.continueShift());
+diff --git a/_bmad-output/implementation-artifacts/notification-originals/MainMenuScene.ts b/src/scenes/MainMenuScene.ts
+index af290a5..982669a 100644
+--- a/_bmad-output/implementation-artifacts/notification-originals/MainMenuScene.ts
++++ b/src/scenes/MainMenuScene.ts
+@@ -5,6 +5,8 @@ import { MenuAmbience } from '../presentation/MenuAmbience';
+ import { MenuWind } from '../presentation/MenuWind';
+ import { MenuSteam } from '../presentation/MenuSteam';
+ import type {CozySaveView} from '../runtime/CozyCampaignSession';
++import {drawNotificationFrame,preloadNotificationFrames,type NotificationLayout} from '../presentation/NotificationFrame';
++import {modalText} from '../presentation/ModalText';
+ 
+ export const MAIN_MENU_BACKGROUND = { key: 'main-menu-background', url: 'assets/main-menu-background.png', type: 'image' as const };
+ type MenuActions = {hasSession:()=>boolean;start:()=>void;continue:()=>void;initialize?:()=>void;save?:()=>CozySaveView;subscribe?:(listener:()=>void)=>()=>void;retryRead?:()=>void;retrySave?:()=>void;recover?:()=>void;temporary?:()=>void};
+@@ -27,8 +29,11 @@ export class MainMenuScene extends Phaser.Scene {
+   private unsubscribeSave?:()=>void;
+   private animationsRunning = false;
+   private ambience!:MenuAmbience;
++  private notification?:{layout:NotificationLayout;ids:string[];start:number;end:number;title:boolean};
++  private notificationButtonLabel=false;
+ 
+   constructor(private readonly preferences: MenuPreferences, private readonly actions: MenuActions) { super('MainMenuScene'); }
++  preload():void{preloadNotificationFrames(this);}
+ 
+   create(): void {
+     this.dialog = 'none'; this.focusId = ''; this.elapsed = 0;
+@@ -91,6 +96,11 @@ export class MainMenuScene extends Phaser.Scene {
+   }
+ 
+   private text(layer: Phaser.GameObjects.Container, x: number, y: number, value: string, size: number, color = '#985025', width?: number): Phaser.GameObjects.Text {
++    if(this.notification&&!this.notificationButtonLabel){
++      const n=this.notification;
++      if(n.title){n.title=false;x=180;y=n.layout.titleY+10;size=Math.min(size,20);width=276;}
++      else {y=this.notificationY(y);width=Math.min(width??284,284);}
++    }
+     const text = this.add.text(x, y, value, {
+       fontFamily: UI_THEME.typography.fontFamily, fontSize: `${size}px`, fontStyle: 'bold', color,
+       align: 'center', ...(width ? { wordWrap: { width, useAdvancedWrap: true } } : {}), padding: { top: 2, bottom: 2 },
+@@ -101,6 +111,7 @@ export class MainMenuScene extends Phaser.Scene {
+   private draw(entrance = false): void {
+     const save=this.actions.save?.();
+     if(this.dialog!=='settings'&&this.dialog!=='new-session')this.dialog=save?.state==='loading'||save?.state==='saving'?'loading':save?.state==='error'?'save-error':save?.state==='recovery'?'recovery':'none';
++    this.notification=undefined;this.game.canvas.dataset.notificationFrame='';this.game.canvas.dataset.modalScroll='[]';
+     this.tweens.killAll(); this.interfaceLayer.removeAll(true); this.targets = [];
+     const titleTexts=[
+       this.text(this.interfaceLayer,128,104,'Tiệm',34,'#4e6335'),
+@@ -136,16 +147,24 @@ export class MainMenuScene extends Phaser.Scene {
+   }
+ 
+   private button(id: string, x: number, y: number, width: number, height: number, title: string, icon: 'play' | 'continue' | 'settings' | 'none', fill: number, color: string, enabled: boolean, action: () => void, entrance = false, subtitle?: string, textSize = 23): void {
++    const footerIndex=this.notification?.ids.indexOf(id)??-1;
++    if(footerIndex>=0)({x,y,width,height}=this.notification!.layout.footer[footerIndex]);
++    else if(this.notification){y=this.notificationY(y);width=Math.min(width,284);x=Math.max(38,Math.min(322-width,x));}
+     const container = this.add.container(x + width / 2, y + height / 2);
+     this.interfaceLayer.add(container);
+     const g = this.add.graphics(); container.add(g);
++    if(footerIndex<0){
+     g.fillStyle(0x623c22, .18).fillRoundedRect(-width / 2 + 1, -height / 2 + 4, width, height, height / 2);
+     g.fillStyle(enabled ? fill : 0xd5c7ac).fillRoundedRect(-width / 2, -height / 2, width, height, height / 2);
+     g.lineStyle(2, enabled ? (fill === SAGE ? 0x536b36 : 0xc27c50) : 0xa99a80).strokeRoundedRect(-width / 2, -height / 2, width, height, height / 2);
+     g.lineStyle(1, 0xfff8dc, .45).strokeRoundedRect(-width / 2 + 3, -height / 2 + 3, width - 6, height - 7, height / 2 - 3);
++    }else if(!enabled)g.fillStyle(0x000000,.45).fillRoundedRect(-width/2,-height/2,width,height,height/2);
+     this.icon(g, icon, -width / 2 + (id.startsWith('menu-') && ['menu-start','menu-continue','menu-settings'].includes(id) ? 38 : 51), icon === 'continue' ? 0 : subtitle ? -4 : 0, enabled ? color : '#786b54');
+-    this.text(container, icon === 'none' ? 0 : 15, subtitle ? -7 : 0, title, subtitle ? 21 : textSize, enabled ? color : '#786b54');
++    this.notificationButtonLabel=true;
++    const label=this.text(container, icon === 'none' ? 0 : 15, subtitle ? -7 : 0, title, footerIndex>=0?16:subtitle?21:textSize, footerIndex>=0?'#fff0d5':enabled ? color : '#786b54',width-16);
++    if(label.height>height-8)label.setScale((height-8)/label.height);
+     if (subtitle) this.text(container, 14, 13, subtitle, 10, '#655c4e');
++    this.notificationButtonLabel=false;
+     const scale = (this.game.canvas.getBoundingClientRect().width || 360) / 360;
+     const hitWidth = Math.max(width, 48.1 / scale), hitHeight = Math.max(height, 48.1 / scale);
+     const target: MenuTarget = { id, x: Math.max(0,Math.min(360-hitWidth,x-(hitWidth-width)/2)), y: Math.max(0,Math.min(640-hitHeight,y-(hitHeight-height)/2)), width: hitWidth, height: hitHeight, disabled: !enabled, visible:new Phaser.Geom.Rectangle(x,y,width,height), action };
+@@ -182,14 +201,19 @@ export class MainMenuScene extends Phaser.Scene {
+   }
+ 
+   private drawDialog(): void {
+-    const g = this.add.graphics(); this.interfaceLayer.add(g);
+-    g.fillStyle(0x382119, .64).fillRect(0, 0, 360, 640);
++    const g = this.add.graphics(); this.interfaceLayer.add(g);g.fillStyle(0x000000,1).fillRect(0,0,360,640);
++    // Remove all old targets before registering dialog controls, including disabled menu targets.
++    this.targets=[];
++    const save=this.actions.save?.();
++    const ids=this.dialog==='new-session'?['menu-new-confirm','menu-new-cancel']:this.dialog==='settings'?['menu-settings-close']:this.dialog==='recovery'?['menu-recover-confirm','menu-retry-read']:[save?.canRetry?'menu-save-retry':'menu-retry-read'];
++    this.notification={layout:drawNotificationFrame(this,this.interfaceLayer,ids.length===2?'two':'one',100,440),ids,start:this.dialog==='settings'?289:281,end:this.dialog==='settings'?385:535,title:true};
+     if(['loading','save-error','recovery'].includes(this.dialog)){
+       const save=this.actions.save!();
+-      g.fillStyle(PAPER).fillRoundedRect(23,180,314,365,23);g.lineStyle(3,0xc17f53).strokeRoundedRect(23,180,314,365,23);
+       this.text(this.interfaceLayer,180,213,this.dialog==='loading'?'Tiến độ chiến dịch':this.dialog==='recovery'?'Khôi phục cùng mốc':'Chưa mở được tiến độ',23);
+-      this.text(this.interfaceLayer,180,281,save.message,14,'#70583b',270);
+-      if(this.dialog==='loading')return;
++      this.dialogText(save.message,95);
++      if(this.dialog==='loading'){
++        this.button(ids[0],0,0,0,0,'Đang tải…','none',SAGE,'#fff6df',false,()=>{},false,undefined,16);return;
++      }
+       if(this.dialog==='recovery'){
+         this.button('menu-recover-confirm',48,372,264,48,'Dùng bản cùng mốc', 'none',SAGE,'#fff6df',true,()=>this.actions.recover?.(),false,undefined,18);
+         this.button('menu-retry-read',48,435,264,48,'Đọc lại','none',0xf5c6a5,'#985025',true,()=>this.actions.retryRead?.(),false,undefined,18);return;
+@@ -200,23 +224,26 @@ export class MainMenuScene extends Phaser.Scene {
+       else if(save.canReload)this.button('menu-load-latest',48,418,264,48,'Tải bản mới nhất','none',0xf5c6a5,'#985025',true,()=>this.actions.retryRead?.(),false,undefined,18);
+       return;
+     }
+-    g.fillStyle(PAPER).fillRoundedRect(23, 219, 314, 226, 23);
+-    g.lineStyle(3, 0xc17f53).strokeRoundedRect(23, 219, 314, 226, 23);
+     if (this.dialog === 'settings') {
+       this.text(this.interfaceLayer, 180, 250, 'Cài đặt', 27);
+-      this.text(this.interfaceLayer, 180, 289, 'Giảm hiệu ứng lửa, khói, gió,\nrèm và chuyển động của nút.', 14, '#70583b', 270);
++      this.dialogText('Giảm hiệu ứng lửa, khói, gió,\nrèm và chuyển động của nút.',65);
+       this.button('menu-motion', 48, 319, 264, 50, `Giảm chuyển động: ${this.preferences.reducedMotion ? 'Bật' : 'Tắt'}`, 'none', SAGE, '#fff6df', true,
+         () => this.preferences.setReducedMotion(!this.preferences.reducedMotion), false, undefined, 19);
+       this.button('menu-settings-close', 84, 383, 192, 48, 'Đóng', 'none', 0xf5c6a5, '#985025', true,
+         () => { this.dialog = 'none'; this.focusId = 'menu-settings'; this.draw(); });
+     } else {
+       this.text(this.interfaceLayer, 180, 251, 'Chiến dịch mới?', 24);
+-      this.text(this.interfaceLayer, 180, 290, 'Thay tiến độ hiện tại bằng Ngày 1.\nCác ngày cũ không thể mở lại.', 14, '#70583b', 278);
++      this.dialogText('Thay tiến độ hiện tại bằng Ngày 1.\nCác ngày cũ không thể mở lại.',160);
+       this.button('menu-new-confirm', 48, 321, 264, 48, 'Bắt đầu mới', 'none', SAGE, '#fff6df', true, () => {this.dialog='none';this.actions.start();});
+       this.button('menu-new-cancel', 84, 383, 192, 48, 'Hủy', 'none', 0xf5c6a5, '#985025', true,
+         () => { this.dialog = 'none'; this.focusId = 'menu-start'; this.draw(); });
+     }
+   }
++  private notificationY(y:number):number{const n=this.notification!;return n.layout.body.y+Math.max(0,Math.min(1,(y-n.start)/(n.end-n.start)))*n.layout.body.height;}
++  private dialogText(value:string,height:number):void{
++    const body=this.notification!.layout.body,scale=Math.max(1,Math.min(2,parseFloat(getComputedStyle(document.documentElement).fontSize)/16));
++    modalText(this,this.interfaceLayer,body.x,body.y,body.width,Math.min(height,body.height),value,14,'#70583b',scale);
++  }
+ 
+   private keyDown = (event: KeyboardEvent): void => {
+     if(document.activeElement!==this.game.canvas)return;
+diff --git a/src/presentation/NotificationFrame.ts b/src/presentation/NotificationFrame.ts
+new file mode 100644
+index 0000000..99e795d
+--- /dev/null
++++ b/src/presentation/NotificationFrame.ts
+@@ -0,0 +1,34 @@
++import Phaser from 'phaser';
++
++export type NotificationVariant = 'one'|'two';
++export type NotificationRect = {x:number;y:number;width:number;height:number};
++export type NotificationLayout = {variant:NotificationVariant;bounds:NotificationRect;titleY:number;body:NotificationRect;footer:NotificationRect[]};
++export const NOTIFICATION_FRAMES = [
++  {key:'notification-frame-one',url:'assets/references/Khung thông báo tiệm pizza ấm cúng.png'},
++  {key:'notification-frame-two',url:'assets/references/Hộp thoại thông báo pizza ấm cúng.png'},
++] as const;
++
++export function preloadNotificationFrames(scene:Phaser.Scene):void{
++  for(const asset of NOTIFICATION_FRAMES)if(!scene.textures.exists(asset.key))scene.load.image(asset.key,`${import.meta.env.BASE_URL}${asset.url}`);
++}
++
++/** Only the undecorated middle grows; the pizza crest, borders and buttons retain their proportions. */
++export function drawNotificationFrame(scene:Phaser.Scene,layer:Phaser.GameObjects.Container,variant:NotificationVariant,top=125,height=420):NotificationLayout{
++  const x=14,width=332,key=`notification-frame-${variant}`,texture=scene.textures.get(key);
++  const source=texture.getSourceImage(),scale=width/source.width;
++  const headerEnd=variant==='one'?240:410,footerStart=variant==='one'?1120:800;
++  const headerHeight=headerEnd*scale,footerHeight=(source.height-footerStart)*scale;
++  const slices=[['header',0,headerEnd,top,headerHeight],['middle',headerEnd,footerStart-headerEnd,top+headerHeight,height-headerHeight-footerHeight],['footer',footerStart,source.height-footerStart,top+height-footerHeight,footerHeight]] as const;
++  for(const [name,sourceY,sourceHeight,y,h] of slices){
++    if(!texture.has(name))texture.add(name,0,0,sourceY,source.width,sourceHeight);
++    layer.add(scene.add.image(x,y,key,name).setOrigin(0).setDisplaySize(width,h));
++  }
++  const buttonY=top+height-footerHeight+(variant==='one'?17:8)*scale;
++  const footer=variant==='one'
++    ?[{x:x+257*scale,y:buttonY,width:607*scale,height:145*scale}]
++    :[{x:x+172*scale,y:buttonY,width:505*scale,height:145*scale},{x:x+733*scale,y:buttonY,width:505*scale,height:145*scale}];
++  const bodyY=top+(variant==='one'?125:115),bodyBottom=footer[0].y-14;
++  const layout={variant,bounds:{x,y:top,width,height},titleY:top+(variant==='one'?73:65),body:{x:38,y:bodyY,width:284,height:bodyBottom-bodyY},footer};
++  scene.game.canvas.dataset.notificationFrame=JSON.stringify(layout);
++  return layout;
++}
+diff --git a/tmp/BootScene-before-notifications.ts b/src/scenes/BootScene.ts
+index 7215fb3..b804af3 100644
+--- a/tmp/BootScene-before-notifications.ts
++++ b/src/scenes/BootScene.ts
+@@ -6,6 +6,7 @@ import { PlayLifecycle } from '../runtime/PlayLifecycle';
+ import { BrowserPlayLifecycle } from '../infrastructure/BrowserPlayLifecycle';
+ import { timerText } from '../presentation/PlayHud';
+ import { modalText } from '../presentation/ModalText';
++import {drawNotificationFrame,preloadNotificationFrames,type NotificationLayout} from '../presentation/NotificationFrame';
+ 
+ const C = { bg: 0xf2f4f2, ink: '#202829', muted: '#536560', red: 0xb9362b, green: 0x27664e, line: 0xd3dcd6 };
+ const kinds: Record<string, string> = { regular: 'Khách quen', picky: 'Khó tính', bargain: 'Mặc cả', hurry: 'Đi làm sớm' };
+@@ -48,6 +49,7 @@ export class BootScene extends Phaser.Scene {
+   private browserLifecycle!:BrowserPlayLifecycle;
+   private targets: { x: number; y: number; w: number; h: number; action: () => void }[] = [];
+   constructor(private readonly audio=new PlayAudio()) { super('BootScene'); }
++  preload():void{preloadNotificationFrames(this);}
+   // Campaign renders with Graphics/Text; legacy raster art is optional and is not downloaded.
+   create() {
+     this.layer = this.add.container(0, 0);
+@@ -317,6 +319,7 @@ export class BootScene extends Phaser.Scene {
+     this.game.canvas.dataset.recovery=String(recovery);
+     this.targets = [];
+     this.game.canvas.dataset.modalScroll='[]';
++    this.game.canvas.dataset.notificationFrame='';
+     this.layer.removeAll(true);
+     if (this.screen === 'loading') { this.text(30, 285, 'Đang mở tiệm pizza…', 22); return; }
+     if (this.screen === 'start' || this.screen === 'error') {
+@@ -498,39 +501,43 @@ export class BootScene extends Phaser.Scene {
+   }
+   private shade() {
+     this.targets = [];
+-    this.rect(0, 0, 360, 640, 0x10251c, .8);
+-    this.rect(16, 144, 328, 368, 0xffffff);
+-    if(this.model.state.phase==='shop'){
+-      this.text(18,61,`Đang dừng · Lò ${timerText(Math.floor(this.model.state.pizza?.elapsed??0))}`,13,'#ffffff',324);
+-      this.text(18,87,this.model.state.tickets.map((t,i)=>`Phiếu ${i+1}: ${timerText(t.remaining)}`).join(' · '),12,'#ffffff',324);
+-    }
++    this.rect(0, 0, 360, 640, 0x000000);
++  }
++  private notificationButton(layout:NotificationLayout,index:number,label:string,action:()=>void,enabled=true):void{
++    const r=layout.footer[index],height=Math.max(48,r.height),y=r.y+(r.height-height)/2;
++    const text=this.text(r.x+6,r.y+Math.max(2,(r.height-32)/2),label,14,enabled?'#fff6df':'#a9a29a',r.width-12).setAlign('center');
++    text.setFixedSize(r.width-12,32);
++    if(enabled&&!this.busy)this.targets.push({x:r.x,y,w:r.width,h:height,action});
++  }
++  private notificationTitle(layout:NotificationLayout,value:string):void{
++    this.text(38,layout.titleY,value,21,C.ink,284).setAlign('center').setFixedSize(284,48);
+   }
+   private offer() {
+     const t = this.model.state.offer!;
+-    this.shade(); this.text(32, 163, t.help ? 'LỜI NHỜ KHÁCH QUEN' : kinds[t.kind].toUpperCase(), 21, C.ink, 296);
+-    this.pizza(180, 261, 48, recipes.find(r => r.id === t.recipe)!.ingredients);
+-    this.text(32, 328, `Pizza ${recipes.find(r => r.id === t.recipe)!.name}`, 23);
+-    this.text(32, 365, t.help ? 'Tặng một pizza · không thu tiền\nGiúp người thân của khách quen.' : `${t.price} xu · ${t.patience}s kiên nhẫn\n${t.takeaway ? 'Mang đi · cần đóng hộp' : 'Dùng tại quán'}`, 16, C.muted, 296);
+-    this.text(32, 413, this.error, 13, '#a42620', 296);
++    this.shade();const layout=drawNotificationFrame(this,this.layer,'two',90,470);
++    this.notificationTitle(layout,t.help?'LỜI NHỜ KHÁCH QUEN':kinds[t.kind].toUpperCase());
++    this.pizza(180,layout.body.y+45,36,recipes.find(r=>r.id===t.recipe)!.ingredients);
+     const stocked = recipes.find(r => r.id === t.recipe)!.ingredients.every(id => this.model.available(id) >= 1);
+-    if (!stocked) this.text(32, 413, 'Không đủ nguyên liệu cho món này.', 13, '#a42620', 296);
+-    this.button(32, 450, 142, t.help ? 'Giúp khách' : 'Đồng ý giá giảm', () => this.command({ type: 'accept' }), stocked);
+-    this.button(184, 450, 144, t.help ? 'Từ chối' : 'Từ chối giá', () => this.command({ type: 'decline' }), true, C.green);
++    const detail=`Pizza ${recipes.find(r=>r.id===t.recipe)!.name}\n`+(t.help?'Tặng một pizza · không thu tiền\nGiúp người thân của khách quen.':`${t.price} xu · ${t.patience}s kiên nhẫn\n${t.takeaway?'Mang đi · cần đóng hộp':'Dùng tại quán'}`)+`\n${stocked?this.error:'Không đủ nguyên liệu cho món này.'}`;
++    modalText(this,this.layer,layout.body.x,layout.body.y+95,layout.body.width,layout.body.height-95,detail,16,C.ink,Math.max(1,Math.min(2,parseFloat(getComputedStyle(document.documentElement).fontSize)/16)));
++    this.notificationButton(layout,0,t.help?'Giúp khách':'Đồng ý giá giảm',()=>this.command({type:'accept'}),stocked);
++    this.notificationButton(layout,1,t.help?'Từ chối':'Từ chối giá',()=>this.command({type:'decline'}));
+   }
+   private confirm() {
+-    this.shade(); this.text(32, 180, 'XÁC NHẬN', 23);
+-    modalText(this,this.layer,32,248,296,165,this.confirmText,19,C.ink,Math.max(1,Math.min(2,parseFloat(getComputedStyle(document.documentElement).fontSize)/16)));
+-    this.button(32, 441, 142, 'Đồng ý', () => { const action = this.confirmAction; this.confirmAction = null; this.reasons.delete('confirm'); action?.(); this.render(); });
+-    this.button(184, 441, 144, 'Hủy', () => { this.confirmAction = null; this.reasons.delete('confirm'); this.render(); }, true, C.green);
++    this.shade();const layout=drawNotificationFrame(this,this.layer,'two');this.notificationTitle(layout,'XÁC NHẬN');
++    modalText(this,this.layer,layout.body.x,layout.body.y,layout.body.width,layout.body.height,this.confirmText,19,C.ink,Math.max(1,Math.min(2,parseFloat(getComputedStyle(document.documentElement).fontSize)/16)));
++    this.notificationButton(layout,0,'Đồng ý',()=>{const action=this.confirmAction;this.confirmAction=null;this.reasons.delete('confirm');action?.();this.render();});
++    this.notificationButton(layout,1,'Hủy',()=>{this.confirmAction=null;this.reasons.delete('confirm');this.render();});
+   }
+   private pause() {
+     this.shade();
++    const layout=drawNotificationFrame(this,this.layer,'one');
+     const tutorial = this.reasons.has('tutorial')&&!this.lifecycle.needsContinue&&!this.reasons.has('user');
+-    this.text(32, 175, tutorial ? 'NGÀY ĐẦU MỞ QUÁN' : 'TẠM DỪNG', 21, C.ink, 296);
++    this.notificationTitle(layout,tutorial?'NGÀY ĐẦU MỞ QUÁN':'TẠM DỪNG');
+     const names:Record<string,string>={tutorial:'hướng dẫn',user:'nghỉ tay',visibility:'ẩn màn hình',gap:'gián đoạn',confirm:'xác nhận'};
+     const reasons=[...this.reasons].map(reason=>names[reason]??reason).join(', ');
+-    modalText(this,this.layer,32,234,296,185,(tutorial ? 'Nhập đế, sốt và phô mai trước khi mở cửa.\n\nKhách tự đặt đơn → chọn nguyên liệu → nướng 3–5 giây → lấy bánh → giao khách.\n\nĐơn mang đi cần đóng hộp.' : 'Đồng hồ và lò nướng đang dừng.\n\nCheckpoint ở cuối ngày. Thoát giữa ca sẽ trở lại đầu ngày đang lưu.')+'\n\nĐang dừng: '+reasons,17,C.ink,Math.max(1,Math.min(2,parseFloat(getComputedStyle(document.documentElement).fontSize)/16)));
+-    this.button(32, 450, 296, tutorial ? 'Đến chợ sáng' : 'Tiếp tục', () => {
++    modalText(this,this.layer,layout.body.x,layout.body.y,layout.body.width,layout.body.height,(tutorial ? 'Nhập đế, sốt và phô mai trước khi mở cửa.\n\nKhách tự đặt đơn → chọn nguyên liệu → nướng 3–5 giây → lấy bánh → giao khách.\n\nĐơn mang đi cần đóng hộp.' : 'Đồng hồ và lò nướng đang dừng.\n\nCheckpoint ở cuối ngày. Thoát giữa ca sẽ trở lại đầu ngày đang lưu.')+'\n\nĐang dừng: '+reasons,17,C.ink,Math.max(1,Math.min(2,parseFloat(getComputedStyle(document.documentElement).fontSize)/16)));
++    this.notificationButton(layout,0,tutorial ? 'Đến chợ sáng' : 'Tiếp tục', () => {
+       if (this.lifecycle.needsContinue)this.lifecycle.continue();
+       else if (tutorial) this.reasons.delete('tutorial');
+       else if (this.reasons.has('user')) this.reasons.delete('user');

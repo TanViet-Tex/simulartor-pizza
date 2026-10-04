@@ -1,0 +1,730 @@
+{
+  "initial": {
+    "upgrades": {
+      "ovenLevel": 0,
+      "queueLevel": 0,
+      "spent": 0,
+      "pendingSpent": 0
+    },
+    "customerMemory": {
+      "accepted": [],
+      "declined": []
+    },
+    "contentId": "cozy-three-days-2026-10-03",
+    "day": 1,
+    "terminal": false,
+    "stock": {
+      "cash": 300,
+      "nextLot": 1,
+      "activeDay": 1,
+      "lots": [],
+      "books": [],
+      "settlements": []
+    },
+    "progression": {
+      "xp": 0,
+      "cheeseSales": 0,
+      "unlockDay": null,
+      "outcomes": [],
+      "claims": [],
+      "goals": [],
+      "mission": "active"
+    },
+    "help": {
+      "decision": "unseen",
+      "outcome": null,
+      "claims": []
+    },
+    "menu": [
+      "cheese",
+      "mushroom",
+      "sausage"
+    ],
+    "prices": {
+      "cheese": 100,
+      "mushroom": 100,
+      "sausage": 100
+    },
+    "recipe": "cheese",
+    "reports": [],
+    "cumulativeProfit": 0,
+    "reputation": 50,
+    "relationship": 0,
+    "relationshipDays": [],
+    "regularDay1Stars": null,
+    "regularLatestStars": null,
+    "referral": null
+  },
+  "terminal": {
+    "upgrades": {
+      "ovenLevel": 0,
+      "queueLevel": 0,
+      "spent": 0,
+      "pendingSpent": 0
+    },
+    "customerMemory": {
+      "accepted": [],
+      "declined": []
+    },
+    "contentId": "cozy-three-days-2026-10-03",
+    "day": 3,
+    "terminal": true,
+    "stock": {
+      "cash": 240,
+      "nextLot": 1,
+      "activeDay": 3,
+      "lots": [],
+      "books": [],
+      "settlements": [
+        {
+          "day": 1,
+          "expired": 0,
+          "rent": 20
+        },
+        {
+          "day": 2,
+          "expired": 0,
+          "rent": 20
+        },
+        {
+          "day": 3,
+          "expired": 0,
+          "rent": 20
+        }
+      ]
+    },
+    "progression": {
+      "xp": 0,
+      "cheeseSales": 0,
+      "unlockDay": null,
+      "outcomes": [],
+      "claims": [],
+      "goals": [
+        {
+          "day": 1,
+          "status": "expired",
+          "stats": {
+            "delivered": 0,
+            "sales": 0,
+            "stars": []
+          },
+          "description": "Giao 3 đơn thương mại",
+          "progress": "0/3 đơn"
+        },
+        {
+          "day": 2,
+          "status": "expired",
+          "stats": {
+            "delivered": 0,
+            "sales": 0,
+            "stars": []
+          },
+          "description": "Bán pizza đạt 200 xu",
+          "progress": "0/200 xu"
+        },
+        {
+          "day": 3,
+          "status": "expired",
+          "stats": {
+            "delivered": 0,
+            "sales": 0,
+            "stars": []
+          },
+          "description": "Ít nhất 3 đơn kết thúc và trung bình 4 sao",
+          "progress": "0/3 đơn · chưa có sao"
+        }
+      ],
+      "mission": "expired"
+    },
+    "help": {
+      "decision": "unseen",
+      "outcome": null,
+      "claims": []
+    },
+    "menu": [
+      "cheese",
+      "mushroom",
+      "sausage"
+    ],
+    "prices": {
+      "cheese": 100,
+      "mushroom": 100,
+      "sausage": 100
+    },
+    "recipe": "cheese",
+    "reports": [
+      {
+        "salesByRecipe": [],
+        "costByIngredient": [],
+        "progression": {
+          "xp": 0,
+          "cheeseSales": 0,
+          "unlockDay": null,
+          "outcomes": [],
+          "claims": [],
+          "goals": [
+            {
+              "day": 1,
+              "status": "expired",
+              "stats": {
+                "delivered": 0,
+                "sales": 0,
+                "stars": []
+              },
+              "description": "Giao 3 đơn thương mại",
+              "progress": "0/3 đơn"
+            }
+          ],
+          "mission": "active"
+        },
+        "goal": {
+          "day": 1,
+          "status": "expired",
+          "stats": {
+            "delivered": 0,
+            "sales": 0,
+            "stars": []
+          },
+          "description": "Giao 3 đơn thương mại",
+          "progress": "0/3 đơn"
+        },
+        "rewards": 0,
+        "accounts": {
+          "startingCash": 300,
+          "openingInventoryValue": 0,
+          "sales": 0,
+          "purchases": 0,
+          "consumed": 0,
+          "expired": 0,
+          "rent": 20,
+          "inventory": {
+            "units": 0,
+            "value": 0,
+            "lots": []
+          },
+          "rewards": 0,
+          "giftCost": 0,
+          "capitalPurchases": 0,
+          "wages": 0,
+          "repairs": 0,
+          "other": 0,
+          "endingCash": 280,
+          "profit": -20,
+          "cumulativeProfit": -20,
+          "zeroReasons": {
+            "wages": "Chưa có nhân viên trong bản demo.",
+            "repairs": "Chưa có thiết bị hỏng trong bản demo.",
+            "rewards": "Chưa có mục tiêu, nhiệm vụ hoặc lời cảm ơn đủ điều kiện nhận thưởng trong ca.",
+            "other": "Không có chi phí khác trong ca này."
+          }
+        },
+        "day": 1,
+        "revenue": 0,
+        "purchases": 0,
+        "cost": 0,
+        "expired": 0,
+        "rent": 20,
+        "profit": -20,
+        "delivered": 0,
+        "abandoned": 0,
+        "rating": null,
+        "cash": 280,
+        "reviews": [],
+        "ending": null,
+        "reputation": 50,
+        "relationship": 0,
+        "referral": null,
+        "viability": {
+          "viable": true,
+          "cause": null,
+          "missing": 0,
+          "recipe": "cheese",
+          "ingredientCost": 17,
+          "message": ""
+        }
+      },
+      {
+        "salesByRecipe": [],
+        "costByIngredient": [],
+        "progression": {
+          "xp": 0,
+          "cheeseSales": 0,
+          "unlockDay": null,
+          "outcomes": [],
+          "claims": [],
+          "goals": [
+            {
+              "day": 1,
+              "status": "expired",
+              "stats": {
+                "delivered": 0,
+                "sales": 0,
+                "stars": []
+              },
+              "description": "Giao 3 đơn thương mại",
+              "progress": "0/3 đơn"
+            },
+            {
+              "day": 2,
+              "status": "expired",
+              "stats": {
+                "delivered": 0,
+                "sales": 0,
+                "stars": []
+              },
+              "description": "Bán pizza đạt 200 xu",
+              "progress": "0/200 xu"
+            }
+          ],
+          "mission": "active"
+        },
+        "goal": {
+          "day": 2,
+          "status": "expired",
+          "stats": {
+            "delivered": 0,
+            "sales": 0,
+            "stars": []
+          },
+          "description": "Bán pizza đạt 200 xu",
+          "progress": "0/200 xu"
+        },
+        "rewards": 0,
+        "accounts": {
+          "startingCash": 280,
+          "openingInventoryValue": 0,
+          "sales": 0,
+          "purchases": 0,
+          "consumed": 0,
+          "expired": 0,
+          "rent": 20,
+          "inventory": {
+            "units": 0,
+            "value": 0,
+            "lots": []
+          },
+          "rewards": 0,
+          "giftCost": 0,
+          "capitalPurchases": 0,
+          "wages": 0,
+          "repairs": 0,
+          "other": 0,
+          "endingCash": 260,
+          "profit": -20,
+          "cumulativeProfit": -40,
+          "zeroReasons": {
+            "wages": "Chưa có nhân viên trong bản demo.",
+            "repairs": "Chưa có thiết bị hỏng trong bản demo.",
+            "rewards": "Chưa có mục tiêu, nhiệm vụ hoặc lời cảm ơn đủ điều kiện nhận thưởng trong ca.",
+            "other": "Không có chi phí khác trong ca này."
+          }
+        },
+        "day": 2,
+        "revenue": 0,
+        "purchases": 0,
+        "cost": 0,
+        "expired": 0,
+        "rent": 20,
+        "profit": -20,
+        "delivered": 0,
+        "abandoned": 0,
+        "rating": null,
+        "cash": 260,
+        "reviews": [],
+        "ending": null,
+        "reputation": 50,
+        "relationship": 0,
+        "referral": {
+          "eligible": false,
+          "day": 3,
+          "reason": "Uy tín cuối ngày 2 chưa đạt 55: chưa đủ điều kiện giới thiệu."
+        },
+        "viability": {
+          "viable": true,
+          "cause": null,
+          "missing": 0,
+          "recipe": "cheese",
+          "ingredientCost": 14,
+          "message": ""
+        }
+      },
+      {
+        "salesByRecipe": [],
+        "costByIngredient": [],
+        "progression": {
+          "xp": 0,
+          "cheeseSales": 0,
+          "unlockDay": null,
+          "outcomes": [],
+          "claims": [],
+          "goals": [
+            {
+              "day": 1,
+              "status": "expired",
+              "stats": {
+                "delivered": 0,
+                "sales": 0,
+                "stars": []
+              },
+              "description": "Giao 3 đơn thương mại",
+              "progress": "0/3 đơn"
+            },
+            {
+              "day": 2,
+              "status": "expired",
+              "stats": {
+                "delivered": 0,
+                "sales": 0,
+                "stars": []
+              },
+              "description": "Bán pizza đạt 200 xu",
+              "progress": "0/200 xu"
+            },
+            {
+              "day": 3,
+              "status": "expired",
+              "stats": {
+                "delivered": 0,
+                "sales": 0,
+                "stars": []
+              },
+              "description": "Ít nhất 3 đơn kết thúc và trung bình 4 sao",
+              "progress": "0/3 đơn · chưa có sao"
+            }
+          ],
+          "mission": "expired"
+        },
+        "goal": {
+          "day": 3,
+          "status": "expired",
+          "stats": {
+            "delivered": 0,
+            "sales": 0,
+            "stars": []
+          },
+          "description": "Ít nhất 3 đơn kết thúc và trung bình 4 sao",
+          "progress": "0/3 đơn · chưa có sao"
+        },
+        "rewards": 0,
+        "accounts": {
+          "startingCash": 260,
+          "openingInventoryValue": 0,
+          "sales": 0,
+          "purchases": 0,
+          "consumed": 0,
+          "expired": 0,
+          "rent": 20,
+          "inventory": {
+            "units": 0,
+            "value": 0,
+            "lots": []
+          },
+          "rewards": 0,
+          "giftCost": 0,
+          "capitalPurchases": 0,
+          "wages": 0,
+          "repairs": 0,
+          "other": 0,
+          "endingCash": 240,
+          "profit": -20,
+          "cumulativeProfit": -60,
+          "zeroReasons": {
+            "wages": "Chưa có nhân viên trong bản demo.",
+            "repairs": "Chưa có thiết bị hỏng trong bản demo.",
+            "rewards": "Chưa có mục tiêu, nhiệm vụ hoặc lời cảm ơn đủ điều kiện nhận thưởng trong ca.",
+            "other": "Không có chi phí khác trong ca này."
+          }
+        },
+        "day": 3,
+        "revenue": 0,
+        "purchases": 0,
+        "cost": 0,
+        "expired": 0,
+        "rent": 20,
+        "profit": -20,
+        "delivered": 0,
+        "abandoned": 0,
+        "rating": null,
+        "cash": 240,
+        "reviews": [],
+        "ending": "complete",
+        "reputation": 50,
+        "relationship": 0,
+        "referral": {
+          "eligible": false,
+          "day": 3,
+          "reason": "Uy tín cuối ngày 2 chưa đạt 55: chưa đủ điều kiện giới thiệu."
+        }
+      }
+    ],
+    "cumulativeProfit": -60,
+    "reputation": 50,
+    "relationship": 0,
+    "relationshipDays": [],
+    "regularDay1Stars": null,
+    "regularLatestStars": null,
+    "referral": {
+      "eligible": false,
+      "day": 3,
+      "reason": "Uy tín cuối ngày 2 chưa đạt 55: chưa đủ điều kiện giới thiệu."
+    }
+  },
+  "sausageUnlocked": {
+    "upgrades": {
+      "ovenLevel": 0,
+      "queueLevel": 0,
+      "spent": 0,
+      "pendingSpent": 0
+    },
+    "customerMemory": {
+      "accepted": [],
+      "declined": []
+    },
+    "contentId": "cozy-three-days-2026-10-03",
+    "day": 2,
+    "terminal": false,
+    "stock": {
+      "cash": 440,
+      "nextLot": 4,
+      "activeDay": 2,
+      "lots": [],
+      "books": [
+        {
+          "day": 1,
+          "purchases": 60,
+          "consumed": 60
+        }
+      ],
+      "settlements": [
+        {
+          "day": 1,
+          "expired": 0,
+          "rent": 20
+        }
+      ]
+    },
+    "progression": {
+      "xp": 70,
+      "cheeseSales": 4,
+      "unlockDay": 2,
+      "outcomes": [
+        "cozy-1",
+        "cozy-2",
+        "cozy-3",
+        "cozy-4"
+      ],
+      "claims": [
+        "goal.day-1"
+      ],
+      "goals": [
+        {
+          "day": 1,
+          "status": "completed",
+          "stats": {
+            "delivered": 4,
+            "sales": 200,
+            "stars": [
+              5,
+              5,
+              5,
+              5
+            ]
+          },
+          "description": "Giao 3 đơn thương mại",
+          "progress": "4/3 đơn"
+        }
+      ],
+      "mission": "active"
+    },
+    "help": {
+      "decision": "unseen",
+      "outcome": null,
+      "claims": []
+    },
+    "menu": [
+      "cheese",
+      "mushroom",
+      "sausage"
+    ],
+    "prices": {
+      "cheese": 100,
+      "mushroom": 100,
+      "sausage": 100
+    },
+    "recipe": "cheese",
+    "reports": [
+      {
+        "salesByRecipe": [
+          {
+            "recipe": "cheese",
+            "quantity": 4,
+            "revenue": 200
+          }
+        ],
+        "costByIngredient": [
+          {
+            "ingredient": "dough",
+            "cost": 20
+          },
+          {
+            "ingredient": "sauce",
+            "cost": 12
+          },
+          {
+            "ingredient": "cheese",
+            "cost": 28
+          }
+        ],
+        "progression": {
+          "xp": 70,
+          "cheeseSales": 4,
+          "unlockDay": 2,
+          "outcomes": [
+            "cozy-1",
+            "cozy-2",
+            "cozy-3",
+            "cozy-4"
+          ],
+          "claims": [
+            "goal.day-1"
+          ],
+          "goals": [
+            {
+              "day": 1,
+              "status": "completed",
+              "stats": {
+                "delivered": 4,
+                "sales": 200,
+                "stars": [
+                  5,
+                  5,
+                  5,
+                  5
+                ]
+              },
+              "description": "Giao 3 đơn thương mại",
+              "progress": "4/3 đơn"
+            }
+          ],
+          "mission": "active"
+        },
+        "goal": {
+          "day": 1,
+          "status": "completed",
+          "stats": {
+            "delivered": 4,
+            "sales": 200,
+            "stars": [
+              5,
+              5,
+              5,
+              5
+            ]
+          },
+          "description": "Giao 3 đơn thương mại",
+          "progress": "4/3 đơn"
+        },
+        "rewards": 20,
+        "accounts": {
+          "startingCash": 300,
+          "openingInventoryValue": 0,
+          "sales": 200,
+          "purchases": 60,
+          "consumed": 60,
+          "expired": 0,
+          "rent": 20,
+          "inventory": {
+            "units": 0,
+            "value": 0,
+            "lots": []
+          },
+          "rewards": 20,
+          "giftCost": 0,
+          "capitalPurchases": 0,
+          "wages": 0,
+          "repairs": 0,
+          "other": 0,
+          "endingCash": 440,
+          "profit": 120,
+          "cumulativeProfit": 120,
+          "zeroReasons": {
+            "wages": "Chưa có nhân viên trong bản demo.",
+            "repairs": "Chưa có thiết bị hỏng trong bản demo.",
+            "rewards": "Thưởng mục tiêu/nhiệm vụ/lời cảm ơn đã nhận, tách khỏi bán pizza.",
+            "other": "Không có chi phí khác trong ca này."
+          }
+        },
+        "day": 1,
+        "revenue": 200,
+        "purchases": 60,
+        "cost": 60,
+        "expired": 0,
+        "rent": 20,
+        "profit": 120,
+        "delivered": 4,
+        "abandoned": 0,
+        "rating": 5,
+        "cash": 440,
+        "reviews": [
+          {
+            "avatarIndex": 0,
+            "name": "Linh Gánh Rau",
+            "stars": 5,
+            "reasons": [],
+            "outcome": "delivered",
+            "reputationDelta": 1,
+            "relationshipDelta": 1
+          },
+          {
+            "avatarIndex": 37,
+            "name": "Xương Xí Xọn",
+            "stars": 5,
+            "reasons": [],
+            "outcome": "delivered",
+            "reputationDelta": 1,
+            "relationshipDelta": 0
+          },
+          {
+            "avatarIndex": 74,
+            "name": "Núi Nóng",
+            "stars": 5,
+            "reasons": [],
+            "outcome": "delivered",
+            "reputationDelta": 1,
+            "relationshipDelta": 0
+          },
+          {
+            "avatarIndex": 111,
+            "name": "Trúc Trộn",
+            "stars": 5,
+            "reasons": [],
+            "outcome": "delivered",
+            "reputationDelta": 1,
+            "relationshipDelta": 0
+          }
+        ],
+        "ending": null,
+        "reputation": 54,
+        "relationship": 1,
+        "referral": null,
+        "viability": {
+          "viable": true,
+          "cause": null,
+          "missing": 0,
+          "recipe": "cheese",
+          "ingredientCost": 17,
+          "message": ""
+        }
+      }
+    ],
+    "cumulativeProfit": 120,
+    "reputation": 54,
+    "relationship": 1,
+    "relationshipDays": [
+      1
+    ],
+    "regularDay1Stars": 5,
+    "regularLatestStars": 5,
+    "referral": null
+  }
+}

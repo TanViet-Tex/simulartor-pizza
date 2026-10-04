@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "ingredients": [
+    {"id":"dough","name":"Đế bánh","basePrice":5,"color":15255427},
+    {"id":"sauce","name":"Sốt cà chua","basePrice":3,"color":12138027},
+    {"id":"cheese","name":"Phô mai","basePrice":7,"color":16043865},
+    {"id":"mushroom","name":"Nấm","basePrice":5,"color":13875107},
+    {"id":"sausage","name":"Xúc xích","basePrice":10,"color":12084073}
+  ],
+  "recipes": [
+    {"id":"cheese","name":"Phô mai","price":50,"ingredients":["dough","sauce","cheese"]},
+    {"id":"mushroom","name":"Nấm","price":65,"ingredients":["dough","sauce","cheese","mushroom"]},
+    {"id":"sausage","name":"Xúc xích","price":75,"ingredients":["dough","sauce","cheese","sausage"]}
+  ]
+}
