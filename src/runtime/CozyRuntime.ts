@@ -1,3 +1,5 @@
+import {LEGACY_EVENT_SEED} from '../config/campaignEvents';
+import {chooseCampaignEvent,validCampaignEventSeed,type CampaignLossEvent,type CampaignEventRoll} from '../domain/CampaignEvents';
 import {CAMPAIGN_LAST_DAY} from '../config/campaignRules';
 import {cozyCampaignResults,type CozyCampaignResults} from '../domain/CozyCampaignResults';
 import {shopItem} from '../config/shopCatalog';
@@ -39,8 +41,15 @@ export function validateHelpState(value:unknown):CozyHelpState|null {
   if((s.decision==='accepted'?(s.outcome===null||s.outcome==='pending'&&!s.ticketId||s.offer!==null):(s.outcome!==null||s.ticketId!==null||s.giftCost!==0))||s.offer!==null&&s.decision!=='unseen'||s.thanksPending&&(!s.claims.length||s.outcome==='pending'))return null;
   return {decision:s.decision,outcome:s.outcome,ticketId:s.ticketId,offer:s.offer?{arrivalId:s.offer.arrivalId,name:s.offer.name}:null,giftCost:s.giftCost,claims:[...s.claims],thanksPending:s.thanksPending};
 }
-export type CozyScheduleDependencies=Readonly<{schedule?:ScheduleFactory;deliveryStaffAvailable?:()=>boolean;resolveRecipe?:(slot:ScheduleSlot,enabled:readonly StockRecipe[],selected:StockRecipe)=>StockRecipe|null}>;
+export type CozyScheduleDependencies=Readonly<{eventSeed?:number;eventRoll?:CampaignEventRoll;schedule?:ScheduleFactory;deliveryStaffAvailable?:()=>boolean;resolveRecipe?:(slot:ScheduleSlot,enabled:readonly StockRecipe[],selected:StockRecipe)=>StockRecipe|null}>;
 export class CozyRuntime {
+  private eventSeed=LEGACY_EVENT_SEED;
+  private appliedCampaignEvent:CampaignLossEvent|null=null;
+  private campaignEventAcknowledged=false;
+  get campaignEvent(){return {day:this.currentDay,id:this.appliedCampaignEvent?.id??null,loss:this.appliedCampaignEvent?.loss??0,acknowledged:this.campaignEventAcknowledged};}
+  get campaignEvents(){return {seed:this.eventSeed,decision:this.appliedCampaignEvent?{...this.appliedCampaignEvent}:null,eventLoss:this.appliedCampaignEvent?.loss??0};}
+  acknowledgeCampaignEvent():boolean {if(!this.appliedCampaignEvent||this.campaignEventAcknowledged)return false;this.campaignEventAcknowledged=true;this.revision++;return true;}
+
   private appEnabled=false;
   private appCommands=new Set<string>();
   private bookingCommands=new Set<string>();
@@ -144,13 +153,13 @@ export class CozyRuntime {
     if(!this.production||this.shiftOpen||this.tutorialActive||!['preparation','summary'].includes(this.phase))throw new Error('Not a day boundary');
     const terminal=!!this.summary?.ending,day=this.summary?(terminal?this.currentDay:this.currentDay+1):this.currentDay;
     const recipe=this.recipeOwnership.has(this.recipe)?this.recipe:this.menuFor(day)[0];
-    const data:CozyCheckpoint={campaignEndDay:this.campaignLastDay,staff:structuredClone(this.staff),shop:structuredClone(this.shop),deliveryAppEnabled:this.appEnabled,ownedRecipes:this.ownedRecipes,recipePurchases:this.recipePurchases,upgrades:this.upgrades,customerMemory:this.customerMemory,contentId:COZY_CONTENT_VERSION,day,terminal,stock:this.stock.exportCheckpoint(),progression:this.progress.snapshot,help:{decision:this.help.decision,outcome:this.help.outcome==='pending'?null:this.help.outcome,claims:[...this.help.claims]},menu:[...this.enabledMenu],prices:{...this.pricing},recipe,reports:structuredClone(this.reports),cumulativeProfit:this.cumulativeProfit,reputation:this.reputation,relationship:this.relationship,relationshipDays:[...this.relationshipDays],regularDay1Stars:this.regularDay1Stars,regularLatestStars:this.regularLatestStars,referral:this.referral?{...this.referral}:null};
+    const data:CozyCheckpoint={campaignEventSeed:this.eventSeed,campaignEndDay:this.campaignLastDay,staff:structuredClone(this.staff),shop:structuredClone(this.shop),deliveryAppEnabled:this.appEnabled,ownedRecipes:this.ownedRecipes,recipePurchases:this.recipePurchases,upgrades:this.upgrades,customerMemory:this.customerMemory,contentId:COZY_CONTENT_VERSION,day,terminal,stock:this.stock.exportCheckpoint(),progression:this.progress.snapshot,help:{decision:this.help.decision,outcome:this.help.outcome==='pending'?null:this.help.outcome,claims:[...this.help.claims]},menu:[...this.enabledMenu],prices:{...this.pricing},recipe,reports:structuredClone(this.reports),cumulativeProfit:this.cumulativeProfit,reputation:this.reputation,relationship:this.relationship,relationshipDays:[...this.relationshipDays],regularDay1Stars:this.regularDay1Stars,regularLatestStars:this.regularLatestStars,referral:this.referral?{...this.referral}:null};
     const validated=validateCozyCheckpoint(data);if(!validated)throw new Error('Invalid day boundary');return validated;
   }
   static restoreCheckpoint(value:unknown,tutorial=false,dependencies:CozyScheduleDependencies={}):CozyRuntime|null {
     const s=validateCozyCheckpoint(value);if(!s)return null;
     const r=new CozyRuntime(tutorial&&s.day===1&&!s.reports.length,true,dependencies);
-    r.campaignLastDay=s.campaignEndDay!;r.staff=structuredClone(s.staff!);r.shop=structuredClone(s.shop!);r.upgradeReceipts=structuredClone(s.upgrades.receipts??[]);r.appEnabled=s.deliveryAppEnabled??false;r.recipeOwnership=new Set(s.ownedRecipes);r.purchasedRecipes=[...s.recipePurchases.purchased];r.grantedRecipes=[...(s.recipePurchases.granted??[])];r.recipeSpent=s.recipePurchases.spent;r.pendingRecipeSpent=s.recipePurchases.pendingSpent;
+    r.eventSeed=s.campaignEventSeed??dependencies.eventSeed??LEGACY_EVENT_SEED;r.campaignLastDay=s.campaignEndDay!;r.staff=structuredClone(s.staff!);r.shop=structuredClone(s.shop!);r.upgradeReceipts=structuredClone(s.upgrades.receipts??[]);r.appEnabled=s.deliveryAppEnabled??false;r.recipeOwnership=new Set(s.ownedRecipes);r.purchasedRecipes=[...s.recipePurchases.purchased];r.grantedRecipes=[...(s.recipePurchases.granted??[])];r.recipeSpent=s.recipePurchases.spent;r.pendingRecipeSpent=s.recipePurchases.pendingSpent;
     r.ovenUpgrade=s.upgrades.ovenLevel as 0|1|2;r.queueUpgrade=s.upgrades.queueLevel;r.upgradeSpent=s.upgrades.spent;r.pendingUpgradeSpent=s.upgrades.pendingSpent;r.customerDecisions=structuredClone(s.customerMemory);r.stock=CozyStock.restore(s.stock)!;r.progress=CozyProgression.restore(s.progression)!;r.currentDay=s.day;r.enabledMenu=new Set(s.menu);r.pricing={...s.prices};r.recipe=s.recipe;r.order=new CozyOrder(false,s.recipe,true,r.ovenUpgrade);r.reports=structuredClone(s.reports);r.closedDays=new Set(s.reports.map(x=>x.day));r.cumulativeProfit=s.cumulativeProfit;r.reputation=s.reputation;r.relationship=s.relationship;r.relationshipDays=new Set(s.relationshipDays);r.regularDay1Stars=s.regularDay1Stars;r.regularLatestStars=s.regularLatestStars;r.referral=s.referral?{...s.referral}:null;
     r.serial=s.progression.outcomes.reduce((n,id)=>Math.max(n,Number(id.replace('cozy-',''))||0),0)+s.reports.reduce((n,x)=>n+x.abandoned,0)+(s.help.decision==='accepted'?1:0);
     r.help={...s.help,ticketId:null,offer:null,giftCost:0,thanksPending:false};r.startingCash=s.reports[s.reports.length-1]?.cash??300;r.openingInventoryValue=s.reports[s.reports.length-1]?.accounts.inventory.value??0;
@@ -311,6 +320,7 @@ export class CozyRuntime {
   private accumulator = 0;
   private pauseVersion = 0;
   constructor(tutorial = false, private readonly production = false,private readonly scheduleDependencies:CozyScheduleDependencies={}) {
+    if(scheduleDependencies.eventSeed!==undefined){if(!validCampaignEventSeed(scheduleDependencies.eventSeed))throw new Error('Invalid campaign event seed');this.eventSeed=scheduleDependencies.eventSeed;}
     this.step = tutorial ? 'dough' : null;
     if (tutorial) this.pause('tutorial');
   }
@@ -347,11 +357,11 @@ export class CozyRuntime {
     if(wagesPaid)this.stock.debit(wagesPaid);this.staff.arrears=due-wagesPaid;
     this.payrollWarning=this.staff.arrears?`Không đủ tiền trả lương. Còn thiếu ${Math.max(0,due-this.stock.cash)} xu; lương chưa trả ${this.staff.arrears} xu.`:'';
     const payroll={roles:[...this.shiftRoles],openingArrears,wagesPaid,endingArrears:this.staff.arrears};
-    const accounts=closeAccounts({wages,wagesPaid,startingCash:this.startingCash,openingInventoryValue:this.openingInventoryValue,sales:this.revenue,rewards:this.rewardCash,purchases:ledger.purchases,consumed:ledger.consumed,giftCost:this.dailyGiftCost,capitalPurchases:this.capitalPurchases,deliveryFees:this.deliveryFees,...settled,inventory:this.stock.inventorySnapshot(),previousProfit:this.cumulativeProfit});
+    const accounts=closeAccounts({... (this.appliedCampaignEvent?{eventLoss:this.appliedCampaignEvent.loss}:{}),wages,wagesPaid,startingCash:this.startingCash,openingInventoryValue:this.openingInventoryValue,sales:this.revenue,rewards:this.rewardCash,purchases:ledger.purchases,consumed:ledger.consumed,giftCost:this.dailyGiftCost,capitalPurchases:this.capitalPurchases,deliveryFees:this.deliveryFees,...settled,inventory:this.stock.inventorySnapshot(),previousProfit:this.cumulativeProfit});
     this.cumulativeProfit=accounts.cumulativeProfit;
     const viability=cozyViability(this.stock.cash,this.currentDay+1,STOCK_RECIPES.filter(recipe=>this.recipeOwnership.has(recipe)),id=>this.stock.available(id,this.currentDay+1),id=>this.stock.purchasePrice(id,this.currentDay+1));
     if(this.currentDay===2&&!this.referral)this.referral=referralEligibility(this.reputation);
-    this.summary={payroll,pizzasSold:this.pizzasSold,deliveryFees:this.deliveryFees,event:this.shiftEvent!.id,appEnabled:this.shiftApp,ownedRecipes:this.ownedRecipes,progression:this.progress.snapshot,goal:this.progress.goal(this.currentDay),rewards:this.rewardCash,accounts,reputation:this.reputation,relationship:this.relationship,referral:this.referral?{...this.referral}:null,day:this.currentDay,revenue:this.revenue,purchases:ledger.purchases,cost:ledger.consumed,...settled,profit:accounts.profit,delivered:this.deliveredCount,abandoned:this.abandonedCount,rating:this.reviews.length?this.reviews.reduce((sum,r)=>sum+r.stars,0)/this.reviews.length:null,cash:this.stock.cash,reviews:structuredClone(this.reviews),ending:this.currentDay===this.campaignLastDay?'complete':!viability.viable?'insolvent':null,...(viability?{viability}:{})};
+    this.summary={...(this.appliedCampaignEvent?{campaignEvent:{id:this.appliedCampaignEvent.id,loss:this.appliedCampaignEvent.loss}}:{}),payroll,pizzasSold:this.pizzasSold,deliveryFees:this.deliveryFees,event:this.shiftEvent!.id,appEnabled:this.shiftApp,ownedRecipes:this.ownedRecipes,progression:this.progress.snapshot,goal:this.progress.goal(this.currentDay),rewards:this.rewardCash,accounts,reputation:this.reputation,relationship:this.relationship,referral:this.referral?{...this.referral}:null,day:this.currentDay,revenue:this.revenue,purchases:ledger.purchases,cost:ledger.consumed,...settled,profit:accounts.profit,delivered:this.deliveredCount,abandoned:this.abandonedCount,rating:this.reviews.length?this.reviews.reduce((sum,r)=>sum+r.stars,0)/this.reviews.length:null,cash:this.stock.cash,reviews:structuredClone(this.reviews),ending:this.currentDay===this.campaignLastDay?'complete':!viability.viable?'insolvent':null,...(viability?{viability}:{})};
     this.summary.salesByRecipe=[...this.salesByRecipe].map(([recipe,sales])=>({recipe,...sales}));
     this.summary.costByIngredient=this.stock.consumedByIngredient(this.currentDay);
     this.reports.push(compactCozyReport(this.summary));
@@ -362,7 +372,7 @@ export class CozyRuntime {
   private openNextDayNow():boolean {
     if(!this.canOpenNextDay)return false;
     this.startingCash=this.summary!.cash;this.openingInventoryValue=this.summary!.accounts.inventory.value;
-    this.currentDay++;this.deliveryFees=0;this.pizzasSold=0;this.deliveryTime=0;this.courier=null;this.shiftEvent=null;this.rewardCash=0;this.dailyGiftCost=0;this.priceRejections=0;this.summary=null;this.reviews=[];this.revenue=0;this.deliveredCount=0;this.abandonedCount=0;this.elapsed=0;this.arrival=0;this.schedule=null;this.processedArrivals.clear();this.completed=null;this.result=null;this.phase='preparation';this.accumulator=0;
+    this.currentDay++;this.appliedCampaignEvent=null;this.campaignEventAcknowledged=false;this.deliveryFees=0;this.pizzasSold=0;this.deliveryTime=0;this.courier=null;this.shiftEvent=null;this.rewardCash=0;this.dailyGiftCost=0;this.priceRejections=0;this.summary=null;this.reviews=[];this.revenue=0;this.deliveredCount=0;this.abandonedCount=0;this.elapsed=0;this.arrival=0;this.schedule=null;this.processedArrivals.clear();this.completed=null;this.result=null;this.phase='preparation';this.accumulator=0;
     this.salesByRecipe.clear();
     return this.openShop();
   }
@@ -434,6 +444,10 @@ export class CozyRuntime {
     this.schedule=validateCozySchedule((this.scheduleDependencies.schedule??threeDaySchedule)(this.currentDay,{regularDay1Stars:this.regularDay1Stars,regularLatestStars:this.regularLatestStars,helpSucceeded:this.help.outcome==='succeeded',referral:this.currentDay>=4?this.reputation>=55:!!this.referral?.eligible}));
     this.shiftEvent=deliveryEvent(this.currentDay);this.shiftRoles=this.staff.acquired.map(a=>a.role);this.shiftStaff=this.shiftRoles.includes('delivery')||!!this.scheduleDependencies.deliveryStaffAvailable?.();this.staffJobs.clear();this.payrollWarning='';this.shiftApp=this.appEnabled&&this.currentDay>=5;if(!this.scheduleDependencies.schedule)this.schedule=deliverySchedule(this.schedule,this.shiftApp);
     this.frozenShopEffects=this.shopState.effects;this.schedule=shopSchedule(this.schedule,this.frozenShopEffects.visitors);
+    const history=this.reports.flatMap(report=>report.campaignEvent?[{...report.campaignEvent,day:report.day}]:[]);
+    this.appliedCampaignEvent=chooseCampaignEvent(this.eventSeed,this.currentDay,history,this.scheduleDependencies.eventRoll);
+    if(this.appliedCampaignEvent&&!this.stock.applyCampaignLoss(this.currentDay))throw new Error('Campaign event applied twice');
+    this.campaignEventAcknowledged=false;
     this.shiftOpen = true; this.phase = 'making';
     this.capitalPurchases=this.pendingUpgradeSpent+this.pendingRecipeSpent+this.shop.pendingSpent+this.staff.pendingSpent;this.pendingUpgradeSpent=0;this.pendingRecipeSpent=0;this.shop.pendingSpent=0;this.staff.pendingSpent=0;
     const first=this.schedule.slots[0];if(first?.at===0)this.processArrival(first.id);
@@ -659,7 +673,7 @@ export class CozyRuntime {
       if (!this.production) return this.order.dispatch(intent);
       if (intent.type === 'reset') {
         if(this.closedDays.size)return false;
-        this.appEnabled=false;this.appCommands.clear();this.bookingCommands.clear();this.shiftEvent=null;this.shiftApp=false;this.shiftStaff=false;this.deliveryFees=0;this.pizzasSold=0;this.deliveryTime=0;this.courier=null;this.recipeOwnership=new Set(['cheese','mushroom']);this.recipeSpent=0;this.pendingRecipeSpent=0;this.purchasedRecipes=[];this.grantedRecipes=[];this.recipeCommands.clear();this.campaignLastDay=CAMPAIGN_LAST_DAY;this.staff=emptyStaff();this.shiftRoles=[];this.staffJobs.clear();this.staffCommands.clear();this.payrollWarning='';this.shop={acquired:[],spent:0,pendingSpent:0};this.shopCommands.clear();this.upgradeReceipts=[];this.frozenShopEffects=shopEffects([]);this.ovenUpgrade=0;this.queueUpgrade=0;this.upgradeSpent=0;this.pendingUpgradeSpent=0;this.capitalPurchases=0;this.upgradeCommands.clear();this.customerDecisions={accepted:[],declined:[]};this.expressPending.clear();
+        this.appliedCampaignEvent=null;this.campaignEventAcknowledged=false;this.eventSeed=this.scheduleDependencies.eventSeed??LEGACY_EVENT_SEED;this.appEnabled=false;this.appCommands.clear();this.bookingCommands.clear();this.shiftEvent=null;this.shiftApp=false;this.shiftStaff=false;this.deliveryFees=0;this.pizzasSold=0;this.deliveryTime=0;this.courier=null;this.recipeOwnership=new Set(['cheese','mushroom']);this.recipeSpent=0;this.pendingRecipeSpent=0;this.purchasedRecipes=[];this.grantedRecipes=[];this.recipeCommands.clear();this.campaignLastDay=CAMPAIGN_LAST_DAY;this.staff=emptyStaff();this.shiftRoles=[];this.staffJobs.clear();this.staffCommands.clear();this.payrollWarning='';this.shop={acquired:[],spent:0,pendingSpent:0};this.shopCommands.clear();this.upgradeReceipts=[];this.frozenShopEffects=shopEffects([]);this.ovenUpgrade=0;this.queueUpgrade=0;this.upgradeSpent=0;this.pendingUpgradeSpent=0;this.capitalPurchases=0;this.upgradeCommands.clear();this.customerDecisions={accepted:[],declined:[]};this.expressPending.clear();
         this.stock = new CozyStock();this.progress=new CozyProgression();this.rewardCash=0;this.dailyGiftCost=0;this.help={decision:'unseen',outcome:null,ticketId:null,offer:null,giftCost:0,claims:[],thanksPending:false};this.enabledMenu=new Set(['cheese','mushroom']);this.startingCash=300;this.openingInventoryValue=0;this.cumulativeProfit=0; this.purchaseCommands.clear();this.purchaseSerial=0;this.order = new CozyOrder(); this.recipe = 'cheese'; this.phase = 'preparation';
         this.active.clear(); this.processedArrivals.clear(); this.ovenId = null; this.discardId = null; this.ticket = ''; this.elapsed = 0; this.serial = 0; this.arrival = 0; this.schedule=null;this.regularDay1Stars=null;this.regularLatestStars=null; this.shiftOpen = false; this.history = [];
         this.completed = null;this.summary=null;this.reports=[];this.currentDay=1;this.revenue=0;this.deliveredCount=0;this.abandonedCount=0;this.reviews=[];

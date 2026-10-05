@@ -15,6 +15,7 @@ import {drawStockPlanner} from '../presentation/StockPlannerPanel';
 import { CozyRuntime } from '../runtime/CozyRuntime';
 import {recipePrice,recipeIngredients,STOCK_INGREDIENTS,ingredientName,type StockRecipe,type StockIngredient} from '../domain/CozyStock';
 import {menuPrice} from '../domain/CustomerProgression';
+import {campaignEventSeed} from '../domain/CampaignEvents';
 import { CozyArt, UI } from '../presentation/CozyArt';
 import { preloadPizzaIcons } from '../presentation/PizzaIcons';
 import { PIZZA_BOX_ART } from '../presentation/PizzaBoxArt';
@@ -62,6 +63,7 @@ export class CozyScene extends Phaser.Scene {
   private endDayConfirmation=false;
   private endedDayNotice:number|null=null;
   private endedDayLease?:PauseLease;
+  private campaignEventLease?:PauseLease;
   private pauseSettings=false;
   private veilDrawn=false;
   private settingsFocusId='';
@@ -154,6 +156,7 @@ export class CozyScene extends Phaser.Scene {
     this.events.once('shutdown',()=>this.closeMarketPurchase());
     this.events.once('shutdown',()=>{this.closeDeliveryApp();this.closeHubPanels();});
     this.events.once('shutdown',()=>{this.endedDayLease?.release();this.endedDayLease=undefined;this.endedDayNotice=null;});
+    this.events.once('shutdown',()=>{this.campaignEventLease?.release();this.campaignEventLease=undefined;});
     this.events.once('shutdown',()=>{this.closeFinalResults();this.closeNewCampaign();});
     this.events.once('destroy',()=>{this.closeDeliveryApp();this.closeHubPanels();});
     this.events.once('shutdown',()=>this.closeMarketQuantity());
@@ -167,6 +170,8 @@ export class CozyScene extends Phaser.Scene {
   private hold(reason:'user'|'order'):void{if(!this.scenePauses.has(reason))this.scenePauses.set(reason,this.runtime.acquirePause(reason));}
   private release(reason:'user'|'order'):void{this.scenePauses.get(reason)?.release();this.scenePauses.delete(reason);}
   update(_time:number,delta:number):void{
+    const event=this.runtime.campaignEvent;
+    if(event.id&&!event.acknowledged&&this.runtime.shopOpen&&!this.campaignEventLease&&!this.runtime.pauses.length&&!this.campaignSession?.view.pending){this.campaignEventLease=this.runtime.acquirePause('order');this.dirty=true;}
     this.lifecycle.frame(performance.now(),this.runtime.pauses.length===0&&this.runtime.simulationActive);
     if(this.runtime.day===1&&this.runtime.shopOpen&&this.runtime.shiftClock.phase==='awaiting-close'&&!this.runtime.pauses.length&&this.runtime.canCloseDay)this.finishDay();
     const payroll=this.runtime.daySummary?.payroll;
@@ -347,7 +352,14 @@ export class CozyScene extends Phaser.Scene {
       else this.runtime.dispatch({type:'deliver'});
     });
     this.inventory();
-    if(this.endedDayNotice!==null){
+    if(this.campaignEventLease){
+      this.resetModalControls();
+      const event=this.runtime.campaignEvent;
+      this.notice('Sự kiện A',`Cửa hàng mất ${event.loss} xu.\nSố dư hiện tại: ${this.runtime.state.cash} xu.${this.runtime.state.cash<0?'\nTiền đang âm; bạn vẫn có thể phục vụ trong ca để bù lại.':''}`,'campaign-event-understood','Đã hiểu',()=>{
+        this.runtime.acknowledgeCampaignEvent();this.campaignEventLease?.release();this.campaignEventLease=undefined;this.dirty=true;
+      });
+    }
+    else if(this.endedDayNotice!==null){
       this.resetModalControls();
       this.notice(`Đã hết ngày ${this.endedDayNotice}`,'Ca bán đã kết thúc. Bấm Đã hiểu để xem tổng kết ngày.','day-ended-understood','Đã hiểu',()=>{
         this.endedDayNotice=null;this.endedDayLease?.release();this.endedDayLease=undefined;this.summaryTab='summary';this.dirty=true;
@@ -392,6 +404,7 @@ export class CozyScene extends Phaser.Scene {
     canvas.setAttribute('aria-label',`Tiệm pizza. Ngày ${this.runtime.day}. ${s.cash} xu. ${this.runtime.productionActive?this.runtime.shopMessage:s.feedback}`);
     canvas.dataset.campaignProgress=JSON.stringify({day:this.runtime.day,endDay:this.runtime.campaignEndDay});
     canvas.dataset.campaignResults=JSON.stringify(this.runtime.campaignResults);
+    canvas.dataset.campaignEvent=JSON.stringify(this.runtime.campaignEvent);
     canvas.dataset.tutorial=this.runtime.tutorialStep??'off';
     canvas.dataset.commercialCash=String(this.runtime.commercialState.cash);
     canvas.dataset.reducedMotion=String(this.reducedMotion);
@@ -904,7 +917,7 @@ export class CozyScene extends Phaser.Scene {
     this.label(180,231,'Chiến dịch mới?',23,ink);
     this.explanation(278,72,this.campaignSession?'Tiến độ hiện tại sẽ được thay bằng Ngày 1, 300 xu và kho trống. Các ngày đã chốt không thể mở lại. Chỉ thay bản cũ sau khi lưu mới thành công.':'Tiền và kho hiện tại sẽ được đặt lại về 300 xu và kho trống.',14);
     this.button('market-new-cancel',48,377,264,48,'Giữ phiên',true,()=>this.closeNewCampaign(),UI.dark);
-    this.button('market-new-confirm',48,442,264,48,'Bắt đầu mới',true,()=>{this.closeNewCampaign();if(this.campaignSession)void this.campaignSession.start(false).then(runtime=>{if(runtime)this.replaceRuntime?.(runtime);});else if(this.replaceRuntime)this.replaceRuntime(new CozyRuntime(false,true));else {this.release('user');this.runtime.dispatch({type:'reset'});this.dirty=true;}});
+    this.button('market-new-confirm',48,442,264,48,'Bắt đầu mới',true,()=>{this.closeNewCampaign();if(this.campaignSession)void this.campaignSession.start(false).then(runtime=>{if(runtime)this.replaceRuntime?.(runtime);});else if(this.replaceRuntime)this.replaceRuntime(new CozyRuntime(false,true,{eventSeed:campaignEventSeed(crypto.randomUUID())}));else {this.release('user');this.runtime.dispatch({type:'reset'});this.dirty=true;}});
   }
   private discardDialog():void{
     this.notificationFrame(["confirm-discard","cancel-discard"],276,332,420);

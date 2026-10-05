@@ -1,3 +1,4 @@
+import {campaignEventSeed} from '../domain/CampaignEvents';
 import {CozyRuntime} from './CozyRuntime';
 import {PlayLifecycle,type PauseLease} from './PlayLifecycle';
 import type {CozyLoadResult,CozySaveEnvelope,CozySavePort,CozyWriteRequest,SaveFailure} from '../infrastructure/CozySaveRepository';
@@ -43,16 +44,16 @@ export class CozyCampaignSession {
     return this.acceptLoaded(result.envelope);
   }
   private acceptLoaded(envelope:CozySaveEnvelope,recovered=false):CozyRuntime|null {
-    const runtime=CozyRuntime.restoreCheckpoint(envelope.payload);if(!runtime){this.status='error';this.failure={ok:false,code:'corrupt',message:'Không thể mở tiến độ đã lưu.'};this.publish();return null;}
+    const runtime=CozyRuntime.restoreCheckpoint(envelope.payload,false,{eventSeed:campaignEventSeed(envelope.campaignId)});if(!runtime){this.status='error';this.failure={ok:false,code:'corrupt',message:'Không thể mở tiến độ đã lưu.'};this.publish();return null;}
     this.install(runtime);this.saved=structuredClone(envelope);this.confirmedRecovery=recovered;this.pending=null;this.recovery=null;this.status='ready';this.failure=null;this.publish();return runtime;
   }
   confirmRecovery():CozyRuntime|null {if(this.status!=='recovery'||!this.recovery)return null;return this.acceptLoaded(this.recovery.envelope,true);}
   async start(tutorial=true):Promise<CozyRuntime|null> {
     if(this.busy)return null;
     if((this.pending?.kind==='day'||this.pending?.kind==='upgrade'))return null;
-    if(this.status==='temporary'){this.install(new CozyRuntime(tutorial,true));this.publish();return this.current;}
-    const runtime=new CozyRuntime(false,true),payload=runtime.exportCheckpoint();
-    this.pending={kind:'create',tutorial,request:{campaignId:this.id(),commitId:this.id(),sourceRevision:0,payload,...(this.replacement!==undefined?{replacementToken:this.replacement}:{})}};
+    if(this.status==='temporary'){this.install(new CozyRuntime(tutorial,true,{eventSeed:campaignEventSeed(this.id())}));this.publish();return this.current;}
+    const campaignId=this.id(),runtime=new CozyRuntime(false,true,{eventSeed:campaignEventSeed(campaignId)}),payload=runtime.exportCheckpoint();
+    this.pending={kind:'create',tutorial,request:{campaignId,commitId:this.id(),sourceRevision:0,payload,...(this.replacement!==undefined?{replacementToken:this.replacement}:{})}};
     return this.writePending();
   }
   closeDay():boolean {
@@ -103,9 +104,9 @@ export class CozyCampaignSession {
     })().finally(()=>{this.inFlight=null;});return this.inFlight;
   }
   temporary(tutorial=true):CozyRuntime|null {
-    if(!this.view.canTemporary)return null;this.pending=null;this.saved=null;this.recovery=null;this.install(new CozyRuntime(tutorial,true));this.status='temporary';this.failure=null;this.publish();return this.current;
+    if(!this.view.canTemporary)return null;this.pending=null;this.saved=null;this.recovery=null;this.install(new CozyRuntime(tutorial,true,{eventSeed:campaignEventSeed(this.id())}));this.status='temporary';this.failure=null;this.publish();return this.current;
   }
   returnToMenu(){if(this.current)this.menuLease??=this.current.acquirePause('menu');}
-  continue():CozyRuntime|null {if(!this.allowed())return null;if(!this.current&&this.saved)this.install(CozyRuntime.restoreCheckpoint(this.saved.payload)!);this.menuLease?.release();this.menuLease=null;return this.current;}
+  continue():CozyRuntime|null {if(!this.allowed())return null;if(!this.current&&this.saved)this.install(CozyRuntime.restoreCheckpoint(this.saved.payload,false,{eventSeed:campaignEventSeed(this.saved.campaignId)})!);this.menuLease?.release();this.menuLease=null;return this.current;}
   destroy(){this.generation++;this.releaseSave();this.menuLease?.release();this.menuLease=null;this.interruption?.destroy();this.interruption=null;this.current=null;this.listeners.clear();}
 }

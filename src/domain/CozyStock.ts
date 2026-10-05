@@ -22,13 +22,14 @@ interface Allocation { lotId:number; ingredient:StockIngredient; quantity:number
 interface Reservation { allocations:Allocation[]; day:number; expiresAt:number }
 export interface CozyLot { id: number; ingredient: StockIngredient; quantity: number; unitCost: number; day: number; expiry: number }
 export interface CozyInventory {units:number;value:number;lots:CozyLot[]}
-export interface CozyStockSnapshot {cash:number;nextLot:number;activeDay:number;lots:CozyLot[];books:{day:number;purchases:number;ordinaryPurchases?:number;consumed:number}[];settlements:{day:number;expired:number;rent:number}[]}
+export interface CozyStockSnapshot {cash:number;nextLot:number;activeDay:number;lots:CozyLot[];books:{day:number;purchases:number;ordinaryPurchases?:number;eventLoss?:number;consumed:number}[];settlements:{day:number;expired:number;rent:number}[]}
 export function validateStockSnapshot(value:unknown):CozyStockSnapshot|null {
   if(!value||typeof value!=='object')return null;
   const s=value as CozyStockSnapshot,whole=(n:unknown,min=0,max=1000000)=>Number.isSafeInteger(n)&&Number(n)>=min&&Number(n)<=max;
-  if(!whole(s.cash,-20)||!whole(s.nextLot,1,1000000000)||!whole(s.activeDay,1,1000000)||!Array.isArray(s.lots)||s.lots.length>300||!Array.isArray(s.books)||s.books.length>1000000||!Array.isArray(s.settlements)||s.settlements.length>1000000)return null;
+  const eventLoss=Array.isArray(s.books)?s.books.reduce((sum,b)=>sum+(b?.eventLoss===200?200:0),0):0;
+  if(!whole(s.cash,-20-eventLoss)||!whole(s.nextLot,1,1000000000)||!whole(s.activeDay,1,1000000)||!Array.isArray(s.lots)||s.lots.length>300||!Array.isArray(s.books)||s.books.length>1000000||!Array.isArray(s.settlements)||s.settlements.length>1000000)return null;
   if(s.lots.some(l=>!l||!whole(l.id,1,999999999)||l.id>=s.nextLot||!STOCK_INGREDIENTS.includes(l.ingredient)||!whole(l.quantity,1,100)||!whole(l.day,1,1000000)||![datedIngredientPrice(l.ingredient,l.day),expressIngredientPrice(l.ingredient,l.day),supplierPrice(datedIngredientPrice(l.ingredient,l.day),SUPPLIER_THRESHOLD)].includes(l.unitCost)||l.expiry!==ingredientExpiry(l.ingredient,l.day))||new Set(s.lots.map(l=>l.id)).size!==s.lots.length)return null;
-  if(s.books.some(b=>!b||!whole(b.day,1,1000000)||!whole(b.purchases)||!whole(b.ordinaryPurchases??0,0,b.purchases)||!whole(b.consumed))||new Set(s.books.map(b=>b.day)).size!==s.books.length)return null;
+  if(s.books.some(b=>!b||!whole(b.day,1,1000000)||!whole(b.purchases)||!whole(b.ordinaryPurchases??0,0,b.purchases)||!whole(b.consumed)||(b.eventLoss!==undefined&&b.eventLoss!==200))||new Set(s.books.map(b=>b.day)).size!==s.books.length)return null;
   if(s.settlements.some(b=>!b||!whole(b.day,1,1000000)||!whole(b.expired)||b.rent!==20)||new Set(s.settlements.map(b=>b.day)).size!==s.settlements.length)return null;
   return {cash:s.cash,nextLot:s.nextLot,activeDay:s.activeDay,lots:s.lots.map(l=>({...l})),books:s.books.map(b=>({...b})),settlements:s.settlements.map(b=>({...b}))};
 }
@@ -39,7 +40,7 @@ export class CozyStock {
   private nextLot = 1;
   private tickets = new Map<string, Reservation>();
   private money = 300;
-  private books = new Map<number, { purchases:number; ordinaryPurchases?:number; consumed:number }>();
+  private books = new Map<number, { purchases:number; ordinaryPurchases?:number; eventLoss?:number; consumed:number }>();
   private ingredientCosts=new Map<number,Map<StockIngredient,number>>();
   private settlements=new Map<number,{expired:number;rent:number}>();
   private activeDay=1;
@@ -54,6 +55,11 @@ export class CozyStock {
   get cash() { return this.money; }
   debit(amount:number):boolean { if(!Number.isSafeInteger(amount)||amount<0||amount>this.money)return false;this.money-=amount;return true; }
   spend(amount:number):boolean { return this.debit(amount); }
+  /** Only the approved daily event may force an overdraft; ordinary spending still needs funds. */
+  applyCampaignLoss(day:number):boolean {
+    if(!Number.isSafeInteger(day)||day<1||day>1000000||this.settlements.has(day)||this.books.get(day)?.eventLoss)return false;
+    this.book(day).eventLoss=200;this.money-=200;return true;
+  }
   get lots(): readonly Readonly<CozyLot>[] { return this.inventory.map(lot => ({ ...lot })); }
   inventorySnapshot():CozyInventory {
     return {units:this.inventory.reduce((sum,l)=>sum+l.quantity,0),value:this.inventory.reduce((sum,l)=>sum+l.quantity*l.unitCost,0),lots:this.inventory.map(l=>({...l}))};

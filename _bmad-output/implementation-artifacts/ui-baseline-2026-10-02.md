@@ -379,3 +379,6 @@ Kiểm chứng: build,6unit và15luồng E2E tập trung360×640 đạt; ba revi
 ![Cài đặt Pause](ui-baseline/refinement-pause-settings.png)
 
 ![Thông báo tự hết ngày](ui-baseline/refinement-automatic-notice.png)
+### Sự kiện A — 2026-10-05
+
+Chỉ thêm thông báo compact một nút với mất200/số dư thật và dòng tổn thất trong finance cuộn; giữ bố cục, sáu ô, năm tab, art và veil0.28. Xem [spec9.2](spec-9-2-random-loss-events.md), [thông báo](ui-baseline/event-a-notice-2026-10-05.png), [tài chính](ui-baseline/event-a-finance-2026-10-05.png).

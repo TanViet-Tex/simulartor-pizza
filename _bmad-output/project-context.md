@@ -332,3 +332,7 @@ Cozy mới chạy tối đa30ngày, giữ Chợ→Kho→ca→chốt→chuẩn b�
 
 Người dùng yêu cầu nhích chữ năm tab lên để không lẹm xuống, giữ khung/vùng bấm; ô tiền header giữ icon đồng xu và chỉ số, bỏ hậu tố xu. Các thông báo click/tự hiện cùng Menu/Pause dùng lớp đen bán trong suốt nhẹ thay nền đen kín; vẫn chặn input nền và giữ lease riêng. Cài đặt Menu/Pause dùng cùng panel và cùng PlayAudio/MenuPreferences, điều khiển hiệu ứng/mute/giảm chuyển động; nhạc chưa có ghi rõ, không tạo tính năng nhạc giả. Bố cục/art/body hub và gameplay/save không đổi. Quyết định này thay các yêu cầu nền đen kín lịch sử; chi tiết spec-shared-settings-and-hub-label-refinement.md.
 Kiểm chứng phạm vi trên: build,6unit và15E2E tập trung360×640 đạt; ba review không còn phát hiện. Mốc UI đã ghi ảnh đúng phần sửa.
+
+### Epic9.2 — Sự kiện A, 2026-10-05
+
+A xét một lần khi mở ca, xác suất10%, mất đúng200 kể cả tiền âm. Cooldown khoảng cách3ngày (10→13), tối đa1sự kiện xấu/ngày và không liền2ngày. Seed gắn campaign identity trước chơi, reload/mua chuẩn bị không reroll; save cũ xác minh checksum trước chuẩn hóa và giữ lịch sử. Thông báo một nút dùng lease riêng; loss vào chi phí khác, không trừ vào kho/giá vốn. Retry/restore không trừ trùng. Không lưu giữa ca hoặc thêm loại sự kiện xấu. Build,45unit và2E2E360×640 đạt; ba review độc lập. Xem implementation-artifacts/spec-9-2-random-loss-events.md.

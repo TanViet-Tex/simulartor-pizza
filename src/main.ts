@@ -3,6 +3,7 @@ import { GAME_HEIGHT, GAME_WIDTH } from './config/viewport';
 import { BootScene } from './scenes/BootScene';
 import { CozyScene } from './scenes/CozyScene';
 import { CozyRuntime } from './runtime/CozyRuntime';
+import {campaignEventSeed} from './domain/CampaignEvents';
 import { StartupScene } from './scenes/StartupScene';
 import { MainMenuScene } from './scenes/MainMenuScene';
 import { MenuPreferences } from './presentation/MenuPreferences';
@@ -20,7 +21,8 @@ const playAudio=new PlayAudio();
 /** Direct entry modes keep the same runtime in RAM when visiting the menu. */
 function directPlay():Phaser.Scene {
   const preferences=new MenuPreferences();
-  let runtime=new CozyRuntime(guided,mode!=='freeplay'),lifecycle=new PlayLifecycle(runtime),menuLease:PauseLease|undefined;
+  const freshRuntime=()=>new CozyRuntime(guided,mode!=='freeplay',{eventSeed:campaignEventSeed(crypto.randomUUID())});
+  let runtime=freshRuntime(),lifecycle=new PlayLifecycle(runtime),menuLease:PauseLease|undefined;
   const enter=()=>{
     menuLease?.release();menuLease=undefined;
     game.scene.stop('MainMenuScene');
@@ -30,7 +32,7 @@ function directPlay():Phaser.Scene {
   const menu=new MainMenuScene(preferences,{
     hasSession:()=>true,
     continue:enter,
-    start:()=>{menuLease?.release();menuLease=undefined;lifecycle.destroy();runtime=new CozyRuntime(guided,mode!=='freeplay');lifecycle=new PlayLifecycle(runtime);enter();},
+    start:()=>{menuLease?.release();menuLease=undefined;lifecycle.destroy();runtime=freshRuntime();lifecycle=new PlayLifecycle(runtime);enter();},
   },playAudio);
   const makePlay=()=>new CozyScene(runtime,preferences,()=>{
     menuLease??=runtime.acquirePause('menu');
