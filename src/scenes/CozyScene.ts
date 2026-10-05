@@ -111,6 +111,12 @@ export class CozyScene extends Phaser.Scene {
   private browserLifecycle!:BrowserPlayLifecycle;
   private timers:{text:Phaser.GameObjects.Text;read:()=>string}[]=[];
   private timerElapsed=0;
+  private dynamicVisuals:{graphics:Phaser.GameObjects.Graphics;read:()=>number;paint:(g:Phaser.GameObjects.Graphics,value:number)=>void;last:number}[]=[];
+  private frameTickets:ReturnType<CozyRuntime['tickets']['slice']>=[];
+  private frameExpress:ReturnType<CozyRuntime['expressOrders']['slice']>=[];
+  private heatSignature='';
+  private feedback=new Set<{object:Phaser.GameObjects.Rectangle;tween?:Phaser.Tweens.Tween;timer?:Phaser.Time.TimerEvent}>();
+  private feedbackState='';
   private preferenceUnsubscribe?:()=>void;
   private scenePauses=new Map<'user'|'order',PauseLease>();
   private staticGraphics!:StaticGraphics;
@@ -161,7 +167,7 @@ export class CozyScene extends Phaser.Scene {
     this.events.once('destroy',()=>{this.closeDeliveryApp();this.closeHubPanels();});
     this.events.once('shutdown',()=>this.closeMarketQuantity());
     this.events.once('destroy',()=>this.closeMarketQuantity());
-    const cleanup=()=>{this.events.off('shutdown',cleanup);this.events.off('destroy',cleanup);this.queueUpgradeLease?.release();this.queueUpgradeLease=undefined;this.queueUpgradeNotice=false;this.priceLease?.release();this.priceLease=undefined;this.statementLease?.release();this.statementLease=undefined;this.motion?.removeEventListener('change',this.motionChange);this.preferenceUnsubscribe?.();this.scale.off('resize',this.motionChange);this.browserLifecycle.destroy(!this.sharedLifecycle);for(const lease of this.scenePauses.values())lease.release();this.scenePauses.clear();this.audio.silence();this.input.keyboard?.off('keydown',this.settingsKeyDown);this.tweens.killAll();for(const zone of this.hitZones.values())zone.destroy();this.hitZones.clear();this.staticGraphics.destroy();};
+    const cleanup=()=>{this.events.off('shutdown',cleanup);this.events.off('destroy',cleanup);this.queueUpgradeLease?.release();this.queueUpgradeLease=undefined;this.queueUpgradeNotice=false;this.priceLease?.release();this.priceLease=undefined;this.statementLease?.release();this.statementLease=undefined;this.motion?.removeEventListener('change',this.motionChange);this.preferenceUnsubscribe?.();this.scale.off('resize',this.motionChange);this.browserLifecycle.destroy(!this.sharedLifecycle);for(const lease of this.scenePauses.values())lease.release();this.scenePauses.clear();this.audio.silence();this.input.keyboard?.off('keydown',this.settingsKeyDown);this.clearFeedback();this.tweens.killAll();for(const zone of this.hitZones.values())zone.destroy();this.hitZones.clear();this.staticGraphics.destroy();};
     this.events.once('shutdown',cleanup);this.events.once('destroy',cleanup);this.draw();
   }
   private motionChange=():void=>{this.dirty=true;};
@@ -174,23 +180,26 @@ export class CozyScene extends Phaser.Scene {
     if(event.id&&!event.acknowledged&&this.runtime.shopOpen&&!this.campaignEventLease&&!this.runtime.pauses.length&&!this.campaignSession?.view.pending){this.campaignEventLease=this.runtime.acquirePause('order');this.dirty=true;}
     this.lifecycle.frame(performance.now(),this.runtime.pauses.length===0&&this.runtime.simulationActive);
     if(this.runtime.day===1&&this.runtime.shopOpen&&this.runtime.shiftClock.phase==='awaiting-close'&&!this.runtime.pauses.length&&this.runtime.canCloseDay)this.finishDay();
-    const payroll=this.runtime.daySummary?.payroll;
-    if(this.runtime.shopPhase==='summary'&&payroll?.endingArrears&&!this.warnedPayrollDays.has(this.runtime.day)&&!this.runtime.pauses.length&&!this.campaignSession?.view.pending){
+    if(this.runtime.shopPhase==='summary'&&!this.warnedPayrollDays.has(this.runtime.day)&&!this.runtime.pauses.length&&!this.campaignSession?.view.pending){
       this.warnedPayrollDays.add(this.runtime.day);this.summaryTab='summary';
-      this.hubDetail={title:'Chưa đủ tiền trả lương',body:this.runtime.staffState.warning+'\nKhoản chưa trả được giữ để trả cùng lương vào cuối ngày sau.',lease:this.runtime.acquirePause('order')};this.dirty=true;
+      if(this.runtime.daySummary?.payroll?.endingArrears){this.hubDetail={title:'Chưa đủ tiền trả lương',body:this.runtime.staffState.warning+'\nKhoản chưa trả được giữ để trả cùng lương vào cuối ngày sau.',lease:this.runtime.acquirePause('order')};this.dirty=true;}
     }
     if(this.pendingFinalResults&&!this.runtime.pauses.length&&!this.campaignSession?.view.pending){this.pendingFinalResults=false;this.openFinalResults();}
     const s=this.runtime.state;
-    this.game.canvas.dataset.shiftClock=JSON.stringify(this.runtime.shiftClock);
-    const sig=[s.stage,s.ingredients.join(','),Math.floor(this.runtime.ovenState?.ovenSeconds??s.ovenSeconds),this.runtime.expressOrders.map(o=>`${o.id}:${Math.ceil(o.remaining*10)}`).join(','),this.runtime.tickets.map(t=>`${t.id}:${Math.ceil(t.remaining)}:${t.packed}:${t.riderState}`).join(','),this.runtime.selectedTicketId,this.runtime.tutorialActive,this.runtime.pauseRevision,this.runtime.shopRevision,this.runtime.shiftClock.phase,this.runtime.deliveryStatus.phase,Math.ceil(this.runtime.deliveryStatus.remaining)].join('|');
+    this.frameTickets=this.runtime.tickets;this.frameExpress=this.runtime.expressOrders;
+    const sig=[s.stage,s.ingredients.join(','),!this.runtime.productionActive&&s.ovenSeconds>=this.runtime.bakeTiming.perfectStart,this.runtime.ovenState?.stage,this.runtime.ovenOwner,this.frameExpress.map(o=>o.id).join(','),this.frameTickets.map(t=>`${t.id}:${t.packed}:${t.riderState}:${t.stage}`).join(','),this.runtime.selectedTicketId,this.runtime.tutorialActive,this.runtime.pauseRevision,this.runtime.shopRevision,this.runtime.shiftClock.phase,this.runtime.deliveryStatus.phase].join('|');
     if(this.dirty||sig!==this.signature){this.signature=sig;this.draw();}
     const oven=this.runtime.productionActive?this.runtime.ovenState:s;
-    if(this.heatBar){const seconds=oven?.ovenSeconds??0,timing=this.runtime.bakeTiming;this.heatBar.clear().fillStyle(0x49372d,1).fillRoundedRect(243,357,100,6,3);if(seconds>0)this.heatBar.fillStyle(seconds>timing.perfectEnd?0xe54b3c:seconds>=timing.perfectStart?0x68bd58:0xfff1dc,1).fillRoundedRect(243,357,Math.max(6,100*Math.min(1,seconds/timing.gaugeEnd)),6,3);}
-    this.game.canvas.dataset.oven=String(oven?.ovenSeconds??0);
-    this.game.canvas.dataset.heat=oven?.stage==='burnt'?'burnt':(oven?.ovenSeconds??0)>=this.runtime.bakeTiming.perfectStart?'perfect':'warming';
+    const heatSignature=`${oven?.stage}:${oven?.ovenSeconds??0}`;
+    if(this.heatBar&&heatSignature!==this.heatSignature){this.heatSignature=heatSignature;const seconds=oven?.ovenSeconds??0,timing=this.runtime.bakeTiming;this.heatBar.clear().fillStyle(0x49372d,1).fillRoundedRect(243,357,100,6,3);if(seconds>0)this.heatBar.fillStyle(seconds>timing.perfectEnd?0xe54b3c:seconds>=timing.perfectStart?0x68bd58:0xfff1dc,1).fillRoundedRect(243,357,Math.max(6,100*Math.min(1,seconds/timing.gaugeEnd)),6,3);}
+    for(const visual of this.dynamicVisuals){const value=visual.read();if(value!==visual.last){visual.last=value;visual.graphics.clear();visual.paint(visual.graphics,value);}}
     this.timerElapsed+=delta;
-    if(this.timerElapsed>=100){this.timerElapsed=0;for(const timer of this.timers)timer.text.setText(timer.read());}
+    if(this.timerElapsed>=100){this.timerElapsed=0;for(const timer of this.timers){const value=timer.read();if(timer.text.active&&timer.text.text!==value)timer.text.setText(value);}this.game.canvas.dataset.shiftClock=JSON.stringify(this.runtime.shiftClock);this.game.canvas.dataset.oven=String(oven?.ovenSeconds??0);this.game.canvas.dataset.heat=oven?.stage==='burnt'?'burnt':(oven?.ovenSeconds??0)>=this.runtime.bakeTiming.perfectStart?'perfect':'warming';}
   }
+  private dynamic(read:()=>number,paint:(g:Phaser.GameObjects.Graphics,value:number)=>void):void{
+    const graphics=this.add.graphics().setData('dynamic',true);this.layer.add(graphics);const value=read();paint(graphics,value);this.dynamicVisuals.push({graphics,read,paint,last:value});
+  }
+  private clearFeedback():void{for(const effect of this.feedback){effect.tween?.remove();effect.timer?.remove(false);effect.object.destroy();}this.feedback.clear();}
   private graphics(dynamic=false):void{const g=this.add.graphics();if(dynamic)g.setData('dynamic',true);this.layer.add(g);this.art=new CozyArt(g);}
   private label(x:number,y:number,value:string,size=12,color:string=cream,width=0,align:'left'|'center'='center'):Phaser.GameObjects.Text{
     let notificationTitle=false;
@@ -255,19 +264,20 @@ export class CozyScene extends Phaser.Scene {
     let zone=this.hitZones.get(id);
     if(!zone){zone=this.add.zone(x,y,w,h).setOrigin(0).setDepth(10).setInteractive({useHandCursor:true});this.hitZones.set(id,zone);}
     zone.setPosition(x,y).setSize(w,h);zone.input?.hitArea.setTo(0,0,w,h);
-    zone.removeAllListeners('pointerdown');
-    zone.removeAllListeners('pointerup');
-    zone.setInteractive({useHandCursor:true});
+    if(zone.input)zone.input.enabled=true;
+    if(zone.listenerCount('pointerdown')||zone.listenerCount('pointerup'))return;
     zone.on(id.startsWith('stock-item-')?'pointerup':'pointerdown',(pointer:Phaser.Input.Pointer)=>{
       // On shorter portrait screens enlarged touch padding may overlap. The
       // visible button beneath the finger always wins over a neighbour's padding.
       const touched=[...this.tapRects].find(([key,c])=>this.controls.some(active=>active.id===key)&&pointer.x>=c.x&&pointer.x<=c.x+c.w&&pointer.y>=c.y&&pointer.y<=c.y+c.h);
       const targetId=touched?.[0]??id,rect=touched?.[1]??this.tapRects.get(id)!;
       const flash=this.add.rectangle(rect.x+rect.w/2,rect.y+rect.h/2,rect.w-4,rect.h-4,0xfff3dc,.23).setDepth(60);
-      if(this.reducedMotion)this.time.delayedCall(140,()=>flash.destroy());
-      else this.tweens.add({targets:flash,alpha:0,scaleX:.96,scaleY:.96,duration:190,onComplete:()=>flash.destroy()});
+      const effect:{object:Phaser.GameObjects.Rectangle;tween?:Phaser.Tweens.Tween;timer?:Phaser.Time.TimerEvent}={object:flash};this.feedback.add(effect);
+      const dispose=()=>{this.feedback.delete(effect);flash.destroy();};
+      if(this.reducedMotion)effect.timer=this.time.delayedCall(140,dispose);
+      else effect.tween=this.tweens.add({targets:flash,alpha:0,scaleX:.96,scaleY:.96,duration:190,onComplete:dispose,onStop:dispose});
       const visible=this.visibleActions.find(c=>c.id===targetId);
-      if(visible)visible.action();void this.audio.interact().then(()=>{this.audio.cue();this.dirty=true;});this.dirty=true;
+      if(visible)visible.action();const audioStatus=this.audio.status;void this.audio.interact().then(()=>{this.audio.cue();if(this.audio.status!==audioStatus)this.dirty=true;});this.dirty=true;
     });
   }
   private button(id:string,x:number,y:number,w:number,h:number,title:string,enabled:boolean,action:()=>void,fill:number=UI.green):void{
@@ -309,7 +319,9 @@ export class CozyScene extends Phaser.Scene {
     this.button(id,0,0,0,0,buttonTitle,enabled,action);
   }
   private draw():void{
-    this.dirty=false;this.veilDrawn=false;this.game.canvas.dataset.settingsPanel='';this.game.canvas.dataset.modalBackdrop='';this.notification=undefined;this.game.canvas.dataset.notificationFrame='';this.game.canvas.dataset.pausePanel='';this.game.canvas.dataset.modalScroll='[]';this.timers=[];this.heatBar=undefined;this.layer.removeAll(true);this.controls=[];this.visibleActions=[];this.tapRects.clear();this.graphics();
+    const feedbackState=`${this.runtime.shopPhase}:${this.runtime.pauseRevision}`;
+    if(this.feedbackState!==feedbackState){this.clearFeedback();this.feedbackState=feedbackState;}
+    this.dirty=false;this.veilDrawn=false;this.game.canvas.dataset.settingsPanel='';this.game.canvas.dataset.modalBackdrop='';this.notification=undefined;this.game.canvas.dataset.notificationFrame='';this.game.canvas.dataset.pausePanel='';this.game.canvas.dataset.modalScroll='[]';this.timers=[];this.dynamicVisuals=[];this.heatSignature='';this.heatBar=undefined;this.layer.removeAll(true);this.controls=[];this.visibleActions=[];this.tapRects.clear();this.graphics();
     const backdrop=this.textures.get('reference-kitchen-background').getSourceImage();
     const backdropScale=Math.min(KITCHEN.width/backdrop.width,KITCHEN.height/backdrop.height);
     this.layer.add(this.add.image(KITCHEN.width/2,KITCHEN.height/2,'reference-kitchen-background').setScale(backdropScale));
@@ -460,9 +472,9 @@ export class CozyScene extends Phaser.Scene {
     if(!available){this.art.g.fillStyle(0x19120d,.38).fillRoundedRect(x+2,y+2,w-4,h-4,8);this.icon('lock',x+w-8,y+9,12,.9);}
   }
   private stockBadge(id:StockIngredient,x:number,y:number,w:number):void{
-    this.graphics(true);this.art.circle(x+w-8,y+9,7,UI.dark);this.label(x+w-8,y+2,String(this.runtime.owned(id)),8,cream);
+    this.graphics();this.art.circle(x+w-8,y+9,7,UI.dark);this.label(x+w-8,y+2,String(this.runtime.owned(id)),8,cream);
     const order=this.runtime.expressOrders.find(order=>order.ingredient===id);
-    if(order){this.art.g.lineStyle(2,0x76cf6e,1).beginPath().arc(x+w/2,y+17,15,-Math.PI/2,-Math.PI/2+Math.PI*2*(1-order.remaining/order.duration)).strokePath();this.label(x+w/2,y+5,`${Math.ceil(order.remaining)}s`,10,cream);}
+    if(order){this.dynamic(()=>this.frameExpress.find(p=>p.id===order.id)?.remaining??0,(g,value)=>g.lineStyle(2,0x76cf6e,1).beginPath().arc(x+w/2,y+17,15,-Math.PI/2,-Math.PI/2+Math.PI*2*(1-value/order.duration)).strokePath());const text=this.label(x+w/2,y+5,`${Math.ceil(order.remaining)}s`,10,cream);this.timers.push({text,read:()=>`${Math.ceil(this.frameExpress.find(p=>p.id===order.id)?.remaining??0)}s`});}
   }
   private ovens():void{
     const s=this.runtime.productionActive?this.runtime.ovenState??this.runtime.state:this.runtime.state,occupied=this.runtime.productionActive?!!this.runtime.ovenState:s.stage==='baking'||s.stage==='burnt';
@@ -521,9 +533,8 @@ export class CozyScene extends Phaser.Scene {
           const clip=this.make.graphics({x:0,y:0});clip.fillStyle(0xffffff).fillCircle(centerX,centerY,21);const mask=clip.createGeometryMask();image.setMask(mask);image.once('destroy',()=>{mask.destroy();clip.destroy();});
         }
       }
-      this.graphics(true);
-      if(slot.selected)this.art.g.lineStyle(1.5,0x548b38,1).strokeCircle(centerX,centerY,23);
-      if(slot.patienceRatio!==null)this.art.g.lineStyle(2,0x65b74d,1).beginPath().arc(centerX,centerY,24,-Math.PI/2,-Math.PI/2+Math.PI*2*slot.patienceRatio).strokePath();
+      if(slot.selected){this.graphics();this.art.g.lineStyle(1.5,0x548b38,1).strokeCircle(centerX,centerY,23);}
+      if(slot.patienceRatio!==null)this.dynamic(()=>{const ticket=this.frameTickets.find(t=>t.id===slot.id);return ticket?Math.max(0,Math.min(1,ticket.remaining/ticket.patience)):slot.patienceRatio!;},(g,value)=>g.lineStyle(2,0x65b74d,1).beginPath().arc(centerX,centerY,24,-Math.PI/2,-Math.PI/2+Math.PI*2*value).strokePath());
       const name=this.label(centerX,119,slot.name,9,ink);
       if(name.width>51){name.setText(slot.name);while(name.width>51&&name.text.length>2)name.setText(name.text.replace(/…$/,'').slice(0,-1)+'…');}
       this.hit(this.runtime.productionActive?'ticket-'+slot.id:'customer-linh',bounds.x,bounds.y,bounds.w,bounds.h,true,()=>{
@@ -541,12 +552,13 @@ export class CozyScene extends Phaser.Scene {
     const notice=this.runtime.productionActive&&['Khách từ chối giá','Khách chưa thể đặt món.','Đã đủ 3 đơn'].some(prefix=>message.startsWith(prefix))?message:'';
     if(detail){
       this.graphics();this.art.pizza(33,164,13,recipeIngredients(detail.recipe));
-      const row=(y:number,value:string,size:number,color:string)=>{const text=this.label(53,y,value,size,color,0,'left');const width=book?180:y===144&&courierText?146:282;if(text.width>width)text.setScale(width/text.width,1);};
+      const row=(y:number,value:string,size:number,color:string)=>{const text=this.label(53,y,value,size,color,0,'left');const width=book?180:y===144&&courierText?146:282;if(text.width>width)text.setScale(width/text.width,1);return text;};
       row(144,`#${detail.number} · ${appTicket?.vip?'VIP · ':''}${detail.name}`,9,ink);
-      if(courierText&&!book)this.label(268,144,courierText,9,wood,132);
+      if(courierText&&!book){const text=this.label(268,144,courierText,9,wood,132);this.timers.push({text,read:()=>`${status} · ${Math.ceil(this.runtime.deliveryStatus.remaining)}s`});}
       row(157,detail.lines[1],9,accent);
-      row(170,notice||(appTicket?.vip?`Còn ${Math.ceil(appTicket.remaining)}s · Đúng/chín: +500 · +2 uy tín`:detail.lines[2]),9,wood);
-    }else {this.label(180,151,courierText||ORDER_DETAIL_PROMPT,13,ink,310);if(notice)this.label(180,170,notice,8,wood,310);}
+      const clock=row(170,notice||(appTicket?.vip?`Còn ${Math.ceil(appTicket.remaining)}s · Đúng/chín: +500 · +2 uy tín`:detail.lines[2]),9,wood);
+      if(!notice)this.timers.push({text:clock,read:()=>{const ticket=this.frameTickets.find(t=>t.id===detail.id);return !ticket?clock.text:ticket.vip?`Còn ${Math.ceil(ticket.remaining)}s · Đúng/chín: +500 · +2 uy tín`:createOrderQueue([{...ticket,deliveryStatus:ticket.riderState==='waiting'?`Tới sau ${Math.ceil(ticket.riderRemaining)}s`:ticket.riderState==='arrived'?'Shipper đã tới':ticket.riderState==='staff'?'Nhân viên giao':'Chưa book shipper'}],ticket.id,ticket.id).detail?.lines[2]??clock.text;}});
+    }else {const text=this.label(180,151,courierText||ORDER_DETAIL_PROMPT,13,ink,310);if(courierText)this.timers.push({text,read:()=>`${status} · ${Math.ceil(this.runtime.deliveryStatus.remaining)}s`});if(notice)this.label(180,170,notice,8,wood,310);}
     const {x,y,w,h}=KITCHEN.order;
     this.hit('order',x,y,book?224:w,h,!!detail||this.runtime.tutorialActive||!!notice,()=>{this.inspectedRecipe=null;if(this.orderQueue.detail||this.runtime.tutorialActive||notice)this.hold('order');});
     if(book&&detail)this.button('app-book-shipper',240,138,100,48,courierText||'Book shipper',!delivery.busy,()=>this.openDeliveryApp('book',detail.id),UI.dark);
@@ -683,7 +695,7 @@ export class CozyScene extends Phaser.Scene {
     const summary=this.runtime.daySummary,initial=this.preparationHub;
     if(!summary&&!initial)return;
     const canBuy=initial?this.runtime.canOpen:this.runtime.canPrepareNextDay;
-    this.layer.removeAll(true);this.controls=[];this.visibleActions=[];this.timers=[];this.heatBar=undefined;
+    this.layer.removeAll(true);this.controls=[];this.visibleActions=[];this.timers=[];this.dynamicVisuals=[];this.heatSignature='';this.heatBar=undefined;
     for(const zone of this.hitZones.values())zone.disableInteractive();
     {
       const saveBlocked=this.campaignSession&&['error','recovery'].includes(this.campaignSession.view.state);
@@ -1079,6 +1091,3 @@ export class CozyScene extends Phaser.Scene {
     }
   }
 }
-
-
-

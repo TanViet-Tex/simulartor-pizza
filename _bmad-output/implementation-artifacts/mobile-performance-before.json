@@ -1,0 +1,66 @@
+{
+  "start": {
+    "objects": 177,
+    "types": {
+      "Container": 1,
+      "Image": 55,
+      "Text": 61,
+      "Graphics": 22,
+      "Zone": 38
+    },
+    "tweens": 0,
+    "timers": 0,
+    "listeners": 69,
+    "created": {
+      "Mesh2D": 1,
+      "Ellipse": 1,
+      "Graphics": 218,
+      "Arc": 3,
+      "Rope": 1,
+      "Image": 264,
+      "Container": 20,
+      "Text": 280,
+      "Zone": 131
+    },
+    "frames": 46,
+    "meanFrameMs": 15.92753623188405,
+    "p95FrameMs": 16.65999999999999,
+    "longFrames": 0,
+    "textureCount": 174,
+    "texturePixels": 42990523,
+    "canvas": {
+      "width": 360,
+      "height": 640
+    },
+    "dpr": 1
+  },
+  "end": {
+    "objects": 177,
+    "types": {
+      "Container": 1,
+      "Image": 55,
+      "Text": 61,
+      "Graphics": 22,
+      "Zone": 38
+    },
+    "tweens": 0,
+    "timers": 0,
+    "listeners": 69,
+    "created": {
+      "Graphics": 310,
+      "Image": 275,
+      "Text": 305
+    },
+    "frames": 105,
+    "meanFrameMs": 20.299809523809515,
+    "p95FrameMs": 33.33000000000002,
+    "longFrames": 0,
+    "textureCount": 174,
+    "texturePixels": 42990523,
+    "canvas": {
+      "width": 360,
+      "height": 640
+    },
+    "dpr": 1
+  }
+}

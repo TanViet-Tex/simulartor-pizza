@@ -10,6 +10,7 @@ import { MenuPreferences } from './presentation/MenuPreferences';
 import {CozyCampaignSession} from './runtime/CozyCampaignSession';
 import {CozySaveRepository} from './infrastructure/CozySaveRepository';
 import { PlayAudio } from './presentation/PlayAudio';
+import {installRuntimeDiagnostics} from './presentation/RuntimeDiagnostics';
 import {PlayLifecycle,type PauseLease} from './runtime/PlayLifecycle';
 import './style.css';
 
@@ -86,6 +87,7 @@ const game = new Phaser.Game({
     : direct&&mode!=='shop' ? directPlay() : mainMenu(), !campaign)],
 });
 game.events.once(Phaser.Core.Events.DESTROY,()=>playAudio.destroy());
+installRuntimeDiagnostics(game);
 
 if (import.meta.hot) {
   import.meta.hot.dispose(() => game.destroy(true));
