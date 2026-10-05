@@ -168,7 +168,8 @@ Sau demo; P07, P11, P15, P16, tích hợp P01–P14. Trụ cột tiến độ. P
 
 - **9.1 — Khung chiến dịch 30 ngày:** giữ luồng Chợ/Kho/ca bán/tổng kết, hiển thị ngày trên tổng 30, chốt chiến dịch sau ngày 30, xem thành tích thật và bắt đầu lượt mới có xác nhận. Giữ luật XP/tiền/kho/lương/save; không thêm thưởng kết thúc. Save cũ đã quá ngày 30 giữ toàn bộ dữ liệu, hoàn tất ngày đang chuẩn bị rồi kết thúc; không cắt lịch sử hoặc đặt lại tiền. Xem [spec 9.1](../../implementation-artifacts/spec-9-1-thirty-day-campaign.md).
 - **9.2 — Sự kiện A:**10% mỗi ngày mở ca, mất200 cho phép âm; cooldown3ngày, tối đa1sự kiện xấu/ngày, không liền2ngày. Seed ổn định, chi phí/report/checkpoint chính xác, thông báo lease riêng. Đã triển khai/kiểm tra; xem [spec9.2](../../implementation-artifacts/spec-9-2-random-loss-events.md).
-- VIP được chốt từ ngày10,10% mỗi lượt khách đủ điều kiện và có thể nhiều lần/ngày, thưởng500/+2; đang triển khai riêng9.3. Lịch nhiệm vụ/XP/mở khóa mới, balance dài hạn và playtest còn ngoài đợt này; toàn Epic9 còn in-progress.
+- **9.3 — VIP lặp lại:** từ ngày10,10% mỗi lượt khách quầy đủ điều kiện, có thể nhiều lần/ngày;1bánh/100giây. Đúng món/chín/trước hạn thêm500 ngoài tiền bán,+2uytín theo cap100; giữXP thường và menu/capacity/save hiện có. Đã triển khai và kiểm tra; xem [spec9.3](../../implementation-artifacts/spec-9-3-repeatable-vip-customers.md).
+- Lịch nhiệm vụ/XP/mở khóa mới, đơn cao trào, balance dài hạn và playtest còn ngoài đợt này; toàn Epic9 còn in-progress.
 
 ## Chỉnh sửa luồng cuối ngày Cozy — người dùng 2026-10-02
 

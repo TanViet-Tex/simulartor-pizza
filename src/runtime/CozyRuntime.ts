@@ -1,4 +1,6 @@
 import {LEGACY_EVENT_SEED} from '../config/campaignEvents';
+import {VIP_RULES} from '../config/vipCustomers';
+import {isVipArrival,vipQualifies,type VipReceipt,type VipRoll} from '../domain/VipCustomers';
 import {chooseCampaignEvent,validCampaignEventSeed,type CampaignLossEvent,type CampaignEventRoll} from '../domain/CampaignEvents';
 import {CAMPAIGN_LAST_DAY} from '../config/campaignRules';
 import {cozyCampaignResults,type CozyCampaignResults} from '../domain/CozyCampaignResults';
@@ -30,7 +32,7 @@ export type CozyRuntimeIntent=CozyIntent|{type:'customer.price';recipe:StockReci
 export type CozyPause = 'user' | 'visibility' | 'orientation' | 'order' | 'gap' | 'success' | 'tutorial' | 'discard' | 'delivery' | 'menu' | 'bargain' | 'help' | 'save';
 export type CozyTutorialStep = 'dough' | 'sauce' | 'cheese' | 'bake' | 'warming' | 'extract' | 'box' | 'deliver' | 'complete';
 const steps: readonly CozyTutorialStep[] = ['dough', 'sauce', 'cheese', 'bake', 'warming', 'extract', 'box', 'deliver', 'complete'];
-type Ticket = {source:'shop'|'app';quantity:1|2|3;packed:{stars:number;reasons:string[];correct:boolean}[]; avatarIndex:number; bargainDecision?:'accepted'|'declined'; id: string; name: string; recipe: StockRecipe; kind: CustomerKind; help?:boolean; bakedCost?:number;giftBooked?:boolean; takeaway:boolean; finalPrice:number; patience: number; extraPenalty: number; deadline: number; committed: boolean; order: CozyOrder };
+type Ticket = {vip?:boolean;source:'shop'|'app';quantity:1|2|3;packed:{stars:number;reasons:string[];correct:boolean}[]; avatarIndex:number; bargainDecision?:'accepted'|'declined'; id: string; name: string; recipe: StockRecipe; kind: CustomerKind; help?:boolean; bakedCost?:number;giftBooked?:boolean; takeaway:boolean; finalPrice:number; patience: number; extraPenalty: number; deadline: number; committed: boolean; order: CozyOrder };
 export type CozyHelpState={decision:'unseen'|'accepted'|'declined';outcome:null|'pending'|'succeeded'|'failed';ticketId:string|null;offer:{arrivalId:string;name:string}|null;giftCost:number;claims:string[];thanksPending:boolean};
 export function validateHelpState(value:unknown):CozyHelpState|null {
   if(!value||typeof value!=='object')return null;
@@ -41,7 +43,7 @@ export function validateHelpState(value:unknown):CozyHelpState|null {
   if((s.decision==='accepted'?(s.outcome===null||s.outcome==='pending'&&!s.ticketId||s.offer!==null):(s.outcome!==null||s.ticketId!==null||s.giftCost!==0))||s.offer!==null&&s.decision!=='unseen'||s.thanksPending&&(!s.claims.length||s.outcome==='pending'))return null;
   return {decision:s.decision,outcome:s.outcome,ticketId:s.ticketId,offer:s.offer?{arrivalId:s.offer.arrivalId,name:s.offer.name}:null,giftCost:s.giftCost,claims:[...s.claims],thanksPending:s.thanksPending};
 }
-export type CozyScheduleDependencies=Readonly<{eventSeed?:number;eventRoll?:CampaignEventRoll;schedule?:ScheduleFactory;deliveryStaffAvailable?:()=>boolean;resolveRecipe?:(slot:ScheduleSlot,enabled:readonly StockRecipe[],selected:StockRecipe)=>StockRecipe|null}>;
+export type CozyScheduleDependencies=Readonly<{vipRoll?:VipRoll;eventSeed?:number;eventRoll?:CampaignEventRoll;schedule?:ScheduleFactory;deliveryStaffAvailable?:()=>boolean;resolveRecipe?:(slot:ScheduleSlot,enabled:readonly StockRecipe[],selected:StockRecipe)=>StockRecipe|null}>;
 export class CozyRuntime {
   private eventSeed=LEGACY_EVENT_SEED;
   private appliedCampaignEvent:CampaignLossEvent|null=null;
@@ -190,7 +192,7 @@ export class CozyRuntime {
   private purchaseSerial=0;
   private sourceId = '';
   private pendingDelivery: { sourceId:string; targetId:string; commandId:string; name:string; recipe:StockRecipe; reasons:string[] } | null = null;
-  private result: { targetId:string; name:string; recipe:StockRecipe; help?:boolean; price:number; stars:number; reasons:string[]; outcome:'delivered'|'expired'; reputationDelta:number; relationshipDelta:number;xpDelta?:number;rewardCoins?:number;rewardReputation?:number } | null = null;
+  private result: { targetId:string; name:string; recipe:StockRecipe; help?:boolean; price:number; stars:number; reasons:string[]; outcome:'delivered'|'expired'; reputationDelta:number; relationshipDelta:number;xpDelta?:number;rewardCoins?:number;rewardReputation?:number;vip?:boolean;vipRewardCoins?:number;vipRewardReputation?:number } | null = null;
   private reputation = 50;
   private relationship=0;
   private relationshipDays=new Set<number>();
@@ -260,23 +262,28 @@ export class CozyRuntime {
     if(!this.canSetPrices||!this.availableRecipes.includes(recipe)||menuPrice(recipePrice(recipe),percent)===null)return false;
     this.pricing[recipe]=percent;this.revision++;return true;
   }
-  private terminal(t:Ticket,stars:number,reasons:string[],outcome:CozyReview['outcome']){
+  private terminal(t:Ticket,stars:number,reasons:string[],outcome:CozyReview['outcome'],vipCheck?:Pick<VipReceipt,'correct'|'quality'|'onTime'>){
     if(t.help)return this.resolveHelpOutcome(t,outcome==='delivered'&&!reasons.length);
     if(t.kind==='regular'){this.regularLatestStars=stars;if(this.currentDay===1)this.regularDay1Stars=stars;}
     const rep=reputationResult(this.reputation,stars),relation=relationshipResult(this.relationship,t.kind,stars,this.relationshipDays.has(this.currentDay));
     this.reputation=rep.value;this.relationship=relation.value;
     if(t.kind==='regular'&&stars>=4){this.relationshipDays.add(this.currentDay);if(relation.delta)this.event('relationship:'+this.currentDay+':'+relation.value);}
-    const feedback={reputationDelta:rep.delta,relationshipDelta:relation.delta};
-    this.reviews.push({...(t.source==='app'?{source:t.source,quantity:t.quantity,deliveryFee:outcome==='delivered'?(this.courier?.mode==='shipper'?DELIVERY_RULES.fee:0):0}:{}),name:t.name,avatarIndex:t.avatarIndex,stars,reasons:[...reasons],outcome,...feedback});return feedback;
+    const vip=t.vip?{...(vipCheck??{correct:false,quality:'raw' as const,onTime:false}),coins:0,reputation:0}:undefined;
+    if(vip&&outcome==='delivered'&&vipQualifies(vip)){
+      vip.coins=VIP_RULES.rewardCoins;vip.reputation=Math.min(100,this.reputation+VIP_RULES.reputation)-this.reputation;
+      this.stock.receive(vip.coins);this.rewardCash+=vip.coins;this.reputation+=vip.reputation;
+    }
+    const feedback={reputationDelta:rep.delta+(vip?.reputation??0),relationshipDelta:relation.delta,...(vip?{vip:true,vipRewardCoins:vip.coins,vipRewardReputation:vip.reputation}:{})};
+    this.reviews.push({...(vip?{vip}:{}),...(t.source==='app'?{source:t.source,quantity:t.quantity,deliveryFee:outcome==='delivered'?(this.courier?.mode==='shipper'?DELIVERY_RULES.fee:0):0}:{}),name:t.name,avatarIndex:t.avatarIndex,stars,reasons:[...reasons],outcome,reputationDelta:feedback.reputationDelta,relationshipDelta:feedback.relationshipDelta});return feedback;
   }
   private rejectPrice():boolean {
     const delta=this.priceRejections<3?Math.max(0,this.reputation-1)-this.reputation:0;
     if(this.priceRejections<3){this.priceRejections++;this.reputation+=delta;}
     return this.shopFeedback('Khách từ chối giá vượt mức chấp nhận · Uy tín '+delta+' (tối đa 3 lần/ngày).');
   }
-  private createTicket(kind:CustomerKind,name:string,recipe:StockRecipe,finalPrice:number,arrivalId:string,takeaway:boolean,help=false,commercial=true):boolean {
-    const profile=CUSTOMER_PROFILES[kind],id='cozy-'+(this.serial+1);
-    const eligiblePrice=kind==='bargain'?agreedPrice(finalPrice,profile.discountPercent):finalPrice;
+  private createTicket(kind:CustomerKind,name:string,recipe:StockRecipe,finalPrice:number,arrivalId:string,takeaway:boolean,help=false,commercial=true,vip=false):boolean {
+    const profile=CUSTOMER_PROFILES[vip?'picky':kind],id='cozy-'+(this.serial+1);
+    const eligiblePrice=!vip&&kind==='bargain'?agreedPrice(finalPrice,profile.discountPercent):finalPrice;
     if(!priceAccepted(eligiblePrice,recipePrice(recipe),profile.maxPricePercent))return this.rejectPrice();
     const busy=new Set([...this.active.values()].map(t=>t.avatarIndex));
     let avatarIndex=kind==='regular'?this.customerDecisions.accepted.find(index=>!busy.has(index)&&!this.customerDecisions.declined.includes(index)):undefined;
@@ -284,12 +291,12 @@ export class CozyRuntime {
     if(avatarIndex===undefined)return this.shopFeedback('Không có khách mới phù hợp.');
     if(!help)name=customerProfile(avatarIndex).name;
     this.serial++;
-    const patience=profile.patience*(help||!commercial?1:1+this.frozenShopEffects.patience);
-    const t:Ticket={source:'shop',quantity:1,packed:[],avatarIndex,id,name,recipe,kind,help,takeaway,finalPrice,patience,extraPenalty:profile.extraPenalty,deadline:this.elapsed+patience,committed:false,order:new CozyOrder(false,recipe,true,this.ovenUpgrade)};
+    const patience=vip?VIP_RULES.patience:profile.patience*(help||!commercial?1:1+this.frozenShopEffects.patience);
+    const t:Ticket={...(vip?{vip:true}:{}),source:'shop',quantity:1,packed:[],avatarIndex,id,name,recipe,kind:vip?'picky':kind,help,takeaway,finalPrice,patience,extraPenalty:profile.extraPenalty,deadline:this.elapsed+patience,committed:false,order:new CozyOrder(false,recipe,true,this.ovenUpgrade)};
     this.active.set(id,t);
     if(!this.active.has(this.ticket)){this.ticket=id;this.order=t.order;}
     if(this.phase==='delivered')this.phase='making';
-    this.event('arrived:'+arrivalId+':'+id);this.message=name+' · '+profile.label+': đã đặt món.';this.revision++;return true;
+    this.event('arrived:'+arrivalId+':'+id);this.message=name+' · '+(vip?'VIP':profile.label)+': đã đặt món.';this.revision++;return true;
   }
   resolveBargain(accept:boolean):boolean {
     if(typeof accept!=='boolean'||!this.bargain||this.blocked('bargain'))return false;
@@ -390,7 +397,7 @@ export class CozyRuntime {
   get stockLots() { return this.stock.lots; }
   get canOpen() { return this.saveGuard()&&this.productionActive && this.phase === 'preparation' && this.active.size < this.queueCapacity; }
   get bakeReady() { return (this.tutorialActive ? this.practice : this.order).bakeReady && !this.needsRemake; }
-  get tickets() { return [...this.active.values()].map(t => ({ source:t.source,quantity:t.quantity,packed:t.packed.length,booked:this.courier?.ticketId===t.id,riderState:this.courier?.ticketId===t.id?(this.courier.phase==='waiting'?'waiting':'arrived'):this.shiftStaff?'staff':'none',riderRemaining:this.courier?.ticketId===t.id?this.courier.remaining:0,avatarIndex:t.avatarIndex,id: t.id, name: t.name, recipe: t.recipe, kind: t.kind,help:!!t.help,takeaway:t.takeaway, kindLabel:t.help?'Giúp miễn phí':CUSTOMER_PROFILES[t.kind].label, finalPrice:t.finalPrice, maxPricePercent:CUSTOMER_PROFILES[t.kind].maxPricePercent, patience: t.patience, extraPenalty: t.extraPenalty, remaining: Math.max(0, t.deadline - this.elapsed), stage: t.order.state.stage })); }
+  get tickets() { return [...this.active.values()].map(t => ({ source:t.source,quantity:t.quantity,packed:t.packed.length,booked:this.courier?.ticketId===t.id,riderState:this.courier?.ticketId===t.id?(this.courier.phase==='waiting'?'waiting':'arrived'):this.shiftStaff?'staff':'none',riderRemaining:this.courier?.ticketId===t.id?this.courier.remaining:0,avatarIndex:t.avatarIndex,id: t.id, name: t.name, recipe: t.recipe, kind: t.kind,vip:!!t.vip,help:!!t.help,takeaway:t.takeaway, kindLabel:t.help?'Giúp miễn phí':t.vip?'VIP':CUSTOMER_PROFILES[t.kind].label, finalPrice:t.finalPrice, maxPricePercent:CUSTOMER_PROFILES[t.kind].maxPricePercent, patience: t.patience, extraPenalty: t.extraPenalty, remaining: Math.max(0, t.deadline - this.elapsed), stage: t.order.state.stage })); }
   get selectedTicketId() { return this.ticket; }
   get selectedTicket() { return this.tickets.find(t => t.id === this.ticket) ?? null; }
   get ovenOwner() { return this.ovenId; }
@@ -470,7 +477,9 @@ export class CozyRuntime {
     const recipe=this.scheduleDependencies.resolveRecipe?this.scheduleDependencies.resolveRecipe(slot,this.eligibleMenuRecipes(),this.recipe):resolveScheduleRecipe(slot,this.eligibleMenuRecipes());
     if(!recipe)return this.shopFeedback('Khách chưa thể đặt món. Món yêu cầu chưa có trong thực đơn.');
     const originalPrice=menuPrice(recipePrice(recipe),this.pricing[recipe])!;
-    const accepted=this.createTicket(kind,name,recipe,originalPrice,arrivalId,slot.takeaway,false,(slot as DeliveryScheduleSlot).source!=='app');
+    const commercial=(slot as DeliveryScheduleSlot).source!=='app';
+    const vip=commercial&&isVipArrival(this.eventSeed,this.currentDay,arrivalId,this.scheduleDependencies.vipRoll);
+    const accepted=this.createTicket(kind,name,recipe,originalPrice,arrivalId,slot.takeaway,false,commercial,vip);
     const deliverySlot=slot as DeliveryScheduleSlot;if(accepted&&deliverySlot.source==='app'&&this.shiftApp){const t=this.active.get('cozy-'+this.serial)!;t.source='app';t.quantity=deliverySlot.quantity??1;t.takeaway=true;t.patience=DELIVERY_RULES.deadline;t.deadline=this.elapsed+t.patience;t.kind='hurry';t.extraPenalty=0;t.name='App '+t.id;}
     return accepted;
   }
@@ -510,6 +519,7 @@ export class CozyRuntime {
     if(source.source!==target.source||source.source==='app'&&sourceId!==targetId)return false;
     if(target.source==='app')return this.packApp(target,commandId,confirmed);
     const s=source.order.state;
+    const vipQuality=s.stage==='raw'?'raw':s.stage==='burnt'?'burnt':'good';
     const helpSuccess=!['raw','burnt'].includes(s.stage);
     const result=deliveryResult({expected:recipeIngredients(target.recipe),actual:s.ingredients,takeaway:target.takeaway,boxed:s.stage==='boxed',quality:s.stage==='raw'?'raw':s.stage==='burnt'?'burnt':'good',remaining:target.deadline-this.elapsed,patience:target.patience,extraPenalty:target.extraPenalty});
     if(result.mismatch&&!confirmed){this.pendingDelivery={sourceId,targetId,commandId,name:target.name,recipe:target.recipe,reasons:result.reasons};this.pause('delivery');this.revision++;return true;}
@@ -530,7 +540,7 @@ export class CozyRuntime {
       const sales=this.salesByRecipe.get(target.recipe)??{quantity:0,revenue:0};
       this.salesByRecipe.set(target.recipe,{quantity:sales.quantity+1,revenue:sales.revenue+price});
     }
-    const feedback=target.help?this.resolveHelpOutcome(target,!result.mismatch&&helpSuccess):this.terminal(target,result.stars,result.reasons,'delivered');
+    const feedback=target.help?this.resolveHelpOutcome(target,!result.mismatch&&helpSuccess):this.terminal(target,result.stars,result.reasons,'delivered',{correct:!result.mismatch,quality:vipQuality,onTime:target.deadline>this.elapsed});
     const progress=this.progress.recordDelivery({id:target.id,day:this.currentDay,stars:result.stars,qualifyingCheese:target.recipe==='cheese'&&source.recipe==='cheese'&&s.ingredients.length===3&&recipeIngredients('cheese').every(id=>s.ingredients.includes(id)),commercial:!target.help});
     const rewardReputation=this.applyProgress(progress);
     if(sourceId!==targetId&&target.committed&&target.order.state.stage!=='assembly')this.abandoned.set(targetId,target);

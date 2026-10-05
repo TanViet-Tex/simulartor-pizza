@@ -1,0 +1,40 @@
+import {expect,test,type Page} from '@playwright/test';
+import {build} from 'esbuild';
+async function data(page:Page,key:string){return JSON.parse(await page.locator('canvas').getAttribute('data-'+key)??'null');}
+async function tap(page:Page,id:string){let control:any;await expect.poll(async()=>{control=(await data(page,'controls'))?.find((c:any)=>c.id===id&&c.enabled);return !!control;},{timeout:15000}).toBe(true);const b=(await page.locator('canvas').boundingBox())!;await page.touchscreen.tap(b.x+(control.x+control.width/2)*b.width/360,b.y+(control.y+control.height/2)*b.height/640);}
+async function active(page:Page){return page.evaluate(()=>new Promise<any>((resolve,reject)=>{const q=indexedDB.open('pizza-cozy-checkpoints',1);q.onerror=()=>reject(q.error);q.onsuccess=()=>{const db=q.result,tx=db.transaction('latest','readonly'),read=tx.objectStore('latest').get('active');tx.oncomplete=()=>{db.close();resolve(read.result);};};}));}
+async function fixture(page:Page){
+ const name:string='node:path',paths:{resolve:(p:string)=>string}=await import(name);
+ const bundle=await build({stdin:{resolveDir:paths.resolve('.'),loader:'ts',contents:`
+ import Phaser from 'phaser';import {CozyScene} from './src/scenes/CozyScene';import {CozyRuntime} from './src/runtime/CozyRuntime';import {CozyCampaignSession} from './src/runtime/CozyCampaignSession';import {CozySaveRepository} from './src/infrastructure/CozySaveRepository';import {fundedShopCheckpoint} from './src/runtime/shopTestFixture';import {campaignEventRoll} from './src/domain/CampaignEvents';import {vipCustomerRoll} from './src/domain/VipCustomers';
+ (async()=>{let earned=CozyRuntime.restoreCheckpoint(fundedShopCheckpoint(8000),false,{vipRoll:()=>1,eventRoll:()=>1});while(earned.preparationDay<10){earned.openShop();earned.closeDay();earned=CozyRuntime.restoreCheckpoint(earned.exportCheckpoint(),false,{vipRoll:()=>1,eventRoll:()=>1});}
+ const saved=earned.exportCheckpoint();let seed=0;while(campaignEventRoll(seed,10)<.1||vipCustomerRoll(seed,10,'vip-first')>=.1||vipCustomerRoll(seed,10,'vip-second')>=.1)seed++;saved.campaignEventSeed=seed;
+ const repo=new CozySaveRepository(),loaded=await repo.load(),result=await repo.commit({campaignId:'vip-e2e',commitId:'prepared',sourceRevision:0,replacementToken:loaded.replacementToken,payload:saved});if(!result.ok)throw Error(result.message);
+ const session=new CozyCampaignSession(repo);await session.load();const schedule=day=>({day,duration:240,grace:120,slots:[{id:'vip-first',at:0,kind:'picky',opportunity:'commercial',commercialOrdinal:1,takeaway:true},{id:'vip-second',at:60,kind:'picky',opportunity:'commercial',commercialOrdinal:2,takeaway:true}]});let runtime,game;
+ function enter(next){if(!next)return;runtime=CozyRuntime.restoreCheckpoint(next.exportCheckpoint(),false,{schedule});session.install(runtime);session.lifecycle.frame=()=>{};if(game){game.scene.stop('CozyScene');game.scene.remove('CozyScene');game.scene.add('CozyScene',new CozyScene(runtime,undefined,undefined,undefined,session.lifecycle,session,enter),true);}}
+ runtime=CozyRuntime.restoreCheckpoint(session.runtime.exportCheckpoint(),false,{schedule});session.install(runtime);session.lifecycle.frame=()=>{};game=new Phaser.Game({type:Phaser.AUTO,parent:'fixture',width:360,height:640,scale:{mode:Phaser.Scale.FIT,autoCenter:Phaser.Scale.CENTER_BOTH},scene:[new CozyScene(runtime,undefined,undefined,undefined,session.lifecycle,session,enter)]});window.vipTest={session,get runtime(){return runtime;},tick:seconds=>{for(let i=0;i<seconds*20;i++)runtime.advance(50);},restore:async()=>enter(await session.load())};
+ })();`},bundle:true,platform:'browser',format:'iife',minify:true,define:{'import.meta.env.BASE_URL':'"/"'},write:false});
+ await page.route('**/assets/index-*.js',route=>route.abort());await page.goto('/');await page.setContent('<style>html,body{margin:0;height:100%;overflow:hidden}#fixture{height:100%;width:100%}</style><div id="fixture"></div>');await page.addScriptTag({content:bundle.outputFiles[0].text});await expect(page.locator('canvas')).toHaveAttribute('data-screen','preparation-hub',{timeout:15000});
+}
+async function serve(page:Page){for(const id of ['dough','sauce','cheese'])await tap(page,id);await tap(page,'bake');await page.evaluate(()=>(window as any).vipTest.tick(7));await tap(page,'extract');await tap(page,'box');await tap(page,'deliver');}
+
+test('day10 VIP keeps six slots, labels rules, serves twice and preserves separate rewards through native save/restore',async({page},info)=>{
+ await fixture(page);const before=await active(page);
+ await page.evaluate(()=>{const r=(window as any).vipTest.runtime;for(const id of ['dough','sauce','cheese'])r.buy(id,2);});await tap(page,'summary-open-first-day');
+ const first=await page.evaluate(()=>(window as any).vipTest.runtime.selectedTicket);expect(first).toMatchObject({vip:true,quantity:1,patience:100});await tap(page,'ticket-'+first.id);
+ await expect.poll(async()=>(await data(page,'labels')).some((l:any)=>l.text.includes('VIP ·'))).toBe(true);expect((await data(page,'kitchen-layout')).customerFrames).toHaveLength(6);await page.locator('canvas').screenshot({path:info.outputPath('vip-order.png')});
+ await tap(page,'order');await expect.poll(async()=>(await data(page,'labels')).some((l:any)=>l.text.includes('VIP: 1 bánh'))).toBe(true);await tap(page,'close-order');
+ await serve(page);await expect.poll(async()=>(await data(page,'labels')).some((l:any)=>l.text.includes('Thưởng VIP: +500'))).toBe(true);await page.locator('canvas').screenshot({path:info.outputPath('vip-reward.png')});expect(await active(page)).toEqual(before);
+ await tap(page,'continue-shift');await page.evaluate(()=>(window as any).vipTest.tick(60));await serve(page);await tap(page,'continue-shift');
+ await tap(page,'end-day');await tap(page,'confirm-end-day');await expect.poll(async()=>(await data(page,'save-state'))?.state).toBe('ready');
+ const saved=await active(page),report=saved.payload.reports.at(-1);expect(report.day).toBe(10);expect(report.revenue).toBe(100);expect(report.rewards).toBe(1000);expect(report.reviews.map((r:any)=>r.vip.coins)).toEqual([500,500]);
+ await tap(page,'summary-figure-0');await expect.poll(async()=>await data(page,'summary-modal-text')).toContain('VIP: 1000 xu');await page.locator('canvas').screenshot({path:info.outputPath('vip-finance.png')});
+ await page.evaluate(()=>{void (window as any).vipTest.restore();});await expect(page.locator('canvas')).toHaveAttribute('data-cash',String(saved.payload.stock.cash));expect(await active(page)).toEqual(saved);
+});
+
+test('VIP day-save failure retries the same bonus and reload never pays again',async({page})=>{
+ await fixture(page);const before=await active(page);await page.evaluate(()=>{const r=(window as any).vipTest.runtime;for(const id of ['dough','sauce','cheese'])r.buy(id,1);});await tap(page,'summary-open-first-day');await serve(page);await tap(page,'continue-shift');
+ await page.evaluate(()=>{const put=IDBObjectStore.prototype.put;IDBObjectStore.prototype.put=function(value:any,key?:IDBValidKey){if(key==='active'&&value.payload?.reports?.at(-1)?.day===10&&!sessionStorage.getItem('vip-failed')){sessionStorage.setItem('vip-failed','1');this.transaction.abort();throw new DOMException('VIP test','QuotaExceededError');}return key===undefined?put.call(this,value):put.call(this,value,key);};});
+ await tap(page,'end-day');await tap(page,'confirm-end-day');await expect.poll(async()=>(await data(page,'save-state'))?.state).toBe('error');expect(await active(page)).toEqual(before);await tap(page,'save-retry');await expect.poll(async()=>(await data(page,'save-state'))?.state).toBe('ready');
+ const saved=await active(page);expect(saved.payload.reports.at(-1).rewards).toBe(500);await page.evaluate(()=>{void (window as any).vipTest.restore();});await expect(page.locator('canvas')).toHaveAttribute('data-cash',String(saved.payload.stock.cash));expect(await active(page)).toEqual(saved);
+});

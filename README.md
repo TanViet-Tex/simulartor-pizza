@@ -6,7 +6,7 @@ Trang `/` mở menu minh họa có animation. Bắt đầu dẫn qua hướng d�
 
 Trong ca bán, chạm đồng hồ ca → **Kết thúc ngày → Xác nhận** để vào tổng kết. Dùng Chợ mua trước ca và giữa các ngày, nhập Kho rồi **Mở quán — Ngày N+1**; ca sử dụng tồn kho đó. Tiền và lô còn hạn được giữ qua ngày. Pause có Tiếp tục/Cài đặt/Menu; về Menu giữ phiên đang chơi.
 
-Chiến dịch chính có khung **ngày 1–30**. Sau ngày 30 xem tổng tiền, cấp/XP, uy tín, đơn/pizza đã bán và nhiệm vụ hoàn thành; có thể xem lại hoặc bắt đầu lượt mới sau xác nhận. Chưa bổ sung VIP, lịch XP/nhiệm vụ mới hoặc cân bằng đầy đủ 30 ngày. Save cũ đã vượt ngày 30 giữ toàn bộ dữ liệu, hoàn tất ngày đang chuẩn bị rồi tổng kết.
+Chiến dịch chính có khung **ngày 1–30**. Sau ngày 30 xem tổng tiền, cấp/XP, uy tín, đơn/pizza đã bán và nhiệm vụ hoàn thành; có thể xem lại hoặc bắt đầu lượt mới sau xác nhận. VIP từ ngày10 có10% cơ hội mỗi lượt khách quầy đủ điều kiện, có thể nhiều lần/ngày:1bánh,100giây; giao đúng/chín/trước hạn thêm500 và+2uytín (cap100). Sự kiện A có10% mỗi ngày mở ca, mất200 kể cả tiền âm, cooldown3ngày; sự kiện xấu tối đa1/ngày, không liền2ngày. Lịch XP/nhiệm vụ mới, đơn cao trào và cân bằng đầy đủ30ngày còn chưa triển khai. Save cũ giữ dữ liệu; nếu đã vượt ngày30 thì hoàn tất ngày đang chuẩn bị rồi tổng kết.
 
 Tiến độ dùng **IndexedDB** khi tạo chiến dịch, mua nâng cấp/công thức/nhân viên và chốt ngày; không lưu giữa ca. Tải lại giữa ca trở về checkpoint đầu ngày đang chơi. Lỗi lưu có thử lại và giữ bản cũ; lượt mới chỉ thay phiên sau khi lưu thành công. Xem [spec chiến dịch](_bmad-output/implementation-artifacts/spec-9-1-thirty-day-campaign.md).
 

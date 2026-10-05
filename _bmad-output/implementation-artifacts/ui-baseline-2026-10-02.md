@@ -382,3 +382,7 @@ Kiểm chứng: build,6unit và15luồng E2E tập trung360×640 đạt; ba revi
 ### Sự kiện A — 2026-10-05
 
 Chỉ thêm thông báo compact một nút với mất200/số dư thật và dòng tổn thất trong finance cuộn; giữ bố cục, sáu ô, năm tab, art và veil0.28. Xem [spec9.2](spec-9-2-random-loss-events.md), [thông báo](ui-baseline/event-a-notice-2026-10-05.png), [tài chính](ui-baseline/event-a-finance-2026-10-05.png).
+
+### VIP — 2026-10-05
+
+Giữ sáu ô và toàn bộ art/bố cục; tên/avatar khách giữ identity, thêm nhãn VIP và điều kiện thưởng trong khung đơn hiện có. Thưởng VIP ghi riêng trong thông báo kết quả và finance cuộn, không thay toàn màn. Xem [spec9.3](spec-9-3-repeatable-vip-customers.md), [đơn VIP](ui-baseline/vip-order-2026-10-05.png), [thưởng](ui-baseline/vip-reward-2026-10-05.png), [thu chi](ui-baseline/vip-finance-2026-10-05.png).

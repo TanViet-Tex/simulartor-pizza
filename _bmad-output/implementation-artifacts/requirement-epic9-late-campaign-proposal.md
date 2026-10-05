@@ -1,6 +1,6 @@
 ---
 title: 'Epic 9 — đề xuất VIP, đơn cao trào và kiểm tra kinh tế'
-status: draft
+status: partially-implemented
 date: '2026-10-05'
 baseline_commit: 7865e47
 ---
@@ -51,4 +51,4 @@ Phát hiện sơ bộ từ cấu hình: giá cơ bản pizza phô mai50; đế5+
 - `src/domain/CozyCheckpoint.ts`: phải xác thực báo cáo/mục tiêu mới nhưng giữ checksum/migration và reports cũ.
 - `src/scenes/CozyScene.ts`: tên/trạng thái/số bánh trong khung đơn hiện có; không thêm hàng/tab/panel hoặc đổi art đã duyệt.
 
-Sau khi chọn thông số, tạo spec triển khai với test ngày21/22/29/30, nhiều bánh đúng/sai/cháy, quá hạn, đầy hàng, Pause, reload/checkpoint và thưởng một lần. Chốt chuẩn bị/mở ca/tiền/kho giữ luồng hiện có.
+Sự kiện A và VIP đã có spec9.2/9.3 và kiểm tra riêng. VIP hiện một bánh tại quầy, không cần đổi tích nhiều bánh/app. Đơn cao trào nhiều bánh, nhiệm vụ mới và balance vẫn là đề xuất chưa triển khai; giữ chuẩn bị/mở ca/tiền/kho hiện có.

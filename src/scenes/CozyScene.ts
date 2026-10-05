@@ -542,10 +542,10 @@ export class CozyScene extends Phaser.Scene {
     if(detail){
       this.graphics();this.art.pizza(33,164,13,recipeIngredients(detail.recipe));
       const row=(y:number,value:string,size:number,color:string)=>{const text=this.label(53,y,value,size,color,0,'left');const width=book?180:y===144&&courierText?146:282;if(text.width>width)text.setScale(width/text.width,1);};
-      row(144,`#${detail.number} · ${detail.name}`,9,ink);
+      row(144,`#${detail.number} · ${appTicket?.vip?'VIP · ':''}${detail.name}`,9,ink);
       if(courierText&&!book)this.label(268,144,courierText,9,wood,132);
       row(157,detail.lines[1],9,accent);
-      row(170,notice||detail.lines[2],9,wood);
+      row(170,notice||(appTicket?.vip?`Còn ${Math.ceil(appTicket.remaining)}s · Đúng/chín: +500 · +2 uy tín`:detail.lines[2]),9,wood);
     }else {this.label(180,151,courierText||ORDER_DETAIL_PROMPT,13,ink,310);if(notice)this.label(180,170,notice,8,wood,310);}
     const {x,y,w,h}=KITCHEN.order;
     this.hit('order',x,y,book?224:w,h,!!detail||this.runtime.tutorialActive||!!notice,()=>{this.inspectedRecipe=null;if(this.orderQueue.detail||this.runtime.tutorialActive||notice)this.hold('order');});
@@ -999,7 +999,7 @@ export class CozyScene extends Phaser.Scene {
       }
       const rows=recipeIngredients(this.runtime.selectedRecipe);
       const ticket=this.runtime.selectedTicket,result=this.runtime.lastResult;
-      const detail=this.runtime.shopMessage+'\n'+`${ticket?ticket.kindLabel+' · Giá chốt '+ticket.finalPrice+' xu · Mức nhận ≤'+ticket.maxPricePercent+'%\n':''}`+rows.map(id=>`${catalog.find(item=>item.id===id)!.name}: có ${this.runtime.owned(id)} · rảnh ${this.runtime.available(id)} · giữ ${this.runtime.reserved(id)}`).join('\n')+'\nNguyên liệu đã giữ chỉ dùng cho đơn này.\n'+this.shiftTimeText()+' · '+(ticket?.takeaway?'Cần đóng hộp':'Không cần hộp')+'\n'+reasons+`\nUy tín ${this.runtime.customerProgress.reputation}/100 · Quan hệ ${this.runtime.customerProgress.relationship}/3${result?'\nKết quả '+result.name+': '+result.stars+' sao · '+result.price+' xu\n'+(result.reasons.join(', ')||'Đúng món và chín vừa.')+'\nUy tín '+(result.reputationDelta>0?'+':'')+result.reputationDelta+' · Quan hệ +'+result.relationshipDelta:''}`;
+      const detail=this.runtime.shopMessage+'\n'+(ticket?.vip?'VIP: 1 bánh, hạn 100 giây. Đúng món, chín và trước hạn: thưởng thêm 500 và +2 uy tín.\n':'')+`${ticket?ticket.kindLabel+' · Giá chốt '+ticket.finalPrice+' xu · Mức nhận ≤'+ticket.maxPricePercent+'%\n':''}`+rows.map(id=>`${catalog.find(item=>item.id===id)!.name}: có ${this.runtime.owned(id)} · rảnh ${this.runtime.available(id)} · giữ ${this.runtime.reserved(id)}`).join('\n')+'\nNguyên liệu đã giữ chỉ dùng cho đơn này.\n'+this.shiftTimeText()+' · '+(ticket?.takeaway?'Cần đóng hộp':'Không cần hộp')+'\n'+reasons+`\nUy tín ${this.runtime.customerProgress.reputation}/100 · Quan hệ ${this.runtime.customerProgress.relationship}/3${result?'\nKết quả '+result.name+': '+result.stars+' sao · '+result.price+' xu\n'+(result.reasons.join(', ')||'Đúng món và chín vừa.')+'\nUy tín '+(result.reputationDelta>0?'+':'')+result.reputationDelta+' · Quan hệ +'+result.relationshipDelta:''}`;
       this.notice(`Đơn của ${ticket.name}`,`${ticket.quantity} ${recipeName(this.runtime.selectedRecipe).toLocaleLowerCase('vi')} · ${ticket.source==='app'?`App · ${ticket.finalPrice*ticket.quantity} xu cả đơn · ${ticket.packed}/${ticket.quantity} hộp`:ticket.takeaway?'Mang đi':'Tại quầy'}\n`+detail,'close-order','Tiếp tục làm bánh',()=>this.release('order'),this.scenePauses.has('order'),11);return;
     }
     this.notice('Đơn của Linh','1 pizza phô mai · Mang đi\nĐế bánh + sốt cà chua + phô mai\n'+reasons,'close-order','Làm bánh thôi',()=>this.release('order'),this.scenePauses.has('order'),12);
@@ -1061,7 +1061,7 @@ export class CozyScene extends Phaser.Scene {
     }
     if(this.runtime.day!==1||this.campaignSession){
       const result=this.runtime.lastResult;
-      const detail=`${this.runtime.lastDelivery?.name??'Khách'} đã nhận món. Cảm ơn bạn!\n`+(result?.help?this.runtime.shopMessage:`${result?.stars??5} sao · +${this.runtime.lastDelivery?.price??0} xu · +${result?.xpDelta??0} XP\n${result?.reasons.join(', ')||'Đúng món và chín vừa.'}\nUy tín ${(result?.reputationDelta??0)>0?'+':''}${result?.reputationDelta??0} · Quan hệ +${result?.relationshipDelta??0}\nThưởng nhiệm vụ: +${result?.rewardCoins??0} xu · +${result?.rewardReputation??0} uy tín`);
+      const detail=`${this.runtime.lastDelivery?.name??'Khách'} đã nhận món. Cảm ơn bạn!\n`+(result?.help?this.runtime.shopMessage:`${result?.stars??5} sao · +${this.runtime.lastDelivery?.price??0} xu · +${result?.xpDelta??0} XP\n${result?.reasons.join(', ')||'Đúng món và chín vừa.'}\nUy tín ${(result?.reputationDelta??0)>0?'+':''}${result?.reputationDelta??0} · Quan hệ +${result?.relationshipDelta??0}\nThưởng nhiệm vụ: +${result?.rewardCoins??0} xu · +${result?.rewardReputation??0} uy tín${result?.vip?`\nThưởng VIP: +${result.vipRewardCoins??0} · +${result.vipRewardReputation??0} uy tín`:''}`);
       this.notice('Đã giao pizza!',detail,'continue-shift','Tiếp tục ca',()=>this.runtime.continueShift(),true,12);return;
     }
     this.notificationFrame([this.runtime.productionActive?'continue-shift':'replay'],285,470,460);

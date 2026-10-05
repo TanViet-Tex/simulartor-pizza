@@ -133,3 +133,7 @@ Cozy mới chạy tối đa30ngày, giữ Chợ→Kho→ca→chốt→chuẩn b�
 ### Epic9.2 — Sự kiện A, 2026-10-05
 
 A xét một lần khi mở ca, xác suất10%, mất đúng200 kể cả tiền âm. Cooldown khoảng cách3ngày (10→13), tối đa1sự kiện xấu/ngày và không liền2ngày. Seed gắn campaign identity trước chơi, reload/mua chuẩn bị không reroll; save cũ xác minh checksum trước chuẩn hóa và giữ lịch sử. Thông báo một nút dùng lease riêng; loss vào chi phí khác, không trừ vào kho/giá vốn. Retry/restore không trừ trùng. Không lưu giữa ca hoặc thêm loại sự kiện xấu. Build,45unit và2E2E360×640 đạt; ba review độc lập. Xem implementation-artifacts/spec-9-2-random-loss-events.md.
+
+### Epic9.3 — VIP lặp lại, 2026-10-05
+
+VIP từ ngày10:10% mỗi lượt khách quầy đủ điều kiện, có thể nhiều lần/ngày; không chịu cooldown/giới hạn sự kiện xấu. Một bánh, hạn100giây giữ theo đề xuất đã thông báo khi người dùng chỉ đổi tần suất. Chỉ đúng công thức, đáp ứng đóng hộp, bánh chín và trước hạn mới thêm500 ngoài tiền bán,+2uytín (cap100, lưu delta thực nhận); không tăng XP ngoài luật thường. App/help không thànhVIP, menu đang sở hữu/bật bán và sức chứa4/6 giữ nguyên. Seed/day/slotID có channelVIP riêng; report receipt optional đối soát thưởng và giữ save cũ/checksum. Không lưu giữa ca; retry/reload không thưởng trùng. Giữ art/bố cục, thêm nhãn trong panel đơn/kết quả và dòng tiền thưởng finance. Build/50unit/2VIP E2E360×640 đạt. Story9.3 review; toànEpic9 còn in-progress vì nhiệm vụ/cuối30/balance/playtest chưa chốt hoặc chưa làm. Xem implementation-artifacts/spec-9-3-repeatable-vip-customers.md.

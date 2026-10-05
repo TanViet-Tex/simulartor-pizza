@@ -16,6 +16,6 @@ export function closeAccounts(input:DayAccountsInput){
     capitalPurchases:input.capitalPurchases??0,
     endingCash:input.startingCash+input.sales+rewards-input.purchases-input.rent-wagesPaid-repairs-other-(input.capitalPurchases??0),
     profit,cumulativeProfit:previousProfit+profit,
-    zeroReasons:{wages:wages?'Lương phát sinh trong ngày; tiền thực trả và nợ lương ghi riêng.':'Không có nhân viên trong ca.',repairs:'Chưa có thiết bị hỏng.',rewards:rewards?'Thưởng mục tiêu/nhiệm vụ/lời cảm ơn đã nhận, tách khỏi bán pizza.':'Chưa có mục tiêu, nhiệm vụ hoặc lời cảm ơn đủ điều kiện nhận thưởng trong ca.',other:other?'Phí shipper và tổn thất sự kiện phát sinh, tách khỏi doanh thu bán pizza.':'Không có chi phí khác trong ca này.'}};
+    zeroReasons:{wages:wages?'Lương phát sinh trong ngày; tiền thực trả và nợ lương ghi riêng.':'Không có nhân viên trong ca.',repairs:'Chưa có thiết bị hỏng.',rewards:rewards?'Thưởng VIP/mục tiêu/nhiệm vụ/lời cảm ơn đã nhận, tách khỏi bán pizza.':'Chưa có VIP, mục tiêu, nhiệm vụ hoặc lời cảm ơn đủ điều kiện nhận thưởng trong ca.',other:other?'Phí shipper và tổn thất sự kiện phát sinh, tách khỏi doanh thu bán pizza.':'Không có chi phí khác trong ca này.'}};
 }
 export type DayAccounts=ReturnType<typeof closeAccounts>;

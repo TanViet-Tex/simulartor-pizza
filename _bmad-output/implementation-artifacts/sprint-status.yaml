@@ -68,6 +68,7 @@ development_status:
   epic-9: in-progress
   9-1-thirty-day-campaign-framework: review
   9-2-random-loss-events: review
+  9-3-repeatable-vip-customers: review
 
 
 # Epic4 implementation checks passed; Story4.6 five-person human playtest pending (epic-4-playtest.md).
