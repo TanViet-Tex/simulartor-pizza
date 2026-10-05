@@ -1,3 +1,4 @@
+import {drawModalBackdrop} from '../presentation/ModalBackdrop';
 import Phaser from 'phaser';
 import { DemoGame, ingredients, recipes, validateCampaign, type Campaign, type Command } from '../domain/demo';
 import { loadCheckpoint, resetCheckpoint, saveCheckpoint } from '../infrastructure/checkpoints';
@@ -506,7 +507,7 @@ export class BootScene extends Phaser.Scene {
   }
   private shade() {
     this.targets = [];
-    this.rect(0, 0, 360, 640, 0x000000);
+    drawModalBackdrop(this,this.layer);
   }
   private notificationButton(layout:NotificationLayout,index:number,label:string,action:()=>void,enabled=true):void{
     const r=layout.footer[index],height=Math.max(48,r.height),y=r.y+(r.height-height)/2;

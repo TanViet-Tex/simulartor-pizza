@@ -26,17 +26,17 @@ export function paintHubHeader(scene:Phaser.Scene,ctx:CanvasRenderingContext2D,h
   crop(scene,ctx,[1689,70,380,164],[290,12,65,28],13);
   crop(scene,ctx,[98,112,178,160],[17,19,31,28],7);
   text(ctx,178,18,input.title,20,192);text(ctx,178,46,subtitle,11,192,HUB_THEME.colors.muted);
-  text(ctx,333,21,`${input.cash} xu`,11,37);
+  text(ctx,333,21,`${input.cash}`,11,37);
   hit('pause',12,14,40,40,true,input.pause);
   scene.game.canvas.dataset.hubHeader='minimal-wood-reference';
-  scene.game.canvas.dataset.hubHeaderLabels=JSON.stringify([input.title,subtitle,`${input.cash} xu`,'Tổng kết','Chợ','Kho','Quán','Nhiệm vụ']);
+  scene.game.canvas.dataset.hubHeaderLabels=JSON.stringify([input.title,subtitle,`${input.cash}`,'Tổng kết','Chợ','Kho','Quán','Nhiệm vụ']);
 }
 export function paintHubNavigation(scene:Phaser.Scene,ctx:CanvasRenderingContext2D,hit:HubHit,active:HubTab,tab:(id:HubTab)=>void):void{
   crop(scene,ctx,[17,407,2058,319],[3,70,354,55],12);
   const tabs=[['summary','Tổng kết'],['market','Chợ'],['stock','Kho'],['shop','Quán'],['missions','Nhiệm vụ']] as const;
   tabs.forEach(([id,title],i)=>{const x=7+i*69.2;
     if(id===active){ctx.save();ctx.fillStyle=HUB_THEME.colors.active;ctx.globalAlpha=.24;ctx.beginPath();ctx.roundRect(x,73,68,49,10);ctx.fill();ctx.restore();}
-    text(ctx,x+34,110,title,11,63);hit(`summary-tab-${id}`,x,73,68,49,true,()=>tab(id));
+    text(ctx,x+34,105,title,11,63);hit(`summary-tab-${id}`,x,73,68,49,true,()=>tab(id));
   });
 }
 /** Retained background/header layer; content renderers keep their existing coordinates. */

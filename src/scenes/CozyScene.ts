@@ -1,3 +1,5 @@
+import {drawModalBackdrop} from '../presentation/ModalBackdrop';
+import {drawSettingsPanel} from '../presentation/SettingsPanel';
 import {RECIPE_CATALOG,recipeDefinition} from '../config/recipeCatalog';
 import {DELIVERY_RULES} from '../config/deliveryEvents';
 import {shopItem} from '../config/shopCatalog';
@@ -61,6 +63,8 @@ export class CozyScene extends Phaser.Scene {
   private endedDayNotice:number|null=null;
   private endedDayLease?:PauseLease;
   private pauseSettings=false;
+  private veilDrawn=false;
+  private settingsFocusId='';
   private priceDraft:{recipe:StockRecipe;percent:number;enabled:boolean}|null=null;
   private priceLease?:PauseLease;
   private priceError='';
@@ -138,6 +142,7 @@ export class CozyScene extends Phaser.Scene {
     registerCustomerPortraitFrames(this);
     this.dirty=true;this.signature='';this.inspectedOrderId=null;this.inspectedRecipe=null;this.inspectionMode='';this.priceDraft=null;this.statementOpen=false;this.queueUpgradeNotice=false;this.layer=this.add.container();this.staticGraphics=new StaticGraphics(this);this.motion=window.matchMedia('(prefers-reduced-motion: reduce)');
     this.motion.addEventListener('change',this.motionChange);
+    this.game.canvas.setAttribute('tabindex','0');this.input.keyboard?.on('keydown',this.settingsKeyDown);
     this.scale.on('resize',this.motionChange);
     this.lifecycle=this.sharedLifecycle??new PlayLifecycle(this.runtime);
     this.browserLifecycle=new BrowserPlayLifecycle(this.lifecycle,()=>{this.audio.silence();this.dirty=true;});
@@ -153,7 +158,7 @@ export class CozyScene extends Phaser.Scene {
     this.events.once('destroy',()=>{this.closeDeliveryApp();this.closeHubPanels();});
     this.events.once('shutdown',()=>this.closeMarketQuantity());
     this.events.once('destroy',()=>this.closeMarketQuantity());
-    const cleanup=()=>{this.events.off('shutdown',cleanup);this.events.off('destroy',cleanup);this.queueUpgradeLease?.release();this.queueUpgradeLease=undefined;this.queueUpgradeNotice=false;this.priceLease?.release();this.priceLease=undefined;this.statementLease?.release();this.statementLease=undefined;this.motion?.removeEventListener('change',this.motionChange);this.preferenceUnsubscribe?.();this.scale.off('resize',this.motionChange);this.browserLifecycle.destroy(!this.sharedLifecycle);for(const lease of this.scenePauses.values())lease.release();this.scenePauses.clear();this.audio.silence();this.tweens.killAll();for(const zone of this.hitZones.values())zone.destroy();this.hitZones.clear();this.staticGraphics.destroy();};
+    const cleanup=()=>{this.events.off('shutdown',cleanup);this.events.off('destroy',cleanup);this.queueUpgradeLease?.release();this.queueUpgradeLease=undefined;this.queueUpgradeNotice=false;this.priceLease?.release();this.priceLease=undefined;this.statementLease?.release();this.statementLease=undefined;this.motion?.removeEventListener('change',this.motionChange);this.preferenceUnsubscribe?.();this.scale.off('resize',this.motionChange);this.browserLifecycle.destroy(!this.sharedLifecycle);for(const lease of this.scenePauses.values())lease.release();this.scenePauses.clear();this.audio.silence();this.input.keyboard?.off('keydown',this.settingsKeyDown);this.tweens.killAll();for(const zone of this.hitZones.values())zone.destroy();this.hitZones.clear();this.staticGraphics.destroy();};
     this.events.once('shutdown',cleanup);this.events.once('destroy',cleanup);this.draw();
   }
   private motionChange=():void=>{this.dirty=true;};
@@ -299,7 +304,7 @@ export class CozyScene extends Phaser.Scene {
     this.button(id,0,0,0,0,buttonTitle,enabled,action);
   }
   private draw():void{
-    this.dirty=false;this.notification=undefined;this.game.canvas.dataset.notificationFrame='';this.game.canvas.dataset.pausePanel='';this.game.canvas.dataset.modalScroll='[]';this.timers=[];this.heatBar=undefined;this.layer.removeAll(true);this.controls=[];this.visibleActions=[];this.tapRects.clear();this.graphics();
+    this.dirty=false;this.veilDrawn=false;this.game.canvas.dataset.settingsPanel='';this.game.canvas.dataset.modalBackdrop='';this.notification=undefined;this.game.canvas.dataset.notificationFrame='';this.game.canvas.dataset.pausePanel='';this.game.canvas.dataset.modalScroll='[]';this.timers=[];this.heatBar=undefined;this.layer.removeAll(true);this.controls=[];this.visibleActions=[];this.tapRects.clear();this.graphics();
     const backdrop=this.textures.get('reference-kitchen-background').getSourceImage();
     const backdropScale=Math.min(KITCHEN.width/backdrop.width,KITCHEN.height/backdrop.height);
     this.layer.add(this.add.image(KITCHEN.width/2,KITCHEN.height/2,'reference-kitchen-background').setScale(backdropScale));
@@ -317,7 +322,7 @@ export class CozyScene extends Phaser.Scene {
     this.label(180,0,this.runtime.productionActive?`Ngày ${this.runtime.day}/${this.runtime.campaignEndDay}`:`Ngày ${this.runtime.day}`,18);
     this.timer(189,23,()=>this.runtime.productionActive&&(!this.runtime.ovenOwner||this.runtime.shiftClock.phase==='awaiting-close')?this.shiftTimeText():`Lò ${timerText(Math.floor(this.runtime.ovenState?.ovenSeconds??this.runtime.state.ovenSeconds))}`,10,'#ead1b3');
     if(this.runtime.shopOpen)this.hit('end-day',133,22,114,20,this.runtime.canCloseDay,()=>{this.hold('user');this.endDayConfirmation=true;this.dirty=true;});
-    this.label(306,10,`${s.cash} xu`,17,ink);
+    this.label(306,10,`${s.cash}`,17,ink);
     this.customers();this.orderCard();this.recipes();this.graphics();
     if(s.stage==='boxed'){
       const source=this.textures.get(PIZZA_BOX_ART.key).getSourceImage();
@@ -599,7 +604,7 @@ export class CozyScene extends Phaser.Scene {
   }
   private veil():void{
     this.visibleActions=[];for(const zone of this.hitZones.values())zone.disableInteractive();
-    this.graphics();this.art.rect(0,0,360,640,0x000000,1);const blocker=this.add.zone(0,0,360,640).setOrigin(0).setInteractive();this.layer.add(blocker);this.controls=[];
+    if(!this.veilDrawn){drawModalBackdrop(this,this.layer);this.veilDrawn=true;}this.controls=[];
   }
   private choosePrice(recipe:StockRecipe):void{
     if(this.runtime.canSetPrices){
@@ -1017,17 +1022,25 @@ export class CozyScene extends Phaser.Scene {
     this.game.canvas.dataset.pausePanel=JSON.stringify(layout);
   }
   private pauseSettingsPanel():void{
-    this.notificationFrame(['pause-settings-back'],270,500,490);
-    this.label(180,234,'Cài đặt',22,ink);
-    this.label(180,270,'Nhạc: chưa có trong phiên bản này',13,wood,280);
-    this.button('settings-music',64,305,232,40,'Âm lượng nhạc — chưa có',false,()=>{},UI.dark);
-    this.label(180,365,`Hiệu ứng: ${Math.round(this.audio.effectsVolume*100)}%${this.audio.muted?' · đang tắt':''}`,14,ink);
-    this.button('settings-effects-less',50,400,76,42,'−',true,()=>this.audio.setEffectsVolume(this.audio.effectsVolume-.1),UI.dark);
-    this.button('mute',137,400,86,42,this.audio.muted?'Bật âm':'Tắt âm',true,()=>this.audio.toggleMute(),UI.dark);
-    this.button('settings-effects-more',234,400,76,42,'+',true,()=>this.audio.setEffectsVolume(this.audio.effectsVolume+.1),UI.dark);
-    this.button('settings-motion',50,458,260,42,`Giảm chuyển động: ${this.reducedMotion?'Bật':'Tắt'}`,!!this.preferences,()=>this.preferences?.setReducedMotion(!this.reducedMotion),UI.dark);
-    this.button('pause-settings-back',64,530,232,48,'Quay lại',true,()=>{this.pauseSettings=false;this.dirty=true;});
+    this.veil();this.notification=undefined;
+    const ids={music:'settings-music','effects-less':'settings-effects-less',mute:'mute','effects-more':'settings-effects-more',motion:'settings-motion',back:'pause-settings-back'};
+    drawSettingsPanel(this,this.layer,{audio:this.audio,preferences:this.preferences,reducedMotion:this.reducedMotion,changed:()=>{this.dirty=true;},back:()=>{this.pauseSettings=false;this.settingsFocusId='';},register:(action,rect,enabled,callback)=>this.hit(ids[action],rect.x,rect.y,rect.width,rect.height,enabled,callback)});
+    const focus=this.controls.find(control=>control.id===this.settingsFocusId&&control.enabled);
+    if(focus){const ring=this.add.graphics();ring.lineStyle(3,0x985025).strokeRoundedRect(focus.x-3,focus.y-3,focus.width+6,focus.height+6,27);this.layer.add(ring);}
   }
+  private settingsKeyDown=(event:KeyboardEvent):void=>{
+    if(!this.pauseSettings||document.activeElement!==this.game.canvas)return;
+    if(event.key==='Escape'){event.preventDefault();this.pauseSettings=false;this.settingsFocusId='';this.dirty=true;return;}
+    const enabled=this.visibleActions.filter(action=>this.controls.some(control=>control.id===action.id&&control.enabled));
+    if(!enabled.length)return;
+    if(['Tab','ArrowDown','ArrowUp'].includes(event.key)){
+      const current=enabled.findIndex(action=>action.id===this.settingsFocusId),direction=event.key==='ArrowUp'||event.shiftKey?-1:1;
+      if(event.key==='Tab'&&current>=0&&(current+direction<0||current+direction>=enabled.length)){this.settingsFocusId='';this.dirty=true;return;}
+      event.preventDefault();this.settingsFocusId=enabled[current===-1?direction===1?0:enabled.length-1:(current+direction+enabled.length)%enabled.length].id;this.dirty=true;
+    }else if(event.key==='Enter'||event.key===' '){
+      const action=enabled.find(action=>action.id===this.settingsFocusId);if(action){event.preventDefault();action.action();void this.audio.interact().then(()=>this.audio.cue());this.dirty=true;}
+    }
+  };
   private success():void{
     if(!this.runtime.productionActive){
       const s=this.runtime.state,wrong=s.feedback.includes('không đúng');

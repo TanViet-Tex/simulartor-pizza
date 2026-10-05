@@ -31,7 +31,7 @@ function directPlay():Phaser.Scene {
     hasSession:()=>true,
     continue:enter,
     start:()=>{menuLease?.release();menuLease=undefined;lifecycle.destroy();runtime=new CozyRuntime(guided,mode!=='freeplay');lifecycle=new PlayLifecycle(runtime);enter();},
-  });
+  },playAudio);
   const makePlay=()=>new CozyScene(runtime,preferences,()=>{
     menuLease??=runtime.acquirePause('menu');
     game.scene.stop('CozyScene');game.scene.stop('PlayScene');
@@ -68,7 +68,7 @@ function mainMenu(): Phaser.Scene {
     retrySave:()=>{void session.retry().then(enterPlay);},
     recover:()=>enterPlay(session.confirmRecovery()),
     temporary:()=>enterPlay(session.temporary(mode!=='shop')),
-  });
+  },playAudio);
 }
 const game = new Phaser.Game({
   type: Phaser.AUTO,

@@ -357,3 +357,25 @@ Nhãn ngày trong header/bếp hiện /30 (save grandfather hiện endDay thật
 ![Hoàn thành chiến dịch](ui-baseline/epic9-campaign-complete.png)
 
 ![Xác nhận lượt mới](ui-baseline/epic9-restart-confirm.png)
+### Chỉnh nhãn và Cài đặt dùng chung — yêu cầu2026-10-05
+
+Người dùng yêu cầu nhích chữ năm tab lên để không lẹm xuống, giữ khung/vùng bấm; ô tiền header giữ icon đồng xu và chỉ số, bỏ hậu tố xu. Các thông báo click/tự hiện cùng Menu/Pause dùng lớp đen bán trong suốt nhẹ thay nền đen kín; vẫn chặn input nền và giữ lease riêng. Cài đặt Menu/Pause dùng cùng panel và cùng PlayAudio/MenuPreferences, điều khiển hiệu ứng/mute/giảm chuyển động; nhạc chưa có ghi rõ, không tạo tính năng nhạc giả. Bố cục/art/body hub và gameplay/save không đổi. Quyết định này thay các yêu cầu nền đen kín lịch sử; chi tiết spec-shared-settings-and-hub-label-refinement.md.
+Kiểm chứng: build,6unit và15luồng E2E tập trung360×640 đạt; ba review không còn phát hiện. Nhãn tab y105 thay110, tiền hub/bếp giữ icon và số, backdrop alpha0.28 chỉ vẽ một lần. Ảnh phạm vi người dùng yêu cầu (không thay ảnh mốc các phần ngoài phạm vi):
+
+![Chợ, nhãn và tiền](ui-baseline/refinement-hub-market.png)
+
+![Kho](ui-baseline/refinement-hub-stock.png)
+
+![Tổng kết](ui-baseline/refinement-hub-summary.png)
+
+![Quán](ui-baseline/refinement-hub-shop.png)
+
+![Nhiệm vụ](ui-baseline/refinement-hub-missions.png)
+
+![Xác nhận mua, nền tối nhẹ](ui-baseline/refinement-purchase-dim.png)
+
+![Cài đặt Menu](ui-baseline/refinement-menu-settings.png)
+
+![Cài đặt Pause](ui-baseline/refinement-pause-settings.png)
+
+![Thông báo tự hết ngày](ui-baseline/refinement-automatic-notice.png)

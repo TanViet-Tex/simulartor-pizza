@@ -1,3 +1,6 @@
+import {PlayAudio} from '../presentation/PlayAudio';
+import {drawModalBackdrop} from '../presentation/ModalBackdrop';
+import {drawSettingsPanel} from '../presentation/SettingsPanel';
 import Phaser from 'phaser';
 import { MenuPreferences } from '../presentation/MenuPreferences';
 import { UI_THEME } from '../presentation/theme';
@@ -31,11 +34,13 @@ export class MainMenuScene extends Phaser.Scene {
   private ambience!:MenuAmbience;
   private notification?:{layout:NotificationLayout;ids:string[];start:number;end:number;title:boolean};
   private notificationButtonLabel=false;
+  private audioCleanupRegistered=false;
 
-  constructor(private readonly preferences: MenuPreferences, private readonly actions: MenuActions) { super('MainMenuScene'); }
+  constructor(private readonly preferences: MenuPreferences, private readonly actions: MenuActions,private readonly audio=new PlayAudio()) { super('MainMenuScene'); }
   preload():void{preloadNotificationFrames(this);}
 
   create(): void {
+    if(!this.audioCleanupRegistered){this.audioCleanupRegistered=true;this.game.events.once(Phaser.Core.Events.DESTROY,()=>this.audio.destroy());}
     this.dialog = 'none'; this.focusId = ''; this.elapsed = 0;
     this.wind = new MenuWind(this, MAIN_MENU_BACKGROUND.key);
     this.glow = this.add.ellipse(278, 270, 70, 70, 0xffad42, .11).setBlendMode(Phaser.BlendModes.ADD);
@@ -111,7 +116,7 @@ export class MainMenuScene extends Phaser.Scene {
   private draw(entrance = false): void {
     const save=this.actions.save?.();
     if(this.dialog!=='settings'&&this.dialog!=='new-session')this.dialog=save?.state==='loading'||save?.state==='saving'?'loading':save?.state==='error'?'save-error':save?.state==='recovery'?'recovery':'none';
-    this.notification=undefined;this.game.canvas.dataset.notificationFrame='';this.game.canvas.dataset.modalScroll='[]';
+    this.notification=undefined;this.game.canvas.dataset.settingsPanel='';this.game.canvas.dataset.modalBackdrop='';this.game.canvas.dataset.notificationFrame='';this.game.canvas.dataset.modalScroll='[]';
     this.tweens.killAll(); this.interfaceLayer.removeAll(true); this.targets = [];
     const titleTexts=[
       this.text(this.interfaceLayer,128,104,'Tiệm',34,'#4e6335'),
@@ -212,18 +217,23 @@ export class MainMenuScene extends Phaser.Scene {
   }
 
   private drawDialog(): void {
-    const g = this.add.graphics(); this.interfaceLayer.add(g);g.fillStyle(0x000000,1).fillRect(0,0,360,640);
+    for(const object of this.interfaceLayer.list)if(object instanceof Phaser.GameObjects.Zone)object.disableInteractive();
+    drawModalBackdrop(this,this.interfaceLayer);
     // Remove all old targets before registering dialog controls, including disabled menu targets.
     this.targets=[];
+    if(this.dialog==='settings'){
+      const ids={music:'menu-music','effects-less':'menu-effects-less',mute:'menu-mute','effects-more':'menu-effects-more',motion:'menu-motion',back:'menu-settings-close'};
+      drawSettingsPanel(this,this.interfaceLayer,{audio:this.audio,preferences:this.preferences,reducedMotion:this.preferences.reducedMotion,changed:()=>this.draw(),back:()=>{this.dialog='none';this.focusId='menu-settings';},register:(action,rect,enabled,callback)=>this.settingsTarget(ids[action],rect,enabled,callback)});return;
+    }
     const save=this.actions.save?.();
-    const ids=this.dialog==='new-session'?['menu-new-confirm','menu-new-cancel']:this.dialog==='settings'?['menu-settings-close']:this.dialog==='recovery'?['menu-recover-confirm','menu-retry-read']:[save?.canRetry?'menu-save-retry':'menu-retry-read'];
+    const ids=this.dialog==='new-session'?['menu-new-confirm','menu-new-cancel']:this.dialog==='recovery'?['menu-recover-confirm','menu-retry-read']:[save?.canRetry?'menu-save-retry':'menu-retry-read'];
     if(this.dialog==='loading'){
       const scale=Math.max(1,Math.min(2,parseFloat(getComputedStyle(document.documentElement).fontSize)/16));
       const layout=drawCompactNotification(this,this.interfaceLayer,'Tiến độ chiến dịch',save?.message??'Đang tải tiến độ…',14,scale);
       this.notification={layout,ids,start:layout.body.y,end:layout.body.y+layout.body.height,title:false};
       this.button(ids[0],0,0,0,0,'Đang tải…','none',SAGE,'#fff6df',false,()=>{},false,undefined,16);return;
     }
-    this.notification={layout:drawNotificationFrame(this,this.interfaceLayer,ids.length===2?'two':'one',100,440),ids,start:this.dialog==='settings'?289:281,end:this.dialog==='settings'?385:535,title:true};
+    this.notification={layout:drawNotificationFrame(this,this.interfaceLayer,ids.length===2?'two':'one',100,440),ids,start:281,end:535,title:true};
     if(['save-error','recovery'].includes(this.dialog)){
       const save=this.actions.save!();
       this.text(this.interfaceLayer,180,213,this.dialog==='recovery'?'Khôi phục cùng mốc':'Chưa mở được tiến độ',23);
@@ -238,20 +248,22 @@ export class MainMenuScene extends Phaser.Scene {
       else if(save.canReload)this.button('menu-load-latest',48,418,264,48,'Tải bản mới nhất','none',0xf5c6a5,'#985025',true,()=>this.actions.retryRead?.(),false,undefined,18);
       return;
     }
-    if (this.dialog === 'settings') {
-      this.text(this.interfaceLayer, 180, 250, 'Cài đặt', 27);
-      this.dialogText('Giảm hiệu ứng lửa, khói, gió,\nrèm và chuyển động của nút.',65);
-      this.button('menu-motion', 48, 319, 264, 50, `Giảm chuyển động: ${this.preferences.reducedMotion ? 'Bật' : 'Tắt'}`, 'none', SAGE, '#fff6df', true,
-        () => this.preferences.setReducedMotion(!this.preferences.reducedMotion), false, undefined, 19);
-      this.button('menu-settings-close', 84, 383, 192, 48, 'Đóng', 'none', 0xf5c6a5, '#985025', true,
-        () => { this.dialog = 'none'; this.focusId = 'menu-settings'; this.draw(); });
-    } else {
-      this.text(this.interfaceLayer, 180, 251, 'Chiến dịch mới?', 24);
-      this.dialogText('Thay tiến độ hiện tại bằng Ngày 1.\nCác ngày cũ không thể mở lại.',160);
-      this.button('menu-new-confirm', 48, 321, 264, 48, 'Bắt đầu mới', 'none', SAGE, '#fff6df', true, () => {this.dialog='none';this.actions.start();});
-      this.button('menu-new-cancel', 84, 383, 192, 48, 'Hủy', 'none', 0xf5c6a5, '#985025', true,
-        () => { this.dialog = 'none'; this.focusId = 'menu-start'; this.draw(); });
-    }
+    this.text(this.interfaceLayer,180,251,'Chiến dịch mới?',24);
+    this.dialogText('Thay tiến độ hiện tại bằng Ngày 1.\nCác ngày cũ không thể mở lại.',160);
+    this.button('menu-new-confirm',48,321,264,48,'Bắt đầu mới','none',SAGE,'#fff6df',true,()=>{this.dialog='none';this.actions.start();});
+    this.button('menu-new-cancel',84,383,192,48,'Hủy','none',0xf5c6a5,'#985025',true,()=>{this.dialog='none';this.focusId='menu-start';this.draw();});
+  }
+  private settingsTarget(id:string,rect:{x:number;y:number;width:number;height:number},enabled:boolean,action:()=>void):void{
+    const bounds=this.game.canvas.getBoundingClientRect(),scale=Math.min((bounds.width||360)/360,(bounds.height||640)/640);
+    const width=Math.max(rect.width,Math.ceil(48/scale)),height=Math.max(rect.height,Math.ceil(48/scale));
+    const target:MenuTarget={id,x:Math.max(0,Math.min(360-width,rect.x-(width-rect.width)/2)),y:Math.max(0,Math.min(640-height,rect.y-(height-rect.height)/2)),width,height,disabled:!enabled,visible:new Phaser.Geom.Rectangle(rect.x,rect.y,rect.width,rect.height),action};
+    this.targets.push(target);
+    if(!enabled)return;
+    const zone=this.add.zone(target.x,target.y,width,height).setOrigin(0).setInteractive({useHandCursor:true});this.interfaceLayer.add(zone);
+    zone.on('pointerdown',(pointer:Phaser.Input.Pointer)=>{
+      const chosen=this.targets.find(item=>!item.disabled&&item.visible.contains(pointer.x,pointer.y))??target;
+      this.focusId=chosen.id;chosen.action();void this.audio.interact().then(()=>this.audio.cue());
+    });
   }
   private notificationY(y:number):number{const n=this.notification!;return n.layout.body.y+Math.max(0,Math.min(1,(y-n.start)/(n.end-n.start)))*n.layout.body.height;}
   private dialogText(value:string,height:number):void{
@@ -275,7 +287,7 @@ export class MainMenuScene extends Phaser.Scene {
       this.drawFocus();
     } else if (event.key === 'Enter' || event.key === ' ') {
       const target = enabled.find(item => item.id === this.focusId);
-      if (target) { event.preventDefault(); target.action(); }
+      if (target) { event.preventDefault(); target.action(); void this.audio.interact().then(()=>this.audio.cue()); }
     }
   };
   private drawFocus(): void {
