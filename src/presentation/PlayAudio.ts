@@ -1,5 +1,5 @@
 export type AudioEffect='settings'|'sauce'|'box'|'arrival';
-const files={oven:'lò nướng.mp3',settings:'cài đặt.mp3',sauce:'sốt.mp3',box:'đóng hộp pizza.wav',arrival:'tiếng khách đến.wav',music1:'nhac nền bán pizza.mp3',music2:'nhạc nèn bán pizza 2.mp3'} as const;
+const files={oven:'oven-baking.wav',settings:'cài đặt.mp3',sauce:'sốt.mp3',box:'đóng hộp pizza.wav',arrival:'tiếng khách đến.wav',music1:'nhac nền bán pizza.mp3',music2:'nhạc nèn bán pizza 2.mp3'} as const;
 const silentVoice='data:audio/wav;base64,UklGRiYAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQIAAAAAAA==';
 const MUSIC_VOLUME=.15;
 // The oven's useful 0–6s range is unusually quiet in the supplied recording.
@@ -22,6 +22,7 @@ export class PlayAudio {
   private queuedEffects=new Set<AudioEffect>();
   private baking=false;
   private ovenPaused=false;
+  private ovenDing=false;
   musicEnabled=true;
   musicTrack:1|2=2;
   get snapshot(){return {unlocked:this.unlocked,baking:this.baking,ovenPaused:this.ovenPaused,muted:this.muted,effectsVolume:this.volume,musicEnabled:this.musicEnabled,musicTrack:this.musicTrack,streams:[...this.streams].map(([name,stream])=>({name,src:stream.media.src,currentTime:stream.media.currentTime,paused:stream.media.paused,wanted:stream.wanted,pending:stream.pending,volume:stream.media.volume,effectiveGain:(stream.gain?.gain.value??1)*stream.media.volume,muted:stream.media.muted,error:stream.media.error?.code??(stream.blocked?'playback-blocked':null)}))};}
@@ -52,8 +53,8 @@ export class PlayAudio {
     // to a suspended context would otherwise silently consume its output.
     if(!this.disposed)for(const [name,stream] of this.streams){this.route(stream);this.mix(name,stream);}
   }
-  toggleMute():void {this.muted=!this.muted;this.setEffectsVolume(this.volume);if(this.muted)this.stopEffects();this.updateOven();}
-  silence():void {for(const gain of this.gains)gain.gain.value=0;this.stopEffects();this.ovenPaused=true;this.updateOven();}
+  toggleMute():void {this.muted=!this.muted;if(this.muted)this.ovenDing=false;this.setEffectsVolume(this.volume);if(this.muted)this.stopEffects();this.updateOven();}
+  silence():void {for(const gain of this.gains)gain.gain.value=0;this.stopEffects();this.ovenDing=false;this.ovenPaused=true;this.updateOven();}
   effect(name:AudioEffect):void{
     if(this.disposed||this.muted)return;
     if(!this.unlocked){if(name!=='arrival')this.queuedEffects.add(name);return;}
@@ -63,12 +64,26 @@ export class PlayAudio {
     if(!stream.priming){stream.media.pause();this.reset(stream,stream.startOffset);}stream.playing=false;stream.revision++;stream.blocked=false;
     this.request(stream,true,false);
   }
-  syncOven(baking:boolean,paused:boolean):void{this.baking=baking;this.ovenPaused=paused;this.updateOven();}
+  syncOven(baking:boolean,paused:boolean,ready=false):void{
+    const started=baking&&!this.baking,finished=this.baking&&!baking&&ready;
+    this.baking=baking;this.ovenPaused=paused;
+    if(started)this.ovenDing=false;
+    if(finished&&!this.muted&&this.unlocked)this.ovenDing=true;
+    const stream=this.streams.get('oven');
+    if(stream&&(started||finished)){
+      const file=this.ovenDing?'oven-ready.wav':files.oven;
+      const url=`${import.meta.env.BASE_URL}assets/audio/${encodeURIComponent(file)}`;
+      if(stream.url!==url){stream.url=url;if(!stream.priming){stream.media.pause();stream.media.src=stream.url;this.reset(stream);}}
+      stream.media.loop=!this.ovenDing;stream.playing=false;stream.revision++;stream.blocked=false;
+      this.mix('oven',stream);
+    }
+    this.updateOven();
+  }
   toggleMusic():void{this.musicEnabled=!this.musicEnabled;this.syncMusic();}
   changeMusic():void{this.musicTrack=this.musicTrack===2?1:2;this.syncMusic();}
   private updateOven():void{
     const stream=this.streams.get('oven')??(this.baking?this.stream('oven'):undefined);
-    if(stream)this.request(stream,this.baking&&!this.ovenPaused&&!this.muted,!this.baking);
+    if(stream)this.request(stream,(this.baking||this.ovenDing)&&!this.ovenPaused&&!this.muted,!this.baking&&!this.ovenDing);
   }
   private syncMusic():void{
     const selected=this.musicTrack===2?'music2':'music1';
@@ -83,7 +98,7 @@ export class PlayAudio {
       const url=`${import.meta.env.BASE_URL}assets/audio/${encodeURIComponent(files[name])}`,media=this.createMedia(url);
       media.loop=name==='oven'||name.startsWith('music');media.preload=name==='settings'?'auto':'metadata';
       const stream:Stream={media,url,wanted:false,playing:false,pending:false,blocked:false,revision:0,reset:false,primed:false,priming:false,startOffset:0};
-      media.onended=()=>{if(!media.loop&&!stream.priming){stream.wanted=false;stream.playing=false;stream.revision++;}};
+      media.onended=()=>{if(!media.loop&&!stream.priming){stream.wanted=false;stream.playing=false;stream.revision++;if(name==='oven')this.ovenDing=false;}};
       media.onloadedmetadata=()=>{if(!stream.priming&&stream.wanted&&!stream.playing&&stream.startOffset)this.reset(stream,stream.startOffset);};
       this.route(stream);this.mix(name,stream);this.streams.set(name,stream);return stream;
     }catch{return;}
@@ -104,7 +119,7 @@ export class PlayAudio {
   private mix(name:Sound,stream:Stream):void{
     const music=name.startsWith('music');
     const level=stream.priming?0:music?MUSIC_VOLUME:this.muted?0:this.volume;
-    if(stream.gain){stream.media.volume=1;stream.gain.gain.value=level*(name==='oven'?OVEN_GAIN:1);}
+    if(stream.gain){stream.media.volume=1;stream.gain.gain.value=level*(name==='oven'&&!this.ovenDing?OVEN_GAIN:1);}
     else stream.media.volume=level;
   }
   private request(stream:Stream,wanted:boolean,reset:boolean):void{
@@ -133,7 +148,7 @@ export class PlayAudio {
     const finish=(primed:boolean)=>{
       stream.pending=false;stream.priming=false;stream.primed=primed;
       stream.media.pause();if(!stream.wanted)this.reset(stream);
-      stream.media.loop=name==='oven'||name.startsWith('music');
+      stream.media.loop=name==='oven'&&!this.ovenDing||name.startsWith('music');
       stream.media.muted=false;this.mix(name,stream);
       if(this.disposed){stream.media.pause();return;}
       stream.media.src=stream.url;

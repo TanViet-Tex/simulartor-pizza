@@ -54,6 +54,25 @@ async function unlock(f:ReturnType<typeof mediaFixture>){
   if(first)for(const [name,media] of f.streams)if(name!=='nhạc nèn bán pizza 2.mp3'){media.play.mockClear();media.pause.mockClear();}
 }
 describe('file audio playback',()=>{
+  it('plays one original ding at readiness, preserves it through pause, and uses normal effects gain',async()=>{
+    const f=mediaFixture(true);await unlock(f);f.audio.setEffectsVolume(.4);
+    f.audio.syncOven(true,false);await flush();const oven=f.streams.get('oven-baking.wav')!;
+    f.audio.syncOven(false,false,true);await flush();
+    expect(oven.src).toContain('oven-ready.wav');expect(oven.loop).toBe(false);expect(oven.play).toHaveBeenCalledTimes(2);
+    expect(f.audio.snapshot.streams.find(s=>s.name==='oven')!.effectiveGain).toBeCloseTo(.4);
+    for(let i=0;i<20;i++)f.audio.syncOven(false,false,true);
+    expect(oven.play).toHaveBeenCalledTimes(2);
+    oven.currentTime=.2;f.audio.syncOven(false,true,true);expect(oven.paused).toBe(true);expect(oven.currentTime).toBe(.2);
+    f.audio.syncOven(false,false,true);await flush();expect(oven.currentTime).toBe(.2);
+    oven.paused=true;oven.onended?.();f.audio.syncOven(false,false,true);expect(oven.play).toHaveBeenCalledTimes(3);
+    f.audio.syncOven(true,false);await flush();expect(oven.src).toContain('oven-baking.wav');expect(oven.loop).toBe(true);
+    f.audio.syncOven(false,false);expect(oven.paused).toBe(true);expect(oven.src).not.toContain('oven-ready.wav');
+  });
+  it('does not replay a muted completion after effects are enabled again',async()=>{
+    const f=mediaFixture();await unlock(f);f.audio.syncOven(true,false);await flush();f.audio.toggleMute();
+    f.audio.syncOven(false,false,true);f.audio.toggleMute();await flush();
+    const oven=f.streams.get('oven-baking.wav')!;expect(oven.paused).toBe(true);expect(oven.play).toHaveBeenCalledOnce();
+  });
   it('preloads settings without a primer so its next UI gesture starts the real file synchronously',async()=>{
     const f=mediaFixture();await f.audio.interact();const settings=f.streams.get('cài đặt.mp3')!;
     expect(settings.src).toContain(encodeURIComponent('cài đặt.mp3'));expect(settings.play).not.toHaveBeenCalled();
@@ -86,7 +105,7 @@ describe('file audio playback',()=>{
     expect(f.context.createMediaElementSource).not.toHaveBeenCalled();expect(f.audio.status).toBe('locked');
     expect(f.audio.snapshot.streams.find(stream=>stream.name==='music2')!.volume).toBe(.15);
     expect(f.audio.snapshot.streams.find(stream=>stream.name==='oven')!.volume).toBe(1);
-    const oven=f.streams.get('lò nướng.mp3')!;expect(oven.paused).toBe(false);oven.currentTime=1.2;
+    const oven=f.streams.get('oven-baking.wav')!;expect(oven.paused).toBe(false);oven.currentTime=1.2;
     await f.audio.interact();await flush();expect(f.context.createMediaElementSource).toHaveBeenCalledTimes(7);
     expect(f.createMedia).toHaveBeenCalledTimes(7);expect(oven.currentTime).toBe(1.2);
     expect(f.audio.snapshot.streams.find(stream=>stream.name==='oven')!.effectiveGain).toBe(6);
@@ -134,7 +153,7 @@ describe('file audio playback',()=>{
   });
   it('recovers music and oven after native audio interruption on the next gesture',async()=>{
     const f=mediaFixture();await unlock(f);f.audio.syncOven(true,false);await flush();
-    const oven=f.streams.get('lò nướng.mp3')!,music=f.streams.get('nhạc nèn bán pizza 2.mp3')!;
+    const oven=f.streams.get('oven-baking.wav')!,music=f.streams.get('nhạc nèn bán pizza 2.mp3')!;
     (oven.pause as ()=>void)();(music.pause as ()=>void)();oven.currentTime=2.3;music.currentTime=14;
     await f.audio.interact();await flush();expect(oven.play).toHaveBeenCalledTimes(2);expect(music.play).toHaveBeenCalledTimes(2);
     expect(oven.currentTime).toBe(2.3);expect(music.currentTime).toBe(14);
@@ -163,12 +182,12 @@ describe('file audio playback',()=>{
     f.audio.toggleMute();await unlock(f);
     const music=f.streams.get('nhạc nèn bán pizza 2.mp3')!;
     expect(music.loop).toBe(true);expect(music.play).toHaveBeenCalledOnce();
-    expect(f.streams.get('lò nướng.mp3')!.play).not.toHaveBeenCalled();
+    expect(f.streams.get('oven-baking.wav')!.play).not.toHaveBeenCalled();
     expect(f.createMedia.mock.calls.some(([url])=>url.includes(encodeURIComponent('nhạc nèn bán pizza 2.mp3')))).toBe(true);
   });
   it('uses one oven loop through repeated frames, pauses, resumes, resets at real completion and follows effects volume',async()=>{
     const f=mediaFixture();await unlock(f);f.audio.syncOven(true,false);await flush();
-    const oven=f.streams.get('lò nướng.mp3')!;oven.currentTime=1.7;
+    const oven=f.streams.get('oven-baking.wav')!;oven.currentTime=1.7;
     for(let i=0;i<10;i++)f.audio.syncOven(true,false);
     expect(oven.play).toHaveBeenCalledOnce();expect(oven.loop).toBe(true);
     f.audio.syncOven(true,true);expect(oven.currentTime).toBe(1.7);expect(oven.pause).toHaveBeenCalledOnce();
@@ -181,7 +200,7 @@ describe('file audio playback',()=>{
   });
   it('stops a late play completion after pause or disposal without overlapping retries',async()=>{
     const f=mediaFixture();await unlock(f);f.audio.syncOven(true,true);
-    const oven=f.streams.get('lò nướng.mp3')!;
+    const oven=f.streams.get('oven-baking.wav')!;
     let complete!:()=>void;oven.play.mockImplementation(()=>new Promise<void>(resolve=>{complete=resolve;}));
     f.audio.syncOven(true,false);f.audio.syncOven(true,false);expect(oven.play).toHaveBeenCalledOnce();
     f.audio.syncOven(true,true);complete();await flush();expect(oven.pause).toHaveBeenCalledTimes(2);expect(oven.play).toHaveBeenCalledOnce();
@@ -193,7 +212,7 @@ describe('file audio playback',()=>{
     for(const effect of ['settings','sauce','box','arrival'] as const)f.audio.effect(effect);
     f.audio.syncOven(true,false);await flush();
     for(const name of ['cài đặt.mp3','sốt.mp3','đóng hộp pizza.wav','tiếng khách đến.wav']){const media=f.streams.get(name)!;expect(media.play).toHaveBeenCalledOnce();expect(media.loop).toBe(false);expect(media.volume).toBe(.4);}
-    const oven=f.streams.get('lò nướng.mp3')!;oven.currentTime=2;f.audio.silence();expect(oven.currentTime).toBe(2);
+    const oven=f.streams.get('oven-baking.wav')!;oven.currentTime=2;f.audio.silence();expect(oven.currentTime).toBe(2);
     expect(f.streams.get('nhạc nèn bán pizza 2.mp3')!.pause).not.toHaveBeenCalled();
     f.audio.syncOven(true,false);await flush();expect(oven.play).toHaveBeenCalledTimes(2);
     f.audio.toggleMute();f.audio.effect('sauce');expect(f.streams.get('sốt.mp3')!.play).toHaveBeenCalledOnce();
@@ -208,13 +227,13 @@ describe('file audio playback',()=>{
   });
   it('contains blocked playback and retries only after a new gesture, not every oven sync',async()=>{
     const f=mediaFixture();await unlock(f);f.audio.syncOven(true,true);
-    const oven=f.streams.get('lò nướng.mp3')!;oven.play.mockRejectedValue(Error('blocked'));
+    const oven=f.streams.get('oven-baking.wav')!;oven.play.mockRejectedValue(Error('blocked'));
     f.audio.syncOven(true,false);await flush();for(let i=0;i<10;i++)f.audio.syncOven(true,false);
     expect(oven.play).toHaveBeenCalledOnce();oven.play.mockResolvedValue(undefined);await unlock(f);expect(oven.play).toHaveBeenCalledTimes(2);
   });
   it('reconciles a pending oven play after pause/resume even if the obsolete attempt rejects',async()=>{
     const f=mediaFixture();await unlock(f);f.audio.syncOven(true,true);
-    const oven=f.streams.get('lò nướng.mp3')!;
+    const oven=f.streams.get('oven-baking.wav')!;
     let reject!:()=>void;oven.play.mockImplementationOnce(()=>new Promise<void>((_,fail)=>{reject=()=>fail(Error('interrupted'));}));
     f.audio.syncOven(true,false);f.audio.syncOven(true,true);f.audio.syncOven(true,false);
     expect(oven.play).toHaveBeenCalledOnce();reject();await flush();expect(oven.play).toHaveBeenCalledTimes(2);

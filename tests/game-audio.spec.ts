@@ -32,7 +32,7 @@ for(const level of [0,1,2])test(`oven level ${level+1} follows real timing, paus
   await fixture(page,level);
   await tap(page,'dough');await tap(page,'sauce');await tap(page,'cheese');await tap(page,'bake');
   await expect.poll(async()=>(await snapshot(page)).streams.find((s:any)=>s.name==='oven')?.paused).toBe(false);
-  await page.evaluate(()=>{const f=(window as any).audioFixture;f.media.find((m:any)=>decodeURIComponent(m.src).includes('lò nướng')).currentTime=.7;});
+  await page.evaluate(()=>{const f=(window as any).audioFixture;f.media.find((m:any)=>decodeURIComponent(m.src).includes('oven-baking')).currentTime=.7;});
   await tap(page,'pause');await tap(page,'pause-settings');
   expect((await snapshot(page)).streams.find((s:any)=>s.name==='oven')).toMatchObject({paused:true,currentTime:.7});
   await page.evaluate(()=>{const f=(window as any).audioFixture;f.runtime.advanceElapsed(3000);});
@@ -50,13 +50,14 @@ for(const level of [0,1,2])test(`oven level ${level+1} follows real timing, paus
   expect((await snapshot(page)).baking).toBe(true);
   await page.evaluate(()=>{const f=(window as any).audioFixture;f.runtime.advanceElapsed(50);});
   await expect.poll(async()=>(await snapshot(page)).baking).toBe(false);
-  expect((await snapshot(page)).streams.find((s:any)=>s.name==='oven')).toMatchObject({paused:true,currentTime:0});
+  expect((await snapshot(page)).streams.find((s:any)=>s.name==='oven')).toMatchObject({paused:false,currentTime:0});
+  expect((await snapshot(page)).streams.find((s:any)=>s.name==='oven').src).toContain('oven-ready.wav');
   await tap(page,'extract');await tap(page,'box');
   await page.evaluate(()=>{(window as any).audioFixture.runtime.advanceElapsed(13000);});
   const sounds=await page.evaluate(()=>(window as any).audioFixture.media.map((m:any)=>({file:decodeURIComponent(m.src.split('/').pop()),plays:m.plays})));
   for(const file of ['sốt.mp3','đóng hộp pizza.wav','tiếng khách đến.wav'])expect(sounds.find((s:any)=>s.file===file)?.plays).toBe(1);
   expect(sounds.find((s:any)=>s.file==='cài đặt.mp3')?.plays).toBe(5);
-  expect(sounds.filter((s:any)=>s.file==='lò nướng.mp3')).toHaveLength(1);
+  expect(sounds.filter((s:any)=>s.file==='oven-ready.wav')).toHaveLength(1);
 });
 
 test('settings pointer and keyboard use the shared file without oscillator feedback in both scenes',async({page})=>{

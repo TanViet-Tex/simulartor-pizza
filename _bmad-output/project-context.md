@@ -46,6 +46,8 @@ Theo steering tiếp theo, nút Mua từng dòng mua ngay không popup, giá/ti�
 
 ### Asset âm thanh và Music — 2026-10-06
 
+Theo steering tiếng lò tiếp theo: báo tinh một lần tại perfectStart6/4/2s. Hai WAV dẫn xuất từ lò nướng.mp3 gốc: oven-baking0–6.16s loop không chứa tinh, oven-ready6.17–9.144s one-shot. Cùng một media oven chuyển nguồn khi clock báo chín, không đổi cao độ; phần chạy6×, tinh1×effectsVolume. Pause giữ playhead, mute không replay tinh khi bật lại; mẻ mới/cancel/shutdown xử lý cùngvoice. Quyết định này thay riêng “dừng/reset khi chín” bên dưới bằng “chuyển sang tinh rồi kết thúc”; xem [spec](implementation-artifacts/spec-oven-ready-ding.md).
+
 Theo yêu cầu tiếp theo, mọi nút Cài đặt Menu/Pause dùng chung cài đặt.mp3, bỏ oscillator trong panel và khi mở. File có390ms gần im lặng đầu: settings preload auto, mỗi click seek0.39s; voice settings phát trực tiếp trong gesture, không prime, bắt đầu feedback trước callback redraw. Mở panel tự unlock trong gesture đầu; Hiệu ứng Tắt dừng tiếng, bật lại phản hồi theo trạng thái mới. Giữ geometry/mixer/gameplay; xem [spec](implementation-artifacts/spec-settings-audio-immediate.md).
 
 Theo yêu cầu giảm nhạc/hiệu ứng khó nghe tiếp theo: Music cố định15% cả hai bài, lò khuếch đại6×effectsVolume qua WebAudio (file gốc0–6s rất nhỏ), hiệu ứng khác1×effectsVolume. Chỉ nối media vào context đã running; context chưa mở/không hỗ trợ vẫn dùng HTML fallback (nhạc15%, hiệu ứng theo volume, lò tối đa1). Không ép bật mute hoặc thêm UI âm lượng. Xem [bản sửa cân bằng âm](implementation-artifacts/spec-audio-mix-balance.md).

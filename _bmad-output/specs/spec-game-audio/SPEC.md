@@ -55,6 +55,8 @@ Kiểm tra tập trung ba cấp lò với thời gian nướng thật, file ng�
 
 ## Assumptions
 
+- Theo yêu cầu tiếp theo2026-10-06, tiếng tinh cuối lò nướng.mp3 phải kêu một lần đúng mốc chín6/4/2s. Hai đoạn WAV dẫn xuất tách tiếng chạy và tinh, dùng cùngvoice; tiếng chạy loop đến chín rồi chuyển tinh không lặp, không thay thời gian/cao độ. Chi tiết ở ../../implementation-artifacts/spec-oven-ready-ding.md.
+
 - Theo yêu cầu tiếp theo2026-10-06, `cài đặt.mp3` phát khi mở và thao tác các nút Cài đặt Menu/Pause (chuột/chạm/bàn phím); thay tiếng bíp cũ. Preload file nhỏ, bỏ qua390ms đầu gần im lặng; một voice restart khi bấm tiếp. Hiệu ứng Tắt dừng tiếng, bật lại phát theo trạng thái mới; không lặp suốt thời gian panel mở.
 - Nhạc nền lặp bài đang chọn; chuyển Menu/bếp không tạo thêm bản. Bật/tắt Music và chọn bài giữ chung trong phiên; lưu qua reload chưa được người dùng yêu cầu.
 - Pause yêu cầu tạm dừng tiếng lò; nhạc nền tiếp tục để có thể nghe/đổi bài trong Cài đặt.

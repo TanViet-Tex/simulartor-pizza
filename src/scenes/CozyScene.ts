@@ -188,7 +188,8 @@ export class CozyScene extends Phaser.Scene {
   private release(reason:'user'|'order'):void{this.scenePauses.get(reason)?.release();this.scenePauses.delete(reason);}
   private syncOvenAudio():void{
     const oven=this.runtime.productionActive?this.runtime.ovenState:this.runtime.state;
-    this.audio.syncOven(oven?.stage==='baking'&&oven.ovenSeconds<this.runtime.bakeTiming.perfectStart,this.runtime.pauses.length>0);
+    const ready=!!oven&&oven.ovenSeconds>=this.runtime.bakeTiming.perfectStart;
+    this.audio.syncOven(oven?.stage==='baking'&&!ready,this.runtime.pauses.length>0,ready);
   }
   update(_time:number,delta:number):void{
     const event=this.runtime.campaignEvent;
