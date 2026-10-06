@@ -8,7 +8,7 @@ async function tap(page:Page,id:string,menu=false){
   const c=JSON.parse(await canvas.getAttribute(attribute)??'[]').find((c:any)=>c.id===id),b=(await canvas.boundingBox())!;
   await page.touchscreen.tap(b.x+(c.x+c.width/2)*b.width/360,b.y+(c.y+c.height/2)*b.height/640);
 }
-async function fixture(page:Page,level:number){
+async function fixture(page:Page,level:number,real=false){
   page.on('pageerror',error=>console.error(error.message));
   const pathSpecifier:string='node:path';const paths:{resolve(path:string):string}=await import(pathSpecifier);
   const bundled=await build({stdin:{resolveDir:paths.resolve('.'),loader:'ts',contents:`
@@ -19,7 +19,7 @@ async function fixture(page:Page,level:number){
     for(let i=0;i<${level};i++)if(!runtime.upgradeShop('oven','audio-upgrade-'+i))throw Error('upgrade failed');
     for(const ingredient of ['dough','sauce','cheese'])runtime.buy(ingredient,3);
     if(!runtime.openShop())throw Error('open shop failed');runtime.dismissThanks();
-    const media=[];const audio=new PlayAudio(undefined,url=>{const item={src:url,loop:false,volume:1,currentTime:0,paused:true,plays:0,preload:'',onended:null,play(){if(!this.src.startsWith('data:'))this.plays++;this.paused=false;return Promise.resolve();},pause(){this.paused=true;},removeAttribute(){},load(){}};media.push(item);return item;});
+    const media=[];const audio=new PlayAudio(undefined,url=>{${real?'const item=new Audio(url);':'const item={src:url,loop:false,volume:1,currentTime:0,paused:true,plays:0,preload:\'\',onended:null,play(){if(!this.src.startsWith(\'data:\'))this.plays++;this.paused=false;return Promise.resolve();},pause(){this.paused=true;},removeAttribute(){},load(){}};'}media.push(item);return item;});
     const lifecycle=new PlayLifecycle(runtime,()=>0);lifecycle.frame=()=>lifecycle.reconcile();
     new Phaser.Game({type:Phaser.AUTO,parent:'fixture',width:360,height:640,scale:{mode:Phaser.Scale.FIT,autoCenter:Phaser.Scale.CENTER_BOTH},scene:[new CozyScene(runtime,new MenuPreferences(),undefined,audio,lifecycle)]});Object.assign(window,{audioFixture:{runtime,audio,media}});
   `},bundle:true,platform:'browser',format:'iife',minify:true,define:{'import.meta.env.BASE_URL':'"/"'},write:false});
@@ -56,6 +56,37 @@ for(const level of [0,1,2])test(`oven level ${level+1} follows real timing, paus
   const sounds=await page.evaluate(()=>(window as any).audioFixture.media.map((m:any)=>({file:decodeURIComponent(m.src.split('/').pop()),plays:m.plays})));
   for(const file of ['sốt.mp3','đóng hộp pizza.wav','cài đặt.mp3','tiếng khách đến.wav'])expect(sounds.find((s:any)=>s.file===file)?.plays).toBe(1);
   expect(sounds.filter((s:any)=>s.file==='lò nướng.mp3')).toHaveLength(1);
+});
+
+test('real gameplay effects produce output above the quieter music mix',async({page})=>{
+  test.setTimeout(60000);await fixture(page,0,true);await tap(page,'dough');
+  await expect.poll(async()=>(await snapshot(page)).streams.find((s:any)=>s.name==='music2')?.currentTime).toBeGreaterThan(0);
+  const graph=await page.evaluate(()=>!!(window as any).audioFixture.audio.context?.createMediaElementSource);
+  if(graph)await page.evaluate(()=>{
+    const f=(window as any).audioFixture,context=f.audio.context;f.meters={};
+    for(const [name,stream] of f.audio.streams){
+      if(!stream.gain)throw Error('Missing real audio mixer: '+name);
+      const analyser=context.createAnalyser(),silent=context.createGain();analyser.fftSize=1024;silent.gain.value=0;
+      stream.gain.connect(analyser);analyser.connect(silent);silent.connect(context.destination);
+      f.meters[name]={analyser,silent,max:0};
+    }
+    f.meterTimer=setInterval(()=>{for(const meter of Object.values(f.meters) as any[]){const data=new Float32Array(meter.analyser.fftSize);meter.analyser.getFloatTimeDomainData(data);let sum=0;for(const value of data)sum+=value*value;meter.max=Math.max(meter.max,Math.sqrt(sum/data.length));}},20);
+  });
+  // Windows WebKit has native media but no WebAudio; verify its volume/playback fallback.
+  const level=(name:string)=>graph?page.evaluate(name=>(window as any).audioFixture.meters[name].max,name):snapshot(page).then(state=>state.streams.find((s:any)=>s.name===name)?.currentTime??0);
+  await tap(page,'sauce');await expect.poll(()=>level('sauce')).toBeGreaterThan(.01);
+  await tap(page,'cheese');await tap(page,'bake');await expect.poll(()=>level('oven')).toBeGreaterThan(.01);
+  let state=await snapshot(page);
+  expect(state.streams.find((s:any)=>s.name==='oven').effectiveGain).toBe(graph?6:1);
+  expect(state.streams.find((s:any)=>s.name==='music2').effectiveGain).toBeCloseTo(.15);
+  await expect.poll(()=>level('music2')).toBeGreaterThan(.001);
+  await page.evaluate(()=>(window as any).audioFixture.runtime.advanceElapsed(13000));
+  await expect.poll(()=>level('arrival')).toBeGreaterThan(.01);
+  await page.evaluate(()=>(window as any).audioFixture.audio.toggleMute());state=await snapshot(page);
+  for(const name of ['sauce','oven','arrival'])expect(state.streams.find((s:any)=>s.name===name).effectiveGain).toBe(0);
+  expect(state.streams.find((s:any)=>s.name==='music2').effectiveGain).toBeCloseTo(.15);
+  expect(state.streams.find((s:any)=>s.name==='music2').paused).toBe(false);
+  if(graph)await page.evaluate(()=>{const f=(window as any).audioFixture;clearInterval(f.meterTimer);for(const meter of Object.values(f.meters) as any[]){meter.analyser.disconnect();meter.silent.disconnect();}});
 });
 
 test('all seven audio assets load browser media metadata',async({page})=>{
@@ -98,13 +129,13 @@ test('real browser playback keeps oven position through Menu and Music remains s
   expect((await read()).streams.filter((s:any)=>s.name==='oven')).toHaveLength(1);
   expect((await read()).streams.find((s:any)=>s.name==='oven').currentTime).toBeGreaterThanOrEqual(position);
   await expect.poll(async()=>(await read()).baking,{timeout:10000}).toBe(false);
-  expect((await read()).streams.find((s:any)=>s.name==='oven')).toMatchObject({paused:true,currentTime:0});
+  await expect.poll(async()=>(await read()).streams.find((s:any)=>s.name==='oven')).toMatchObject({paused:true,currentTime:0});
   await page.evaluate(()=>(window as any).pizzaPerformance.game.scene.getScene('CozyScene').runtime.dispatch({type:'reset'}));
   await tap(page,'dough');await tap(page,'bake');await tap(page,'pause');await tap(page,'main-menu');
   await tap(page,'menu-start',true);await tap(page,'menu-new-confirm',true);
   await expect(page.locator('canvas')).toHaveAttribute('data-stage','assembly');
   await expect.poll(async()=>(await read()).baking).toBe(false);
-  expect((await read()).streams.find((s:any)=>s.name==='oven')).toMatchObject({paused:true,currentTime:0});
+  await expect.poll(async()=>(await read()).streams.find((s:any)=>s.name==='oven')).toMatchObject({paused:true,currentTime:0});
   expect((await read()).musicTrack).toBe(1);
   expect(errors).toEqual([]);
 });

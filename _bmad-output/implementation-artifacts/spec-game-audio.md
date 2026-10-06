@@ -68,6 +68,8 @@ context:
 
 ## Design Notes
 
+Yêu cầu tiếp theo giảm nhạc và sửa hiệu ứng khó nghe được triển khai trong [spec cân bằng âm](spec-audio-mix-balance.md): Music15%, lò6× qua WebAudio, giữ mute/volume/UI/timing. Các kết quả ban đầu phía dưới là lịch sử trước sửa mức trộn này.
+
 Spec đã được người dùng yêu cầu triển khai; không hỏi lại approval cho spec hoặc file asset/untracked do phiên trước tạo. Dirty artifacts ngoài phạm vi được giữ nguyên. Các giả định âm thanh trong spec đầu vào được giữ.
 
 ## Implementation & Results

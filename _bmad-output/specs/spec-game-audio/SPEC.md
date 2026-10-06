@@ -35,6 +35,8 @@ Người dùng đã thêm bảy file âm thanh trong `public/assets/audio/`, yê
 
 ## Constraints
 
+- Theo yêu cầu tiếp theo ngày2026-10-06: nhạc15%, tiếng lò6×effectsVolume qua WebAudio; các hiệu ứng khác1×effectsVolume. Media chỉ nối vào AudioContext đang chạy; browser không có/mở được context dùng HTML fallback nhạc15% và hiệu ứng theo volume (lò tối đa1). Giữ mute riêng và không thêm UI điều chỉnh âm lượng. Chi tiết/kiểm chứng trong [spec cân bằng âm](../../implementation-artifacts/spec-audio-mix-balance.md).
+
 - Giữ bố cục/art/vị trí nút của Cài đặt đã duyệt; chỉ kích hoạt Music và chọn bài trong các vùng hiện có. Yêu cầu mới này thay riêng quy định nhạc disabled/“Chưa có nhạc” trong spec Cài đặt cũ khi triển khai xong.
 - Không thêm lại nút −/+, phần trăm hoặc thanh âm lượng đã bỏ; mức nghe do âm lượng thiết bị và giá trị hiệu ứng hiện hành quyết định.
 - Audio thuộc presentation, đọc trạng thái/sự kiện thật; không thay thời gian nướng, luật gameplay, pause lease hoặc campaign checkpoint để phục vụ âm thanh.
