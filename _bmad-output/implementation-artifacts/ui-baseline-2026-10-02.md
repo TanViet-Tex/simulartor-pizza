@@ -390,3 +390,15 @@ Giữ sáu ô và toàn bộ art/bố cục; tên/avatar khách giữ identity, 
 ### Nhập mã trong Cài đặt — yêu cầu 2026-10-06
 
 Người dùng duyệt thêm Nhập mã cho Cài đặt chung Menu/Pause. Giữ vị trí các điều khiển âm thanh/giảm chuyển động; thêm nút dưới Giảm chuyển động, nới bảng từ490 lên514px và dịch riêng Quay lại xuống24px để giữ khoảng cách. Hộp nhập dùng khung2nút/× hiện có, ô văn bản native, Quay lại/Nhận xu và feedback thật. Menu/bếp/hub giữ bố cục. `VIETVUIVE` chỉ nhận100.000xu một lần mỗi lượt đã lưu khi chuẩn bị; không ghi giữa ca. Khoản hỗ trợ ghi riêng trong dòng tiền báo cáo, không tăng doanh thu/lợi nhuận/XP/uy tín. Xem [spec](spec-vietvuive-test-code.md), [Cài đặt](ui-baseline/test-code-settings-2026-10-06.png), [nhận mã](ui-baseline/test-code-received-2026-10-06.png).
+
+### Popup nhập mã mobile và thông báo thưởng — yêu cầu 2026-10-06
+
+Người dùng duyệt sửa riêng popup nhập mã: khi vùng nhìn thấy thu nhỏ hoặc cuộn do bàn phím, toàn bộ khung, chữ, input native, nút và vùng chạm dùng cùng một offset. Backdrop giữ nguyên. Blur hoặc viewport trở lại đầy đủ đưa hộp về vị trí cũ, giữ nội dung nhập. Menu/Pause dùng chung implementation; viewport quá thấp để chứa toàn bộ khung giữ đầu khung nhìn thấy, không thu nhỏ chữ/nút.
+
+Sau commit thành công, gỡ input/đóng bàn phím và hiện thông báo thưởng giữa canvas theo `thông báo nhận tiền.png`: giấy kem, viền vàng/nâu, pizza ở đầu, đồng xu, tiêu đề “Nhập mã thành công!”, số tiền thật **+100.000 xu**, mô tả và hai nút Đóng/OK. Số +500 trong ảnh mẫu không được render. Hai nút chỉ đóng hộp/trở lại Cài đặt, không thưởng thêm; lease của Pause/Menu giữ nguyên. Giữ các controls Cài đặt khác và UI game. Xem [spec](spec-mobile-code-popup-and-reward.md).
+
+![Popup bình thường](ui-baseline/test-code-mobile-normal.png)
+
+![Popup khi visualViewport thu nhỏ mô phỏng bàn phím](ui-baseline/test-code-mobile-keyboard.png)
+
+![Thông báo thưởng thực nhận](ui-baseline/test-code-received-2026-10-06.png)

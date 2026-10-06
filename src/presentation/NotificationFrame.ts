@@ -8,6 +8,7 @@ export type NotificationLayout = {variant:NotificationVariant;bounds:Notificatio
 export const NOTIFICATION_FRAMES = [
   {key:'notification-frame-one',url:'assets/references/Khung thông báo tiệm pizza ấm cúng.png'},
   {key:'notification-frame-two',url:'assets/references/Hộp thoại thông báo pizza ấm cúng.png'},
+  {key:'test-code-reward',url:'assets/references/thông báo nhận tiền.png'},
 ] as const;
 
 export function preloadNotificationFrames(scene:Phaser.Scene):void{
