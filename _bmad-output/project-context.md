@@ -36,6 +36,14 @@ _Tệp này chứa các quy tắc và patterns quan trọng mà AI agent phải 
 
 ## Critical Implementation Rules
 
+### Dự báo Chợ, quyền nguyên liệu và giỏ mua — 2026-10-06
+
+Chợ dự báo ngày sắp mở từ lịch khách thực (cả sự kiện/app/bonus Quán), menu đang bán đã sở hữu và tối đa3báo cáo chi tiết gần nhất; ngày đầu/thiếu dữ liệu dùng lịch mặc định. `marketForecast.ts` cấu hình dự phòng10%, historyWeight50%; cộng nhu cầu nguyên liệu trước dự phòng, trừ kho usable đúng ngày/còn hạn một lần. Gợi ý chỉ điền lượng thiếu, chỉnh0–100 và không tự mua/mở ca.
+
+Quyền nguyên liệu dẫn xuất từ ownedRecipes: một công thức sở hữu dùng là mở; tắt bán không khóa lại, restore không lưu bảng quyền riêng. Guard cùng quyền ở mua thường/bulk/hỏa tốc; nguyên liệu chưa có công thức catalog phù hợp giữ khóa. Ô khóa có icon/tên công thức cần mua và disable chỉnh/mua.
+
+Theo steering tiếp theo, nút Mua từng dòng mua ngay không popup, giá/tiền/quyền theo runtime; debounce300ms cùng nguyên liệu chống bấm kép. Mua tất cả vẫn xác nhận danh sách/tổng/số dư, giữ quote từng giá/ngày; xác nhận kiểm tra lại và trừ tiền/nhập tất cả lô nguyên tử, thiếu tiền không mua một phần. Giữ semantics checkpoint mua thường hiện có, không autosave mỗi tap/giữa ca, không tự mở ngày. Header/filters/list321×318/hàng53px/footer giữ nguyên; controls mới trong vùng chữ Chợ hiện có. Chi tiết [spec](implementation-artifacts/spec-market-forecast-and-basket.md).
+
 ### Asset âm thanh và Music — 2026-10-06
 
 Theo yêu cầu tiếp theo, mọi nút Cài đặt Menu/Pause dùng chung cài đặt.mp3, bỏ oscillator trong panel và khi mở. File có390ms gần im lặng đầu: settings preload auto, mỗi click seek0.39s; voice settings phát trực tiếp trong gesture, không prime, bắt đầu feedback trước callback redraw. Mở panel tự unlock trong gesture đầu; Hiệu ứng Tắt dừng tiếng, bật lại phản hồi theo trạng thái mới. Giữ geometry/mixer/gameplay; xem [spec](implementation-artifacts/spec-settings-audio-immediate.md).

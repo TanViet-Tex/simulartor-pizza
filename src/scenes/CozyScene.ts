@@ -105,8 +105,9 @@ export class CozyScene extends Phaser.Scene {
   private marketOffset=0;
   private marketDrag:HubDrag={active:false,startY:0,offset:0};
   private marketQuantities:Partial<Record<StockIngredient,number>>={};
+  private marketLastPurchase=new Map<StockIngredient,number>();
   private marketQuantityEditor?:{id:StockIngredient;input:MarketQuantityInput;lease:PauseLease};
-  private marketPurchase:{id:StockIngredient;quantity:number;total:number;commandId:string}|null=null;
+  private marketBasket:(NonNullable<ReturnType<CozyRuntime['quoteMarketBasket']>> & {commandId:string})|null=null;
   private marketLease?:PauseLease;
   private marketError='';
   private readonly purchaseScope=crypto.randomUUID();
@@ -169,14 +170,14 @@ export class CozyScene extends Phaser.Scene {
     this.events.once('shutdown',()=>{this.expressLease?.release();this.expressLease=undefined;this.expressIngredient=null;});
     this.events.once('shutdown',()=>{this.unsubscribeSave?.();this.unsubscribeSave=undefined;});
     this.events.once('shutdown',()=>{this.reviewsLease?.release();this.reviewsLease=undefined;this.reviewsOpen=false;});
-    this.events.once('shutdown',()=>this.closeMarketPurchase());
+    this.events.once('shutdown',()=>this.closeMarketBasket());
     this.events.once('shutdown',()=>{this.closeDeliveryApp();this.closeHubPanels();});
     this.events.once('shutdown',()=>{this.endedDayLease?.release();this.endedDayLease=undefined;this.endedDayNotice=null;});
     this.events.once('shutdown',()=>{this.campaignEventLease?.release();this.campaignEventLease=undefined;});
     this.events.once('shutdown',()=>{this.closeFinalResults();this.closeNewCampaign();});
     this.events.once('destroy',()=>{this.closeDeliveryApp();this.closeHubPanels();});
-    this.events.once('shutdown',()=>this.closeMarketQuantity());
-    this.events.once('destroy',()=>this.closeMarketQuantity());
+    this.events.once('shutdown',()=>this.closeMarketQuantity(),{min:0,max:100});
+    this.events.once('destroy',()=>this.closeMarketQuantity(),{min:0,max:100});
     const cleanup=()=>{this.closeTestCode();this.events.off('shutdown',cleanup);this.events.off('destroy',cleanup);this.queueUpgradeLease?.release();this.queueUpgradeLease=undefined;this.queueUpgradeNotice=false;this.priceLease?.release();this.priceLease=undefined;this.statementLease?.release();this.statementLease=undefined;this.motion?.removeEventListener('change',this.motionChange);this.preferenceUnsubscribe?.();this.scale.off('resize',this.motionChange);this.browserLifecycle.destroy(!this.sharedLifecycle);for(const lease of this.scenePauses.values())lease.release();this.scenePauses.clear();this.audio.silence();document.removeEventListener('keydown',this.settingsKeyDown);this.clearFeedback();this.tweens.killAll();for(const zone of this.hitZones.values())zone.destroy();this.hitZones.clear();this.staticGraphics.destroy();};
     this.events.once('shutdown',cleanup);this.events.once('destroy',cleanup);this.draw();
   }
@@ -423,7 +424,7 @@ export class CozyScene extends Phaser.Scene {
       this.dayHub();
       if(this.statementOpen)this.statementDialog();
       else if(this.reviewsOpen)this.reviewsDialog();
-      else if(this.marketPurchase)this.marketPurchaseDialog();
+      else if(this.marketBasket)this.marketBasketDialog();
       else if(this.marketQuantityEditor)this.marketQuantityDialog();
       else if(this.stockCriteria)this.stockCriteriaDialog();
       else if(this.appDialog)this.deliveryAppDialog();
@@ -486,7 +487,7 @@ export class CozyScene extends Phaser.Scene {
     canvas.dataset.customerProgress=JSON.stringify(this.runtime.customerProgress);
     canvas.dataset.hubDetail=JSON.stringify(this.hubDetail?{title:this.hubDetail.title,body:this.hubDetail.body}:null);canvas.dataset.hubUpgrade=JSON.stringify(this.hubUpgrade?{kind:this.hubUpgrade.kind,cost:this.hubUpgrade.cost}:null);
     canvas.dataset.priceDialog=JSON.stringify(this.priceDraft);
-    canvas.dataset.statementOpen=String(this.statementOpen);canvas.dataset.summaryModal=this.statementOpen?'finance':this.reviewsOpen?'reviews':'';canvas.dataset.marketPurchase=JSON.stringify(this.marketPurchase);
+    canvas.dataset.statementOpen=String(this.statementOpen);canvas.dataset.summaryModal=this.statementOpen?'finance':this.reviewsOpen?'reviews':'';canvas.dataset.marketPurchase=JSON.stringify(null);canvas.dataset.marketBasket=JSON.stringify(this.marketBasket);
     canvas.dataset.queueUpgradeNotice=String(this.queueUpgradeNotice);
     canvas.dataset.preparationBudget=JSON.stringify(this.runtime.preparationBudget);
     canvas.dataset.quality=this.runtime.bakeQuality;
@@ -757,7 +758,7 @@ export class CozyScene extends Phaser.Scene {
         new ReferenceMissions(this,this.layer,(...args)=>this.hit(...args)).draw({day:this.runtime.preparationDay,cash:this.runtime.state.cash,progress:this.runtime.progression,ending:!!summary?.ending,tab,pause:()=>this.hold('user'),footer});return;
       }
       if(this.summaryTab==='market'){
-        new ReferenceMarket(this,this.layer,(...args)=>this.hit(...args),render=>this.syncListHits(render)).draw({unitPrice:id=>this.runtime.price(id),supplier:this.runtime.supplier,day:this.runtime.preparationDay,cash:this.runtime.state.cash,canBuy,readOnlyReason:summary?.ending?'Chặng bán hàng đã kết thúc · Chợ chỉ để xem':'Mua đang bị khóa · Hãy xử lý lưu tiến độ',canScroll:()=>this.runtime.pauses.length===0,filter:this.marketFilter,offset:this.marketOffset,drag:this.marketDrag,quantities:this.marketQuantities,available:id=>this.runtime.available(id),quantity:(id,delta)=>{this.marketQuantities[id]=Phaser.Math.Clamp((this.marketQuantities[id]??1)+delta,1,100);this.dirty=true;},buy:id=>this.openMarketPurchase(id),editQuantity:id=>this.openMarketQuantity(id),scroll:offset=>{this.marketOffset=offset;},setFilter:filter=>{this.marketFilter=filter;this.marketOffset=0;this.dirty=true;},tab:id=>{this.summaryTab=id;this.dirty=true;},pause:()=>this.hold('user'),price:()=>this.choosePrice(this.runtime.selectedRecipe),footer});
+        new ReferenceMarket(this,this.layer,(...args)=>this.hit(...args),render=>this.syncListHits(render)).draw({access:id=>this.runtime.ingredientAccess(id),basketTotal:this.marketBasketTotal,reservePercent:this.runtime.marketForecast.reservePercent,suggest:()=>this.suggestMarket(),buyAll:()=>this.openMarketBasket(),unitPrice:id=>this.runtime.price(id),supplier:this.runtime.supplier,day:this.runtime.preparationDay,cash:this.runtime.state.cash,canBuy,readOnlyReason:summary?.ending?'Chặng bán hàng đã kết thúc · Chợ chỉ để xem':'Mua đang bị khóa · Hãy xử lý lưu tiến độ',canScroll:()=>this.runtime.pauses.length===0,filter:this.marketFilter,offset:this.marketOffset,drag:this.marketDrag,quantities:this.marketQuantities,available:id=>this.runtime.available(id),quantity:(id,delta)=>{if(this.runtime.ingredientAccess(id).unlocked)this.marketQuantities[id]=Phaser.Math.Clamp((this.marketQuantities[id]??1)+delta,0,100);this.dirty=true;},buy:id=>this.buyMarketItem(id),editQuantity:id=>this.openMarketQuantity(id),scroll:offset=>{this.marketOffset=offset;},setFilter:filter=>{this.marketFilter=filter;this.marketOffset=0;this.dirty=true;},tab:id=>{this.summaryTab=id;this.dirty=true;},pause:()=>this.hold('user'),price:()=>this.choosePrice(this.runtime.selectedRecipe),footer});
         return;
       }
       this.referenceSummary().summary({report:summary,day:this.runtime.day,cash:this.runtime.state.cash,xp:summary?.progression.xp??this.runtime.progression.xp,previousXp:summary?(previous?.progression.xp??0):this.runtime.progression.xp,stockUnits:this.runtime.stockLots.reduce((n,lot)=>n+lot.quantity,0),ending:!!summary?.ending,paused:this.runtime.pauses.length>0,footer,tab:id=>{this.summaryTab=id;this.dirty=true;},pause:()=>this.hold('user'),finance:()=>this.openStatement(),reviews:()=>this.openReviews()});
@@ -894,15 +895,15 @@ export class CozyScene extends Phaser.Scene {
   private openRecipePurchase(recipe:StockRecipe):void {if(!this.runtime.canSetPrices||this.runtime.ownedRecipes.includes(recipe))return;this.recipePurchase={recipe,commandId:'recipe:'+this.purchaseScope+':'+recipe,lease:this.runtime.acquirePause('order')};this.dirty=true;}
   private recipePurchaseDialog():void {const purchase=this.recipePurchase!,definition=recipeDefinition(purchase.recipe),cost=definition.purchasePrice;this.summaryModalVeil();this.notificationFrame(['recipe-buy-cancel','recipe-buy-confirm'],250,420,390);const layout={titleY:207,bodyY:278,bodyWidth:286};this.label(180,layout.titleY,'Mua c\u00f4ng th\u1ee9c',23,ink);this.label(180,layout.bodyY,definition.name+'\n'+cost+' xu \u00b7 C\u00f2n '+(this.runtime.state.cash-cost)+' xu\nM\u1edf ngay trong th\u1ef1c \u0111\u01a1n; l\u01b0u c\u00f9ng ti\u1ec1n.',17,ink,layout.bodyWidth);this.button('recipe-buy-cancel',40,430,132,48,'H\u1ee7y',true,()=>this.closeHubPanels(),UI.dark);this.button('recipe-buy-confirm',188,430,132,48,'Mua',this.runtime.state.cash>=cost&&!this.runtime.pauses.some(p=>p!=='order'),()=>{this.closeHubPanels();if(this.campaignSession)this.campaignSession.buyRecipe(purchase.recipe,purchase.commandId);else this.runtime.buyRecipe(purchase.recipe,purchase.commandId);this.dirty=true;});}
   private openMarketQuantity(id:StockIngredient):void{
-    if(this.marketQuantityEditor||this.runtime.pauses.length||!(this.preparationHub?this.runtime.canOpen:this.runtime.canPrepareNextDay))return;
+    if(!this.runtime.ingredientAccess(id).unlocked||this.marketQuantityEditor||this.runtime.pauses.length||!(this.preparationHub?this.runtime.canOpen:this.runtime.canPrepareNextDay))return;
     this.marketDrag.active=false;
     const lease=this.runtime.acquirePause('order');
-    const input=new MarketQuantityInput(this.game.canvas,this.marketQuantities[id]??1,()=>{this.dirty=true;},()=>this.closeMarketQuantity(true),()=>this.closeMarketQuantity());
+    const input=new MarketQuantityInput(this.game.canvas,this.marketQuantities[id]??1,()=>{this.dirty=true;},()=>this.closeMarketQuantity(true),()=>this.closeMarketQuantity(),{min:0,max:100});
     this.marketQuantityEditor={id,input,lease};this.dirty=true;
   }
   private closeMarketQuantity(apply=false):void{
     const editor=this.marketQuantityEditor;if(!editor)return;
-    if(apply){if(editor.input.quantity===null||this.runtime.pauses.some(reason=>reason!=='order'))return;this.marketQuantities[editor.id]=editor.input.quantity;}
+    if(apply){if(editor.input.quantity===null||!this.runtime.ingredientAccess(editor.id).unlocked||this.runtime.pauses.some(reason=>reason!=='order'))return;this.marketQuantities[editor.id]=editor.input.quantity;}
     this.marketQuantityEditor=undefined;editor.input.destroy();editor.lease.release();this.dirty=true;
   }
   private marketQuantityDialog():void{
@@ -910,33 +911,58 @@ export class CozyScene extends Phaser.Scene {
     this.summaryModalVeil();this.notificationFrame(['market-quantity-cancel','market-quantity-apply'],250,420,340);
     this.label(180,210,'Nhập số lượng',22,ink,280);
     this.label(180,260,ingredientName(editor.id),16,ink,280);
-    this.label(180,290,'Số nguyên từ 1 đến 100 phần',12,wood,280);
+    this.label(180,290,'Số nguyên từ 0 đến 100 phần',12,wood,280);
     const valid=editor.input.quantity!==null;
-    this.label(180,414,valid?'Chỉ chọn số lượng, chưa mua hàng.':'Nhập số nguyên từ 1 đến 100.',12,valid?wood:accent,280);
+    this.label(180,414,valid?'Chỉ chọn số lượng, chưa mua hàng.':'Nhập số nguyên từ 0 đến 100.',12,valid?wood:accent,280);
     editor.input.position();
     this.button('market-quantity-cancel',40,430,132,48,'Hủy',true,()=>this.closeMarketQuantity(),UI.dark);
     this.button('market-quantity-apply',188,430,132,48,'Đã chọn',valid&&!this.runtime.pauses.some(reason=>reason!=='order'),()=>this.closeMarketQuantity(true));
   }
-  private openMarketPurchase(id:StockIngredient):void{
-    if(this.marketPurchase||this.runtime.pauses.length||!(this.preparationHub||this.runtime.canPrepareNextDay))return;
+  private get marketBasketEntries(){
+    return STOCK_INGREDIENTS.filter(id=>this.runtime.ingredientAccess(id).unlocked)
+      .map(ingredient=>({ingredient,quantity:this.marketQuantities[ingredient]??1})).filter(row=>row.quantity>0);
+  }
+  private get marketBasketTotal(){return this.marketBasketEntries.reduce((sum,row)=>sum+row.quantity*this.runtime.price(row.ingredient),0);}
+  private suggestMarket():void{
+    if(this.runtime.pauses.length||!(this.preparationHub?this.runtime.canOpen:this.runtime.canPrepareNextDay))return;
+    const forecast=this.runtime.marketForecast;
+    this.marketQuantities=Object.fromEntries(STOCK_INGREDIENTS.map(id=>[id,0]));
+    for(const row of forecast.rows)if(this.runtime.ingredientAccess(row.ingredient).unlocked)this.marketQuantities[row.ingredient]=Math.min(100,row.missing);
+    this.game.canvas.dataset.marketForecast=JSON.stringify(forecast);this.dirty=true;
+  }
+  private openMarketBasket():void{
+    if(this.marketBasket||this.runtime.pauses.length||!(this.preparationHub?this.runtime.canOpen:this.runtime.canPrepareNextDay))return;
+    const quote=this.runtime.quoteMarketBasket(this.marketBasketEntries);if(!quote)return;
+    this.marketDrag.active=false;this.marketBasket={...quote,commandId:`market-all:${this.purchaseScope}:${++this.purchaseSerial}`};
+    this.marketError='';this.marketLease=this.runtime.acquirePause('order');this.dirty=true;
+  }
+  private marketBasketDialog():void{
+    const purchase=this.marketBasket!;this.summaryModalVeil();this.notificationFrame(['market-purchase-cancel','market-purchase-confirm'],250,480,520);
+    this.label(180,210,'Mua tất cả nguyên liệu',21,ink,280);
+    const enough=this.runtime.state.cash>=purchase.total;
+    const lines=purchase.entries.map(row=>`${ingredientName(row.ingredient)} ×${row.quantity} · ${row.unitPrice} xu/phần = ${row.quantity*row.unitPrice} xu`);
+    this.explanation(250,225,[...lines,`Tổng: ${purchase.total} xu`,enough?`Tiền còn lại: ${this.runtime.state.cash-purchase.total} xu`:`Thiếu ${purchase.total-this.runtime.state.cash} xu`,`Nhập toàn bộ vào Kho cho ngày ${purchase.day}.`,this.marketError].filter(Boolean).join('\n'),13);
+    this.button('market-purchase-cancel',40,490,132,48,'Hủy',true,()=>this.closeMarketBasket(),UI.dark);
+    this.button('market-purchase-confirm',188,490,132,48,'Mua tất cả',enough&&!this.runtime.pauses.some(p=>p!=='order'),()=>{
+      if(this.marketBasket!==purchase)return;
+      this.marketLease?.release();this.marketLease=undefined;
+      if(this.runtime.buyAll(purchase.entries,purchase.commandId,purchase.day)){
+        for(const row of purchase.entries)this.marketQuantities[row.ingredient]=0;
+        this.closeMarketBasket();
+      }else{this.marketError='Giá, quyền mua hoặc tiền đã thay đổi. Hãy đóng và kiểm tra lại giỏ.';this.marketLease=this.runtime.acquirePause('order');this.dirty=true;}
+    });
+    this.game.canvas.dataset.marketBasket=JSON.stringify(purchase);
+  }
+  private buyMarketItem(id:StockIngredient):void{
+    if(!this.runtime.ingredientAccess(id).unlocked||this.marketBasket||this.runtime.pauses.length||!(this.preparationHub||this.runtime.canPrepareNextDay))return;
     this.marketDrag.active=false;
     const quantity=this.marketQuantities[id]??1;
-    this.marketPurchase={id,quantity,total:this.runtime.price(id)*quantity,commandId:`market:${this.purchaseScope}:${++this.purchaseSerial}`};this.marketError='';this.marketLease=this.runtime.acquirePause('order');this.dirty=true;
+    if(quantity<1)return;
+    const now=performance.now();if(now-(this.marketLastPurchase.get(id)??-Infinity)<300)return;
+    if(this.runtime.dispatch({type:'market.buy',ingredient:id,quantity,commandId:`market:${this.purchaseScope}:${++this.purchaseSerial}`}))this.marketLastPurchase.set(id,now);
+    this.dirty=true;
   }
-  private closeMarketPurchase():void{this.marketPurchase=null;this.marketLease?.release();this.marketLease=undefined;this.marketError='';this.dirty=true;}
-  private marketPurchaseDialog():void{
-    const purchase=this.marketPurchase!;this.summaryModalVeil();this.notificationFrame(['market-purchase-cancel','market-purchase-confirm'],250,420,420);
-    this.label(180,210,'Mua nguyên liệu',22,ink,280);
-    const enough=this.runtime.state.cash>=purchase.total;
-    this.explanation(250,165,`${ingredientName(purchase.id)} × ${purchase.quantity}\nGiá ${this.runtime.price(purchase.id)} xu / phần · Tổng ${purchase.total} xu\n${enough?`Tiền còn lại: ${this.runtime.state.cash-purchase.total} xu`:`Thiếu ${purchase.total-this.runtime.state.cash} xu`}\nNhập Kho ngay để chuẩn bị ngày ${this.runtime.preparationDay}.${this.marketError?'\n'+this.marketError:''}`,14);
-    this.button('market-purchase-cancel',40,430,132,48,'Hủy',true,()=>this.closeMarketPurchase(),UI.dark);
-    this.button('market-purchase-confirm',188,430,132,48,'Mua',enough&&!this.runtime.pauses.some(p=>p!=='order'),()=>{
-      if(this.marketPurchase!==purchase)return;
-      this.marketLease?.release();this.marketLease=undefined;
-      const accepted=this.runtime.dispatch({type:'market.buy',ingredient:purchase.id,quantity:purchase.quantity,commandId:purchase.commandId});
-      if(accepted)this.closeMarketPurchase();else{this.marketError='Chưa thể mua. Hãy đóng bảng và thử lại khi game tiếp tục.';this.marketLease=this.runtime.acquirePause('order');this.dirty=true;}
-    });
-  }
+  private closeMarketBasket():void{this.marketBasket=null;this.marketLease?.release();this.marketLease=undefined;this.marketError='';this.dirty=true;}
   private saveDialog():void {
     const session=this.campaignSession!;const save=session.view;this.resetModalControls();this.notificationFrame(this.reloadConfirmation?['save-reload-confirm','save-reload-cancel']:[save.state==='recovery'?'save-recover-confirm':save.canRetry?'save-retry':'save-read-again'],250,510,490);
     this.label(180,210,this.reloadConfirmation?'Tải mốc mới nhất?':save.state==='saving'?'Đang lưu ngày…':'Tiến độ chưa lưu',22,ink,284);

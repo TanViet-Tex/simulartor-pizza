@@ -7,6 +7,12 @@ date: '2026-10-02'
 
 # Giao diện hiện tại là mốc cho các lần triển khai sau
 
+### Dự báo và giỏ Chợ — yêu cầu 2026-10-06
+
+Người dùng yêu cầu gợi ý mua/nguyên liệu khóa/mua tất cả, sau đó yêu cầu Mua lẻ mua ngay không popup. Giữ header/năm tab/filter/frame/list321×318/hàng53px/footer mở quán. Header trong thân hiện tổng giỏ và dự phòng/giá ngày/ưu đãi; vùng chữ dưới list thêm hai nút Gợi ý mua hôm nay/Mua tất cả. Không đổi số dòng hoặc vị trí nút mở ngày. Ô khóa giữ icon nguyên liệu, tên và icon khóa/tên công thức cần mua; không có stepper/Mua khả dụng. Quantity0 cho bỏ dòng khỏi giỏ. Mua tất cả dùng khung xác nhận chung có danh sách cuộn, tổng/số dư/Hủy/Mua tất cả. Mua lẻ nhập Kho ngay, không popup hoặc mở ca.
+
+Ảnh kiểm chứng phần Chợ theo yêu cầu mới, giữ mốc cũ riêng: [Chợ](ui-baseline/market-forecast-2026-10-06.png), [giỏ](ui-baseline/market-basket-2026-10-06.png). Xem [spec](spec-market-forecast-and-basket.md).
+
 Người dùng yêu cầu giữ giao diện cũ sau khi Story 1.7 tự thay bố cục, rồi yêu cầu đồng bộ giao diện đã khôi phục vào tài liệu để lần sau không tự đổi. Sau đó người dùng yêu cầu rõ ràng sửa riêng hàng chờ và panel đơn theo ảnh sáu avatar/mái kem. Chỉnh sửa được phép này được ghi trong [spec hàng chờ](spec-compact-order-queue.md); các khu vực còn lại tiếp tục giữ mốc đã duyệt.
 
 Tài liệu này là nguồn hiện hành cho **bố cục và phong cách màn chơi/menu**. Nó thay thế các chỉ dẫn hình ảnh mâu thuẫn trong UX, epics và spec cũ, đặc biệt hàng khách 96px, vùng thao tác tối đa 176px, nút đỏ `#B9362B`, góc 2/6px và đề xuất bỏ ô khóa. GDD/architecture vẫn quyết định luật gameplay và ranh giới kỹ thuật. Các yêu cầu UI mới, rõ ràng của người dùng có thể thay đổi mốc này.

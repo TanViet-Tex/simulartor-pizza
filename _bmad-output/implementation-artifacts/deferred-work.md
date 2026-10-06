@@ -1,5 +1,9 @@
 # Công việc để xử lý riêng
 
+## 2026-10-06 — Assertion report legacy trong CozyMarketFlow
+
+Test “preserves legacy checkpoint stock and cash while buying at its current preparation day” so sánh completedReports với checkpoint.reports còn progressionArchive; selector hiện không xuất trường archive. Cùng lỗi tái hiện với CozyRuntime từ baseline c8408f7 (3test khác trong suite đạt). Không do quyền nguyên liệu/dự báo/bulk. Cần cập nhật assertion theo contract report trong lượt riêng; không sửa báo cáo/gameplay để làm xanh test. Bản Chợ mới có27unit tập trung đạt.
+
 ## 2026-10-04 — Tests lịch sử không khớp luật game hiện hành
 
 Trong khi kiểm tra background play, `CozyRuntime.test.ts` còn assertion lấy bánh ở 3s thay vì cửa sổ lò hiện hành 6–8s; `CozySchedule.test.ts` còn kỳ vọng lịch/menu cũ (7 assertion thất bại tổng cộng). Luật và các assertions này có sẵn trước bản sửa background play. Cần cập nhật bộ test lịch sử theo luật hiện hành ở lượt riêng, giữ bằng chứng regression có ý nghĩa; không đổi luật tiền/kho/lịch chỉ để làm xanh test cũ. Bộ lifecycle/gameplay hiện hành 54 kiểm tra tập trung đạt trước patch review cuối; kết quả cuối ghi ở spec background play.

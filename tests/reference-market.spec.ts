@@ -25,7 +25,7 @@ async function fixture(page:Page,mode:'regular'|'poor'|'terminal'='regular'){
     import Phaser from 'phaser';import {CozyScene} from './src/scenes/CozyScene';import {CozyRuntime} from './src/runtime/CozyRuntime';
     const runtime=new CozyRuntime(false,true,{schedule:day=>({day,duration:180,grace:120,slots:[{id:'first',at:0,kind:'regular',opportunity:'commercial',commercialOrdinal:1,takeaway:true}]}),resolveRecipe:()=> 'cheese'});
     ${mode==='poor'?"runtime.buy('dough',58);":''}
-    ${mode==='terminal'?"runtime.buy('shrimp',24);runtime.openShop();runtime.closeDay();":''}
+    ${mode==='terminal'?"runtime.buy('mushroom',59);runtime.openShop();runtime.closeDay();":''}
     let guarded=false;runtime.attachSaveGuard(()=>!guarded);
     window.marketFixture={runtime,advance:seconds=>{for(let i=0;i<seconds*20;i++)runtime.advance(50);},guard:value=>{guarded=value;window.dispatchEvent(new Event('resize'));}};
     const game=new Phaser.Game({type:Phaser.AUTO,parent:'fixture',width:360,height:640,scale:{mode:Phaser.Scale.FIT,autoCenter:Phaser.Scale.CENTER_BOTH},scene:[new CozyScene(runtime)]});window.marketFixture.game=game;
@@ -38,7 +38,6 @@ async function fixture(page:Page,mode:'regular'|'poor'|'terminal'='regular'){
 }
 async function buyTwo(page:Page,id:string,filter='base'){
   await tap(page,'market-filter-'+filter);await tap(page,'market-plus-'+id);await tap(page,'market-buy-'+id);
-  await tap(page,'market-purchase-confirm');
   await expect.poll(async()=>((await data(page,'stock')) as {id:string;owned:number}[]).find(s=>s.id===id)?.owned).toBe(2);
 }
 async function scrollToEnd(page:Page){
@@ -66,7 +65,7 @@ test('regular market purchase enters stock and is used once through the next-day
   const report=await data(page,'day-summary');expect(report).toMatchObject({purchases:30,cost:15,revenue:50,profit:15,cash:300});
   await tap(page,'summary-tab-market');await tap(page,'market-filter-base');
   const dough=(await data(page,'market-rows')).find((r:Row)=>r.id==='dough');expect(dough).toMatchObject({unitPrice:6,available:1});
-  await tap(page,'market-buy-dough');await tap(page,'market-purchase-confirm');
+  await tap(page,'market-buy-dough');
   await expect(canvas).toHaveAttribute('data-cash',String(300-6*dough.quantity));expect(await data(page,'day-summary')).toEqual(report);
   await tap(page,'summary-tab-stock');await tap(page,'stock-item-dough');expect((await data(page,'hub-detail')).body).toContain('Lô ngày 2');await tap(page,'hub-detail-close');
   await tap(page,'summary-stock-market');await tap(page,'summary-open-next-day');await expect(canvas).toHaveAttribute('data-day','2');await expect(canvas).toHaveAttribute('data-screen','game');
@@ -96,14 +95,14 @@ test('filters and scroll expose all nineteen real ingredients and cancellation c
   await tap(page,'market-price-open');await wheelBehind();await tap(page,'market-price-cancel');
   await tap(page,'market-filter-sauce');expect((await data(page,'market-rows')).map((r:Row)=>r.id).sort()).toEqual(['sauce','sauce-white','sauce-bbq','sauce-pesto','sauce-hot'].sort());
   await tap(page,'market-filter-base');expect((await data(page,'market-rows')).map((r:Row)=>r.id).sort()).toEqual(['cheese','dough']);
-  await tap(page,'market-buy-dough');await expect.poll(async()=>await data(page,'market-purchase')).not.toBeNull();
+  await tap(page,'market-buy-all');await expect.poll(async()=>await data(page,'market-basket')).not.toBeNull();
   const stock=await data(page,'stock');await canvas.screenshot({path:info.outputPath('market-confirmation.png')});
   expect(((await data(page,'controls')) as Control[]).some(c=>c.id==='summary-open-first-day'&&c.enabled)).toBe(false);
   await tap(page,'market-purchase-cancel');await expect(canvas).toHaveAttribute('data-cash','300');expect(await data(page,'stock')).toEqual(stock);
-  await tap(page,'market-buy-dough');
+  await tap(page,'market-buy-all');
   const confirm=((await data(page,'controls')) as Control[]).find(c=>c.id==='market-purchase-confirm')!,box=(await canvas.boundingBox())!;
   for(let i=0;i<2;i++)await page.touchscreen.tap(box.x+(confirm.x+confirm.width/2)*box.width/360,box.y+(confirm.y+confirm.height/2)*box.height/640);
-  await expect(canvas).toHaveAttribute('data-cash','295');expect((await data(page,'stock')).find((s:{id:string})=>s.id==='dough').owned).toBe(1);
+  await expect(canvas).toHaveAttribute('data-cash','280');expect((await data(page,'stock')).find((s:{id:string})=>s.id==='dough').owned).toBe(1);
   await tap(page,'market-filter-topping');expect((await data(page,'market-rows')).length).toBe(12);
   const b=(await canvas.boundingBox())!,region=await data(page,'market-scroll');
   await page.mouse.move(b.x+120*b.width/360,b.y+(region.y+region.height-20)*b.height/640);await page.mouse.down();
@@ -111,8 +110,8 @@ test('filters and scroll expose all nineteen real ingredients and cancellation c
   await expect.poll(async()=>(await data(page,'market-scroll')).offset).toBeGreaterThan(100);
   await scrollToEnd(page);await canvas.screenshot({path:info.outputPath('market-scrolled.png')});
   expect((await data(page,'market-rows')).some((r:Row)=>r.id==='pineapple'&&r.visible)).toBe(true);
-  await tap(page,'market-buy-pineapple');await tap(page,'market-purchase-confirm');
-  expect((await data(page,'stock')).find((s:{id:string})=>s.id==='pineapple').owned).toBe(1);
+  expect(((await data(page,'controls')) as Control[]).find(c=>c.id==='market-buy-pineapple')?.enabled).toBe(false);
+  expect((await data(page,'stock')).find((s:{id:string})=>s.id==='pineapple').owned).toBe(0);
   const offset=(await data(page,'market-scroll')).offset;expect(offset).toBeGreaterThan(0);
   await tap(page,'summary-tab-stock');await tap(page,'summary-stock-market');expect((await data(page,'market-scroll')).offset).toBe(offset);
 });
@@ -122,7 +121,7 @@ test('unaffordable purchases are explained and save guards prevent cash or stock
   expect((await data(page,'market-rows')).find((r:Row)=>r.id==='cheese')).toMatchObject({quantity:2,total:14,remainingCash:-4});
   const cash=await canvas.getAttribute('data-cash'),stock=await data(page,'stock');
   const buy=((await data(page,'controls')) as Control[]).find(c=>c.id==='market-buy-cheese');
-  if(buy?.enabled){await tap(page,'market-buy-cheese');expect(((await data(page,'controls')) as Control[]).find(c=>c.id==='market-purchase-confirm')?.enabled).toBe(false);await tap(page,'market-purchase-cancel');}
+  if(buy?.enabled){await tap(page,'market-buy-cheese');expect(await data(page,'market-purchase')).toBeNull();}
   await expect(canvas).toHaveAttribute('data-cash',cash!);expect(await data(page,'stock')).toEqual(stock);
   await page.evaluate(()=>{(window as unknown as {marketFixture:{guard:(v:boolean)=>void}}).marketFixture.guard(true);});
   await expect.poll(async()=>((await data(page,'controls')) as Control[]).filter(c=>c.id.startsWith('market-buy-')&&c.enabled).length).toBe(0);
@@ -130,7 +129,7 @@ test('unaffordable purchases are explained and save guards prevent cash or stock
 });
 
 test('terminal market stays read-only and switching tabs does not add a visibility pause',async({page})=>{
-  await fixture(page);const canvas=page.locator('canvas');await tap(page,'market-buy-dough');
+  await fixture(page);const canvas=page.locator('canvas');await tap(page,'market-buy-all');
   await page.evaluate(()=>{Object.defineProperty(document,'hidden',{configurable:true,value:true});document.dispatchEvent(new Event('visibilitychange'));Object.defineProperty(document,'hidden',{configurable:true,value:false});document.dispatchEvent(new Event('visibilitychange'));});
   await tap(page,'market-purchase-cancel');await expect(canvas).toHaveAttribute('data-paused','');await expect(canvas).toHaveAttribute('data-cash','300');
   await fixture(page,'terminal');expect(((await data(page,'controls')) as Control[]).filter(c=>c.id.startsWith('market-buy-')&&c.enabled)).toEqual([]);
@@ -160,14 +159,14 @@ test('quantity number opens numeric input, validates integers and buys the chose
   await expect(input).toHaveCount(0);expect((await data(page,'market-rows')).find((r:Row)=>r.id==='dough').quantity).toBe(37);
   await tap(page,'market-quantity-dough');await input.fill('37');await tap(page,'market-quantity-apply');await expect(input).toHaveCount(0);
   await tap(page,'market-quantity-dough');
-  for(const invalid of ['101','0','-2','2.5','1e2','1000','']){
+  for(const invalid of ['101','-2','2.5','1e2','1000','']){
     await input.fill(invalid);await expect.poll(async()=>((await data(page,'controls')) as Control[]).find(c=>c.id==='market-quantity-apply')?.enabled).toBe(false);
     await input.press('Enter');await expect(input).toHaveCount(1);
   }
   await input.press('Escape');await expect(input).toHaveCount(0);
   expect((await data(page,'market-rows')).find((r:Row)=>r.id==='dough').quantity).toBe(37);
   await tap(page,'market-minus-dough');expect((await data(page,'market-rows')).find((r:Row)=>r.id==='dough').quantity).toBe(36);
-  await tap(page,'market-plus-dough');await tap(page,'market-buy-dough');await tap(page,'market-purchase-confirm');
+  await tap(page,'market-plus-dough');await tap(page,'market-buy-dough');
   await expect(canvas).toHaveAttribute('data-cash','115');expect((await data(page,'stock')).find((s:{id:string})=>s.id==='dough').owned).toBe(37);
 });
 
@@ -266,10 +265,10 @@ test('market and stock retain their list textures and input while dragging acros
     expect(retained).toMatchObject({...baseline,sameTexture:true,sameZones:true});
     const controls=await data(page,'controls') as Control[];
     expect(new Set(controls.map(c=>c.id)).size).toBe(controls.length);
-    expect(controls.filter(c=>c.enabled&&(c.id.startsWith('stock-item-')||/^market-(buy|quantity|minus|plus)-/.test(c.id))).every(c=>c.y>=(tab==='market'?219:223)&&c.y+c.height<=(tab==='market'?537:535))).toBe(true);
+    expect(controls.filter(c=>c.enabled&&c.id!=='market-buy-all'&&(c.id.startsWith('stock-item-')||/^market-(buy|quantity|minus|plus)-/.test(c.id))).every(c=>c.y>=(tab==='market'?219:223)&&c.y+c.height<=(tab==='market'?537:535))).toBe(true);
     await canvas.screenshot({path:info.outputPath(tab+'-retained-scroll.png')});
     // Correct current row remains actionable after the scroll.
-    const target=controls.find(c=>c.enabled&&c.height>=48&&(tab==='market'?c.id.startsWith('market-buy-'):c.id.startsWith('stock-item-')))!;
+    const target=controls.find(c=>c.enabled&&c.height>=48&&(tab==='market'?c.id==='market-buy-all':c.id.startsWith('stock-item-')))!;
     await tap(page,target.id);
     const offset=(await data(page,tab+'-scroll')).offset;
     await page.mouse.move(b.x+130*b.width/360,b.y+350*b.height/640);await page.mouse.wheel(0,200);

@@ -28,7 +28,7 @@ describe('Epic 5 catalog, purchases and ongoing campaign',()=>{
   for(let day=1;day<=5;day++){for(const id of ['dough','sauce','cheese'] as const)expect(r.buy(id,1)).toBe(true);expect(day===1?r.openShop():r.openNextDay()).toBe(true);expect(r.shiftClock.duration).toBe(day===1?180:day===2?210:240);expect(r.closeDay()).toBe(true);expect(r.daySummary!.ending).toBeNull();expect(validateCozyCheckpoint(r.exportCheckpoint())).not.toBeNull();}
   
  });
- it('day continuation preserves insolvency and never permits terminal reopening',()=>{const r=new CozyRuntime(false,true);expect(r.buy('shrimp',24)).toBe(true);expect(r.openShop()).toBe(true);expect(r.closeDay()).toBe(true);expect(r.daySummary!.ending).toBe('insolvent');expect(r.openNextDay()).toBe(false);});
+ it('day continuation preserves insolvency and never permits terminal reopening',()=>{const r=new CozyRuntime(false,true);expect(r.buy('mushroom',59)).toBe(true);expect(r.openShop()).toBe(true);expect(r.closeDay()).toBe(true);expect(r.daySummary!.ending).toBe('insolvent');expect(r.openNextDay()).toBe(false);});
  it('supplier rewards ordinary purchases next day, never discounts express or reprices old lots',()=>{
   const s=new CozyStock();s.receive(1000);expect(s.buy('dough',100,1)).toBe(true);expect(s.purchasePrice('cheese',1)).toBe(7);const old=s.lots[0];s.settle(1);expect(s.supplier(2).familiar).toBe(true);expect(s.purchasePrice('cheese',2)).toBe(7);expect(s.buy('shrimp',1,2)).toBe(true);expect(s.lots.find(l=>l.ingredient==='shrimp')!.unitCost).toBe(12);expect(s.lots.find(l=>l.id===old.id)!.unitCost).toBe(5);expect(s.orderExpress('express','shrimp',1,2)!.unitCost).toBe(Math.ceil(datedIngredientPrice('shrimp',2)*1.6));expect(CozyStock.restore(s.exportCheckpoint())).not.toBeNull();
  });

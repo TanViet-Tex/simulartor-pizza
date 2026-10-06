@@ -22,6 +22,7 @@ interface Allocation { lotId:number; ingredient:StockIngredient; quantity:number
 interface Reservation { allocations:Allocation[]; day:number; expiresAt:number }
 export interface CozyLot { id: number; ingredient: StockIngredient; quantity: number; unitCost: number; day: number; expiry: number }
 export interface CozyInventory {units:number;value:number;lots:CozyLot[]}
+export interface MarketBasketEntry {ingredient:StockIngredient;quantity:number;unitPrice:number}
 export interface CozyStockSnapshot {cash:number;nextLot:number;activeDay:number;lots:CozyLot[];books:{day:number;purchases:number;ordinaryPurchases?:number;eventLoss?:number;consumed:number}[];settlements:{day:number;expired:number;rent:number}[]}
 export function validateStockSnapshot(value:unknown):CozyStockSnapshot|null {
   if(!value||typeof value!=='object')return null;
@@ -77,6 +78,17 @@ export class CozyStock {
     this.money -= total;
     this.book(day).purchases += total;this.book(day).ordinaryPurchases=(this.book(day).ordinaryPurchases??0)+total;
     this.inventory.push({ id: this.nextLot++, ingredient: id, quantity, unitCost: this.purchasePrice(id,day), day, expiry: ingredientExpiry(id,day) });
+    return true;
+  }
+  /** Validate every line before committing one ordinary purchase ledger entry. */
+  buyAll(entries:readonly MarketBasketEntry[],day:number):boolean {
+    if(!Number.isSafeInteger(day)||day<1||day>1000000||this.settlements.has(day)||!entries.length||entries.length>STOCK_INGREDIENTS.length||new Set(entries.map(e=>e.ingredient)).size!==entries.length)return false;
+    if(entries.some(e=>!STOCK_INGREDIENTS.includes(e.ingredient)||!Number.isSafeInteger(e.quantity)||e.quantity<1||e.quantity>100||e.unitPrice!==this.purchasePrice(e.ingredient,day)))return false;
+    const total=entries.reduce((sum,e)=>sum+e.quantity*e.unitPrice,0);
+    if(!Number.isSafeInteger(total)||total>this.money)return false;
+    this.money-=total;
+    const book=this.book(day);book.purchases+=total;book.ordinaryPurchases=(book.ordinaryPurchases??0)+total;
+    for(const entry of entries)this.inventory.push({id:this.nextLot++,ingredient:entry.ingredient,quantity:entry.quantity,unitCost:entry.unitPrice,day,expiry:ingredientExpiry(entry.ingredient,day)});
     return true;
   }
   missing(recipe: StockRecipe,day=this.activeDay): StockIngredient[] { return recipeIngredients(recipe).filter(id => this.available(id,day) < 1); }

@@ -32,7 +32,7 @@ test('all five hub labels and coin amount fit; purchase veil is gently dimmed on
     await canvas.screenshot({path:info.outputPath('hub-'+tab+'.png')});
   }
   await tap(page,'summary-tab-market');const before=await corner(page),cash=await canvas.getAttribute('data-cash');
-  await tap(page,'market-buy-dough');await expect(canvas).toHaveAttribute('data-paused',/order/);
+  await tap(page,'market-buy-all');await expect(canvas).toHaveAttribute('data-paused',/order/);
   gentleDim(before,await corner(page));
   const b=(await canvas.boundingBox())!;await page.touchscreen.tap(b.x+180*b.width/360,b.y+95*b.height/640);
   await expect(canvas).toHaveAttribute('data-summary-tab','market');await expect(canvas).toHaveAttribute('data-cash',cash!);
