@@ -4,8 +4,10 @@ const silentVoice='data:audio/wav;base64,UklGRiYAAABXQVZFZm10IBAAAAABAAEARKwAAIh
 const MUSIC_VOLUME=.15;
 // The oven's useful 0–6s range is unusually quiet in the supplied recording.
 const OVEN_GAIN=6;
+// Decoded asset onset: the first audible transient follows 390ms of near silence.
+const SETTINGS_ONSET=.39;
 type Sound=keyof typeof files;
-interface Stream {media:HTMLAudioElement;url:string;wanted:boolean;playing:boolean;pending:boolean;blocked:boolean;revision:number;reset:boolean;primed:boolean;priming:boolean;source?:MediaElementAudioSourceNode;gain?:GainNode;}
+interface Stream {media:HTMLAudioElement;url:string;wanted:boolean;playing:boolean;pending:boolean;blocked:boolean;revision:number;reset:boolean;primed:boolean;priming:boolean;startOffset:number;source?:MediaElementAudioSourceNode;gain?:GainNode;}
 
 /** Audio is presentation-only. Media creation and playback unlock follow an input gesture. */
 export class PlayAudio {
@@ -42,7 +44,9 @@ export class PlayAudio {
     const queued=[...this.queuedEffects];this.queuedEffects.clear();for(const name of queued)this.effect(name);
     // Safari unlocks individual elements. Prime the idle voices inside this gesture,
     // so customer/staff events can use them later without another tap.
-    for(const [name,stream] of this.streams)if(!stream.wanted&&!stream.primed&&!stream.pending)this.prime(name,stream);
+    // Settings always plays in its own UI gesture; avoid deferring that click
+    // behind a primer while its real file can start immediately.
+    for(const [name,stream] of this.streams)if(name!=='settings'&&!stream.wanted&&!stream.primed&&!stream.pending)this.prime(name,stream);
     await resumed;
     // Failed resume leaves native media as the audible fallback. Connecting it
     // to a suspended context would otherwise silently consume its output.
@@ -54,8 +58,9 @@ export class PlayAudio {
     if(this.disposed||this.muted)return;
     if(!this.unlocked){if(name!=='arrival')this.queuedEffects.add(name);return;}
     const stream=this.stream(name);if(!stream)return;
+    stream.startOffset=name==='settings'?SETTINGS_ONSET:0;
     // Reuse one voice per effect, including repeated taps while play() is pending.
-    if(!stream.priming){stream.media.pause();this.reset(stream);}stream.playing=false;stream.revision++;stream.blocked=false;
+    if(!stream.priming){stream.media.pause();this.reset(stream,stream.startOffset);}stream.playing=false;stream.revision++;stream.blocked=false;
     this.request(stream,true,false);
   }
   syncOven(baking:boolean,paused:boolean):void{this.baking=baking;this.ovenPaused=paused;this.updateOven();}
@@ -76,9 +81,10 @@ export class PlayAudio {
     const existing=this.streams.get(name);if(existing)return existing;
     try{
       const url=`${import.meta.env.BASE_URL}assets/audio/${encodeURIComponent(files[name])}`,media=this.createMedia(url);
-      media.loop=name==='oven'||name.startsWith('music');media.preload='metadata';
-      const stream:Stream={media,url,wanted:false,playing:false,pending:false,blocked:false,revision:0,reset:false,primed:false,priming:false};
+      media.loop=name==='oven'||name.startsWith('music');media.preload=name==='settings'?'auto':'metadata';
+      const stream:Stream={media,url,wanted:false,playing:false,pending:false,blocked:false,revision:0,reset:false,primed:false,priming:false,startOffset:0};
       media.onended=()=>{if(!media.loop&&!stream.priming){stream.wanted=false;stream.playing=false;stream.revision++;}};
+      media.onloadedmetadata=()=>{if(!stream.priming&&stream.wanted&&!stream.playing&&stream.startOffset)this.reset(stream,stream.startOffset);};
       this.route(stream);this.mix(name,stream);this.streams.set(name,stream);return stream;
     }catch{return;}
   }
@@ -110,6 +116,7 @@ export class PlayAudio {
   private play(stream:Stream):void{
     if(stream.media.paused)stream.playing=false;
     if(this.disposed||!stream.wanted||stream.playing||stream.pending||stream.blocked)return;
+    if(stream.startOffset)this.reset(stream,stream.startOffset);
     stream.pending=true;const revision=stream.revision;
     try{
       void Promise.resolve(stream.media.play()).then(()=>{
@@ -138,7 +145,7 @@ export class PlayAudio {
       void Promise.resolve(result).then(()=>finish(true),()=>finish(false));
     }catch{stream.media.pause();finish(false);}
   }
-  private reset(stream:Stream):void{try{stream.media.currentTime=0;}catch{ /* Metadata may not be loaded yet. */ }}
+  private reset(stream:Stream,offset=0):void{try{stream.media.currentTime=offset;}catch{ /* Metadata may not be loaded yet; the loadedmetadata handler retries. */ }}
   private stopEffects():void{this.queuedEffects.clear();for(const [name,stream] of this.streams)if(name!=='oven'&&!name.startsWith('music'))this.request(stream,false,true);}
   cue():void{
     if(this.disposed||this.muted||this.context?.state!=='running')return;
@@ -150,5 +157,5 @@ export class PlayAudio {
       oscillator.start();oscillator.stop(this.context.currentTime+.045);
     }catch{ /* A missing audio device must never interrupt gameplay. */ }
   }
-  destroy():void {if(this.disposed)return;this.disposed=true;this.silence();this.gains.clear();for(const stream of this.streams.values()){this.request(stream,false,true);stream.media.onended=null;stream.media.removeAttribute('src');stream.media.load();stream.source?.disconnect();stream.gain?.disconnect();}this.streams.clear();void this.context?.close().catch(()=>{});}
+  destroy():void {if(this.disposed)return;this.disposed=true;this.silence();this.gains.clear();for(const stream of this.streams.values()){this.request(stream,false,true);stream.media.onended=null;stream.media.onloadedmetadata=null;stream.media.removeAttribute('src');stream.media.load();stream.source?.disconnect();stream.gain?.disconnect();}this.streams.clear();void this.context?.close().catch(()=>{});}
 }

@@ -151,7 +151,7 @@ export class MainMenuScene extends Phaser.Scene {
     this.button('menu-continue', 76, top+step, 208, height, 'Tiếp tục', 'continue', PAPER, '#985025', mainEnabled && hasSession,
       () => this.actions.continue(), entrance, hasSession ? save?.day?`Ngày ${save.day}`:undefined : 'Chưa có phiên đang chơi');
     this.button('menu-settings', 76, top+2*step, 208, height, 'Cài đặt', 'settings', 0xf5c6a5, '#985025', mainEnabled,
-      () => { this.audio.effect('settings');this.dialog = 'settings'; this.focusId = ''; this.draw(); }, entrance);
+      () => { void this.audio.interact();this.audio.effect('settings');this.dialog = 'settings'; this.focusId = ''; this.draw(); }, entrance);
     if (this.dialog !== 'none') this.drawDialog();
     this.drawFocus(); this.publish();
   }
@@ -268,7 +268,8 @@ export class MainMenuScene extends Phaser.Scene {
     const zone=this.add.zone(target.x,target.y,width,height).setOrigin(0).setInteractive({useHandCursor:true});this.interfaceLayer.add(zone);
     zone.on('pointerdown',(pointer:Phaser.Input.Pointer)=>{
       const chosen=this.targets.find(item=>!item.disabled&&item.visible.contains(pointer.x,pointer.y))??target;
-      this.keyboardFocus=false;this.focusId=chosen.id;this.drawFocus();chosen.action();void this.audio.interact().then(()=>this.audio.cue());
+      const settings=this.dialog==='settings';
+      this.keyboardFocus=false;this.focusId=chosen.id;this.drawFocus();chosen.action();if(!settings)void this.audio.interact().then(()=>this.audio.cue());
     });
   }
   private notificationY(y:number):number{const n=this.notification!;return n.layout.body.y+Math.max(0,Math.min(1,(y-n.start)/(n.end-n.start)))*n.layout.body.height;}
@@ -295,7 +296,7 @@ export class MainMenuScene extends Phaser.Scene {
       this.drawFocus();
     } else if (event.key === 'Enter' || event.key === ' ') {
       const target = enabled.find(item => item.id === this.focusId);
-      if (target) { event.preventDefault(); target.action(); void this.audio.interact().then(()=>this.audio.cue()); }
+      if (target) { event.preventDefault();const settings=this.dialog==='settings'||target.id==='menu-settings';target.action();if(!settings)void this.audio.interact().then(()=>this.audio.cue()); }
     }
   };
   private drawFocus(): void {

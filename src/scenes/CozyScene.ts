@@ -318,7 +318,8 @@ export class CozyScene extends Phaser.Scene {
       if(this.reducedMotion)effect.timer=this.time.delayedCall(140,dispose);
       else effect.tween=this.tweens.add({targets:flash,alpha:0,scaleX:.96,scaleY:.96,duration:190,onComplete:dispose,onStop:dispose});
       const visible=this.visibleActions.find(c=>c.id===targetId);
-      if(visible)visible.action();const audioStatus=this.audio.status;void this.audio.interact().then(()=>{this.audio.cue();if(this.audio.status!==audioStatus)this.dirty=true;});this.dirty=true;
+      const settings=this.pauseSettings||targetId==='pause-settings';
+      if(visible)visible.action();const audioStatus=this.audio.status;void this.audio.interact().then(()=>{if(!settings)this.audio.cue();if(this.audio.status!==audioStatus)this.dirty=true;});this.dirty=true;
     });
   }
   private button(id:string,x:number,y:number,w:number,h:number,title:string,enabled:boolean,action:()=>void,fill:number=UI.green):void{
@@ -1084,7 +1085,7 @@ export class CozyScene extends Phaser.Scene {
     this.layer.add(this.add.image(layout.x,layout.y,REFERENCE_PAUSE_ART.key).setOrigin(0).setDisplaySize(layout.width,layout.height));
     const hit=(id:string,rect:{x:number;y:number;width:number;height:number},enabled:boolean,action:()=>void)=>this.hit(id,rect.x,rect.y,rect.width,rect.height,enabled,action);
     hit('resume',layout.buttons.resume,this.scenePauses.has('user')||this.lifecycle.needsContinue||this.runtime.pauses.includes('gap'),()=>this.resumePause());
-    hit('pause-settings',layout.buttons.settings,true,()=>{this.hold('user');this.audio.effect('settings');this.pauseSettings=true;this.dirty=true;});
+    hit('pause-settings',layout.buttons.settings,true,()=>{this.hold('user');void this.audio.interact();this.audio.effect('settings');this.pauseSettings=true;this.dirty=true;});
     hit('main-menu',layout.buttons.menu,!!this.returnToMenu,()=>{this.pauseSettings=false;this.returnToMenu?.();});
     this.game.canvas.dataset.pausePanel=JSON.stringify(layout);
   }
@@ -1112,7 +1113,7 @@ export class CozyScene extends Phaser.Scene {
       if(event.key==='Tab'&&current>=0&&(current+direction<0||current+direction>=enabled.length)){this.settingsFocusId='';this.dirty=true;return;}
       event.preventDefault();this.settingsFocusId=enabled[current===-1?direction===1?0:enabled.length-1:(current+direction+enabled.length)%enabled.length].id;this.dirty=true;
     }else if(event.key==='Enter'||event.key===' '){
-      const action=enabled.find(action=>action.id===this.settingsFocusId);if(action){event.preventDefault();action.action();void this.audio.interact().then(()=>this.audio.cue());this.dirty=true;}
+      const action=enabled.find(action=>action.id===this.settingsFocusId);if(action){event.preventDefault();action.action();this.dirty=true;}
     }
   };
   private success():void{

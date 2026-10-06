@@ -54,6 +54,32 @@ async function unlock(f:ReturnType<typeof mediaFixture>){
   if(first)for(const [name,media] of f.streams)if(name!=='nhạc nèn bán pizza 2.mp3'){media.play.mockClear();media.pause.mockClear();}
 }
 describe('file audio playback',()=>{
+  it('preloads settings without a primer so its next UI gesture starts the real file synchronously',async()=>{
+    const f=mediaFixture();await f.audio.interact();const settings=f.streams.get('cài đặt.mp3')!;
+    expect(settings.src).toContain(encodeURIComponent('cài đặt.mp3'));expect(settings.play).not.toHaveBeenCalled();
+    const interaction=f.audio.interact();f.audio.effect('settings');expect(settings.play).toHaveBeenCalledOnce();expect(settings.currentTime).toBe(.39);await interaction;
+  });
+  it('starts every settings click at its audible onset and keeps other effects at the original beginning',async()=>{
+    const f=mediaFixture();f.audio.effect('settings');await f.audio.interact();await flush();
+    const settings=f.streams.get('cài đặt.mp3')!;expect(settings.preload).toBe('auto');expect(settings.currentTime).toBe(.39);
+    settings.currentTime=.8;f.audio.effect('settings');await flush();expect(settings.currentTime).toBe(.39);expect(settings.play).toHaveBeenCalledTimes(2);
+    const sauce=f.streams.get('sốt.mp3')!;sauce.currentTime=.8;f.audio.effect('sauce');expect(sauce.currentTime).toBe(0);
+    f.audio.toggleMute();expect(settings.currentTime).toBe(0);f.audio.effect('settings');expect(settings.play).toHaveBeenCalledTimes(2);
+  });
+  it('retains the settings onset across repeated clicks while a native play is pending',async()=>{
+    const f=mediaFixture();const create=f.createMedia.getMockImplementation()!;let finish!:()=>void;
+    f.createMedia.mockImplementation(url=>{const media=create(url);if(url.includes(encodeURIComponent('cài đặt.mp3')))(media.play as ReturnType<typeof vi.fn>).mockImplementationOnce(()=>new Promise<void>(resolve=>{finish=resolve;}));return media;});
+    await f.audio.interact();f.audio.effect('settings');const settings=f.streams.get('cài đặt.mp3')!;
+    f.audio.effect('settings');expect(settings.src).toContain(encodeURIComponent('cài đặt.mp3'));finish();await flush();
+    expect(settings.src).toContain(encodeURIComponent('cài đặt.mp3'));expect(settings.currentTime).toBe(.39);expect(settings.play).toHaveBeenCalledTimes(2);
+  });
+  it('retries the settings seek when metadata was not yet available on the first click',async()=>{
+    const f=mediaFixture(),create=f.createMedia.getMockImplementation()!;let ready=false,time=0;
+    f.createMedia.mockImplementation(url=>{const media=create(url);if(url.includes(encodeURIComponent('cài đặt.mp3')))Object.defineProperty(media,'currentTime',{get:()=>time,set:(value:number)=>{if(!ready)throw Error('metadata pending');time=value;}});return media;});
+    f.audio.effect('settings');const interaction=f.audio.interact();const settings=f.streams.get('cài đặt.mp3')!;
+    expect(settings.currentTime).toBe(0);ready=true;(settings as unknown as HTMLAudioElement).onloadedmetadata?.(new Event('loadedmetadata'));
+    await interaction;expect(settings.currentTime).toBe(.39);
+  });
   it('keeps native playback when context resume rejects and routes existing voices after a later successful gesture',async()=>{
     const f=mediaFixture(true);f.context.resume.mockRejectedValueOnce(Error('device locked'));
     await unlock(f);f.audio.syncOven(true,false);await flush();
@@ -96,15 +122,15 @@ describe('file audio playback',()=>{
     expect(snapshot.find(stream=>stream.name==='arrival')!.paused).toBe(false);
     expect(f.streams.get('tiếng khách đến.wav')!.play).toHaveBeenCalledOnce();
   });
-  it('unlocks all seven voices during the gesture with a silent source and restores idle asset URLs',async()=>{
+  it('primes event voices during the gesture while preloading settings for its own gesture',async()=>{
     const f=mediaFixture(),plays:{src:string;volume:number;muted:boolean}[]=[];
     const create=f.createMedia.getMockImplementation()!;
     f.createMedia.mockImplementation(url=>{const media=create(url);const play=media.play.bind(media);media.play=()=>{plays.push({src:media.src,volume:media.volume,muted:media.muted});return play();};return media;});
-    const interaction=f.audio.interact();expect(f.createMedia).toHaveBeenCalledTimes(7);expect(plays).toHaveLength(7);
-    expect(plays.filter(play=>play.src.startsWith('data:audio/wav'))).toHaveLength(6);
+    const interaction=f.audio.interact();expect(f.createMedia).toHaveBeenCalledTimes(7);expect(plays).toHaveLength(6);
+    expect(plays.filter(play=>play.src.startsWith('data:audio/wav'))).toHaveLength(5);
     for(const play of plays.filter(play=>play.src.startsWith('data:')))expect(play).toMatchObject({muted:true,volume:0});
     await interaction;await flush();
-    for(const [name,media] of f.streams){expect(media.src).toContain(encodeURIComponent(name));expect(media.preload).toBe('metadata');expect(media.muted).toBe(false);expect(media.volume).toBe(name.includes('nền')||name.includes('nèn')?.15:1);expect(media.paused).toBe(name!=='nhạc nèn bán pizza 2.mp3');}
+    for(const [name,media] of f.streams){expect(media.src).toContain(encodeURIComponent(name));expect(media.preload).toBe(name==='cài đặt.mp3'?'auto':'metadata');expect(media.muted).toBe(false);expect(media.volume).toBe(name.includes('nền')||name.includes('nèn')?.15:1);expect(media.paused).toBe(name!=='nhạc nèn bán pizza 2.mp3');}
   });
   it('recovers music and oven after native audio interruption on the next gesture',async()=>{
     const f=mediaFixture();await unlock(f);f.audio.syncOven(true,false);await flush();

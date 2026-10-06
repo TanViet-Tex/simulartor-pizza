@@ -54,8 +54,68 @@ for(const level of [0,1,2])test(`oven level ${level+1} follows real timing, paus
   await tap(page,'extract');await tap(page,'box');
   await page.evaluate(()=>{(window as any).audioFixture.runtime.advanceElapsed(13000);});
   const sounds=await page.evaluate(()=>(window as any).audioFixture.media.map((m:any)=>({file:decodeURIComponent(m.src.split('/').pop()),plays:m.plays})));
-  for(const file of ['sốt.mp3','đóng hộp pizza.wav','cài đặt.mp3','tiếng khách đến.wav'])expect(sounds.find((s:any)=>s.file===file)?.plays).toBe(1);
+  for(const file of ['sốt.mp3','đóng hộp pizza.wav','tiếng khách đến.wav'])expect(sounds.find((s:any)=>s.file===file)?.plays).toBe(1);
+  expect(sounds.find((s:any)=>s.file==='cài đặt.mp3')?.plays).toBe(5);
   expect(sounds.filter((s:any)=>s.file==='lò nướng.mp3')).toHaveLength(1);
+});
+
+test('settings pointer and keyboard use the shared file without oscillator feedback in both scenes',async({page})=>{
+  await page.goto('/?mode=freeplay&perf=1');
+  await expect(page.locator('canvas')).toHaveAttribute('data-screen','game');
+  await tap(page,'dough');await tap(page,'pause');
+  await page.evaluate(()=>{
+    const audio=(window as any).pizzaPerformance.game.scene.getScenes(true).find((scene:any)=>scene.audio?.snapshot).audio;
+    const calls:any[]=[];const original=audio.effect.bind(audio);
+    audio.effect=(name:string)=>{calls.push({name,muted:audio.muted});original(name);};
+    audio.cue=()=>calls.push({name:'oscillator'});
+    Object.assign(window,{settingsAudioProbe:{audio,calls}});
+  });
+  const calls=()=>page.evaluate(()=>(window as any).settingsAudioProbe.calls);
+  await tap(page,'pause-settings');await tap(page,'settings-music');
+  await page.locator('canvas').focus();await page.keyboard.press('Tab');await page.keyboard.press('Enter');
+  await tap(page,'mute');await tap(page,'mute');
+  await tap(page,'pause-settings-back');
+  expect((await calls()).filter((call:any)=>call.name==='oscillator')).toHaveLength(0);
+  expect((await calls()).filter((call:any)=>call.name==='settings'&&!call.muted)).toHaveLength(5);
+  await tap(page,'main-menu');await expect(page.locator('canvas')).toHaveAttribute('data-menu-dialog','none');
+  await page.evaluate(()=>(window as any).settingsAudioProbe.calls.length=0);
+  await tap(page,'menu-settings',true);await tap(page,'menu-music-choice',true);
+  await page.locator('canvas').focus();await page.keyboard.press('Tab');await page.keyboard.press('Enter');
+  await tap(page,'menu-settings-close',true);
+  expect((await calls()).filter((call:any)=>call.name==='oscillator')).toHaveLength(0);
+  expect((await calls()).filter((call:any)=>call.name==='settings')).toHaveLength(4);
+});
+
+test('real settings voice skips the silent prefix on first and repeated clicks',async({page})=>{
+  await fixture(page,0,true);await tap(page,'dough');await tap(page,'pause');
+  await page.evaluate(()=>{
+    const f=(window as any).audioFixture,stream=f.audio.streams.get('settings');f.settingsStarts=[];
+    stream.media.addEventListener('playing',()=>f.settingsStarts.push(stream.media.currentTime));
+  });
+  await tap(page,'pause-settings');
+  await expect.poll(()=>page.evaluate(()=>(window as any).audioFixture.settingsStarts.length)).toBeGreaterThan(0);
+  await tap(page,'settings-music');
+  await expect.poll(()=>page.evaluate(()=>(window as any).audioFixture.settingsStarts.length)).toBeGreaterThan(1);
+  const result=await page.evaluate(()=>{const f=(window as any).audioFixture;return {starts:f.settingsStarts,preload:f.audio.streams.get('settings').media.preload};});
+  expect(result.preload).toBe('auto');for(const start of result.starts)expect(start).toBeGreaterThanOrEqual(.38);
+});
+
+for(const input of ['pointer','keyboard'])test(`fresh Menu settings ${input} opens and unlocks its own audio`,async({page})=>{
+  await page.goto('/?perf=1');await expect(page.locator('canvas')).toHaveAttribute('data-screen','menu',{timeout:15000});
+  await page.evaluate(()=>{
+    const audio=(window as any).pizzaPerformance.game.scene.getScenes(true).find((scene:any)=>scene.audio?.snapshot).audio;
+    const probe={audio,cues:0};audio.cue=()=>probe.cues++;Object.assign(window,{freshSettingsProbe:probe});
+  });
+  if(input==='pointer')await tap(page,'menu-settings',true);
+  else {
+    await expect.poll(async()=>JSON.parse(await page.locator('canvas').getAttribute('data-menu-targets')??'[]').some((target:any)=>target.id==='menu-settings'&&!target.disabled)).toBe(true);
+    await page.locator('canvas').focus();const targets=JSON.parse(await page.locator('canvas').getAttribute('data-menu-targets')??'[]').filter((target:any)=>!target.disabled);
+    for(let i=0;i<=targets.findIndex((target:any)=>target.id==='menu-settings');i++)await page.keyboard.press('Tab');
+    await page.keyboard.press('Enter');
+  }
+  await expect(page.locator('canvas')).toHaveAttribute('data-menu-dialog','settings');
+  await expect.poll(()=>page.evaluate(()=>(window as any).freshSettingsProbe.audio.snapshot.streams.find((stream:any)=>stream.name==='settings')?.currentTime??0)).toBeGreaterThan(.4);
+  expect(await page.evaluate(()=>(window as any).freshSettingsProbe.cues)).toBe(0);
 });
 
 test('real gameplay effects produce output above the quieter music mix',async({page})=>{

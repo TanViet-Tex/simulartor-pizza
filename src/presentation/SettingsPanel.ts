@@ -25,7 +25,14 @@ export function drawSettingsPanel(scene:Phaser.Scene,layer:Phaser.GameObjects.Co
     g.fillStyle(0x302c29).fillRoundedRect(r.x+5,r.y+5,r.width-10,r.height-10,(r.height-10)/2);
     g.lineStyle(1,0x74695a).strokeRoundedRect(r.x+7,r.y+7,r.width-14,r.height-14,(r.height-14)/2);
     layer.add(g);text(r.x+r.width/2,r.y+(r.height-size-5)/2,title,size,enabled?'#fff0d5':'#c7c0b2',.5);
-    input.register(action,r,enabled,()=>{callback();input.changed();});
+    input.register(action,r,enabled,()=>{
+      // Start feedback before callbacks can rebuild the scene. Enabling effects
+      // needs the new mute state; disabling effects remains silent.
+      void input.audio.interact();
+      if(action==='mute'){callback();input.audio.effect('settings');}
+      else {input.audio.effect('settings');callback();}
+      input.changed();
+    });
   };
   text(180,114,'Cài đặt',29,'#472310',.5);
   drawSettingsIcon(scene,layer,'music',38,173);text(92,187,'Music:',19);
