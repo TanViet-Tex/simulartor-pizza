@@ -457,3 +457,6 @@ Giữ nguyên hàng khách, panel đơn, bàn bếp, chai sốt và vị trí n�
 Theo chỉnh tiếp của người dùng: phần lớn khách đến lẻ, sau bảy lượt lẻ mới có một tốp (không đổi số ô/vị trí). Ngày 6 giữ 50 khách, từ ngày 7 chỉ tăng 2/ngày; Chợ và lịch thật dùng chung lịch đã giảm.
 
 Ảnh kiểm chứng đúng phần nội dung đơn: [đơn quầy](ui-baseline/expanded-orders-2026-10-06/counter-order-detail.png), [bánh thứ hai](ui-baseline/expanded-orders-2026-10-06/second-pizza.png), [app ba món](ui-baseline/expanded-orders-2026-10-06/app-three-pizzas.png).
+# Bổ sung hành vi bàn bánh — 2026-10-07
+
+Giữ nguyên bố cục và art. Bàn thể hiện bánh/hộp thuộc đơn đang làm, dù đang chọn khách khác để xem. Chưa có đế thì các nguyên liệu khác chưa dùng được. Đóng hộp vẫn khóa đơn khác đến khi giao xong; đơn nhiều bánh cho làm tiếp bánh trong cùng đơn. Không đồng thời hiển thị hộp của đơn trước trên bàn và nướng bánh cho đơn khác. Chi tiết: spec-dough-first-and-single-workbench.md.

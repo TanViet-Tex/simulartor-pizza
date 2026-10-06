@@ -13,10 +13,11 @@ describe('Epic8 fixed-role staff',()=>{
  it('takes one simulation second per ingredient while manual additions preserve or cancel the appropriate job',()=>{
   const r=staffRuntime(['prep']);for(const id of ['dough','sauce','cheese'] as const)r.buy(id,2);r.openShop();
   time(r,.5);expect(r.state.ingredients).toEqual([]);
+  expect(r.dispatch({type:'ingredient',ingredient:'cheese'})).toBe(false);
+  time(r,.45);expect(r.state.ingredients).toEqual([]);time(r,.05);expect(r.state.ingredients).toEqual(['dough']);
   expect(r.dispatch({type:'ingredient',ingredient:'cheese'})).toBe(true);
-  time(r,.45);expect(r.state.ingredients).toEqual(['cheese']);time(r,.05);expect(r.state.ingredients).toEqual(['cheese','dough']);
-  time(r,.5);const lease=r.acquirePause('user');time(r,3);expect(r.state.ingredients).toEqual(['cheese','dough']);lease.release();
-  expect(r.dispatch({type:'ingredient',ingredient:'sauce'})).toBe(true);time(r,1);expect(r.state.ingredients).toEqual(['cheese','dough','sauce']);
+  time(r,.5);const lease=r.acquirePause('user');time(r,3);expect(r.state.ingredients).toEqual(['dough','cheese']);lease.release();
+  expect(r.dispatch({type:'ingredient',ingredient:'sauce'})).toBe(true);time(r,1);expect(r.state.ingredients).toEqual(['dough','cheese','sauce']);
   expect(r.owned('sauce')).toBeGreaterThanOrEqual(2);expect(r.state.stage).toBe('assembly');
  });
  it('keeps legacy saves empty and guards unlock, ownership, pause and shift hiring',()=>{
@@ -29,8 +30,10 @@ describe('Epic8 fixed-role staff',()=>{
   const r=staffRuntime(['prep','oven','box'],2);for(const ingredient of ['dough','sauce','cheese'] as const)r.buy(ingredient,3);
   const before=r.exportCheckpoint();r.openShop();const first=r.tickets[0].id;
   const lease=r.acquirePause('user');time(r,10);expect(r.tickets[0].stage).toBe('assembly');expect(r.staffState.jobs).toEqual([]);lease.release();
-  time(r,14);const second=r.tickets[1].id;expect(r.ovenOwner).toBe(second);r.selectTicket(first);time(r,6);
-  expect(r.selectedTicketId).toBe(first);expect(r.tickets.find(t=>t.id===first)!.stage).toBe('boxed');expect(r.tickets.find(t=>t.id===second)!.stage).toBe('boxed');
+  time(r,14);const second=r.tickets[1].id;expect(r.ovenOwner).toBeNull();r.selectTicket(second);time(r,6);
+  expect(r.selectedTicketId).toBe(second);expect(r.productionOwnerId).toBe(first);expect(r.workbenchState?.stage).toBe('boxed');expect(r.tickets.find(t=>t.id===first)!.stage).toBe('boxed');expect(r.tickets.find(t=>t.id===second)!.stage).toBe('assembly');
+  expect(r.dispatch({type:'ingredient',ingredient:'dough'})).toBe(false);r.selectTicket(first);expect(r.dispatch({type:'deliver'})).toBe(true);r.selectTicket(second);time(r,14);
+  expect(r.productionOwnerId).toBe(second);expect(r.workbenchState?.stage).toBe('boxed');
   expect(r.owned('dough')).toBe(before.stock.lots.filter(l=>l.ingredient==='dough').reduce((n,l)=>n+l.quantity,0)-2);
   expect(r.ovenOwner).toBeNull();expect(r.staffState.frozenRoles).toEqual(['prep','oven','box']);
  });

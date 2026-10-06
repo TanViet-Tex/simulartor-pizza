@@ -9,9 +9,10 @@ describe('transient gameplay audio notifications',()=>{
     const r=shop(),effects:CozyAudioEffect[]=[];const unsubscribe=r.subscribeAudio(effect=>effects.push(effect));
     r.openShop();expect(effects).toEqual(['arrival']);
     expect(r.dispatch({type:'box'})).toBe(false);
-    r.dispatch({type:'ingredient',ingredient:'sauce'});r.dispatch({type:'ingredient',ingredient:'sauce'});
+    expect(r.dispatch({type:'ingredient',ingredient:'sauce'})).toBe(false);
+    r.dispatch({type:'ingredient',ingredient:'dough'});r.dispatch({type:'ingredient',ingredient:'sauce'});r.dispatch({type:'ingredient',ingredient:'sauce'});
     r.pause('user');expect(r.dispatch({type:'ingredient',ingredient:'sauce'})).toBe(false);r.resume('user');
-    for(const ingredient of ['dough','sauce','cheese'] as const)r.dispatch({type:'ingredient',ingredient});
+    for(const ingredient of ['sauce','cheese'] as const)r.dispatch({type:'ingredient',ingredient});
     r.dispatch({type:'bake'});r.advanceElapsed(6000);r.dispatch({type:'extract'});r.dispatch({type:'box'});r.dispatch({type:'box'});
     expect(effects).toEqual(['arrival','sauce','sauce','box']);
     unsubscribe();r.advanceElapsed(20000);expect(effects).toHaveLength(4);
@@ -50,16 +51,16 @@ describe('transient gameplay audio notifications',()=>{
     expect(directEffects).toEqual(['sauce']);
   });
   it('coalesces several completed staff pizzas in one catchup and preserves small frame effects',()=>{
-    const r=CozyRuntime.restoreCheckpoint(fundedShopCheckpoint(22000),false,{schedule:day=>({day,duration:350,grace:120,slots:Array.from({length:3},(_,i)=>({id:'staff-'+i,at:i*10,kind:'regular' as const,opportunity:'commercial' as const,commercialOrdinal:i+1,takeaway:true}))})})!;
-    for(const role of ['prep','oven','box'] as const)r.hireStaff(role,'hire-'+role);
+    const r=CozyRuntime.restoreCheckpoint(fundedShopCheckpoint(22000),false,{schedule:day=>({day,duration:350,grace:120,slots:Array.from({length:3},(_,i)=>({id:'staff-'+i,at:i*15,kind:'regular' as const,opportunity:'commercial' as const,commercialOrdinal:i+1,takeaway:true}))})})!;
+    for(const role of ['prep','oven','box','delivery'] as const)r.hireStaff(role,'hire-'+role);
     for(const id of ['dough','sauce','cheese'] as const)r.buy(id,3);
     r.openShop();const effects:CozyAudioEffect[]=[];r.subscribeAudio(effect=>effects.push(effect));
-    r.advanceElapsed(20000);
-    expect(r.tickets.filter(t=>t.stage==='boxed')).toHaveLength(2);
+    r.advanceElapsed(28000);
+    expect(r.events.filter(event=>event.includes(':delivered:'))).toHaveLength(2);
     expect(effects.filter(effect=>effect==='sauce')).toHaveLength(1);expect(effects.filter(effect=>effect==='box')).toHaveLength(1);
     effects.length=0;
-    for(let i=0;i<200;i++)r.advanceElapsed(50);
-    expect(r.tickets.filter(t=>t.stage==='boxed')).toHaveLength(3);
+    for(let i=0;i<300;i++)r.advanceElapsed(50);
+    expect(r.events.filter(event=>event.includes(':delivered:'))).toHaveLength(3);
     expect(effects.filter(effect=>effect==='sauce')).toHaveLength(1);expect(effects.filter(effect=>effect==='box')).toHaveLength(1);
   });
 });

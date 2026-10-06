@@ -26,6 +26,12 @@ export class CozyOrder {
   constructor(private readonly practice = false, private readonly recipe: StockRecipe = 'cheese', private readonly allowRaw = false, level: number = 0) { this.timing = bakeTiming(level); }
   get bakeReady(): boolean { return this.current.ingredients.includes('dough'); }
   get state(): Readonly<CozyState> { return this.current; }
+  canUseIngredient(id:CozyIngredient):boolean {
+    const s=this.current;
+    return isFinishingSauce(id)
+      ? s.extracted&&['raw','ready','burnt'].includes(s.stage)&&!s.finishingSauces.includes(id)
+      : s.stage==='assembly'&&(id==='dough'||s.ingredients.includes('dough'));
+  }
   /** Cancel an uncommitted pack confirmation without rebuilding or consuming this pizza. */
   reopenUnpackedBox():boolean {if(this.current.stage!=='boxed'||!this.current.extracted)return false;this.current.stage='ready';return true;}
   dispatch(intent: CozyIntent): boolean {
@@ -36,7 +42,8 @@ export class CozyOrder {
       s.finishingSauces=[...s.finishingSauces,intent.ingredient];return true;
     }
     if (intent.type === 'ingredient' && s.stage === 'assembly') {
-      s.ingredients = s.ingredients.includes(intent.ingredient) ? s.ingredients.filter(i => i !== intent.ingredient) : [...s.ingredients, intent.ingredient];
+      if(!this.canUseIngredient(intent.ingredient))return false;
+      s.ingredients = intent.ingredient==='dough'&&s.ingredients.includes('dough') ? [] : s.ingredients.includes(intent.ingredient) ? s.ingredients.filter(i => i !== intent.ingredient) : [...s.ingredients, intent.ingredient];
       s.feedback = this.bakeReady ? 'Có đế bánh rồi. Chạm lò để nướng.' : 'Thêm đế bánh để nướng nhé.';
       return true;
     }

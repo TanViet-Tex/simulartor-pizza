@@ -213,7 +213,8 @@ export class CozyScene extends Phaser.Scene {
     if(this.pendingFinalResults&&!this.runtime.pauses.length&&!this.campaignSession?.view.pending){this.pendingFinalResults=false;this.openFinalResults();}
     const s=this.runtime.state;
     this.frameTickets=this.runtime.tickets;this.frameExpress=this.runtime.expressOrders;
-    const sig=[s.stage,s.ingredients.join(','),s.finishingSauces.join(','),s.extracted,!this.runtime.productionActive&&s.ovenSeconds>=this.runtime.bakeTiming.perfectStart,this.runtime.ovenState?.stage,this.runtime.ovenOwner,this.frameExpress.map(o=>o.id).join(','),this.frameTickets.map(t=>`${t.id}:${t.packed}:${t.riderState}:${t.stage}`).join(','),this.runtime.selectedTicketId,this.runtime.tutorialActive,this.runtime.pauseRevision,this.runtime.shopRevision,this.runtime.shiftClock.phase,this.runtime.deliveryStatus.phase].join('|');
+    const board=this.runtime.workbenchState;
+    const sig=[this.runtime.productionOwnerId,board?.stage,board?.ingredients.join(','),board?.finishingSauces.join(','),s.stage,s.ingredients.join(','),s.finishingSauces.join(','),s.extracted,!this.runtime.productionActive&&s.ovenSeconds>=this.runtime.bakeTiming.perfectStart,this.runtime.ovenState?.stage,this.runtime.ovenOwner,this.frameExpress.map(o=>o.id).join(','),this.frameTickets.map(t=>`${t.id}:${t.packed}:${t.riderState}:${t.stage}`).join(','),this.runtime.selectedTicketId,this.runtime.tutorialActive,this.runtime.pauseRevision,this.runtime.shopRevision,this.runtime.shiftClock.phase,this.runtime.deliveryStatus.phase].join('|');
     if(this.dirty||sig!==this.signature){this.signature=sig;this.draw();}
     const oven=this.runtime.productionActive?this.runtime.ovenState:s;
     const heatSignature=`${oven?.stage}:${oven?.ovenSeconds??0}`;
@@ -379,7 +380,7 @@ export class CozyScene extends Phaser.Scene {
     const backdrop=this.textures.get('reference-kitchen-background').getSourceImage();
     const backdropScale=Math.min(KITCHEN.width/backdrop.width,KITCHEN.height/backdrop.height);
     this.layer.add(this.add.image(KITCHEN.width/2,KITCHEN.height/2,'reference-kitchen-background').setScale(backdropScale));
-    const s=this.runtime.state,assembly=s.stage==='assembly';
+    const s=this.runtime.state;
     const mode=this.runtime.productionActive?'live':this.runtime.tutorialActive?'practice':'freeplay';
     if(mode!==this.inspectionMode){this.inspectedOrderId=null;this.inspectionMode=mode;}
     this.inspectedOrderId=this.runtime.productionActive?this.runtime.selectedTicketId:'practice-linh';
@@ -395,16 +396,17 @@ export class CozyScene extends Phaser.Scene {
     if(this.runtime.shopOpen)this.hit('end-day',133,22,114,20,this.runtime.canCloseDay,()=>{this.hold('user');this.endDayConfirmation=true;this.dirty=true;});
     this.label(306,10,`${s.cash}`,17,ink);
     this.customers();this.orderCard();this.recipes();this.graphics();
-    if(s.stage==='boxed'){
+    const board=this.runtime.productionActive?this.runtime.workbenchState:s;
+    if(board?.stage==='boxed'){
       const source=this.textures.get(PIZZA_BOX_ART.key).getSourceImage();
       const box=this.add.image(120,344,PIZZA_BOX_ART.key).setDisplaySize(108,108*source.height/source.width);
       this.layer.add(box);
-    }else if(s.stage!=='baking'&&!(s.stage==='burnt'&&!s.extracted)&&s.ingredients.includes('dough')){
-      this.art.pizza(120,343,51,s.ingredients,false,{seconds:s.ovenSeconds,timing:this.runtime.bakeTiming,finishing:s.finishingSauces});
+    }else if(board&&board.stage!=='baking'&&!(board.stage==='burnt'&&!board.extracted)&&board.ingredients.includes('dough')){
+      this.art.pizza(120,343,51,board.ingredients,false,{seconds:board.ovenSeconds,timing:this.runtime.bakeTiming,finishing:board.finishingSauces});
 
     }
     if(this.runtime.needsRemake)this.hit('remake',18,298,204,80,true,()=>this.runtime.remake());
-    else this.hit('dough-board',18,298,204,80,assembly,()=>this.useIngredient('dough'));
+    else this.hit('dough-board',18,298,204,80,this.runtime.canUseIngredient('dough'),()=>this.useIngredient('dough'));
     this.ovens();this.sauceShelf();
     const counterReady=this.runtime.productionActive&&s.stage==='ready'&&this.runtime.selectedTicket?.takeaway===false;
     const source=this.runtime.deliverySource,target=this.runtime.selectedTicket;
@@ -514,7 +516,7 @@ export class CozyScene extends Phaser.Scene {
     canvas.dataset.labels=JSON.stringify(this.layer.list.filter((o):o is Phaser.GameObjects.Text=>o instanceof Phaser.GameObjects.Text).map(t=>({text:t.text,x:t.getBounds().x,y:t.getBounds().y,width:t.width,height:t.height,font:t.style.fontFamily,size:t.style.fontSize,spacing:t.letterSpacing,color:t.style.color})));
   }
   private sauceShelf():void{
-    const s=this.runtime.state,assembly=s.stage==='assembly',needed=this.neededIngredients;
+    const s=this.runtime.state,needed=this.neededIngredients;
     ['Cà chua','Kem trắng','BBQ','Pesto','Sốt cay'].forEach((name,i)=>{
       const id=['sauce','sauce-white','sauce-bbq','sauce-pesto','sauce-hot'][i] as StockIngredient;
       const {x,y,w,h}=KITCHEN.ingredient(i),available=!this.runtime.tutorialActive||i===0;
@@ -525,7 +527,7 @@ export class CozyScene extends Phaser.Scene {
       bottleLabel.setScale(Math.min(12/bottleLabel.width,6/bottleLabel.height));
       const sauceName=this.label(x+w/2,y+27,name,9,available?cream:muted);
       sauceName.setScale(Math.min(1,(w-8)/sauceName.width,12/sauceName.height));
-      this.hit(id,x,y,w,h,available&&(isFinishingSauce(id)?s.extracted&&['raw','ready','burnt'].includes(s.stage)&&!s.finishingSauces.includes(id):assembly||this.runtime.productionActive&&this.runtime.available(id)<=0),()=>this.useIngredient(id));if(this.runtime.productionActive)this.stockBadge(id,x,y,w);
+      this.hit(id,x,y,w,h,available&&this.runtime.canUseIngredient(id),()=>this.useIngredient(id));if(this.runtime.productionActive)this.stockBadge(id,x,y,w);
     });
   }
   private get neededIngredients():readonly StockIngredient[]{
@@ -657,13 +659,14 @@ export class CozyScene extends Phaser.Scene {
       const available=!this.runtime.tutorialActive||id==='dough'||id==='cheese';
       this.label(x+w/2,y+27,name,9,available?cream:muted,w-3);
       this.ingredientState(x,y,w,h,available,available&&s.ingredients.includes(id as StockIngredient),needed.includes(id as StockIngredient));
-      this.hit(id,x,y,w,h,available&&(s.stage==='assembly'||production&&this.runtime.available(id as StockIngredient)<=0),()=>this.useIngredient(id as StockIngredient));if(production)this.stockBadge(id as StockIngredient,x,y,w);
+      this.hit(id,x,y,w,h,available&&this.runtime.canUseIngredient(id as StockIngredient),()=>this.useIngredient(id as StockIngredient));if(production)this.stockBadge(id as StockIngredient,x,y,w);
     });
     const {x,y,w,h}=KITCHEN.ingredient(19),discardable=this.runtime.selectedExpired||['raw','ready','boxed','burnt'].includes(s.stage);
     this.label(x+w/2,y+27,'Xóa tất cả',9,cream);
     this.hit(discardable?'discard':'clear',x,y,w,h,discardable||s.stage==='assembly'&&s.ingredients.length>0,()=>{if(discardable){if(production)this.runtime.requestDiscard();else this.runtime.dispatch({type:'discard'});}else for(const ingredient of [...this.runtime.state.ingredients])this.runtime.dispatch({type:'ingredient',ingredient});});
   }
   private useIngredient(ingredient:StockIngredient):void{
+    if(!this.runtime.canUseIngredient(ingredient))return;
     if(isFinishingSauce(ingredient)&&this.runtime.state.finishingSauces.includes(ingredient))return;
     if(this.runtime.productionActive&&this.runtime.available(ingredient)<=0&&(this.runtime.state.stage!=='assembly'||!this.runtime.state.ingredients.includes(ingredient))){
       this.expressIngredient=ingredient;this.expressQuantity=1;this.expressLease=this.runtime.acquirePause('order');this.dirty=true;return;

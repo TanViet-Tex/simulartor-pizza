@@ -383,6 +383,10 @@ Lượt khách nền: ngày 1=20; ngày 2–5 chọn ổn định 40–50 theo s
 Cả quầy và app có thể gọi 2–3 pizza khác loại trong menu đã sở hữu/bật bán; menu ít món chỉ gọi số món hợp lệ. VIP/món giúp vẫn một bánh theo luật hiện hành. Theo xác nhận người dùng, đóng hộp từng bánh, chuyển món kế tiếp, giao đủ cả đơn mới thanh toán một lần. Mỗi món giữ công thức/sốt/giá riêng; giá vốn và số pizza theo từng bánh, phí app và XP/mục tiêu theo một khách. Save cuối ngày đối soát từng món đã bán, nhận save cũ và đơn bỏ dở. Giữ geometry/art/số ô/nút, chỉ cập nhật nội dung đơn và trạng thái nút hiện có. Xem implementation-artifacts/spec-staff-and-expanded-customer-orders.md.
 
 
+### Đế bánh và khóa đơn đang làm — yêu cầu 2026-10-07
+
+Phải có đế mới thêm sốt nền/topping; bỏ đế ở bước ráp thì bỏ các nguyên liệu chưa dùng cùng nó. Sau khi bắt đầu một đơn, người chơi và nhân viên chỉ làm đơn đó đến khi giao xong; đóng hộp chưa mở khóa đơn khác. Chọn khách khác vẫn xem được đơn nhưng không đặt đế hoặc dùng nguyên liệu cho đơn đó. Đơn nhiều pizza vẫn đóng hộp từng bánh rồi làm bánh kế tiếp trong cùng đơn, giao đủ cả đơn mới mở khóa. Bỏ bánh để làm lại vẫn giữ đơn; bánh đã dùng nguyên liệu mà khách hết hạn phải bỏ trước khi chuyển đơn. Bàn hiển thị bánh/hộp của đơn thực sự đang làm, không theo khách đang chọn. Giữ bố cục, giá vốn, nhịp nhân viên 1 giây và thời gian nướng hiện hành. Xem implementation-artifacts/spec-dough-first-and-single-workbench.md.
+
 # Mobile rendering performance — 2026-10-05
 
 `CozyScene` chỉ dựng lại UI khi cấu trúc/trạng thái đổi; giây lò/ngày/khách/hỏa tốc cập nhật Text/Graphics đang có. Giữ ngưỡng bật nút lấy bánh, countdown nhân viên khi không chọn đơn, ownership/cleanup hiệu ứng bấm và handler input giữ nguyên qua redraw. Không đưa giây liên tục vào signature hoặc đọc `daySummary` structuredClone mỗi frame. Fixed50ms là simulation, không phải giới hạn render. Probe chỉ bật với `?perf=1`; số đo/emulation và giới hạn xác minh thiết bị ghi ở [báo cáo](implementation-artifacts/mobile-performance-report.md). Không tự giảm chất lượng art hoặc thiết kế lại UI để tối ưu.

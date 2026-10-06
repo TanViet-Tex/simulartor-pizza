@@ -6,6 +6,15 @@ const prepare = (game: CozyOrder | CozyRuntime) => {
   for (const ingredient of ['dough', 'sauce', 'cheese'] as const) game.dispatch({ type: 'ingredient', ingredient });
 };
 describe('cozy day-one interaction fixture', () => {
+  it('requires dough before loose toppings and clears them when dough is removed',()=>{
+    const game=new CozyOrder();
+    for(const ingredient of ['sauce','cheese','mushroom'] as const)expect(game.dispatch({type:'ingredient',ingredient})).toBe(false);
+    expect(game.state.ingredients).toEqual([]);prepare(game);
+    expect(game.dispatch({type:'ingredient',ingredient:'dough'})).toBe(true);
+    expect(game.state.ingredients).toEqual([]);
+    expect(game.dispatch({type:'ingredient',ingredient:'cheese'})).toBe(false);
+    expect(game.state.cash).toBe(300);
+  });
   it('discards a boxed mixed pizza without refunding stock or resetting progress',()=>{
     const game=new CozyOrder();prepare(game);game.dispatch({type:'ingredient',ingredient:'pepperoni'});
     game.dispatch({type:'bake'});game.tick(6);game.dispatch({type:'extract'});game.dispatch({type:'box'});
