@@ -374,6 +374,15 @@ A xét một lần khi mở ca, xác suất10%, mất đúng200 kể cả tiền
 ### Epic9.3 — VIP lặp lại, 2026-10-05
 
 VIP từ ngày10:10% mỗi lượt khách quầy đủ điều kiện, có thể nhiều lần/ngày; không chịu cooldown/giới hạn sự kiện xấu. Một bánh, hạn100giây giữ theo đề xuất đã thông báo khi người dùng chỉ đổi tần suất. Chỉ đúng công thức, đáp ứng đóng hộp, bánh chín và trước hạn mới thêm500 ngoài tiền bán,+2uytín (cap100, lưu delta thực nhận); không tăng XP ngoài luật thường. App/help không thànhVIP, menu đang sở hữu/bật bán và sức chứa4/6 giữ nguyên. Seed/day/slotID có channelVIP riêng; report receipt optional đối soát thưởng và giữ save cũ/checksum. Không lưu giữa ca; retry/reload không thưởng trùng. Giữ art/bố cục, thêm nhãn trong panel đơn/kết quả và dòng tiền thưởng finance. Build/50unit/2VIP E2E360×640 đạt. Story9.3 review; toànEpic9 còn in-progress vì nhiệm vụ/cuối30/balance/playtest chưa chốt hoặc chưa làm. Xem implementation-artifacts/spec-9-3-repeatable-vip-customers.md.
+### Nhân viên và đơn nhiều pizza — yêu cầu 2026-10-06
+
+Nhân viên sơ chế thêm từng nguyên liệu trong 1 giây mô phỏng; người chơi vẫn thêm được. Thêm nguyên liệu đúng khác giữ timer đang chạy, tự thêm đúng nguyên liệu đang chờ hủy thao tác cũ để không bật/tắt hoặc trừ kho hai lần. Sốt ăn kèm khách gọi phải đúng để chấm đúng đơn; nhân viên xịt sau khi lấy bánh ra, trước đóng hộp, cũng 1 giây mỗi sốt. Sốt thêm ngoài yêu cầu vẫn tùy chọn, không đổi công thức nền hoặc highlight.
+
+Lượt khách nền: ngày 1=20; ngày 2–5 chọn ổn định 40–50 theo seed chiến dịch/ngày; ngày 6=50; từ ngày 7 tăng 2/ngày đến 98 ở ngày 30. Giữ các điều chỉnh thời tiết/app/trang trí và độ dài ca. Khách chủ yếu đến lẻ: sau bảy lượt lẻ mới có một tốp đến cùng tick, tối đa sức chứa 4/6 đang sở hữu (tốp cuối có thể nhỏ hơn). Không thêm hàng chờ ngầm. Dự báo và lịch thật dùng cùng seed/sức chứa/lịch nhóm.
+
+Cả quầy và app có thể gọi 2–3 pizza khác loại trong menu đã sở hữu/bật bán; menu ít món chỉ gọi số món hợp lệ. VIP/món giúp vẫn một bánh theo luật hiện hành. Theo xác nhận người dùng, đóng hộp từng bánh, chuyển món kế tiếp, giao đủ cả đơn mới thanh toán một lần. Mỗi món giữ công thức/sốt/giá riêng; giá vốn và số pizza theo từng bánh, phí app và XP/mục tiêu theo một khách. Save cuối ngày đối soát từng món đã bán, nhận save cũ và đơn bỏ dở. Giữ geometry/art/số ô/nút, chỉ cập nhật nội dung đơn và trạng thái nút hiện có. Xem implementation-artifacts/spec-staff-and-expanded-customer-orders.md.
+
+
 # Mobile rendering performance — 2026-10-05
 
 `CozyScene` chỉ dựng lại UI khi cấu trúc/trạng thái đổi; giây lò/ngày/khách/hỏa tốc cập nhật Text/Graphics đang có. Giữ ngưỡng bật nút lấy bánh, countdown nhân viên khi không chọn đơn, ownership/cleanup hiệu ứng bấm và handler input giữ nguyên qua redraw. Không đưa giây liên tục vào signature hoặc đọc `daySummary` structuredClone mỗi frame. Fixed50ms là simulation, không phải giới hạn render. Probe chỉ bật với `?perf=1`; số đo/emulation và giới hạn xác minh thiết bị ghi ở [báo cáo](implementation-artifacts/mobile-performance-report.md). Không tự giảm chất lượng art hoặc thiết kế lại UI để tối ưu.

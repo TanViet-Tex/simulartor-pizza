@@ -409,10 +409,11 @@ export class CozyScene extends Phaser.Scene {
     const counterReady=this.runtime.productionActive&&s.stage==='ready'&&this.runtime.selectedTicket?.takeaway===false;
     const source=this.runtime.deliverySource,target=this.runtime.selectedTicket;
     const earlyDelivery=this.runtime.productionActive&&source?.id===target?.id&&!counterReady&&['raw','ready','burnt'].includes(s.stage);
-    this.kitchenAction('box',0,'Đóng hộp',s.stage==='ready'&&!this.runtime.selectedExpired,()=>this.runtime.dispatch({type:'box'}));
+    this.kitchenAction('box',0,'Đóng hộp',s.stage==='ready'&&!this.runtime.selectedExpired&&(!target||target.packed<target.quantity),()=>this.runtime.dispatch({type:'box'}));
     const appReady=target?.source==='app'&&target.packed===target.quantity;
     const canSendApp=appReady&&(target?.riderState==='arrived'||target?.riderState==='staff'&&!this.runtime.deliveryStatus.busy);
-    const canDeliver=!this.runtime.selectedExpired&&(this.runtime.productionActive?(appReady?canSendApp:!!source&&!!target):s.stage==='boxed');
+    const multiReady=!!target&&target.quantity>1&&target.packed===target.quantity;
+    const canDeliver=!this.runtime.selectedExpired&&(this.runtime.productionActive?(target&&target.quantity>1?multiReady&&(target.source!=='app'||canSendApp):appReady?canSendApp:!!source&&!!target):s.stage==='boxed');
     this.kitchenAction(earlyDelivery?'deliver-unboxed':'deliver',1,'Giao bánh',canDeliver,()=>{
       if(this.runtime.productionActive)this.runtime.dispatch({type:'deliver',sourceId:appReady?target?.id:source?.id,targetId:target?.id,commandId:`deliver:${source?.id??target?.id}:${target?.id}:${target?.source==='app'?(appReady?'launch':target.packed):'single'}`});
       else this.runtime.dispatch({type:'deliver'});
@@ -572,7 +573,7 @@ export class CozyScene extends Phaser.Scene {
     }
   }
   private queueInputs():readonly OrderQueueInput[]{
-    if(this.runtime.productionActive)return this.runtime.tickets.map(t=>({...t,finalPrice:t.finalPrice*(t.source==='app'?t.quantity:1),deliveryStatus:t.riderState==='waiting'?`Tới sau ${Math.ceil(t.riderRemaining)}s`:t.riderState==='arrived'?'Shipper đã tới':t.riderState==='staff'?'Nhân viên giao':'Chưa book shipper'}));
+    if(this.runtime.productionActive)return this.runtime.tickets.map(t=>({...t,finalPrice:t.totalPrice,deliveryStatus:t.riderState==='waiting'?`Tới sau ${Math.ceil(t.riderRemaining)}s`:t.riderState==='arrived'?'Shipper đã tới':t.riderState==='staff'?'Nhân viên giao':'Chưa book shipper'}));
     if(this.runtime.state.stage==='delivered')return [];
     // The existing Linh order is the real practice/freeplay order, without a customer deadline.
     return [{id:'practice-linh',name:'Linh',number:this.runtime.tutorialActive?'Tập':'1',recipe:'cheese',remaining:null}];
@@ -1105,7 +1106,8 @@ export class CozyScene extends Phaser.Scene {
       const rows=recipeIngredients(this.runtime.selectedRecipe);
       const ticket=this.runtime.selectedTicket,result=this.runtime.lastResult;
       const detail=this.runtime.shopMessage+'\n'+(ticket?.vip?'VIP: 1 bánh, hạn 100 giây. Đúng món, chín và trước hạn: thưởng thêm 500 và +2 uy tín.\n':'')+`${ticket?ticket.kindLabel+' · Giá chốt '+ticket.finalPrice+' xu · Mức nhận ≤'+ticket.maxPricePercent+'%\n':''}`+rows.map(id=>`${catalog.find(item=>item.id===id)!.name}: có ${this.runtime.owned(id)} · rảnh ${this.runtime.available(id)} · giữ ${this.runtime.reserved(id)}`).join('\n')+'\nNguyên liệu đã giữ chỉ dùng cho đơn này.\n'+this.shiftTimeText()+' · '+(ticket?.takeaway?'Cần đóng hộp':'Không cần hộp')+'\n'+reasons+`\nUy tín ${this.runtime.customerProgress.reputation}/100 · Quan hệ ${this.runtime.customerProgress.relationship}/3${result?'\nKết quả '+result.name+': '+result.stars+' sao · '+result.price+' xu\n'+(result.reasons.join(', ')||'Đúng món và chín vừa.')+'\nUy tín '+(result.reputationDelta>0?'+':'')+result.reputationDelta+' · Quan hệ +'+result.relationshipDelta:''}`;
-      this.notice(`Đơn của ${ticket.name}`,`${ticket.quantity} ${recipeName(this.runtime.selectedRecipe).toLocaleLowerCase('vi')} · ${ticket.source==='app'?`App · ${ticket.finalPrice*ticket.quantity} xu cả đơn · ${ticket.packed}/${ticket.quantity} hộp`:ticket.takeaway?'Mang đi':'Tại quầy'}\n`+detail,'close-order','Tiếp tục làm bánh',()=>this.release('order'),this.scenePauses.has('order'),11);return;
+      const itemList=ticket.items.map((item,index)=>`${index+1}. Pizza ${recipeName(item.recipe)}${item.finishingSauces.length?' + '+item.finishingSauces.map(id=>ingredientName(id)).join(' + '):''} · ${item.price} xu${index<ticket.packed?' · Đã đóng hộp':''}`).join('\n');
+      this.notice(`Đơn của ${ticket.name}`,`${ticket.source==='app'?'App':ticket.takeaway?'Mang đi':'Tại quầy'} · ${ticket.totalPrice} xu cả đơn · ${ticket.packed}/${ticket.quantity} hộp\n${itemList}\n`+detail,'close-order','Tiếp tục làm bánh',()=>this.release('order'),this.scenePauses.has('order'),11);return;
     }
     this.notice('Đơn của Linh','1 pizza phô mai · Mang đi\nĐế bánh + sốt cà chua + phô mai\n'+reasons,'close-order','Làm bánh thôi',()=>this.release('order'),this.scenePauses.has('order'),12);
     if(pauses.includes('user')&&this.returnToMenu)this.button('main-menu',64,418,232,54,'Về menu chính',true,this.returnToMenu,UI.dark);

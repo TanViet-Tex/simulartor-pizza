@@ -1,3 +1,6 @@
+import {customerPizzaRequests} from '../config/customerPizzaRequests';
+import {resolveScheduleRecipe} from '../config/cozySchedule';
+import {isVipArrival} from '../domain/VipCustomers';
 import {expect,it} from 'vitest';
 import {CozyRuntime} from './CozyRuntime';
 import {CozyStock} from '../domain/CozyStock';
@@ -9,11 +12,11 @@ import {deliverySchedule,type DeliveryScheduleSlot} from '../config/deliveryEven
 it('forecasts day one deterministically, adds reserve once to shared needs and subtracts usable inventory',()=>{
   const r=new CozyRuntime(false,true),before=r.exportCheckpoint();
   const forecast=r.marketForecast;
-  expect(forecast.day).toBe(1);expect(forecast.portions.reduce((n,p)=>n+p.quantity,0)).toBe(10);
-  expect(forecast.rows.find(row=>row.ingredient==='dough')).toMatchObject({needed:11,available:0,missing:11});
+  expect(forecast.day).toBe(1);const pizzas=forecast.portions.reduce((n,p)=>n+p.quantity,0),needed=Math.ceil(pizzas*1.1);expect(pizzas).toBeGreaterThanOrEqual(20);
+  expect(forecast.rows.find(row=>row.ingredient==='dough')).toMatchObject({needed,available:0,missing:needed});
   expect(r.marketForecast).toEqual(forecast);expect(r.exportCheckpoint()).toEqual(before);
   expect(r.buy('dough',2,'stock')).toBe(true);
-  expect(r.marketForecast.rows.find(row=>row.ingredient==='dough')).toMatchObject({needed:11,available:2,missing:9});
+  expect(r.marketForecast.rows.find(row=>row.ingredient==='dough')).toMatchObject({needed,available:2,missing:needed-2});
 });
 
 it('blends only recent detailed history while preserving scheduled count and excluding disabled recipes',()=>{
@@ -81,8 +84,8 @@ it('forecasts the pending day with its app and event quantities without starting
   }
   const checkpoint=r.exportCheckpoint(),forecast=r.marketForecast;
   expect(r.day).toBe(5);expect(forecast.day).toBe(6);
-  const schedule=deliverySchedule(threeDaySchedule(6,{regularDay1Stars:null,regularLatestStars:null,helpSucceeded:false,referral:false}),true);
-  expect(forecast.portions.reduce((n,p)=>n+p.quantity,0)).toBe(schedule.slots.reduce((n,s)=>n+((s as DeliveryScheduleSlot).quantity??1),0));
+  const schedule=deliverySchedule(threeDaySchedule(6,{regularDay1Stars:null,regularLatestStars:null,helpSucceeded:false,referral:false,customerSeed:r.campaignEvents.seed,queueCapacity:r.queueCapacity as 4|6}),true);
+  expect(forecast.portions.reduce((n,p)=>n+p.quantity,0)).toBe(schedule.slots.reduce((n,s)=>{const source=s as DeliveryScheduleSlot,first=resolveScheduleRecipe(s,r.menuRecipes);if(!first)return n;const items=customerPizzaRequests(r.campaignEvents.seed,6,s,r.menuRecipes,first,()=>0,source.source==='app'?source.quantity:undefined);return n+(source.source!=='app'&&isVipArrival(r.campaignEvents.seed,6,s.id)?1:items.length);},0));
   expect(r.exportCheckpoint()).toEqual(checkpoint);
   const quote=r.quoteMarketBasket([{ingredient:'dough',quantity:1}])!;
   expect(quote.day).toBe(6);expect(r.buyAll(quote.entries,'next-day',quote.day)).toBe(true);

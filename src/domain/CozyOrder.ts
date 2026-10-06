@@ -26,6 +26,8 @@ export class CozyOrder {
   constructor(private readonly practice = false, private readonly recipe: StockRecipe = 'cheese', private readonly allowRaw = false, level: number = 0) { this.timing = bakeTiming(level); }
   get bakeReady(): boolean { return this.current.ingredients.includes('dough'); }
   get state(): Readonly<CozyState> { return this.current; }
+  /** Cancel an uncommitted pack confirmation without rebuilding or consuming this pizza. */
+  reopenUnpackedBox():boolean {if(this.current.stage!=='boxed'||!this.current.extracted)return false;this.current.stage='ready';return true;}
   dispatch(intent: CozyIntent): boolean {
     const s = this.current;
     if (intent.type === 'reset') { this.current = fresh(); return true; }

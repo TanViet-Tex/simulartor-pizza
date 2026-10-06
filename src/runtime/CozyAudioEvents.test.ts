@@ -54,7 +54,7 @@ describe('transient gameplay audio notifications',()=>{
     for(const role of ['prep','oven','box'] as const)r.hireStaff(role,'hire-'+role);
     for(const id of ['dough','sauce','cheese'] as const)r.buy(id,3);
     r.openShop();const effects:CozyAudioEffect[]=[];r.subscribeAudio(effect=>effects.push(effect));
-    r.advanceElapsed(19000);
+    r.advanceElapsed(20000);
     expect(r.tickets.filter(t=>t.stage==='boxed')).toHaveLength(2);
     expect(effects.filter(effect=>effect==='sauce')).toHaveLength(1);expect(effects.filter(effect=>effect==='box')).toHaveLength(1);
     effects.length=0;

@@ -4,6 +4,13 @@ import { createOrderQueue, ORDER_DETAIL_PROMPT, ORDER_PANEL, type OrderQueueInpu
 const ticket=(n:number,source?:'shop'|'app'):OrderQueueInput=>({id:`cozy-${n}`,name:`Khách ${n}`,recipe:n%2?'cheese':'mushroom',remaining:119.1,source});
 
 describe('compact order queue',()=>{
+  it('shows the current mixed pizza, requested sauce, total and packed progress in the existing panel',()=>{
+    const queue=createOrderQueue([{...ticket(1),recipe:'mushroom',quantity:2,packed:1,itemIndex:1,requestedSauces:['sauce-pesto'],finalPrice:55,totalPrice:105}], 'cozy-1','cozy-1');
+    expect(queue.detail!.lines[1]).toContain('2/2 · Pizza nấm + pesto');
+    expect(queue.detail!.lines[1]).toContain('105 xu');
+    expect(queue.detail!.lines[2]).toBe('Hộp 1/2 · 2:00');
+    expect(ORDER_PANEL).toEqual({x:10,y:161,width:340,height:63});
+  });
   it('marks free help explicitly without changing panel geometry or counter packaging',()=>{
     const queue=createOrderQueue([{...ticket(1),help:true,takeaway:false,kindLabel:'Giúp miễn phí',finalPrice:0}],'cozy-1','cozy-1');
     expect(queue.detail!.lines[0]).toContain('Giúp miễn phí');expect(queue.detail!.lines[1]).toContain('Tặng miễn phí');expect(queue.detail!.lines[1]).not.toContain('0 xu');expect(queue.detail!.lines[2]).toContain('Không cần hộp');expect(ORDER_PANEL).toEqual({x:10,y:161,width:340,height:63});

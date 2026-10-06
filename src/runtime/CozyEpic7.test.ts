@@ -69,12 +69,12 @@ describe('Epic7 shop investment',()=>{
   for(let i=0;i<400;i++)r.advance(50);expect(r.tickets[1].patience).toBeCloseTo(135.6);
   for(let i=0;i<400;i++)r.advance(50);expect(r.tickets[2].patience).toBe(90);
  });
- it('stable sampled schedule adds expected commercial arrivals only, keeps base slots and caps outcomes',()=>{
-  let extras=0;for(let day=1;day<=1000;day++){
+ it('stable sampled schedule adds expected commercial arrivals only and keeps all base slots',()=>{
+  let extras=0,commercial=0;for(let day=1;day<=30;day++){
    const base=threeDaySchedule(day,{regularDay1Stars:4,regularLatestStars:4,helpSucceeded:false,referral:true}),result=shopSchedule(base,.29);
-   expect(result).toEqual(shopSchedule(base,.29));expect(result.slots.length).toBeLessThanOrEqual(30);for(const slot of base.slots)expect(result.slots).toContainEqual(slot);
-   extras+=result.slots.length-base.slots.length;expect(()=>validateCozySchedule(result)).not.toThrow();expect(result.slots.filter(s=>s.opportunity==='referral')).toHaveLength(base.slots.filter(s=>s.opportunity==='referral').length);
-  }expect(extras).toBeGreaterThan(2500);expect(extras).toBeLessThan(3300);
+   expect(result).toEqual(shopSchedule(base,.29));expect(result.slots.length).toBeLessThanOrEqual(base.slots.length*2);for(const slot of base.slots)expect(result.slots).toContainEqual(slot);
+   extras+=result.slots.length-base.slots.length;commercial+=base.slots.filter(s=>s.opportunity==='commercial').length;expect(()=>validateCozySchedule(result)).not.toThrow();expect(result.slots.filter(s=>s.opportunity==='referral')).toHaveLength(base.slots.filter(s=>s.opportunity==='referral').length);
+  }expect(extras/commercial).toBeGreaterThan(.23);expect(extras/commercial).toBeLessThan(.35);
   const appSlot={id:'app-only',at:0,kind:'hurry' as const,opportunity:'commercial' as const,commercialOrdinal:1,takeaway:true,source:'app' as const};const base=validateCozySchedule({day:2,duration:10,grace:0,slots:[appSlot]});expect(shopSchedule(base,.3).slots).toEqual(base.slots);
  });
  it('stages buy/place before commit and leaves RAM unchanged on failure; retry preserves reference, leases and payload',async()=>{

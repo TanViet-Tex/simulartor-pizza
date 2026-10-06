@@ -21,5 +21,5 @@ export function deliverySchedule(base:CozySchedule,enabled:boolean):CozySchedule
  };
  if(event.id==='rush'||event.id==='festival')for(const [i,at] of (event.id==='rush'?[45,125]:[45,125,205]).entries())add(at,`event-counter-${i+1}`,'shop',1);
  if(enabled&&base.day>=DELIVERY_RULES.unlockDay)for(const [i,at] of (event.id==='rain'?[55,115,175]:[75,155]).entries())add(at,`app-${i+1}`,'app',event.id==='festival'&&i===1?3:i%2===0?1:2);
- return validateCozySchedule({...base,slots:slots.sort((a,b)=>a.at-b.at).slice(0,30)});
+ return validateCozySchedule({...base,slots:slots.sort((a,b)=>a.at-b.at)});
 }

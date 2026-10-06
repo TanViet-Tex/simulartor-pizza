@@ -7,7 +7,6 @@ export function shopSchedule(base:CozySchedule,bonus:number):CozySchedule {
  const extras:ScheduleSlot[]=[],occupied=new Set(base.slots.map(s=>Math.round(s.at*20)));
  let ordinal=base.slots.reduce((n,s)=>Math.max(n,s.commercialOrdinal??0),0);
  for(const slot of base.slots){
-  if(base.slots.length+extras.length>=30)break;
   if(slot.opportunity!=='commercial'||(slot as DeliveryScheduleSlot).source==='app'||sample(`${base.day}/${slot.id}/shop-bonus`)>=Math.min(.30,bonus))continue;
   // Find a free 50ms tick near the midpoint to the next opportunity.
   const next=base.slots.find(s=>s.at>slot.at)?.at??base.duration;

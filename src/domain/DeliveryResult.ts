@@ -1,9 +1,9 @@
 export interface DeliveryCheck {
-  expected: readonly string[]; actual: readonly string[]; takeaway: boolean; boxed: boolean;
+  requestedSauces?:readonly string[];finishingSauces?:readonly string[];expected: readonly string[]; actual: readonly string[]; takeaway: boolean; boxed: boolean;
   quality: 'good' | 'raw' | 'burnt'; remaining: number; patience: number; extraPenalty: number;
 }
 export function deliveryResult(check: DeliveryCheck) {
-  const recipeWrong = check.expected.length !== check.actual.length || !check.expected.every(id => check.actual.includes(id));
+  const recipeWrong = (check.requestedSauces??[]).some(id=>!(check.finishingSauces??[]).includes(id)) || check.expected.length !== check.actual.length || !check.expected.every(id => check.actual.includes(id));
   const unboxed = check.takeaway && !check.boxed;
   const reasons: string[] = [];
   if (recipeWrong) reasons.push('Sai công thức');

@@ -449,3 +449,11 @@ Người dùng yêu cầu triển khai bảy asset âm thanh. Giữ nguyên geom
 Ô nguyên liệu còn thiếu của pizza trong đơn đang chọn có viền vàng và nền sáng; bỏ highlight khi đã thêm, tính lại khi bỏ/xóa nguyên liệu hoặc đổi đơn. Các ô khác giữ nguyên và vẫn dùng được theo luật hiện có. Không dấu tích hoặc màu xanh/đỏ. Năm chai sốt có nhãn giấy kem trên thân, tên đầy đủ bên dưới. Giữ art chai, geometry và hitbox; chỉ thay phần được yêu cầu. Xem [spec](spec-ingredient-hints-and-sauce-labels.md).
 
 Theo yêu cầu chỉnh tiếp: tên đầy đủ của sốt chuyển từ y+31 lên y+27 trong ô, giới hạn chiều rộng w−8 và chiều cao12px, không tràn mép dưới. Nhãn thân chai, highlight và hitbox giữ nguyên. Xem [spec](spec-customer-density-and-sauce-names.md).
+
+### Đơn nhiều pizza và sốt khách gọi — yêu cầu 2026-10-06
+
+Giữ nguyên hàng khách, panel đơn, bàn bếp, chai sốt và vị trí nút. Panel đơn hiển thị bánh hiện tại (1/2, 2/3…), tên món, sốt khách gọi, giá cả đơn và số hộp đã đủ. Chạm panel xem danh sách từng món/sốt trong hộp thoại hiện có. Nút Đóng hộp chuyển sang bánh tiếp theo; Giao chỉ sáng khi đủ hộp, app vẫn đợi shipper/nhân viên giao. Sốt khách gọi cần dùng đúng nhưng không thêm highlight, dấu tích hoặc đổi màu ô. Khách cùng lúc chỉ lấp các chỗ 4/6 đã sở hữu. Xem [spec](spec-staff-and-expanded-customer-orders.md).
+
+Theo chỉnh tiếp của người dùng: phần lớn khách đến lẻ, sau bảy lượt lẻ mới có một tốp (không đổi số ô/vị trí). Ngày 6 giữ 50 khách, từ ngày 7 chỉ tăng 2/ngày; Chợ và lịch thật dùng chung lịch đã giảm.
+
+Ảnh kiểm chứng đúng phần nội dung đơn: [đơn quầy](ui-baseline/expanded-orders-2026-10-06/counter-order-detail.png), [bánh thứ hai](ui-baseline/expanded-orders-2026-10-06/second-pizza.png), [app ba món](ui-baseline/expanded-orders-2026-10-06/app-three-pizzas.png).
