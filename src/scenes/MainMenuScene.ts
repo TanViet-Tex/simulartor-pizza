@@ -30,6 +30,7 @@ export class MainMenuScene extends Phaser.Scene {
   private dialog: Dialog = 'none';
   private testCodePanel?:TestCodePanel;
   private focusId = '';
+  private keyboardFocus = false;
   private elapsed = 0;
   private unsubscribe?: () => void;
   private unsubscribeSave?:()=>void;
@@ -44,7 +45,7 @@ export class MainMenuScene extends Phaser.Scene {
 
   create(): void {
     if(!this.audioCleanupRegistered){this.audioCleanupRegistered=true;this.game.events.once(Phaser.Core.Events.DESTROY,()=>this.audio.destroy());}
-    this.dialog = 'none'; this.focusId = ''; this.elapsed = 0;
+    this.dialog = 'none'; this.focusId = ''; this.keyboardFocus = false; this.elapsed = 0;
     this.wind = new MenuWind(this, MAIN_MENU_BACKGROUND.key);
     this.glow = this.add.ellipse(278, 270, 70, 70, 0xffad42, .11).setBlendMode(Phaser.BlendModes.ADD);
     this.ambience=new MenuAmbience(this);
@@ -187,7 +188,7 @@ export class MainMenuScene extends Phaser.Scene {
       const closeTarget:MenuTarget={id:'notification-close',x:cx-size/2,y:cy-size/2,width:size,height:size,disabled:!enabled,visible:new Phaser.Geom.Rectangle(close.x,close.y,close.width,close.height),action};
       this.targets.push(closeTarget);
       const closeZone=this.add.zone(closeTarget.x,closeTarget.y,size,size).setOrigin(0).setInteractive({useHandCursor:true});this.interfaceLayer.add(closeZone);
-      closeZone.on('pointerdown',()=>{if(enabled)action();});
+      closeZone.on('pointerdown',()=>{if(enabled){this.keyboardFocus=false;this.drawFocus();action();}});
     }
     if (enabled) {
       const zone = this.add.zone(target.x, target.y, target.width, target.height).setOrigin(0).setInteractive({ useHandCursor: true });
@@ -195,7 +196,7 @@ export class MainMenuScene extends Phaser.Scene {
       this.interfaceLayer.add(zone);
       zone.on('pointerdown', (pointer:Phaser.Input.Pointer) => {
         const chosen=this.targets.find(item=>!item.disabled&&item.visible.contains(pointer.x,pointer.y))??target;
-        this.focusId = chosen.id; this.drawFocus(); if (!this.preferences.reducedMotion) container.setAlpha(.85); chosen.action();
+        this.keyboardFocus = false; this.focusId = chosen.id; this.drawFocus(); if (!this.preferences.reducedMotion) container.setAlpha(.85); chosen.action();
       });
       zone.on('pointerup', () => { if (container.active) container.setAlpha(1); });
       zone.on('pointerout', () => { if (container.active) container.setAlpha(1); });
@@ -267,7 +268,7 @@ export class MainMenuScene extends Phaser.Scene {
     const zone=this.add.zone(target.x,target.y,width,height).setOrigin(0).setInteractive({useHandCursor:true});this.interfaceLayer.add(zone);
     zone.on('pointerdown',(pointer:Phaser.Input.Pointer)=>{
       const chosen=this.targets.find(item=>!item.disabled&&item.visible.contains(pointer.x,pointer.y))??target;
-      this.focusId=chosen.id;chosen.action();void this.audio.interact().then(()=>this.audio.cue());
+      this.keyboardFocus=false;this.focusId=chosen.id;this.drawFocus();chosen.action();void this.audio.interact().then(()=>this.audio.cue());
     });
   }
   private notificationY(y:number):number{const n=this.notification!;return n.layout.body.y+Math.max(0,Math.min(1,(y-n.start)/(n.end-n.start)))*n.layout.body.height;}
@@ -283,6 +284,7 @@ export class MainMenuScene extends Phaser.Scene {
     const enabled = this.targets.filter(target => !target.disabled);
     if (!enabled.length) return;
     if (event.key === 'Tab' || event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+      this.keyboardFocus = true;
       const current = enabled.findIndex(target => target.id === this.focusId);
       const direction = event.key === 'ArrowUp' || event.shiftKey ? -1 : 1;
       if(event.key==='Tab'&&current>=0&&(current+direction<0||current+direction>=enabled.length)){
@@ -298,7 +300,7 @@ export class MainMenuScene extends Phaser.Scene {
   };
   private drawFocus(): void {
     this.focusRing.clear();
-    const target = this.targets.find(item => item.id === this.focusId && !item.disabled);
+    const target = this.keyboardFocus ? this.targets.find(item => item.id === this.focusId && !item.disabled) : undefined;
     if (target) this.focusRing.lineStyle(3, BROWN).strokeRoundedRect(target.x - 3, target.y - 3, target.width + 6, target.height + 6, 27);
   }
   private publish(): void {

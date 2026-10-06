@@ -412,3 +412,8 @@ Thứ tự Music → Chọn nhạc nền → Hiệu ứng → Code → Chuyển 
 ![Cài đặt Menu theo references](ui-baseline/reference-settings-menu-2026-10-06.png)
 
 ![Cài đặt Pause theo references](ui-baseline/reference-settings-pause-2026-10-06.png)
+
+
+### Viền focus khi chạm — yêu cầu 2026-10-06
+
+Bỏ viền focus nâu đỏ khi click/chạm trong Menu/Cài đặt và nút đóng hộp thoại; giữ viền chọn khi dùng Tab/phím mũi tên. Không đổi art hoặc logic nút. Xem [spec](spec-hide-touch-focus-ring.md).

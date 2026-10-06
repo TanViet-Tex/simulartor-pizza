@@ -294,6 +294,7 @@ export class CozyScene extends Phaser.Scene {
       this.hubTap={id:target,pointerId:pointer.id};
     });
     zone.on(list?'pointerup':'pointerdown',(pointer:Phaser.Input.Pointer)=>{
+      this.settingsFocusId='';
       if(list){const drag=id.startsWith('stock-item-')?this.stockDrag:this.marketDrag;
         if(!drag.controller?.canTap(pointer.id)||this.hubTap?.pointerId!==pointer.id)return;
         const target=[...this.tapRects].find(([key,c])=>this.listHit(key)&&pointer.x>=c.x&&pointer.x<=c.x+c.w&&pointer.y>=c.y&&pointer.y<=c.y+c.h)?.[0]??id;
