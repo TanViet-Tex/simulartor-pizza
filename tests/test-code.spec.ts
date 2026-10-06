@@ -20,19 +20,19 @@ for(const source of ['Menu','Pause'])test(`${source} mobile visualViewport moves
   await input(page).fill('keep-me');
   const canvas=page.locator('canvas'),b=(await canvas.boundingBox())!,originalTop=(await input(page).boundingBox())!.y;
   const receive=async()=>JSON.parse(await canvas.getAttribute(menu?'data-menu-targets':'data-controls')??'[]').find((c:any)=>c.id==='test-code-receive');
-  const original=await receive();if(menu)await page.screenshot({path:'_bmad-output/implementation-artifacts/ui-baseline/test-code-mobile-normal.png'});
+  const original=await receive();if(menu)await page.screenshot({path:test.info().outputPath('test-code-mobile-normal.png')});
   await page.evaluate(()=>{const b=document.querySelector('canvas')!.getBoundingClientRect();(window as any).codeViewport(360*b.height/640,0);});
   await expect.poll(async()=>Number(await canvas.getAttribute('data-test-code-offset'))).toBeLessThan(0);
   const offset=Number(await canvas.getAttribute('data-test-code-offset'));
   expect((await receive()).y-original.y).toBeCloseTo(offset,3);expect((await input(page).boundingBox())!.y-originalTop).toBeCloseTo(offset*b.height/640,1);
-  if(menu)await page.screenshot({path:'_bmad-output/implementation-artifacts/ui-baseline/test-code-mobile-keyboard.png'});
+  if(menu)await page.screenshot({path:test.info().outputPath('test-code-mobile-keyboard.png')});
   await page.evaluate(()=>(window as any).codeViewport(360*document.querySelector('canvas')!.getBoundingClientRect().height/640,30,'scroll'));
   await expect.poll(async()=>Number(await canvas.getAttribute('data-test-code-offset'))).toBeCloseTo(offset+30*640/b.height,1);
   await input(page).evaluate((e:HTMLInputElement)=>e.blur());await expect(canvas).toHaveAttribute('data-test-code-offset','0');await expect(input(page)).toHaveValue('keep-me');
   await input(page).focus();await page.evaluate(()=>(window as any).codeViewport(window.innerHeight,0));await expect(canvas).toHaveAttribute('data-test-code-offset','0');
   await page.evaluate(()=>(window as any).codeViewport(360*document.querySelector('canvas')!.getBoundingClientRect().height/640,0));await expect.poll(async()=>Number(await canvas.getAttribute('data-test-code-offset'))).toBeLessThan(0);
-  await tap(page,'test-code-cancel',menu);await expect(input(page)).toHaveCount(0);
-  await page.evaluate(()=>(window as any).codeViewport(300,0));await expect(canvas).not.toHaveAttribute('data-test-code-offset',/./);await tap(page,menu?'menu-mute':'settings-effects-less',menu);
+  await tap(page,'test-code-cancel',menu);await expect(input(page)).toHaveCount(0);await expect(canvas).toHaveAttribute('data-settings-panel',/motionEnabled/);
+  await page.evaluate(()=>(window as any).codeViewport(300,0));await expect(canvas).not.toHaveAttribute('data-test-code-offset',/./);await tap(page,menu?'menu-mute':'mute',menu);
 });
 
 test('Viewport API fallback and Escape clean up the native editor',async({page})=>{
@@ -48,15 +48,15 @@ test('Pause preparation grants exact funds, preserves user pause and rejects rep
   await prep(page);const canvas=page.locator('canvas');await expect(canvas).toHaveAttribute('data-cash','300');await tap(page,'pause');await tap(page,'pause-settings');await tap(page,'settings-code');
   await input(page).fill('wrong');await tap(page,'test-code-receive');await expect(canvas).toHaveAttribute('data-test-code-feedback','Mã không hợp lệ.');await expect(canvas).toHaveAttribute('data-cash','300');
   await input(page).fill(' vietvuive ');await tap(page,'test-code-receive');await expect(canvas).toHaveAttribute('data-test-code-feedback',/Đã nhận 100.000/);await expect(canvas).toHaveAttribute('data-cash','100300');
-  await page.screenshot({path:'_bmad-output/implementation-artifacts/ui-baseline/test-code-received-2026-10-06.png'});
-  await expect(input(page)).toHaveCount(0);await expect(canvas).toHaveAttribute('data-test-code-reward',/100000/);await tap(page,'test-code-reward-close');await expect(canvas).toHaveAttribute('data-paused',/user/);await tap(page,'settings-effects-less');await tap(page,'settings-motion');
-  await page.screenshot({path:'_bmad-output/implementation-artifacts/ui-baseline/test-code-settings-2026-10-06.png'});
+  await page.screenshot({path:test.info().outputPath('test-code-received.png')});
+  await expect(input(page)).toHaveCount(0);await expect(canvas).toHaveAttribute('data-test-code-reward',/100000/);await tap(page,'test-code-reward-close');await expect(canvas).toHaveAttribute('data-paused',/user/);await tap(page,'mute');await tap(page,'settings-motion');
+  await page.screenshot({path:test.info().outputPath('test-code-settings.png')});
   await tap(page,'pause-settings-back');await tap(page,'resume');await expect(canvas).toHaveAttribute('data-paused','');
   await page.reload();await expect(canvas).toHaveAttribute('data-cash','100300');await tap(page,'pause');await tap(page,'pause-settings');await tap(page,'settings-code');await input(page).fill('VIETVUIVE');await tap(page,'test-code-receive');await expect(canvas).toHaveAttribute('data-test-code-feedback',/đã được nhận/);
 });
 test('Menu uses the live preparation session and credits exactly once',async({page})=>{
   await prep(page);await tap(page,'pause');await tap(page,'main-menu');await tap(page,'menu-settings',true);await tap(page,'menu-code',true);await input(page).fill('VIETVUIVE');await tap(page,'test-code-receive',true);await expect(page.locator('canvas')).toHaveAttribute('data-test-code-feedback',/Đã nhận 100.000/);
-  await expect(input(page)).toHaveCount(0);await tap(page,'test-code-reward-ok',true);await tap(page,'menu-settings-close',true);await tap(page,'menu-continue',true);await expect(page.locator('canvas')).toHaveAttribute('data-cash','100300');await expect(input(page)).toHaveCount(0);
+  await expect(input(page)).toHaveCount(0);await tap(page,'test-code-reward-ok',true);await expect(page.locator('canvas')).toHaveAttribute('data-settings-panel',/motionEnabled/);await tap(page,'menu-settings-close',true);await tap(page,'menu-continue',true);await expect(page.locator('canvas')).toHaveAttribute('data-cash','100300');await expect(input(page)).toHaveCount(0);
 });
 test('Pause and Menu during a live shift never claim or save test funds',async({page})=>{
   await prep(page);const canvas=page.locator('canvas');await tap(page,'summary-open-first-day');await expect(canvas).toHaveAttribute('data-screen','game');

@@ -402,3 +402,13 @@ Sau commit thành công, gỡ input/đóng bàn phím và hiện thông báo th�
 ![Popup khi visualViewport thu nhỏ mô phỏng bàn phím](ui-baseline/test-code-mobile-keyboard.png)
 
 ![Thông báo thưởng thực nhận](ui-baseline/test-code-received-2026-10-06.png)
+
+### Cài đặt theo ảnh tiệm pizza ấm cúng — yêu cầu 2026-10-06
+
+Người dùng duyệt thay riêng bảng Cài đặt chung Menu/Pause theo `Cài đặt tiệm pizza ấm cúng.png`: khung gỗ nâu/vàng, giấy kem, huy hiệu pizza, title và các icon nguồn ảnh; controls đen viền vàng, phần chọn của toggle màu vàng. Khung cache các lát art/giấy trống và clip silhouette, không dùng toàn ảnh có chữ/trạng thái mẫu. Geometry portrait360×640: bounds12/34/336/578, các vùng chạm48CSS trở lên, không chồng nhau.
+
+Thứ tự Music → Chọn nhạc nền → Hiệu ứng → Code → Chuyển động → Quay lại. Hai mục nhạc disabled, ghi rõ “Chưa có nhạc”; Hiệu ứng chỉ bật/tắt PlayAudio thật. Theo steering mới, bỏ nút−/+, bỏ phần trăm âm lượng, dùng âm lượng điện thoại. Chuyển động Bật là reducedMotion=false, Tắt là true. Code mở editor/nhận thưởng hiện có, VIETVUIVE vẫn100.000xu; hủy/đóng thưởng trở lại bảng này. Keyboard, pause ownership, nền tối nhẹ và mọi giao diện ngoài Cài đặt giữ nguyên. Mốc này thay phần geometry/art Cài đặt cũ, không thay popup mã/thưởng. Xem [spec](spec-reference-settings-panel.md).
+
+![Cài đặt Menu theo references](ui-baseline/reference-settings-menu-2026-10-06.png)
+
+![Cài đặt Pause theo references](ui-baseline/reference-settings-pause-2026-10-06.png)

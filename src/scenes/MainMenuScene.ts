@@ -2,6 +2,7 @@ import {TestCodePanel,type TestCodeActions} from '../presentation/TestCodePanel'
 import {PlayAudio} from '../presentation/PlayAudio';
 import {drawModalBackdrop} from '../presentation/ModalBackdrop';
 import {drawSettingsPanel} from '../presentation/SettingsPanel';
+import {preloadSettingsArt} from '../presentation/ReferenceSettingsArt';
 import Phaser from 'phaser';
 import { MenuPreferences } from '../presentation/MenuPreferences';
 import { UI_THEME } from '../presentation/theme';
@@ -39,7 +40,7 @@ export class MainMenuScene extends Phaser.Scene {
   private audioCleanupRegistered=false;
 
   constructor(private readonly preferences: MenuPreferences, private readonly actions: MenuActions,private readonly audio=new PlayAudio()) { super('MainMenuScene'); }
-  preload():void{preloadNotificationFrames(this);}
+  preload():void{preloadNotificationFrames(this);preloadSettingsArt(this);}
 
   create(): void {
     if(!this.audioCleanupRegistered){this.audioCleanupRegistered=true;this.game.events.once(Phaser.Core.Events.DESTROY,()=>this.audio.destroy());}
@@ -53,7 +54,7 @@ export class MainMenuScene extends Phaser.Scene {
     this.unsubscribe = this.preferences.subscribe(this.preferenceChanged);
     document.addEventListener('visibilitychange', this.visibilityChanged);
     this.scale.on('resize', this.resized);
-    this.input.keyboard?.on('keydown', this.keyDown);
+    document.addEventListener('keydown', this.keyDown);
     const canvas = this.game.canvas;
     canvas.setAttribute('tabindex', '0');
     canvas.dataset.screen = 'menu';
@@ -82,7 +83,7 @@ export class MainMenuScene extends Phaser.Scene {
     this.unsubscribeSave?.();this.unsubscribeSave=undefined;
     document.removeEventListener('visibilitychange', this.visibilityChanged);
     this.scale.off('resize', this.resized);
-    this.input.keyboard?.off('keydown', this.keyDown);
+    document.removeEventListener('keydown', this.keyDown);
     this.tweens.killAll(); this.animationsRunning = false; this.targets = [];
     this.steam.destroy(); this.wind.destroy();
     this.ambience.destroy();
@@ -226,7 +227,7 @@ export class MainMenuScene extends Phaser.Scene {
     if(this.testCodePanel){this.testCodePanel.draw(this,this.interfaceLayer,(id,rect,enabled,action)=>this.settingsTarget(id,rect,enabled,action));return;}
     drawModalBackdrop(this,this.interfaceLayer);
     if(this.dialog==='settings'){
-      const ids={music:'menu-music','effects-less':'menu-effects-less',mute:'menu-mute','effects-more':'menu-effects-more',motion:'menu-motion',code:'menu-code',back:'menu-settings-close'};
+      const ids={music:'menu-music','music-choice':'menu-music-choice',mute:'menu-mute',motion:'menu-motion',code:'menu-code',back:'menu-settings-close'};
       drawSettingsPanel(this,this.interfaceLayer,{audio:this.audio,preferences:this.preferences,reducedMotion:this.preferences.reducedMotion,changed:()=>this.draw(),code:()=>{this.testCodePanel=new TestCodePanel(this.game.canvas,this.actions.testCode,()=>this.draw(),()=>{this.testCodePanel?.destroy();this.testCodePanel=undefined;this.focusId='menu-code';this.draw();});},back:()=>{this.dialog='none';this.focusId='menu-settings';},register:(action,rect,enabled,callback)=>this.settingsTarget(ids[action],rect,enabled,callback)});return;
     }
     const save=this.actions.save?.();

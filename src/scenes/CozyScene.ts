@@ -2,6 +2,7 @@ import {TestCodePanel} from '../presentation/TestCodePanel';
 import type {HubDrag} from '../presentation/HubListWindow';
 import {drawModalBackdrop} from '../presentation/ModalBackdrop';
 import {drawSettingsPanel} from '../presentation/SettingsPanel';
+import {preloadSettingsArt} from '../presentation/ReferenceSettingsArt';
 import {RECIPE_CATALOG,recipeDefinition} from '../config/recipeCatalog';
 import {DELIVERY_RULES} from '../config/deliveryEvents';
 import {shopItem} from '../config/shopCatalog';
@@ -144,7 +145,7 @@ export class CozyScene extends Phaser.Scene {
     for(const asset of SHOP_ART)if(!this.textures.exists(asset.key))this.load.image(asset.key,`${import.meta.env.BASE_URL}${asset.url}`);
     preloadSummaryArt(this);
     preloadReferencePause(this);
-    preloadNotificationFrames(this);
+    preloadNotificationFrames(this);preloadSettingsArt(this);
     preloadPizzaIcons(this);
     preloadCustomerPortraits(this);
     for(const asset of [...REFERENCE_KITCHEN_MANIFEST,PIZZA_BOX_ART])if(!this.textures.exists(asset.key))this.load.image(asset.key,`${import.meta.env.BASE_URL}${asset.url}`);
@@ -154,7 +155,9 @@ export class CozyScene extends Phaser.Scene {
     registerCustomerPortraitFrames(this);
     this.dirty=true;this.signature='';this.inspectedOrderId=null;this.inspectedRecipe=null;this.inspectionMode='';this.priceDraft=null;this.statementOpen=false;this.queueUpgradeNotice=false;this.layer=this.add.container();this.staticGraphics=new StaticGraphics(this);this.motion=window.matchMedia('(prefers-reduced-motion: reduce)');
     this.motion.addEventListener('change',this.motionChange);
-    this.game.canvas.setAttribute('tabindex','0');this.input.keyboard?.on('keydown',this.settingsKeyDown);
+    // Canvas modal navigation must prevent native Tab before the browser moves
+    // focus; Phaser's queued keyboard events run after the default action on iOS.
+    this.game.canvas.setAttribute('tabindex','0');document.addEventListener('keydown',this.settingsKeyDown);
     this.scale.on('resize',this.motionChange);
     this.lifecycle=this.sharedLifecycle??new PlayLifecycle(this.runtime);
     this.browserLifecycle=new BrowserPlayLifecycle(this.lifecycle,()=>{this.audio.silence();this.dirty=true;});
@@ -171,7 +174,7 @@ export class CozyScene extends Phaser.Scene {
     this.events.once('destroy',()=>{this.closeDeliveryApp();this.closeHubPanels();});
     this.events.once('shutdown',()=>this.closeMarketQuantity());
     this.events.once('destroy',()=>this.closeMarketQuantity());
-    const cleanup=()=>{this.closeTestCode();this.events.off('shutdown',cleanup);this.events.off('destroy',cleanup);this.queueUpgradeLease?.release();this.queueUpgradeLease=undefined;this.queueUpgradeNotice=false;this.priceLease?.release();this.priceLease=undefined;this.statementLease?.release();this.statementLease=undefined;this.motion?.removeEventListener('change',this.motionChange);this.preferenceUnsubscribe?.();this.scale.off('resize',this.motionChange);this.browserLifecycle.destroy(!this.sharedLifecycle);for(const lease of this.scenePauses.values())lease.release();this.scenePauses.clear();this.audio.silence();this.input.keyboard?.off('keydown',this.settingsKeyDown);this.clearFeedback();this.tweens.killAll();for(const zone of this.hitZones.values())zone.destroy();this.hitZones.clear();this.staticGraphics.destroy();};
+    const cleanup=()=>{this.closeTestCode();this.events.off('shutdown',cleanup);this.events.off('destroy',cleanup);this.queueUpgradeLease?.release();this.queueUpgradeLease=undefined;this.queueUpgradeNotice=false;this.priceLease?.release();this.priceLease=undefined;this.statementLease?.release();this.statementLease=undefined;this.motion?.removeEventListener('change',this.motionChange);this.preferenceUnsubscribe?.();this.scale.off('resize',this.motionChange);this.browserLifecycle.destroy(!this.sharedLifecycle);for(const lease of this.scenePauses.values())lease.release();this.scenePauses.clear();this.audio.silence();document.removeEventListener('keydown',this.settingsKeyDown);this.clearFeedback();this.tweens.killAll();for(const zone of this.hitZones.values())zone.destroy();this.hitZones.clear();this.staticGraphics.destroy();};
     this.events.once('shutdown',cleanup);this.events.once('destroy',cleanup);this.draw();
   }
   private motionChange=():void=>{this.dirty=true;};
@@ -1085,7 +1088,7 @@ export class CozyScene extends Phaser.Scene {
   }
   private pauseSettingsPanel():void{
     this.veil();this.notification=undefined;
-    const ids={music:'settings-music','effects-less':'settings-effects-less',mute:'mute','effects-more':'settings-effects-more',motion:'settings-motion',code:'settings-code',back:'pause-settings-back'};
+    const ids={music:'settings-music','music-choice':'settings-music-choice',mute:'mute',motion:'settings-motion',code:'settings-code',back:'pause-settings-back'};
     drawSettingsPanel(this,this.layer,{audio:this.audio,preferences:this.preferences,reducedMotion:this.reducedMotion,changed:()=>{this.dirty=true;},code:()=>this.openTestCode(),back:()=>{this.pauseSettings=false;this.settingsFocusId='';},register:(action,rect,enabled,callback)=>this.hit(ids[action],rect.x,rect.y,rect.width,rect.height,enabled,callback)});
     const focus=this.controls.find(control=>control.id===this.settingsFocusId&&control.enabled);
     if(focus){const ring=this.add.graphics();ring.lineStyle(3,0x985025).strokeRoundedRect(focus.x-3,focus.y-3,focus.width+6,focus.height+6,27);this.layer.add(ring);}
