@@ -64,6 +64,7 @@ function mainMenu(): Phaser.Scene {
     hasSession:() => session.hasSession,
     start:() => {void session.start(mode!=='shop').then(enterPlay);},
     continue:() => enterPlay(session.continue()),
+    testCode:{message:value=>session.testCodeMessage(value),claim:value=>session.claimTestCode(value),claimed:()=>!!session.runtime?.testCodeClaimed,save:()=>session.view,retry:()=>{void session.retry();}},
     save:()=>session.view,
     subscribe:listener=>session.subscribe(listener),
     initialize:()=>{if(initialized)return;initialized=true;void session.load().then(runtime=>{if(mode==='shop'){if(runtime)enterPlay(runtime);else if(session.view.state==='ready')void session.start(false).then(enterPlay);}});},

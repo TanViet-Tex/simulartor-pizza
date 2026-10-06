@@ -386,3 +386,7 @@ Chỉ thêm thông báo compact một nút với mất200/số dư thật và d�
 ### VIP — 2026-10-05
 
 Giữ sáu ô và toàn bộ art/bố cục; tên/avatar khách giữ identity, thêm nhãn VIP và điều kiện thưởng trong khung đơn hiện có. Thưởng VIP ghi riêng trong thông báo kết quả và finance cuộn, không thay toàn màn. Xem [spec9.3](spec-9-3-repeatable-vip-customers.md), [đơn VIP](ui-baseline/vip-order-2026-10-05.png), [thưởng](ui-baseline/vip-reward-2026-10-05.png), [thu chi](ui-baseline/vip-finance-2026-10-05.png).
+
+### Nhập mã trong Cài đặt — yêu cầu 2026-10-06
+
+Người dùng duyệt thêm Nhập mã cho Cài đặt chung Menu/Pause. Giữ vị trí các điều khiển âm thanh/giảm chuyển động; thêm nút dưới Giảm chuyển động, nới bảng từ490 lên514px và dịch riêng Quay lại xuống24px để giữ khoảng cách. Hộp nhập dùng khung2nút/× hiện có, ô văn bản native, Quay lại/Nhận xu và feedback thật. Menu/bếp/hub giữ bố cục. `VIETVUIVE` chỉ nhận100.000xu một lần mỗi lượt đã lưu khi chuẩn bị; không ghi giữa ca. Khoản hỗ trợ ghi riêng trong dòng tiền báo cáo, không tăng doanh thu/lợi nhuận/XP/uy tín. Xem [spec](spec-vietvuive-test-code.md), [Cài đặt](ui-baseline/test-code-settings-2026-10-06.png), [nhận mã](ui-baseline/test-code-received-2026-10-06.png).

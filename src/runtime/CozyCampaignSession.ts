@@ -1,3 +1,4 @@
+import {TEST_CODE,normalizeTestCode} from '../domain/TestCode';
 import {campaignEventSeed} from '../domain/CampaignEvents';
 import {CozyRuntime} from './CozyRuntime';
 import {PlayLifecycle,type PauseLease} from './PlayLifecycle';
@@ -81,9 +82,21 @@ export class CozyCampaignSession {
   buyShopItem(id:import('../domain/ShopEffects').ShopItemId,commandId:string):boolean {return this.stageShop(r=>r.buyShopItem(id,commandId),commandId);}
   placeShopItem(id:import('../domain/ShopEffects').ShopItemId,placed:boolean,commandId:string):boolean {return this.stageShop(r=>r.placeShopItem(id,placed,commandId),commandId);}
   upgradeShop(kind:'oven'|'queue',commandId:string):boolean {return this.stageShop(r=>r.upgradeShop(kind,commandId),commandId);}
+  testCodeMessage(value:string):string {
+    if(normalizeTestCode(value)!==TEST_CODE)return 'Mã không hợp lệ.';
+    if(this.status!=='ready'||this.pending)return this.status==='saving'?'Đang lưu…':this.status==='temporary'?'Cần chiến dịch có lưu để nhận mã.':'Hãy xử lý lưu tiến độ trước khi nhận mã.';
+    if(!this.current)return 'Hãy Bắt đầu lượt chơi rồi nhập mã.';
+    if(this.current.testCodeClaimed)return 'Mã đã được nhận trong lượt chơi này.';
+    if(!this.current.canClaimTestCode)return 'Chỉ nhận trong chuẩn bị. Hãy chốt ngày rồi nhập mã.';
+    return '';
+  }
+  claimTestCode(value:string):boolean {
+    if(this.testCodeMessage(value))return false;
+    return this.stageShop(r=>r.claimTestCode(value),'test-code:VIETVUIVE',true);
+  }
   hireStaff(role:import('../config/staffCatalog').StaffRole,commandId:string):boolean {return this.stageShop(r=>r.hireStaff(role,commandId),commandId);}
-  private stageShop(action:(candidate:CozyRuntime)=>boolean,commandId:string):boolean {
-    if(!this.allowed()||!this.current||!this.current.canSetPrices||this.current.shopCommandUsed(commandId))return false;
+  private stageShop(action:(candidate:CozyRuntime)=>boolean,commandId:string,testCode=false):boolean {
+    if(!this.allowed()||!this.current||!(testCode?this.current.canClaimTestCode:this.current.canSetPrices)||this.current.shopCommandUsed(commandId))return false;
     if(this.status==='temporary'){const accepted=action(this.current);if(accepted)this.publish();return accepted;}
     const candidate=CozyRuntime.restoreCheckpoint(this.current.exportCheckpoint())!;
     if(!action(candidate))return false;

@@ -1,3 +1,4 @@
+import {TestCodePanel} from '../presentation/TestCodePanel';
 import type {HubDrag} from '../presentation/HubListWindow';
 import {drawModalBackdrop} from '../presentation/ModalBackdrop';
 import {drawSettingsPanel} from '../presentation/SettingsPanel';
@@ -65,6 +66,8 @@ export class CozyScene extends Phaser.Scene {
   private endedDayNotice:number|null=null;
   private endedDayLease?:PauseLease;
   private campaignEventLease?:PauseLease;
+  private testCodePanel?:TestCodePanel;
+  private testCodeLease?:PauseLease;
   private pauseSettings=false;
   private veilDrawn=false;
   private settingsFocusId='';
@@ -168,7 +171,7 @@ export class CozyScene extends Phaser.Scene {
     this.events.once('destroy',()=>{this.closeDeliveryApp();this.closeHubPanels();});
     this.events.once('shutdown',()=>this.closeMarketQuantity());
     this.events.once('destroy',()=>this.closeMarketQuantity());
-    const cleanup=()=>{this.events.off('shutdown',cleanup);this.events.off('destroy',cleanup);this.queueUpgradeLease?.release();this.queueUpgradeLease=undefined;this.queueUpgradeNotice=false;this.priceLease?.release();this.priceLease=undefined;this.statementLease?.release();this.statementLease=undefined;this.motion?.removeEventListener('change',this.motionChange);this.preferenceUnsubscribe?.();this.scale.off('resize',this.motionChange);this.browserLifecycle.destroy(!this.sharedLifecycle);for(const lease of this.scenePauses.values())lease.release();this.scenePauses.clear();this.audio.silence();this.input.keyboard?.off('keydown',this.settingsKeyDown);this.clearFeedback();this.tweens.killAll();for(const zone of this.hitZones.values())zone.destroy();this.hitZones.clear();this.staticGraphics.destroy();};
+    const cleanup=()=>{this.closeTestCode();this.events.off('shutdown',cleanup);this.events.off('destroy',cleanup);this.queueUpgradeLease?.release();this.queueUpgradeLease=undefined;this.queueUpgradeNotice=false;this.priceLease?.release();this.priceLease=undefined;this.statementLease?.release();this.statementLease=undefined;this.motion?.removeEventListener('change',this.motionChange);this.preferenceUnsubscribe?.();this.scale.off('resize',this.motionChange);this.browserLifecycle.destroy(!this.sharedLifecycle);for(const lease of this.scenePauses.values())lease.release();this.scenePauses.clear();this.audio.silence();this.input.keyboard?.off('keydown',this.settingsKeyDown);this.clearFeedback();this.tweens.killAll();for(const zone of this.hitZones.values())zone.destroy();this.hitZones.clear();this.staticGraphics.destroy();};
     this.events.once('shutdown',cleanup);this.events.once('destroy',cleanup);this.draw();
   }
   private motionChange=():void=>{this.dirty=true;};
@@ -261,7 +264,7 @@ export class CozyScene extends Phaser.Scene {
     const rawY=y,rawH=h;
     if(list){y=Math.max(top,y);h=Math.max(0,Math.min(bottom,rawY+rawH)-y);enabled=enabled&&h>0;}
     this.tapRects.set(id,{x,y,w,h});
-    if(this.campaignSession&&['loading','saving','error','recovery'].includes(this.campaignSession.view.state))enabled=enabled&&(['pause','mute'].includes(id)||id.startsWith('summary-tab-')||id.startsWith('summary-figure-')||id==='summary-statement-close'||id.startsWith('save-'));
+    if(this.campaignSession&&['loading','saving','error','recovery'].includes(this.campaignSession.view.state))enabled=enabled&&(['pause','mute'].includes(id)||id.startsWith('test-code-')||id.startsWith('summary-tab-')||id.startsWith('summary-figure-')||id==='summary-statement-close'||id.startsWith('save-'));
     if(this.runtime.productionActive&&!this.runtime.tutorialActive&&this.runtime.shopPhase!=='making'&&this.runtime.shopPhase!=='delivered'&&!this.runtime.pauses.length){
       enabled=enabled&&(['pause','mute'].includes(id)||id.startsWith('market-')||id.startsWith('summary-')||id.startsWith('stock-')||id.startsWith('shop-'));
     }
@@ -432,7 +435,7 @@ export class CozyScene extends Phaser.Scene {
     else if(this.runtime.helpPending||this.runtime.thanksPending)this.helpDialog();
     else if(s.stage==='delivered'&&(!this.runtime.productionActive||this.runtime.shopPhase==='delivered'))this.success();
     if(this.expressIngredient)this.expressDialog();
-    if(this.campaignSession&&(['saving','error','loading','recovery'].includes(this.campaignSession.view.state)&&!this.saveDismissed||this.reloadConfirmation))this.saveDialog();
+    if(!this.testCodePanel&&this.campaignSession&&(['saving','error','loading','recovery'].includes(this.campaignSession.view.state)&&!this.saveDismissed||this.reloadConfirmation))this.saveDialog();
     else if(this.newCampaignConfirmation)this.newCampaignDialog();
     else if(this.finalOpen)this.finalDialog();
     if(this.campaignSession?.view.state==='temporary'&&!this.notification&&!this.newCampaignConfirmation&&!this.finalOpen)this.label(180, this.runtime.shopPhase==='summary'||this.runtime.postTutorialPreparation?572:611,'Chơi tạm không lưu · tải lại sẽ mất phiên',9,cream,330);
@@ -1015,6 +1018,7 @@ export class CozyScene extends Phaser.Scene {
     this.label(26,148,title,12,ink,307,'left');this.label(26,165,detail,9,ink,307,'left');
   }
   private overlay():void{
+    if(this.testCodePanel){this.resetModalControls();this.testCodePanel.draw(this,this.layer,(id,rect,enabled,action)=>this.hit(id,rect.x,rect.y,rect.width,rect.height,enabled,action));return;}
     const pauses=this.runtime.pauses;
     const reasons=`Đang dừng: ${pauses.map(p=>({tutorial:'hướng dẫn',user:'nghỉ tay',visibility:'ẩn màn hình',orientation:'xoay ngang',order:'đọc đơn',gap:'gián đoạn',success:'hoàn thành',discard:'xác nhận bỏ bánh',delivery:'xác nhận giao món',menu:'menu chính',bargain:'mặc cả',help:'lựa chọn giúp đỡ/lời cảm ơn',save:'lưu tiến độ'}[p])).join(', ')}`;
     if(this.endDayConfirmation&&this.scenePauses.has('user')){
@@ -1072,15 +1076,22 @@ export class CozyScene extends Phaser.Scene {
     hit('main-menu',layout.buttons.menu,!!this.returnToMenu,()=>{this.pauseSettings=false;this.returnToMenu?.();});
     this.game.canvas.dataset.pausePanel=JSON.stringify(layout);
   }
+  private closeTestCode():void {this.testCodePanel?.destroy();this.testCodePanel=undefined;this.testCodeLease?.release();this.testCodeLease=undefined;this.dirty=true;}
+  private openTestCode():void {
+    if(this.testCodePanel)return;
+    this.testCodeLease=this.runtime.acquirePause('order');
+    const session=this.campaignSession;
+    this.testCodePanel=new TestCodePanel(this.game.canvas,session?{message:value=>session.testCodeMessage(value),claim:value=>session.claimTestCode(value),claimed:()=>!!session.runtime?.testCodeClaimed,save:()=>session.view,retry:()=>{void session.retry();}}:undefined,()=>{this.dirty=true;},()=>this.closeTestCode());this.dirty=true;
+  }
   private pauseSettingsPanel():void{
     this.veil();this.notification=undefined;
-    const ids={music:'settings-music','effects-less':'settings-effects-less',mute:'mute','effects-more':'settings-effects-more',motion:'settings-motion',back:'pause-settings-back'};
-    drawSettingsPanel(this,this.layer,{audio:this.audio,preferences:this.preferences,reducedMotion:this.reducedMotion,changed:()=>{this.dirty=true;},back:()=>{this.pauseSettings=false;this.settingsFocusId='';},register:(action,rect,enabled,callback)=>this.hit(ids[action],rect.x,rect.y,rect.width,rect.height,enabled,callback)});
+    const ids={music:'settings-music','effects-less':'settings-effects-less',mute:'mute','effects-more':'settings-effects-more',motion:'settings-motion',code:'settings-code',back:'pause-settings-back'};
+    drawSettingsPanel(this,this.layer,{audio:this.audio,preferences:this.preferences,reducedMotion:this.reducedMotion,changed:()=>{this.dirty=true;},code:()=>this.openTestCode(),back:()=>{this.pauseSettings=false;this.settingsFocusId='';},register:(action,rect,enabled,callback)=>this.hit(ids[action],rect.x,rect.y,rect.width,rect.height,enabled,callback)});
     const focus=this.controls.find(control=>control.id===this.settingsFocusId&&control.enabled);
     if(focus){const ring=this.add.graphics();ring.lineStyle(3,0x985025).strokeRoundedRect(focus.x-3,focus.y-3,focus.width+6,focus.height+6,27);this.layer.add(ring);}
   }
   private settingsKeyDown=(event:KeyboardEvent):void=>{
-    if(!this.pauseSettings||document.activeElement!==this.game.canvas)return;
+    if(this.testCodePanel||!this.pauseSettings||document.activeElement!==this.game.canvas)return;
     if(event.key==='Escape'){event.preventDefault();this.pauseSettings=false;this.settingsFocusId='';this.dirty=true;return;}
     const enabled=this.visibleActions.filter(action=>this.controls.some(control=>control.id===action.id&&control.enabled));
     if(!enabled.length)return;

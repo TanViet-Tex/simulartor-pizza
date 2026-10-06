@@ -4,19 +4,19 @@ import type {MenuPreferences} from './MenuPreferences';
 import {drawNotificationFrame,drawNotificationButton,type NotificationRect} from './NotificationFrame';
 import {UI_THEME} from './theme';
 
-export type SettingsAction='music'|'effects-less'|'mute'|'effects-more'|'motion'|'back';
-type SettingsInput={audio:PlayAudio;preferences?:MenuPreferences;reducedMotion:boolean;changed:()=>void;back:()=>void;register:(action:SettingsAction,rect:NotificationRect,enabled:boolean,callback:()=>void)=>void};
+export type SettingsAction='music'|'effects-less'|'mute'|'effects-more'|'motion'|'code'|'back';
+type SettingsInput={audio:PlayAudio;preferences?:MenuPreferences;reducedMotion:boolean;changed:()=>void;back:()=>void;code:()=>void;register:(action:SettingsAction,rect:NotificationRect,enabled:boolean,callback:()=>void)=>void};
 
 /** Both scenes draw the same absolute geometry; adapters only register input and semantic IDs. */
 export function drawSettingsPanel(scene:Phaser.Scene,layer:Phaser.GameObjects.Container,input:SettingsInput):void {
-  const layout=drawNotificationFrame(scene,layer,'one',75,490),y=layout.body.y;
+  const layout=drawNotificationFrame(scene,layer,'one',75,514),y=layout.body.y;
   const text=(at:number,value:string,size=14,color=UI_THEME.text.ink)=>{
     layer.add(scene.add.text(180,at,value,{fontFamily:UI_THEME.typography.fontFamily,fontSize:`${size}px`,fontStyle:'bold',color,align:'center',wordWrap:{width:280},padding:{top:2,bottom:2}}).setOrigin(.5,0));
   };
   const controls:Record<SettingsAction,NotificationRect>={
     music:{x:50,y:y+32,width:260,height:48},
     'effects-less':{x:50,y:y+125,width:76,height:48},mute:{x:137,y:y+125,width:86,height:48},'effects-more':{x:234,y:y+125,width:76,height:48},
-    motion:{x:50,y:y+190,width:260,height:48},back:layout.footer[0],
+    motion:{x:50,y:y+190,width:260,height:48},code:{x:50,y:y+254,width:260,height:48},back:layout.footer[0],
   };
   const button=(action:SettingsAction,title:string,enabled:boolean,callback:()=>void)=>{
     const rect=controls[action];if(action!=='back')drawNotificationButton(scene,layer,rect.x,rect.y,rect.width,rect.height);
@@ -32,5 +32,6 @@ export function drawSettingsPanel(scene:Phaser.Scene,layer:Phaser.GameObjects.Co
   button('effects-more','+',true,()=>input.audio.setEffectsVolume(input.audio.effectsVolume+.1));
   button('motion',`Giảm chuyển động: ${input.reducedMotion?'Bật':'Tắt'}`,!!input.preferences,()=>input.preferences?.setReducedMotion(!input.reducedMotion));
   button('back','Quay lại',true,input.back);
+  button('code','Nhập mã',true,input.code);
   scene.game.canvas.dataset.settingsPanel=JSON.stringify({layout,controls,effectsVolume:input.audio.effectsVolume,muted:input.audio.muted,reducedMotion:input.reducedMotion,musicAvailable:false});
 }

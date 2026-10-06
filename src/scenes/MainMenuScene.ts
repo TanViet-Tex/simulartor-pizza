@@ -1,3 +1,4 @@
+import {TestCodePanel,type TestCodeActions} from '../presentation/TestCodePanel';
 import {PlayAudio} from '../presentation/PlayAudio';
 import {drawModalBackdrop} from '../presentation/ModalBackdrop';
 import {drawSettingsPanel} from '../presentation/SettingsPanel';
@@ -12,7 +13,7 @@ import {drawCompactNotification,drawNotificationFrame,drawNotificationClose,draw
 import {modalText} from '../presentation/ModalText';
 
 export const MAIN_MENU_BACKGROUND = { key: 'main-menu-background', url: 'assets/main-menu-background.png', type: 'image' as const };
-type MenuActions = {hasSession:()=>boolean;start:()=>void;continue:()=>void;initialize?:()=>void;save?:()=>CozySaveView;subscribe?:(listener:()=>void)=>()=>void;retryRead?:()=>void;retrySave?:()=>void;recover?:()=>void;temporary?:()=>void};
+type MenuActions = {testCode?:TestCodeActions;hasSession:()=>boolean;start:()=>void;continue:()=>void;initialize?:()=>void;save?:()=>CozySaveView;subscribe?:(listener:()=>void)=>()=>void;retryRead?:()=>void;retrySave?:()=>void;recover?:()=>void;temporary?:()=>void};
 type MenuTarget = { id: string; x: number; y: number; width: number; height: number; disabled: boolean; visible:Phaser.Geom.Rectangle; action: () => void };
 type Dialog = 'none' | 'settings' | 'new-session'|'loading'|'save-error'|'recovery';
 const PAPER = 0xfff0d5, BROWN = 0x985025, SAGE = 0x738d50;
@@ -26,6 +27,7 @@ export class MainMenuScene extends Phaser.Scene {
   private wind!: MenuWind;
   private targets: MenuTarget[] = [];
   private dialog: Dialog = 'none';
+  private testCodePanel?:TestCodePanel;
   private focusId = '';
   private elapsed = 0;
   private unsubscribe?: () => void;
@@ -73,6 +75,7 @@ export class MainMenuScene extends Phaser.Scene {
   }
 
   private cleanup = (): void => {
+    this.testCodePanel?.destroy();this.testCodePanel=undefined;
     this.events.off('shutdown', this.cleanup);
     this.events.off('destroy', this.cleanup);
     this.unsubscribe?.(); this.unsubscribe = undefined;
@@ -218,12 +221,13 @@ export class MainMenuScene extends Phaser.Scene {
 
   private drawDialog(): void {
     for(const object of this.interfaceLayer.list)if(object instanceof Phaser.GameObjects.Zone)object.disableInteractive();
-    drawModalBackdrop(this,this.interfaceLayer);
     // Remove all old targets before registering dialog controls, including disabled menu targets.
     this.targets=[];
+    if(this.testCodePanel){this.testCodePanel.draw(this,this.interfaceLayer,(id,rect,enabled,action)=>this.settingsTarget(id,rect,enabled,action));return;}
+    drawModalBackdrop(this,this.interfaceLayer);
     if(this.dialog==='settings'){
-      const ids={music:'menu-music','effects-less':'menu-effects-less',mute:'menu-mute','effects-more':'menu-effects-more',motion:'menu-motion',back:'menu-settings-close'};
-      drawSettingsPanel(this,this.interfaceLayer,{audio:this.audio,preferences:this.preferences,reducedMotion:this.preferences.reducedMotion,changed:()=>this.draw(),back:()=>{this.dialog='none';this.focusId='menu-settings';},register:(action,rect,enabled,callback)=>this.settingsTarget(ids[action],rect,enabled,callback)});return;
+      const ids={music:'menu-music','effects-less':'menu-effects-less',mute:'menu-mute','effects-more':'menu-effects-more',motion:'menu-motion',code:'menu-code',back:'menu-settings-close'};
+      drawSettingsPanel(this,this.interfaceLayer,{audio:this.audio,preferences:this.preferences,reducedMotion:this.preferences.reducedMotion,changed:()=>this.draw(),code:()=>{this.testCodePanel=new TestCodePanel(this.game.canvas,this.actions.testCode,()=>this.draw(),()=>{this.testCodePanel?.destroy();this.testCodePanel=undefined;this.focusId='menu-code';this.draw();});},back:()=>{this.dialog='none';this.focusId='menu-settings';},register:(action,rect,enabled,callback)=>this.settingsTarget(ids[action],rect,enabled,callback)});return;
     }
     const save=this.actions.save?.();
     const ids=this.dialog==='new-session'?['menu-new-confirm','menu-new-cancel']:this.dialog==='recovery'?['menu-recover-confirm','menu-retry-read']:[save?.canRetry?'menu-save-retry':'menu-retry-read'];
@@ -273,6 +277,7 @@ export class MainMenuScene extends Phaser.Scene {
 
   private keyDown = (event: KeyboardEvent): void => {
     if(document.activeElement!==this.game.canvas)return;
+    if(this.testCodePanel)return;
     if (event.key === 'Escape' && this.dialog !== 'none') { event.preventDefault(); this.dialog = 'none'; this.focusId = ''; this.draw(); return; }
     const enabled = this.targets.filter(target => !target.disabled);
     if (!enabled.length) return;
