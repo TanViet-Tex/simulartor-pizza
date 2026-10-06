@@ -19,6 +19,10 @@ Tài liệu này là nguồn hiện hành cho **bố cục và phong cách màn 
 
 ## Màn chơi cần giữ
 
+### Phản hồi tiền trên HUD — yêu cầu 2026-10-06
+
+Hiện tiền thực nhận “+N xu” xanh hoặc tiền chi “−N xu” đỏ, viền tối, ngay dưới ô tiền: anchor bếp340/36, hub350/44. Text tạm14px, bay8px và fade trong1000ms; reducedMotion chỉfade. Nhiều receipt cách32px và x lệch10px xen kẽ, không đổi geometry/art/nút/luật tiền. Không popup, không replay khi redraw/save. Xem [spec](spec-cash-feedback.md).
+
 ### Bỏ popup giao bánh — yêu cầu 2026-10-06
 
 Sau khi giao trong ca thật, không hiện “Đã giao pizza” và không cần bấm Tiếp tục ca; trở lại bếp ngay. Xác nhận sai món và kết thúc tutorial/freeplay giữ nguyên. Không thêm toast hoặc đổi bố cục. Xem [spec](spec-remove-delivery-acknowledgement.md).

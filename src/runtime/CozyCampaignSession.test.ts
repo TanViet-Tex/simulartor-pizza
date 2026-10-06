@@ -15,10 +15,11 @@ function open(r:CozyRuntime){for(const id of ['dough','sauce','cheese'] as const
 describe('Cozy prepare/commit/confirm session',()=>{
   it('grants test funds only after commit, once per campaign, with retry and owned pauses intact',async()=>{
     const {session,port,r}=await setup();const menu=r.acquirePause('menu'),user=r.acquirePause('user'),editor=r.acquirePause('order');port.fail=true;
+    const receipts:number[]=[];r.subscribeCash(receipt=>receipts.push(receipt.amount));
     expect(session.claimTestCode(' vietvuive ')).toBe(true);expect(r.state.cash).toBe(300);expect(session.claimTestCode('VIETVUIVE')).toBe(false);
-    await settle();expect(session.view.state).toBe('error');expect(r.state.cash).toBe(300);expect(port.value!.payload.stock.cash).toBe(300);
+    await settle();expect(receipts).toEqual([]);expect(session.view.state).toBe('error');expect(r.state.cash).toBe(300);expect(port.value!.payload.stock.cash).toBe(300);
     const pending=port.calls[port.calls.length-1];port.fail=false;await session.retry();expect(port.calls[port.calls.length-1]).toEqual(pending);expect(r.state.cash).toBe(100300);expect(r.pauses).toEqual(expect.arrayContaining(['menu','user','order']));
-    expect(session.claimTestCode('VIETVUIVE')).toBe(false);menu.release();user.release();editor.release();
+    expect(receipts).toEqual([100000]);expect(session.claimTestCode('VIETVUIVE')).toBe(false);expect(receipts).toEqual([100000]);menu.release();user.release();editor.release();
     const restored=(await session.load())!;expect(restored.state.cash).toBe(100300);expect(restored.testCodeClaimed).toBe(true);expect(session.claimTestCode('VIETVUIVE')).toBe(false);
     expect(restored.progression.xp).toBe(0);expect(restored.state.reputation).toBe(50);
     expect((await session.start(false))!.state.cash).toBe(300);expect(session.claimTestCode('VIETVUIVE')).toBe(true);await settle();expect(session.runtime!.state.cash).toBe(100300);

@@ -1,5 +1,5 @@
-export type AudioEffect='settings'|'sauce'|'box'|'arrival';
-const files={oven:'oven-baking.wav',settings:'cài đặt.mp3',sauce:'sốt.mp3',box:'đóng hộp pizza.wav',arrival:'tiếng khách đến.wav',music1:'nhac nền bán pizza.mp3',music2:'nhạc nèn bán pizza 2.mp3'} as const;
+export type AudioEffect='settings'|'sauce'|'box'|'arrival'|'payment';
+const files={oven:'oven-baking.wav',settings:'cài đặt.mp3',sauce:'sốt.mp3',box:'đóng hộp pizza.wav',arrival:'tiếng khách đến.wav',payment:'thanh toán.mp3',music1:'nhac nền bán pizza.mp3',music2:'nhạc nèn bán pizza 2.mp3'} as const;
 const silentVoice='data:audio/wav;base64,UklGRiYAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQIAAAAAAA==';
 const MUSIC_VOLUME=.15;
 // The oven's useful 0–6s range is unusually quiet in the supplied recording.
@@ -96,7 +96,7 @@ export class PlayAudio {
     const existing=this.streams.get(name);if(existing)return existing;
     try{
       const url=`${import.meta.env.BASE_URL}assets/audio/${encodeURIComponent(files[name])}`,media=this.createMedia(url);
-      media.loop=name==='oven'||name.startsWith('music');media.preload=name==='settings'?'auto':'metadata';
+      media.loop=name==='oven'||name.startsWith('music');media.preload=name==='settings'||name==='payment'?'auto':'metadata';
       const stream:Stream={media,url,wanted:false,playing:false,pending:false,blocked:false,revision:0,reset:false,primed:false,priming:false,startOffset:0};
       media.onended=()=>{if(!media.loop&&!stream.priming){stream.wanted=false;stream.playing=false;stream.revision++;if(name==='oven')this.ovenDing=false;}};
       media.onloadedmetadata=()=>{if(!stream.priming&&stream.wanted&&!stream.playing&&stream.startOffset)this.reset(stream,stream.startOffset);};
@@ -118,7 +118,7 @@ export class PlayAudio {
   }
   private mix(name:Sound,stream:Stream):void{
     const music=name.startsWith('music');
-    const level=stream.priming?0:music?MUSIC_VOLUME:this.muted?0:this.volume;
+    const level=stream.priming?0:music?MUSIC_VOLUME:this.muted?0:this.volume*(name==='payment'?.75:1);
     if(stream.gain){stream.media.volume=1;stream.gain.gain.value=level*(name==='oven'&&!this.ovenDing?OVEN_GAIN:1);}
     else stream.media.volume=level;
   }

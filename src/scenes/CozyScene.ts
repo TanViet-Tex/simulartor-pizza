@@ -30,6 +30,7 @@ import { MenuPreferences } from '../presentation/MenuPreferences';
 import { PlayLifecycle, type PauseLease } from '../runtime/PlayLifecycle';
 import { BrowserPlayLifecycle } from '../infrastructure/BrowserPlayLifecycle';
 import { PlayAudio } from '../presentation/PlayAudio';
+import {CashFeedback} from '../presentation/CashFeedback';
 import { PLAY_BANDS, timerText } from '../presentation/PlayHud';
 import { modalText } from '../presentation/ModalText';
 import { StaticGraphics } from '../presentation/StaticGraphics';
@@ -48,6 +49,7 @@ const recipeName=(recipe:StockRecipe)=>'Pizza '+recipeDefinition(recipe).name;
 
 export class CozyScene extends Phaser.Scene {
   private layer!:Phaser.GameObjects.Container;
+  private cashFeedback?:CashFeedback;
   private art!:CozyArt;
   private controls:Control[]=[];
   private dirty=true;
@@ -162,6 +164,10 @@ export class CozyScene extends Phaser.Scene {
     this.scale.on('resize',this.motionChange);
     this.lifecycle=this.sharedLifecycle??new PlayLifecycle(this.runtime);
     const unsubscribeAudio=this.runtime.subscribeAudio(effect=>this.audio.effect(effect));
+    this.cashFeedback=new CashFeedback(this,()=>this.preparationHub||this.runtime.shopPhase==='summary'?{x:350,y:44}:{x:340,y:36},()=>this.reducedMotion);
+    const unsubscribeCash=this.runtime.subscribeCash(receipt=>{this.cashFeedback?.show(receipt);this.audio.effect('payment');this.dirty=true;});
+    const clearCash=()=>{unsubscribeCash();this.cashFeedback?.destroy();this.cashFeedback=undefined;};
+    this.events.once('shutdown',clearCash);this.events.once('destroy',clearCash);
     const unsubscribeAudioBoundary=this.runtime.subscribeTimeBoundary(phase=>{if(phase==='after')this.syncOvenAudio();});
     this.events.once('shutdown',()=>{unsubscribeAudio();unsubscribeAudioBoundary();this.audio.silence();});
     this.browserLifecycle=new BrowserPlayLifecycle(this.lifecycle,()=>{this.syncOvenAudio();this.dirty=true;});
@@ -213,6 +219,7 @@ export class CozyScene extends Phaser.Scene {
     if(this.heatBar&&heatSignature!==this.heatSignature){this.heatSignature=heatSignature;const seconds=oven?.ovenSeconds??0,timing=this.runtime.bakeTiming;this.heatBar.clear().fillStyle(0x49372d,1).fillRoundedRect(243,357,100,6,3);if(seconds>0)this.heatBar.fillStyle(seconds>timing.perfectEnd?0xe54b3c:seconds>=timing.perfectStart?0x68bd58:0xfff1dc,1).fillRoundedRect(243,357,Math.max(6,100*Math.min(1,seconds/timing.gaugeEnd)),6,3);}
     for(const visual of this.dynamicVisuals){const value=visual.read();if(value!==visual.last){visual.last=value;visual.graphics.clear();visual.paint(visual.graphics,value);}}
     this.timerElapsed+=delta;
+    this.game.canvas.dataset.cashFeedback=JSON.stringify(this.cashFeedback?.snapshot??[]);
     if(this.timerElapsed>=100){this.timerElapsed=0;for(const timer of this.timers){const value=timer.read();if(timer.text.active&&timer.text.text!==value)timer.text.setText(value);}this.game.canvas.dataset.shiftClock=JSON.stringify(this.runtime.shiftClock);this.game.canvas.dataset.oven=String(oven?.ovenSeconds??0);this.game.canvas.dataset.heat=oven?.stage==='burnt'?'burnt':(oven?.ovenSeconds??0)>=this.runtime.bakeTiming.perfectStart?'perfect':'warming';}
   }
   private dynamic(read:()=>number,paint:(g:Phaser.GameObjects.Graphics,value:number)=>void):void{
@@ -485,6 +492,7 @@ export class CozyScene extends Phaser.Scene {
     canvas.dataset.staffState=JSON.stringify(this.runtime.staffState);
     canvas.dataset.deliveryStatus=JSON.stringify(this.runtime.deliveryStatus);
     canvas.dataset.result=JSON.stringify(this.runtime.lastResult);
+    canvas.dataset.cashFeedback=JSON.stringify(this.cashFeedback?.snapshot??[]);
     canvas.dataset.bargain=JSON.stringify(this.runtime.bargainPending);
     canvas.dataset.help=JSON.stringify(this.runtime.helpState);canvas.dataset.helpOffer=JSON.stringify(this.runtime.helpPending);
     canvas.dataset.customerProgress=JSON.stringify(this.runtime.customerProgress);

@@ -36,6 +36,10 @@ _Tệp này chứa các quy tắc và patterns quan trọng mà AI agent phải 
 
 ## Critical Implementation Rules
 
+### Tiền trên HUD và thanh toán — 2026-10-06
+
+Mỗi cash transaction có transient receipt net delta một lần, không đọc cash diff khi redraw hay replay save. Nested giao bánh gom giá/phí/VIP/thưởng (app+95, VIP+550 trong test); mua/chi hiện đỏ, nhận xanh, stroke tối dưới HUD. CashFeedback ở ngoài layer redraw,32px giữa slot/x lệch10, bay8px+fade1000ms hoặc chỉ fade khi reducedMotion; cleanup tween/text/unsubscribe khi xong/rời scene. Luật tiền/schema/layout giữ nguyên. Payment dùng thanh toán.mp3, preload, cùng mộtvoice,75%effectsVolume theo steering “nhỏ lại tý”; mute/effect volume vẫn áp dụng. Đây là asset thứ8 được người dùng yêu cầu thêm. Xem [spec](implementation-artifacts/spec-cash-feedback.md).
+
 ### Giao bánh tiếp tục ca ngay — 2026-10-06
 
 Theo yêu cầu mới, ca thật không hiện popup “Đã giao pizza” hoặc nút Tiếp tục ca. Scene chuyển phase delivered→making qua continueShift có guard hiện hành trước khi vẽ/cập nhật ca; không vượt save/pause lease. Giao còn đơn tự chọn tiếp như cũ. Tiền/XP/thưởng/báo cáo và xác nhận giao sai món giữ nguyên; tutorial/freeplay vẫn có kết thúc riêng. Xem [spec](implementation-artifacts/spec-remove-delivery-acknowledgement.md).

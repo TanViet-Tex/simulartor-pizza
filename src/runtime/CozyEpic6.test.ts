@@ -37,8 +37,8 @@ describe('delivery schedule',()=>{
   const count=(day:number,on:boolean)=>deliverySchedule(threeDaySchedule(day,eligibility),on).slots as DeliveryScheduleSlot[];
   expect(count(4,true).filter(s=>s.source==='app')).toHaveLength(0);
   expect(count(5,true).filter(s=>s.source==='app').map(s=>s.quantity)).toEqual([1,2]);
-  expect(count(6,false)).toHaveLength(7);expect(count(6,true).filter(s=>s.source==='app')).toHaveLength(3);
-  expect(count(7,false)).toHaveLength(12);expect(count(9,false)).toHaveLength(13);
+  expect(count(6,false)).toHaveLength(14);expect(count(6,true).filter(s=>s.source==='app')).toHaveLength(3);
+  expect(count(7,false)).toHaveLength(22);expect(count(9,false)).toHaveLength(28);
   expect(count(9,true).filter(s=>s.source==='app').map(s=>s.quantity)).toEqual([1,3]);
   expect(count(10,true)).toEqual(count(10,true));expect(deliveryEvent(10).id).toBe('rain');expect(deliveryEvent(8).id).toBe('normal');
  });
@@ -56,12 +56,13 @@ describe('app order settlement',()=>{
  });
  it('requires booking before bake, waits for rider, consumes two pies and charges once per order',()=>{
   const r=app(),id=r.selectedTicketId,cash=r.state.cash,cost=r.available('dough');
+  const payments:number[]=[];r.subscribeCash(receipt=>payments.push(receipt.amount));
   for(const ingredient of ingredients)r.dispatch({type:'ingredient',ingredient});
   expect(r.dispatch({type:'bake'})).toBe(false);expect(r.bookShipper(id,'book')).toBe(true);expect(r.bookShipper(id,'again')).toBe(false);
   expect(r.dispatch({type:'bake'})).toBe(true);r.advanceElapsed(7000);r.dispatch({type:'extract'});r.dispatch({type:'box'});expect(r.dispatch({type:'deliver',commandId:'part0'})).toBe(true);
   expect(r.selectedTicket?.packed).toBe(1);expect(r.state.stage).toBe('assembly');expect(r.dispatch({type:'deliver',commandId:'part0'})).toBe(false);
   cook(r,'part1');expect(r.tickets).toHaveLength(0);expect(r.deliveryStatus.phase).toBe('idle');expect(r.canCloseDay).toBe(true);expect(r.state.cash).toBe(cash+95);
-  expect(r.available('dough')).toBe(cost-2);expect(r.state.cash).toBe(cash+95);
+  expect(r.available('dough')).toBe(cost-2);expect(r.state.cash).toBe(cash+95);expect(payments).toEqual([95]);
   expect(r.deliveryStatus.phase).toBe('idle');expect(r.dispatch({type:'deliver',sourceId:id,targetId:id,commandId:'send-again'})).toBe(false);
   expect(r.closeDay()).toBe(true);const report=r.daySummary!;
   expect(report.delivered).toBe(1);expect(report.pizzasSold).toBe(2);expect(report.revenue).toBe(100);expect(report.deliveryFees).toBe(5);expect(report.accounts.other).toBe(5);

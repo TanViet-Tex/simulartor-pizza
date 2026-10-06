@@ -54,6 +54,27 @@ async function unlock(f:ReturnType<typeof mediaFixture>){
   if(first)for(const [name,media] of f.streams)if(name!=='nhạc nèn bán pizza 2.mp3'){media.play.mockClear();media.pause.mockClear();}
 }
 describe('file audio playback',()=>{
+  it('preloads payment and restarts the same single voice for successive transactions',async()=>{
+    const f=mediaFixture();await unlock(f);const payment=f.streams.get('thanh toán.mp3')!;
+    expect(payment.preload).toBe('auto');expect(payment.loop).toBe(false);
+    f.audio.effect('payment');await flush();expect(payment.play).toHaveBeenCalledOnce();
+    payment.currentTime=.7;f.audio.effect('payment');await flush();
+    expect(payment.currentTime).toBe(0);expect(payment.play).toHaveBeenCalledTimes(2);
+    expect(f.createMedia.mock.calls.filter(([url])=>url.includes(encodeURIComponent('thanh toán.mp3')))).toHaveLength(1);
+    payment.paused=true;payment.onended?.();await f.audio.interact();await flush();
+    expect(payment.play).toHaveBeenCalledTimes(2);expect(payment.paused).toBe(true);
+  });
+  it('payment follows effects volume and cancels pending playback on mute or disposal',async()=>{
+    const f=mediaFixture(true);await unlock(f);f.audio.setEffectsVolume(.35);f.audio.effect('payment');await flush();
+    const payment=f.streams.get('thanh toán.mp3')!;
+    expect(f.audio.snapshot.streams.find(stream=>stream.name==='payment')!.effectiveGain).toBeCloseTo(.35*.75);
+    f.audio.toggleMute();expect(payment.paused).toBe(true);expect(payment.currentTime).toBe(0);
+    expect(f.audio.snapshot.streams.find(stream=>stream.name==='payment')!.effectiveGain).toBe(0);
+    f.audio.effect('payment');expect(payment.play).toHaveBeenCalledOnce();
+    f.audio.toggleMute();let finish!:()=>void;payment.play.mockImplementationOnce(()=>new Promise<void>(resolve=>{finish=resolve;}));
+    f.audio.effect('payment');f.audio.destroy();finish();await flush();
+    expect(payment.paused).toBe(true);expect(payment.src).toBe('');expect(payment.play).toHaveBeenCalledTimes(2);
+  });
   it('plays one original ding at readiness, preserves it through pause, and uses normal effects gain',async()=>{
     const f=mediaFixture(true);await unlock(f);f.audio.setEffectsVolume(.4);
     f.audio.syncOven(true,false);await flush();const oven=f.streams.get('oven-baking.wav')!;
@@ -106,16 +127,16 @@ describe('file audio playback',()=>{
     expect(f.audio.snapshot.streams.find(stream=>stream.name==='music2')!.volume).toBe(.15);
     expect(f.audio.snapshot.streams.find(stream=>stream.name==='oven')!.volume).toBe(1);
     const oven=f.streams.get('oven-baking.wav')!;expect(oven.paused).toBe(false);oven.currentTime=1.2;
-    await f.audio.interact();await flush();expect(f.context.createMediaElementSource).toHaveBeenCalledTimes(7);
-    expect(f.createMedia).toHaveBeenCalledTimes(7);expect(oven.currentTime).toBe(1.2);
+    await f.audio.interact();await flush();expect(f.context.createMediaElementSource).toHaveBeenCalledTimes(8);
+    expect(f.createMedia).toHaveBeenCalledTimes(8);expect(oven.currentTime).toBe(1.2);
     expect(f.audio.snapshot.streams.find(stream=>stream.name==='oven')!.effectiveGain).toBe(6);
     expect(f.audio.snapshot.streams.find(stream=>stream.name==='music2')!.effectiveGain).toBe(.15);
-    await f.audio.interact();expect(f.context.createMediaElementSource).toHaveBeenCalledTimes(7);
+    await f.audio.interact();expect(f.context.createMediaElementSource).toHaveBeenCalledTimes(8);
   });
   it('mixes quiet Music independently and boosts the oven through a single shared media graph',async()=>{
     const f=mediaFixture(true);await unlock(f);
     const sound=(name:string)=>f.audio.snapshot.streams.find(stream=>stream.name===name)!;
-    expect(f.sources).toHaveLength(7);expect(f.gains).toHaveLength(7);
+    expect(f.sources).toHaveLength(8);expect(f.gains).toHaveLength(8);
     expect(sound('music1').effectiveGain).toBe(.15);expect(sound('music2').effectiveGain).toBe(.15);
     expect(sound('oven').effectiveGain).toBe(6);expect(sound('sauce').effectiveGain).toBe(1);
     for(const media of f.streams.values())expect(media.volume).toBe(1);
@@ -123,7 +144,7 @@ describe('file audio playback',()=>{
     expect(sound('oven').effectiveGain).toBeCloseTo(2.4);expect(sound('sauce').effectiveGain).toBe(.4);expect(sound('music2').effectiveGain).toBe(.15);
     f.audio.toggleMute();expect(sound('oven').effectiveGain).toBe(0);expect(sound('sauce').effectiveGain).toBe(0);expect(sound('music2').effectiveGain).toBe(.15);
     expect(sound('music2').paused).toBe(false);
-    f.audio.toggleMute();await f.audio.interact();await flush();expect(f.sources).toHaveLength(7);expect(sound('oven').effectiveGain).toBeCloseTo(2.4);
+    f.audio.toggleMute();await f.audio.interact();await flush();expect(f.sources).toHaveLength(8);expect(sound('oven').effectiveGain).toBeCloseTo(2.4);
     for(const source of f.sources)expect(source.connect).toHaveBeenCalledOnce();
     f.audio.destroy();f.audio.destroy();for(const source of f.sources)expect(source.disconnect).toHaveBeenCalledOnce();for(const gain of f.gains)expect(gain.disconnect).toHaveBeenCalledOnce();
   });
@@ -145,11 +166,11 @@ describe('file audio playback',()=>{
     const f=mediaFixture(),plays:{src:string;volume:number;muted:boolean}[]=[];
     const create=f.createMedia.getMockImplementation()!;
     f.createMedia.mockImplementation(url=>{const media=create(url);const play=media.play.bind(media);media.play=()=>{plays.push({src:media.src,volume:media.volume,muted:media.muted});return play();};return media;});
-    const interaction=f.audio.interact();expect(f.createMedia).toHaveBeenCalledTimes(7);expect(plays).toHaveLength(6);
-    expect(plays.filter(play=>play.src.startsWith('data:audio/wav'))).toHaveLength(5);
+    const interaction=f.audio.interact();expect(f.createMedia).toHaveBeenCalledTimes(8);expect(plays).toHaveLength(7);
+    expect(plays.filter(play=>play.src.startsWith('data:audio/wav'))).toHaveLength(6);
     for(const play of plays.filter(play=>play.src.startsWith('data:')))expect(play).toMatchObject({muted:true,volume:0});
     await interaction;await flush();
-    for(const [name,media] of f.streams){expect(media.src).toContain(encodeURIComponent(name));expect(media.preload).toBe(name==='cài đặt.mp3'?'auto':'metadata');expect(media.muted).toBe(false);expect(media.volume).toBe(name.includes('nền')||name.includes('nèn')?.15:1);expect(media.paused).toBe(name!=='nhạc nèn bán pizza 2.mp3');}
+    for(const [name,media] of f.streams){expect(media.src).toContain(encodeURIComponent(name));expect(media.preload).toBe(name==='cài đặt.mp3'||name==='thanh toán.mp3'?'auto':'metadata');expect(media.muted).toBe(false);expect(media.volume).toBe(name.includes('nền')||name.includes('nèn')?.15:name==='thanh toán.mp3'?.75:1);expect(media.paused).toBe(name!=='nhạc nèn bán pizza 2.mp3');}
   });
   it('recovers music and oven after native audio interruption on the next gesture',async()=>{
     const f=mediaFixture();await unlock(f);f.audio.syncOven(true,false);await flush();

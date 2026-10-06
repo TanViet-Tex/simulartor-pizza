@@ -32,7 +32,8 @@ describe('Repeatable VIP customers',()=>{
   it('supports multiple VIPs, ordinary XP, cash rewards and checkpoint restore exactly once',()=>{
     const r=prepare();for(const id of ['dough','sauce','cheese'] as const)r.buy(id,2);
     const before=r.state.cash,xp=r.progression.xp;r.openShop();expect(r.selectedTicket).toMatchObject({vip:true,quantity:1,patience:100,kindLabel:'VIP'});
-    serve(r);expect(r.lastResult).toMatchObject({vip:true,vipRewardCoins:500,xpDelta:15});expect(r.state.cash).toBe(before+550);
+    const payments:number[]=[];r.subscribeCash(receipt=>payments.push(receipt.amount));
+    serve(r);expect(payments).toEqual([550]);expect(r.lastResult).toMatchObject({vip:true,vipRewardCoins:500,xpDelta:15});expect(r.state.cash).toBe(before+550);
     expect(r.dispatch({type:'deliver',commandId:'again'})).toBe(false);expect(r.state.cash).toBe(before+550);
     r.continueShift();tick(r,3);expect(r.selectedTicket?.vip).toBe(true);serve(r);r.continueShift();r.closeDay();
     expect(r.daySummary!.reviews.filter(v=>v.vip?.coins===500)).toHaveLength(2);expect(r.daySummary!.revenue).toBe(100);expect(r.daySummary!.rewards).toBe(1000);

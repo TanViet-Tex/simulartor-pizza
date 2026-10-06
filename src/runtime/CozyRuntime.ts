@@ -86,7 +86,8 @@ export class CozyRuntime {
   private recipeCommands=new Set<string>();
   get ownedRecipes(){return [...this.recipeOwnership];}
   get recipePurchases(){return {spent:this.recipeSpent,pendingSpent:this.pendingRecipeSpent,purchased:[...this.purchasedRecipes],granted:[...this.grantedRecipes]};}
-  buyRecipe(recipe:StockRecipe,commandId:string):boolean {
+  buyRecipe(recipe:StockRecipe,commandId:string):boolean {return this.cashTransaction(()=>this.buyRecipeNow(recipe,commandId));}
+  private buyRecipeNow(recipe:StockRecipe,commandId:string):boolean {
     if(!this.canSetPrices||!STOCK_RECIPES.includes(recipe)||typeof commandId!=='string'||!commandId.trim()||this.recipeCommands.has(commandId)||this.recipeOwnership.has(recipe))return false;
     const cost=recipeDefinition(recipe).purchasePrice;if(!this.stock.debit(cost))return this.shopFeedback('Kh\u00f4ng \u0111\u1ee7 ti\u1ec1n mua c\u00f4ng th\u1ee9c.');
     this.recipeCommands.add(commandId);this.recipeOwnership.add(recipe);this.enabledMenu.add(recipe);this.purchasedRecipes.push(recipe);this.recipeSpent+=cost;this.pendingRecipeSpent+=cost;this.message='\u0110\u00e3 m\u1edf c\u00f4ng th\u1ee9c '+recipeDefinition(recipe).name;this.revision++;return true;
@@ -94,7 +95,8 @@ export class CozyRuntime {
   private testCodeReceipt?:TestCodeReceipt;
   get testCodeClaimed(){return !!this.testCodeReceipt;}
   get canClaimTestCode(){return this.saveGuard()&&this.productionActive&&!this.tutorialActive&&!this.shiftOpen&&(this.phase==='preparation'||this.phase==='summary'&&!this.summary?.ending)&&![...this.reasons].some(reason=>!['user','menu','order'].includes(reason));}
-  claimTestCode(value:string):boolean {
+  claimTestCode(value:string):boolean {return this.cashTransaction(()=>this.claimTestCodeNow(value));}
+  private claimTestCodeNow(value:string):boolean {
     if(normalizeTestCode(value)!==TEST_CODE||this.testCodeReceipt||!this.canClaimTestCode)return false;
     this.testCodeReceipt={code:TEST_CODE,coins:TEST_CODE_COINS,day:this.preparationDay};
     this.stock.receive(TEST_CODE_COINS);this.revision++;return true;
@@ -114,7 +116,8 @@ export class CozyRuntime {
   private payrollWarning='';
   get staffState(){return {...structuredClone(this.staff),dailyWages:this.staff.acquired.length*STAFF_RULES.dailyWage,warning:this.payrollWarning||(this.staff.arrears?`Không đủ tiền trả lương. Còn thiếu ${Math.max(0,this.staff.arrears-this.stock.cash)} xu; lương chưa trả ${this.staff.arrears} xu.`:''),jobs:[...this.staffJobs].map(([role,job])=>({role,ticketId:job.ticketId,action:job.action,remaining:job.remaining})),frozenRoles:[...this.shiftRoles]};}
   staffPreview(role:StaffRole){return {role,price:STAFF_RULES.hirePrice,missing:Math.max(0,STAFF_RULES.hirePrice-this.stock.cash),owned:this.staff.acquired.some(a=>a.role===role),available:STAFF_ROLES.includes(role)&&this.preparationDay>=STAFF_RULES.unlockDay,dailyWage:STAFF_RULES.dailyWage};}
-  hireStaff(role:StaffRole,commandId:string):boolean{
+  hireStaff(role:StaffRole,commandId:string):boolean{return this.cashTransaction(()=>this.hireStaffNow(role,commandId));}
+  private hireStaffNow(role:StaffRole,commandId:string):boolean{
     const preview=this.staffPreview(role);
     if(!this.canSetPrices||!preview.available||preview.owned||typeof commandId!=='string'||!commandId.trim()||this.shopCommandUsed(commandId)||!this.stock.debit(preview.price))return false;
     this.staff.acquired.push({role,hiredDay:this.preparationDay,actualPrice:preview.price});this.staff.spent+=preview.price;this.staff.pendingSpent+=preview.price;this.staffCommands.add(commandId);this.revision++;return true;
@@ -122,7 +125,8 @@ export class CozyRuntime {
   shopCommandUsed(commandId:string){return this.shopCommands.has(commandId)||this.upgradeCommands.has(commandId)||this.staffCommands.has(commandId);}
   get shopState(){return {...structuredClone(this.shop),effects:shopEffects(this.shop.acquired.filter(i=>i.placedSlot!==null).map(i=>i.id)),frozenEffects:this.frozenShopEffects};}
   shopItemPreview(id:ShopItemId,placed=true){const item=shopItem(id),owned=this.shop.acquired.find(i=>i.id===id),ids=this.shop.acquired.filter(i=>i.placedSlot!==null&&i.id!==id).map(i=>i.id);if(placed)ids.push(id);return {item,owned:!!owned,placed:!!owned?.placedSlot,price:item?.price??null,missing:Math.max(0,(item?.price??0)-this.stock.cash),current:this.shopState.effects,after:shopEffects(ids)};}
-  buyShopItem(id:ShopItemId,commandId:string):boolean {
+  buyShopItem(id:ShopItemId,commandId:string):boolean {return this.cashTransaction(()=>this.buyShopItemNow(id,commandId));}
+  private buyShopItemNow(id:ShopItemId,commandId:string):boolean {
     const item=shopItem(id);if(!this.canSetPrices||!item||!item.available||item.price===null||typeof commandId!=='string'||!commandId.trim()||this.shopCommands.has(commandId)||this.shop.acquired.some(i=>i.id===id))return false;
     if(!this.stock.debit(item.price))return this.shopFeedback('Không đủ tiền. Thiếu '+Math.max(0,item.price-this.stock.cash)+' xu.');
     this.shop.acquired.push({id,actualPrice:item.price,placedSlot:null});this.shop.spent+=item.price;this.shop.pendingSpent+=item.price;this.shopCommands.add(commandId);this.revision++;return true;
@@ -133,6 +137,9 @@ export class CozyRuntime {
   }
   /** Session confirmation changes only checkpoint-owned investment state; leases and scene identity survive. */
   confirmShopCheckpoint(value:CozyCheckpoint,commandId:string):boolean {
+    return this.cashTransaction(()=>this.confirmShopCheckpointNow(value,commandId));
+  }
+  private confirmShopCheckpointNow(value:CozyCheckpoint,commandId:string):boolean {
     const s=validateCozyCheckpoint(value);if(!s||this.shiftOpen||s.day!==(this.phase==='summary'?this.currentDay+1:this.currentDay))return false;
     this.testCodeReceipt=s.testCodeReceipt?{...s.testCodeReceipt}:undefined;this.stock=CozyStock.restore(s.stock)!;this.staff=structuredClone(s.staff!);this.shop=structuredClone(s.shop!);this.ovenUpgrade=s.upgrades.ovenLevel as 0|1|2;this.queueUpgrade=s.upgrades.queueLevel;this.upgradeSpent=s.upgrades.spent;this.pendingUpgradeSpent=s.upgrades.pendingSpent;this.upgradeReceipts=structuredClone(s.upgrades.receipts??[]);this.shopCommands.add(commandId);this.staffCommands.add(commandId);this.upgradeCommands.add(commandId);this.order=new CozyOrder(false,this.recipe,true,this.ovenUpgrade);this.revision++;return true;
   }
@@ -372,7 +379,8 @@ export class CozyRuntime {
   get canPrepareNextDay() {return this.saveGuard()&&this.phase==='summary'&&!!this.summary&&!this.summary.ending;}
   get canOpenNextDay() {return this.canPrepareNextDay&&!this.reasons.size;}
   closeDay():boolean {return this.clockAction(()=>this.closeDayNow());}
-  private closeDayNow():boolean {
+  private closeDayNow():boolean {return this.cashTransaction(()=>this.closeDayTransaction());}
+  private closeDayTransaction():boolean {
     if(!this.canCloseDay||this.closedDays.has(this.currentDay))return false;
     for(const t of this.active.values()){this.stock.release(t.id);if(!t.help)this.abandonedCount++;this.terminal(t,1,['Quán đóng cửa trước khi giao món'],'closed');}
     this.applyProgress(this.progress.closeDay(this.currentDay,this.goalStats()));
@@ -451,13 +459,15 @@ export class CozyRuntime {
     const quoted=entries.map(e=>({...e,unitPrice:this.price(e.ingredient)}));
     return {day:this.preparationDay,entries:quoted,total:quoted.reduce((sum,e)=>sum+e.quantity*e.unitPrice,0)};
   }
-  buyAll(entries:readonly MarketBasketEntry[],commandId:string,expectedDay:number):boolean {
+  buyAll(entries:readonly MarketBasketEntry[],commandId:string,expectedDay:number):boolean {return this.cashTransaction(()=>this.buyAllNow(entries,commandId,expectedDay));}
+  private buyAllNow(entries:readonly MarketBasketEntry[],commandId:string,expectedDay:number):boolean {
     if(!this.saveGuard()||!this.productionActive||this.reasons.size||this.shiftOpen||!(this.phase==='preparation'||this.canPrepareNextDay)||expectedDay!==this.preparationDay||typeof commandId!=='string'||!commandId.trim()||this.purchaseCommands.has(commandId))return false;
     if(entries.some(e=>!this.ingredientAccess(e.ingredient).unlocked))return this.shopFeedback('Nguyên liệu chưa có công thức đã mở.');
     if(!this.stock.buyAll(entries,this.preparationDay))return this.shopFeedback('Giá hoặc số lượng đã thay đổi, hoặc không đủ tiền. Chưa mua nguyên liệu nào.');
     this.purchaseCommands.add(commandId);this.message='Đã mua toàn bộ nguyên liệu trong giỏ.';this.revision++;return true;
   }
-  buy(id: StockIngredient, quantity: number,commandId=`purchase-${++this.purchaseSerial}`): boolean {
+  buy(id: StockIngredient, quantity: number,commandId=`purchase-${++this.purchaseSerial}`): boolean {return this.cashTransaction(()=>this.buyNow(id,quantity,commandId));}
+  private buyNow(id:StockIngredient,quantity:number,commandId:string):boolean {
     if (!this.saveGuard() || !this.productionActive || this.reasons.size || !(this.phase === 'preparation'||this.canPrepareNextDay)) return false;
     if(this.shiftOpen)return this.shopFeedback('Chỉ mua nguyên liệu trước khi mở cửa. Kho hiện tại chỉ để xem.');
     if(typeof commandId!=='string'||!commandId.trim()||this.purchaseCommands.has(commandId))return false;
@@ -466,7 +476,8 @@ export class CozyRuntime {
     this.purchaseCommands.add(commandId);
     this.message = `Đã mua ${quantity} ${ingredientName(id)}.`; this.revision++; return true;
   }
-  orderExpress(id:StockIngredient,quantity:number,commandId:string):boolean {
+  orderExpress(id:StockIngredient,quantity:number,commandId:string):boolean {return this.cashTransaction(()=>this.orderExpressNow(id,quantity,commandId));}
+  private orderExpressNow(id:StockIngredient,quantity:number,commandId:string):boolean {
     if(!this.saveGuard()||!this.productionActive||!this.shiftOpen||this.phase==='summary'||this.blocked('order')||this.shiftClock.phase==='awaiting-close')return false;
     if(typeof commandId!=='string'||!commandId.trim()||this.purchaseCommands.has(commandId))return false;
     if(!this.ingredientAccess(id).unlocked)return this.shopFeedback('Nguyên liệu chưa có công thức đã mở.');
@@ -476,7 +487,8 @@ export class CozyRuntime {
     this.expressPending.set(commandId,{id:commandId,ingredient:id,quantity,unitPrice:receipt.unitCost,remaining:5,duration:5});
     this.message=`Đang giao ${ingredientName(id)} ×${quantity}; nhận sau 5 giây.`;this.revision++;return true;
   }
-  upgradeShop(kind:'oven'|'queue',commandId:string):boolean {
+  upgradeShop(kind:'oven'|'queue',commandId:string):boolean {return this.cashTransaction(()=>this.upgradeShopNow(kind,commandId));}
+  private upgradeShopNow(kind:'oven'|'queue',commandId:string):boolean {
     if(!['oven','queue'].includes(kind)||!this.canSetPrices||typeof commandId!=='string'||!commandId.trim()||this.upgradeCommands.has(commandId))return false;
     const cost=this.upgradePrice(kind);if(cost===null||!this.stock.debit(cost))return this.shopFeedback('Không đủ tiền hoặc đã nâng cấp tối đa.');
     if(kind==='oven')this.ovenUpgrade=(this.ovenUpgrade+1) as 1|2;else this.queueUpgrade=1;
@@ -490,7 +502,8 @@ export class CozyRuntime {
     this.message = this.missingReason || 'Đủ nguyên liệu cho món đã chọn.'; this.revision++; return true;
   }
   openShop():boolean {return this.clockAction(()=>this.openShopNow());}
-  private openShopNow():boolean {
+  private openShopNow():boolean {return this.cashTransaction(()=>this.openShopTransaction());}
+  private openShopTransaction():boolean {
     if (!this.saveGuard() || !this.productionActive || this.reasons.size || this.phase !== 'preparation' || this.currentDay>this.campaignLastDay || this.closedDays.has(this.currentDay)) return false;
     if (this.shiftOpen) return this.returnToOrders();
     if (!this.canOpen) return this.shopFeedback(this.missingReason);
@@ -507,7 +520,8 @@ export class CozyRuntime {
     this.revision++; return true;
   }
   /** Atomic scheduled arrival. A failed slot is consumed rather than queued for retry. */
-  processArrival(arrivalId: string): boolean {
+  processArrival(arrivalId:string):boolean {return this.cashTransaction(()=>this.processArrivalNow(arrivalId));}
+  private processArrivalNow(arrivalId: string): boolean {
     const slot=this.schedule?.slots[this.arrival];
     if (!this.saveGuard() || !this.productionActive || !this.shiftOpen || !['making','delivered'].includes(this.phase) || this.reasons.size || !slot||arrivalId!==slot.id||this.processedArrivals.has(arrivalId)||this.elapsed<slot.at||this.elapsed>=this.schedule!.duration) return false;
     this.processedArrivals.add(arrivalId);this.arrival++;
@@ -558,7 +572,8 @@ export class CozyRuntime {
     const t=this.active.get(id)??this.abandoned.get(id); if(!t)return false;
     this.ticket=id;this.order=t.order;this.sourceId=id;this.revision++;return true;
   }
-  private deliver(sourceId:string,targetId:string,commandId:string,confirmed=false):boolean {
+  private deliver(sourceId:string,targetId:string,commandId:string,confirmed=false):boolean {return this.cashTransaction(()=>this.deliverNow(sourceId,targetId,commandId,confirmed));}
+  private deliverNow(sourceId:string,targetId:string,commandId:string,confirmed:boolean):boolean {
     if(this.deliveredCommands.has(commandId))return false;
     const source=this.active.get(sourceId),target=this.active.get(targetId);
     if(!source||!target||target.deadline<=this.elapsed||!['raw','ready','boxed','burnt'].includes(source.order.state.stage))return this.shopFeedback('Khách đã rời đi hoặc bánh chưa sẵn sàng. Không thể giao.');
@@ -624,7 +639,8 @@ export class CozyRuntime {
     const next=this.active.values().next().value as Ticket|undefined;if(next){this.ticket=next.id;this.order=next.order;}else this.order=new CozyOrder(false,this.recipe,true,this.ovenUpgrade);
     this.phase='making';this.message='Đơn app đang giao.';this.event('app-sent:'+t.id);this.revision++;this.tickCourier(0);return true;
   }
-  private tickCourier(seconds:number):void {
+  private tickCourier(seconds:number):void {this.cashTransaction(()=>this.tickCourierNow(seconds));}
+  private tickCourierNow(seconds:number):void {
     const c=this.courier;if(!c||c.phase==='arrived')return;
     c.remaining=Math.max(0,Math.round((c.remaining-seconds)*1e6)/1e6);if(c.remaining)return;
     if(c.phase==='waiting'){c.phase='arrived';this.revision++;return;}
@@ -680,6 +696,21 @@ export class CozyRuntime {
   get pauseRevision() { return this.pauseVersion; }
   private readonly timeBoundaryListeners=new Set<(phase:'before'|'after')=>void>();
   private readonly audioListeners=new Set<(effect:CozyAudioEffect)=>void>();
+  private readonly cashListeners=new Set<(receipt:Readonly<{id:number;amount:number;cash:number}>)=>void>();
+  private cashSerial=0;
+  private cashDepth=0;
+  subscribeCash(listener:(receipt:Readonly<{id:number;amount:number;cash:number}>)=>void):()=>void {this.cashListeners.add(listener);return ()=>this.cashListeners.delete(listener);}
+  private cashTransaction<T>(action:()=>T):T {
+    const outer=this.cashDepth++===0,before=this.stock.cash;let completed=false;
+    try{const result=action();completed=true;return result;}finally{
+      this.cashDepth--;
+      const amount=this.stock.cash-before;
+      if(outer&&completed&&amount!==0){
+        const receipt=Object.freeze({id:++this.cashSerial,amount,cash:this.stock.cash});
+        for(const listener of this.cashListeners)try{listener(receipt);}catch{/* Presentation must not affect committed money. */}
+      }
+    }
+  }
   private audioCatchup=false;
   private readonly pendingAudioArrivals=new Set<string>();
   private readonly pendingAudioEffects=new Set<'sauce'|'box'>();

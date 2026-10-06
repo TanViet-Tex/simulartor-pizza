@@ -55,6 +55,8 @@ Kiểm tra tập trung ba cấp lò với thời gian nướng thật, file ng�
 
 ## Assumptions
 
+- Yêu cầu thêm2026-10-06: dùng thanh toán.mp3 cho feedback giao dịch nhận/chi tiền thành công, thêm một voice payment preload. Theo steering “nhỏ lại tý”, payment75%effectsVolume, mute vẫn áp dụng. Receipt từ cash transaction thật, không từ redraw; nhiều click/receipt dùng cùngvoice, không chồng. Đây là bổ sung được người dùng cho phép ngoài bảy file ban đầu. Xem ../../implementation-artifacts/spec-cash-feedback.md.
+
 - Theo yêu cầu tiếp theo2026-10-06, tiếng tinh cuối lò nướng.mp3 phải kêu một lần đúng mốc chín6/4/2s. Hai đoạn WAV dẫn xuất tách tiếng chạy và tinh, dùng cùngvoice; tiếng chạy loop đến chín rồi chuyển tinh không lặp, không thay thời gian/cao độ. Chi tiết ở ../../implementation-artifacts/spec-oven-ready-ding.md.
 
 - Theo yêu cầu tiếp theo2026-10-06, `cài đặt.mp3` phát khi mở và thao tác các nút Cài đặt Menu/Pause (chuột/chạm/bàn phím); thay tiếng bíp cũ. Preload file nhỏ, bỏ qua390ms đầu gần im lặng; một voice restart khi bấm tiếp. Hiệu ứng Tắt dừng tiếng, bật lại phát theo trạng thái mới; không lặp suốt thời gian panel mở.
