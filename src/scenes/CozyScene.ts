@@ -495,24 +495,35 @@ export class CozyScene extends Phaser.Scene {
     canvas.dataset.stock=JSON.stringify(STOCK_INGREDIENTS.map(id=>({id,owned:this.runtime.owned(id),available:this.runtime.available(id),reserved:this.runtime.reserved(id)})));
     canvas.dataset.expressOrders=JSON.stringify(this.runtime.expressOrders);
     canvas.dataset.bakeTiming=JSON.stringify(this.runtime.bakeTiming);canvas.dataset.queueCapacity=String(this.runtime.queueCapacity);
+    canvas.dataset.neededIngredients=JSON.stringify(this.neededIngredients);
     canvas.dataset.progression=JSON.stringify(this.runtime.progression);canvas.dataset.menuRecipes=JSON.stringify(this.runtime.menuRecipes);
     if(this.campaignSession)canvas.dataset.saveState=JSON.stringify(this.campaignSession.view);
     // Read-only geometry makes canvas typography verifiable at every device scale.
     canvas.dataset.labels=JSON.stringify(this.layer.list.filter((o):o is Phaser.GameObjects.Text=>o instanceof Phaser.GameObjects.Text).map(t=>({text:t.text,x:t.getBounds().x,y:t.getBounds().y,width:t.width,height:t.height,font:t.style.fontFamily,size:t.style.fontSize,spacing:t.letterSpacing,color:t.style.color})));
   }
   private sauceShelf():void{
-    const s=this.runtime.state,assembly=s.stage==='assembly';
+    const s=this.runtime.state,assembly=s.stage==='assembly',needed=this.neededIngredients;
     ['Cà chua','Kem trắng','BBQ','Pesto','Sốt cay'].forEach((name,i)=>{
       const id=['sauce','sauce-white','sauce-bbq','sauce-pesto','sauce-hot'][i] as StockIngredient;
       const {x,y,w,h}=KITCHEN.ingredient(i),available=!this.runtime.tutorialActive||i===0;
-      this.label(x+w/2,y+27,name,9,available?cream:muted);
-      this.ingredientState(x,y,w,h,available,available&&s.ingredients.includes(id));
+      this.ingredientState(x,y,w,h,available,available&&s.ingredients.includes(id),needed.includes(id));
+      // Paper labels sit on the bottle body; full names remain readable beneath it.
+      this.graphics();this.art.g.fillStyle(0xfff1d4,1).fillRoundedRect(x+w/2-7,y+15,14,9,2);
+      const bottleLabel=this.label(x+w/2,y+16,['CÀ','KEM','BBQ','PESTO','CAY'][i],9,ink);
+      bottleLabel.setScale(Math.min(12/bottleLabel.width,6/bottleLabel.height));
+      this.label(x+w/2,y+31,name,9,available?cream:muted);
       this.hit(id,x,y,w,h,available&&(assembly||this.runtime.productionActive&&this.runtime.available(id)<=0),()=>this.useIngredient(id));if(this.runtime.productionActive)this.stockBadge(id,x,y,w);
     });
   }
-  private ingredientState(x:number,y:number,w:number,h:number,available:boolean,selected:boolean):void{
+  private get neededIngredients():readonly StockIngredient[]{
+    const s=this.runtime.state;
+    if(s.stage!=='assembly'||this.runtime.selectedExpired||this.runtime.productionActive&&!this.runtime.tutorialActive&&!this.runtime.selectedTicket)return [];
+    return recipeIngredients(this.runtime.selectedRecipe).filter(id=>!s.ingredients.includes(id));
+  }
+  private ingredientState(x:number,y:number,w:number,h:number,available:boolean,selected:boolean,needed=false):void{
     this.graphics();
     if(selected)this.art.g.fillStyle(0xf6ead4,.08).fillRoundedRect(x+2,y+2,w-4,h-4,8);
+    if(available&&needed)this.art.g.fillStyle(0xfff1c2,.22).fillRoundedRect(x+2,y+2,w-4,h-4,8).lineStyle(2,0xffd45e,1).strokeRoundedRect(x+2,y+2,w-4,h-4,8);
     if(!available){this.art.g.fillStyle(0x19120d,.38).fillRoundedRect(x+2,y+2,w-4,h-4,8);this.icon('lock',x+w-8,y+9,12,.9);}
   }
   private stockBadge(id:StockIngredient,x:number,y:number,w:number):void{
@@ -628,12 +639,12 @@ export class CozyScene extends Phaser.Scene {
   }
   private inventory():void{
     const items=[['dough','Đế bánh'],['cheese','Phô mai'],['mushroom','Nấm'],['sausage','Xúc xích'],['pepperoni','Pepperoni'],['pepper','Ớt chuông'],['onion','Hành tây'],['corn','Bắp'],['olive','Ô liu'],['chicken','Gà'],['shrimp','Tôm'],['squid','Mực'],['ham','Giăm bông'],['pineapple','Dứa']];
-    const s=this.runtime.state,production=this.runtime.productionActive&&!this.runtime.tutorialActive;
+    const s=this.runtime.state,production=this.runtime.productionActive&&!this.runtime.tutorialActive,needed=this.neededIngredients;
     items.forEach(([id,name],i)=>{
       const {x,y,w,h}=KITCHEN.ingredient(i+5);
       const available=!this.runtime.tutorialActive||id==='dough'||id==='cheese';
       this.label(x+w/2,y+27,name,9,available?cream:muted,w-3);
-      this.ingredientState(x,y,w,h,available,available&&s.ingredients.includes(id as StockIngredient));
+      this.ingredientState(x,y,w,h,available,available&&s.ingredients.includes(id as StockIngredient),needed.includes(id as StockIngredient));
       this.hit(id,x,y,w,h,available&&(s.stage==='assembly'||production&&this.runtime.available(id as StockIngredient)<=0),()=>this.useIngredient(id as StockIngredient));if(production)this.stockBadge(id as StockIngredient,x,y,w);
     });
     const {x,y,w,h}=KITCHEN.ingredient(19),discardable=this.runtime.selectedExpired||['raw','ready','boxed','burnt'].includes(s.stage);

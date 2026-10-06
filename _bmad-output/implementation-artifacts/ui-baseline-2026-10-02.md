@@ -429,3 +429,7 @@ Bỏ viền focus nâu đỏ khi click/chạm trong Menu/Cài đặt và nút đ
 Người dùng yêu cầu triển khai bảy asset âm thanh. Giữ nguyên geometry/art/thứ tự controls của bảng Cài đặt đã duyệt. Music dùng toggle Tắt/Bật vàng/đen cùng phong cách Hiệu ứng; Chọn nhạc nền hiển thị “Nhạc nền 2 ›” mặc định, chạm chuyển sang bài1 và ngược lại. Hai control nay hoạt động thật, thay riêng quy định disabled/“Chưa có nhạc” ở trên. Menu/Pause chia sẻ cùng lựa chọn; Hiệu ứng vẫn bật/tắt riêng, không thêm nút âm lượng. Mở Cài đặt phát cài đặt.mp3 một lần; nhạc tiếp tục khi Pause, tiếng lò tạm dừng theo lease. Không sửa giao diện bếp/hub/menu hoặc popup mã. Xem [spec triển khai](spec-game-audio.md), [nguồn asset](../specs/spec-game-audio/audio-assets.md).
 
 Ảnh kiểm chứng đúng phần controls nhạc, giữ ảnh cũ riêng: [Menu](ui-baseline/audio-settings-menu-2026-10-06.png), [Pause](ui-baseline/audio-settings-pause-2026-10-06.png).
+
+### Gợi ý nguyên liệu và nhãn chai sốt — yêu cầu 2026-10-06
+
+Ô nguyên liệu còn thiếu của pizza trong đơn đang chọn có viền vàng và nền sáng; bỏ highlight khi đã thêm, tính lại khi bỏ/xóa nguyên liệu hoặc đổi đơn. Các ô khác giữ nguyên và vẫn dùng được theo luật hiện có. Không dấu tích hoặc màu xanh/đỏ. Năm chai sốt có nhãn giấy kem trên thân, tên đầy đủ bên dưới. Giữ art chai, geometry và hitbox; chỉ thay phần được yêu cầu. Xem [spec](spec-ingredient-hints-and-sauce-labels.md).
