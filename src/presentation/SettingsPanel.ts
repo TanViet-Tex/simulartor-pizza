@@ -29,9 +29,13 @@ export function drawSettingsPanel(scene:Phaser.Scene,layer:Phaser.GameObjects.Co
   };
   text(180,114,'Cài đặt',29,'#472310',.5);
   drawSettingsIcon(scene,layer,'music',38,173);text(92,187,'Music:',19);
-  button('music','Chưa có nhạc',false,()=>{},13);
+  button('music','',true,()=>input.audio.toggleMusic());
+  const music=controls.music,musicOn=input.audio.musicEnabled,mg=scene.add.graphics(),musicX=music.x+(musicOn?music.width/2:0)+5;
+  mg.fillStyle(0xffcc4e).fillRoundedRect(musicX,music.y+5,music.width/2-10,music.height-10,18);
+  mg.lineStyle(2,0xffeaa6).strokeRoundedRect(musicX+2,music.y+7,music.width/2-14,music.height-14,16);layer.add(mg);
+  text(music.x+music.width/4,music.y+12,'Tắt',16,musicOn?'#bdb7ad':'#472310',.5);text(music.x+music.width*3/4,music.y+12,'Bật',16,musicOn?'#472310':'#bdb7ad',.5);
   drawSettingsIcon(scene,layer,'record',38,241);text(92,220,'Chọn nhạc nền',17);
-  button('music-choice','Chưa có nhạc',false,()=>{},16);
+  button('music-choice',`Nhạc nền ${input.audio.musicTrack}  ›`,true,()=>input.audio.changeMusic(),16);
   drawSettingsIcon(scene,layer,'music',38,327);text(92,340,'Hiệu ứng:',17);
   button('mute','',true,()=>input.audio.toggleMute());
   const effects=controls.mute,enabled=!input.audio.muted,eg=scene.add.graphics(),selected=effects.x+(enabled?effects.width/2:0)+5;
@@ -54,5 +58,5 @@ export function drawSettingsPanel(scene:Phaser.Scene,layer:Phaser.GameObjects.Co
   const ornament=scene.add.graphics();ornament.lineStyle(1,0xb78347).lineBetween(84,527,159,527).lineBetween(201,527,276,527);ornament.fillStyle(0xb78347).fillCircle(180,527,3);layer.add(ornament);
   button('back','Quay lại',true,input.back,21);
   const layout={bounds:{x:12,y:34,width:336,height:578},titleY:114};
-  scene.game.canvas.dataset.settingsPanel=JSON.stringify({layout,controls,effectsVolume:input.audio.effectsVolume,muted:input.audio.muted,reducedMotion:input.reducedMotion,motionEnabled:!input.reducedMotion,musicAvailable:false});
+  scene.game.canvas.dataset.settingsPanel=JSON.stringify({layout,controls,effectsVolume:input.audio.effectsVolume,muted:input.audio.muted,reducedMotion:input.reducedMotion,motionEnabled:!input.reducedMotion,musicAvailable:true,musicEnabled:input.audio.musicEnabled,musicTrack:input.audio.musicTrack});
 }

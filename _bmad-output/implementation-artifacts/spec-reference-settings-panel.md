@@ -66,6 +66,8 @@ context:
 
 ## Spec Change Log
 
+- 2026-10-06: Người dùng yêu cầu triển khai nhạc thật từ hai asset và đổi bài trong Cài đặt. Spec-game-audio.md thay riêng ràng buộc Music/chọn bài disabled/unavailable: bài2 mặc định, toggle Music riêng và đổi1↔2 trong các vùng hiện có; giữ geometry/art và hiệu ứng toggle, không thêm UI âm lượng. Các kết quả kiểm tra phía dưới là lịch sử trước lần tích hợp âm thanh.
+
 - 2026-10-06: Người dùng yêu cầu bỏ nút hiệu ứng −/+ vì dùng âm lượng điện thoại. Đồng bộ intent và acceptance: giữ bật/tắt hiệu ứng, bỏ phần trăm và điều khiển âm lượng UI; không đổi API/logic audio khác.
 - 2026-10-06: Acceptance audit phát hiện lựa chọn chuyển động chưa sống qua reload như AC. Bổ sung lưu/đọc preference giao diện riêng; giữ art, controls, pause, domain và checkpoint hiện hành.
 

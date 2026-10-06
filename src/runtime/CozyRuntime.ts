@@ -31,6 +31,7 @@ import { CozyStock,STOCK_RECIPES, datedIngredientPrice, ingredientExpiry, ingred
 export type CozyRuntimeIntent=CozyIntent|{type:'customer.price';recipe:StockRecipe;percent:number}|{type:'customer.bargain';accept:boolean}|{type:'customer.help';accept:boolean}|{type:'customer.thanks'}|{type:'market.buy';ingredient:StockIngredient;quantity:number;commandId:string}|{type:'menu.configure';recipe:StockRecipe;percent:number;enabled:boolean}|{type:'express.order';ingredient:StockIngredient;quantity:number;commandId:string}|{type:'shop.buy';id:ShopItemId;commandId:string}|{type:'shop.place';id:ShopItemId;placed:boolean;commandId:string}|{type:'shop.upgrade';kind:'oven'|'queue';commandId:string};
 
 export type CozyPause = 'user' | 'visibility' | 'orientation' | 'order' | 'gap' | 'success' | 'tutorial' | 'discard' | 'delivery' | 'menu' | 'bargain' | 'help' | 'save';
+export type CozyAudioEffect = 'sauce' | 'box' | 'arrival';
 export type CozyTutorialStep = 'dough' | 'sauce' | 'cheese' | 'bake' | 'warming' | 'extract' | 'box' | 'deliver' | 'complete';
 const steps: readonly CozyTutorialStep[] = ['dough', 'sauce', 'cheese', 'bake', 'warming', 'extract', 'box', 'deliver', 'complete'];
 type Ticket = {vip?:boolean;source:'shop'|'app';quantity:1|2|3;packed:{stars:number;reasons:string[];correct:boolean}[]; avatarIndex:number; bargainDecision?:'accepted'|'declined'; id: string; name: string; recipe: StockRecipe; kind: CustomerKind; help?:boolean; bakedCost?:number;giftBooked?:boolean; takeaway:boolean; finalPrice:number; patience: number; extraPenalty: number; deadline: number; committed: boolean; order: CozyOrder };
@@ -307,7 +308,9 @@ export class CozyRuntime {
     this.active.set(id,t);
     if(!this.active.has(this.ticket)){this.ticket=id;this.order=t.order;}
     if(this.phase==='delivered')this.phase='making';
-    this.event('arrived:'+arrivalId+':'+id);this.message=name+' · '+(vip?'VIP':profile.label)+': đã đặt món.';this.revision++;return true;
+    this.event('arrived:'+arrivalId+':'+id);this.message=name+' · '+(vip?'VIP':profile.label)+': đã đặt món.';this.revision++;
+    if(this.audioCatchup)this.pendingAudioArrivals.add(id);else this.notifyAudio('arrival');
+    return true;
   }
   resolveBargain(accept:boolean):boolean {
     if(typeof accept!=='boolean'||!this.bargain||this.blocked('bargain'))return false;
@@ -644,6 +647,17 @@ export class CozyRuntime {
   get expectedControl(): string | null { return this.step === 'complete' ? 'start-shift' : this.step === 'warming' ? null : this.step; }
   get pauseRevision() { return this.pauseVersion; }
   private readonly timeBoundaryListeners=new Set<(phase:'before'|'after')=>void>();
+  private readonly audioListeners=new Set<(effect:CozyAudioEffect)=>void>();
+  private audioCatchup=false;
+  private readonly pendingAudioArrivals=new Set<string>();
+  private readonly pendingAudioEffects=new Set<'sauce'|'box'>();
+  /** Presentation notifications are transient and never part of campaign history or saves. */
+  subscribeAudio(listener:(effect:CozyAudioEffect)=>void):()=>void {this.audioListeners.add(listener);return ()=>this.audioListeners.delete(listener);}
+  private notifyAudio(effect:CozyAudioEffect):void {for(const listener of this.audioListeners){try{listener(effect);}catch{/* Audio must never interrupt gameplay. */}}}
+  private notifyIntentAudio(intent:CozyIntent,addingSauce:boolean):void {
+    const effect=intent.type==='box'?'box':addingSauce?'sauce':null;
+    if(effect){if(this.audioCatchup)this.pendingAudioEffects.add(effect);else this.notifyAudio(effect);}
+  }
   subscribeTimeBoundary(listener:(phase:'before'|'after')=>void):()=>void {this.timeBoundaryListeners.add(listener);return ()=>this.timeBoundaryListeners.delete(listener);}
   private clockAction<T>(action:()=>T):T {this.timeBoundary("before");try{return action();}finally{this.timeBoundary("after");}}
   private timeBoundary(phase:'before'|'after'):void {for(const listener of this.timeBoundaryListeners)listener(phase);}
@@ -691,7 +705,10 @@ export class CozyRuntime {
     if(intent.type==='customer.thanks')return this.dismissThanks();
     if (!this.tutorialActive) {
       if (this.reasons.size) return false;
-      if (!this.production) return this.order.dispatch(intent);
+      if (!this.production) {
+        const addingSauce=intent.type==='ingredient'&&intent.ingredient.startsWith('sauce')&&!this.order.state.ingredients.includes(intent.ingredient);
+        const accepted=this.order.dispatch(intent);if(accepted)this.notifyIntentAudio(intent,addingSauce);return accepted;
+      }
       if (intent.type === 'reset') {
         if(this.closedDays.size)return false;
         this.appliedCampaignEvent=null;this.campaignEventAcknowledged=false;this.eventSeed=this.scheduleDependencies.eventSeed??LEGACY_EVENT_SEED;this.appEnabled=false;this.appCommands.clear();this.bookingCommands.clear();this.shiftEvent=null;this.shiftApp=false;this.shiftStaff=false;this.deliveryFees=0;this.pizzasSold=0;this.deliveryTime=0;this.courier=null;this.recipeOwnership=new Set(['cheese','mushroom']);this.recipeSpent=0;this.pendingRecipeSpent=0;this.purchasedRecipes=[];this.grantedRecipes=[];this.recipeCommands.clear();this.campaignLastDay=CAMPAIGN_LAST_DAY;this.staff=emptyStaff();this.shiftRoles=[];this.staffJobs.clear();this.staffCommands.clear();this.payrollWarning='';this.shop={acquired:[],spent:0,pendingSpent:0};this.shopCommands.clear();this.upgradeReceipts=[];this.frozenShopEffects=shopEffects([]);this.ovenUpgrade=0;this.queueUpgrade=0;this.upgradeSpent=0;this.pendingUpgradeSpent=0;this.capitalPurchases=0;this.upgradeCommands.clear();this.customerDecisions={accepted:[],declined:[]};this.expressPending.clear();
@@ -714,7 +731,9 @@ export class CozyRuntime {
     }
     if (this.otherPaused() || this.step === 'warming' || this.step === 'complete') return false;
     const matches = intent.type === 'ingredient' ? intent.ingredient === this.step : intent.type === this.step;
+    const addingSauce=intent.type==='ingredient'&&intent.ingredient.startsWith('sauce')&&!this.practice.state.ingredients.includes(intent.ingredient);
     if (!matches || !this.practice.dispatch(intent)) return false;
+    this.notifyIntentAudio(intent,addingSauce);
     this.setStep(steps[steps.indexOf(this.step!) + 1]!); return true;
   }
   startShift():boolean {return this.clockAction(()=>this.startShiftNow());}
@@ -726,9 +745,20 @@ export class CozyRuntime {
   /** Wall-clock catch-up uses bounded steps and stops at the first decision or shift boundary. */
   advanceElapsed(delta:number):void {
     if(!Number.isFinite(delta)||delta<=0)return;
-    let remaining=delta;
-    while(remaining>0&&this.simulationActive&&!this.reasons.size&&this.saveGuard()){
-      const step=Math.min(50,remaining);remaining-=step;this.advance(step);
+    const previousCatchup=this.audioCatchup;this.audioCatchup=true;
+    try{
+      let remaining=delta;
+      while(remaining>0&&this.simulationActive&&!this.reasons.size&&this.saveGuard()){
+        const step=Math.min(50,remaining);remaining-=step;this.advance(step);
+      }
+    }finally{
+      this.audioCatchup=previousCatchup;
+      if(!previousCatchup){
+        const hasArrival=[...this.pendingAudioArrivals].some(id=>this.active.has(id));this.pendingAudioArrivals.clear();
+        const effects=[...this.pendingAudioEffects];this.pendingAudioEffects.clear();
+        if(hasArrival)this.notifyAudio('arrival');
+        for(const effect of effects)this.notifyAudio(effect);
+      }
     }
   }
   /** Shared manual/staff path; always uses the ticket's order, never changes selection. */
@@ -748,12 +778,13 @@ export class CozyRuntime {
       if(t.help){this.dailyGiftCost+=t.bakedCost;this.help.giftCost+=t.bakedCost;}t.committed=true;
     }
     if(intent.type==='extract'&&this.ovenId!==t.id)return false;
+    const addingSauce=intent.type==='ingredient'&&intent.ingredient.startsWith('sauce')&&!s.ingredients.includes(intent.ingredient);
     if(!order.dispatch(intent))return false;
     if(intent.type==='bake'){this.ovenId=t.id;if(this.ticket===t.id)this.sourceId=t.id;this.message=`Đang nướng pizza cho ${t.name}.`;}
     if(intent.type==='extract'){this.ovenId=null;this.message=order.state.feedback;}
     if((intent.type==='extract'||intent.type==='box')&&this.ticket===t.id)this.sourceId=t.id;
     if(intent.type==='box')this.message=`Pizza đã đóng hộp cho ${t.name}.`;
-    this.event(`${intent.type}:${t.id}`);this.revision++;return true;
+    this.event(`${intent.type}:${t.id}`);this.revision++;this.notifyIntentAudio(intent,addingSauce);return true;
   }
   private tickStaff(seconds:number):void{
     if(!this.saveGuard()||this.reasons.size||!this.shiftOpen||this.phase!=='making'||this.elapsed>=this.schedule!.duration+this.schedule!.grace)return;

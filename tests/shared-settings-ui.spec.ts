@@ -50,19 +50,19 @@ test('Menu and Pause share settings, geometry and live audio preferences without
   const menuBounds=(await canvas.boundingBox())!;
   await page.touchscreen.tap(menuBounds.x+(behindStart.x+2)*menuBounds.width/360,menuBounds.y+(behindStart.y+behindStart.height-2)*menuBounds.height/640);
   await expect(canvas).toHaveAttribute('data-menu-dialog','settings');
-  await canvas.focus();await page.keyboard.press('Tab');await page.keyboard.press('Enter');
+  await tap(page,'menu-mute',true);
   await expect.poll(async()=>JSON.parse((await canvas.getAttribute('data-settings-panel'))||'{}').muted).toBe(true);
   await tap(page,'menu-motion',true);
   await expect(canvas).toHaveAttribute('data-menu-reduced-motion','true');
   const menuSettings=await canvas.getAttribute('data-settings-panel'),menuFrame=await canvas.getAttribute('data-notification-frame');
   expect(menuSettings).toBeTruthy();
-  const rendered=JSON.parse(menuSettings!);expect(rendered.musicAvailable).toBe(false);expect(rendered.motionEnabled).toBe(false);
+  const rendered=JSON.parse(menuSettings!);expect(rendered.musicAvailable).toBe(true);expect(rendered.musicTrack).toBe(2);expect(rendered.motionEnabled).toBe(false);
   const menuTargets=JSON.parse(await canvas.getAttribute('data-menu-targets')??'[]');
-  for(const id of ['menu-music','menu-music-choice'])expect(menuTargets.find((c:any)=>c.id===id).disabled).toBe(true);
+  for(const id of ['menu-music','menu-music-choice'])expect(menuTargets.find((c:any)=>c.id===id).disabled).toBe(false);
   const active=menuTargets.filter((c:any)=>!c.disabled);
   active.forEach((c:any)=>{expect(c.width*menuBounds.width/360).toBeGreaterThanOrEqual(48);expect(c.height*menuBounds.height/640).toBeGreaterThanOrEqual(48);});
   for(let i=0;i<active.length;i++)for(let j=i+1;j<active.length;j++){const a=active[i],z=active[j];expect(a.x+a.width<=z.x||z.x+z.width<=a.x||a.y+a.height<=z.y||z.y+z.height<=a.y).toBe(true);}
-  if(info.project.name==='chromium-360x640')await canvas.screenshot({path:'_bmad-output/implementation-artifacts/ui-baseline/reference-settings-menu-2026-10-06.png'});
+  await canvas.screenshot({path:info.outputPath('audio-settings-menu.png')});
   const beforeTargets=JSON.parse(await canvas.getAttribute('data-menu-targets')??'[]');
   const b=(await canvas.boundingBox())!;await page.touchscreen.tap(b.x+180*b.width/360,b.y+615*b.height/640);
   await expect(canvas).toHaveAttribute('data-menu-dialog','settings');
@@ -78,16 +78,16 @@ test('Menu and Pause share settings, geometry and live audio preferences without
   await expect(canvas).toHaveAttribute('data-ingredients','dough');
   const clock=JSON.parse(await canvas.getAttribute('data-shift-clock')??'null');
   await page.waitForTimeout(300);expect(JSON.parse(await canvas.getAttribute('data-shift-clock')??'null')).toEqual(clock);
-  if(info.project.name==='chromium-360x640')await canvas.screenshot({path:'_bmad-output/implementation-artifacts/ui-baseline/reference-settings-pause-2026-10-06.png'});
+  await canvas.screenshot({path:info.outputPath('audio-settings-pause.png')});
   const oldMuted=JSON.parse((await canvas.getAttribute('data-settings-panel'))||'{}').muted;
-  await canvas.focus();await page.keyboard.press('Tab');await page.keyboard.press('Enter');
+  await canvas.focus();await page.keyboard.press('Tab');await page.keyboard.press('Tab');await page.keyboard.press('Tab');await page.keyboard.press('Enter');
   await expect.poll(async()=>JSON.parse((await canvas.getAttribute('data-settings-panel'))||'{}').muted).toBe(!oldMuted);
   await page.keyboard.press('Escape');await expect(canvas).toHaveAttribute('data-paused',/user/);
   await expect(canvas).toHaveAttribute('data-settings-panel','');
   await tap(page,'resume');await expect(canvas).toHaveAttribute('data-paused','');
   await page.reload();await expect(canvas).toHaveAttribute('data-screen','game');
   await tap(page,'pause');await tap(page,'pause-settings');
-  await expect.poll(async()=>JSON.parse(await canvas.getAttribute('data-settings-panel')??'{}').motionEnabled).toBe(false);
+  await expect.poll(async()=>JSON.parse((await canvas.getAttribute('data-settings-panel'))||'{}').motionEnabled).toBe(false);
 });
 
 test('automatic end-day notice retains a visible dim background and waits for acknowledgement',async({page},info)=>{

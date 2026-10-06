@@ -36,6 +36,10 @@ _Tệp này chứa các quy tắc và patterns quan trọng mà AI agent phải 
 
 ## Critical Implementation Rules
 
+### Asset âm thanh và Music — 2026-10-06
+
+Bảy file thật ở `public/assets/audio/`, shared PlayAudio cho Menu/bếp. Lò chỉ một loop lúc baking chưa đạt perfectStart6/4/2s (cửa sổ chín vừa6–8/4–6/2–4), dừng/reset khi chín hoặc bỏ mẻ; mọi pause lease giữ playhead, Menu→Tiếp tục giữ cùng player. Hiệu ứng sốt chung/đóng hộp/khách đến từ sự kiện thành công gồm staff; catchup gom mỗi loại một lần, không replay backlog. Mở Cài đặt phát cài đặt.mp3 một lần. Music riêng bật/tắt, hai bài lặp, mặc định `nhạc nèn bán pizza 2.mp3`, đổi ở control hiện có, giữ trong phiên; Music tiếp tục khi Pause. Hiệu ứng theo mute/effectsVolume, không thêm lại UI âm lượng. Yêu cầu này thay trạng thái nhạc unavailable/disabled trong tài liệu Cài đặt cũ; giữ geometry/art/save/gameplay. Xem [spec triển khai](implementation-artifacts/spec-game-audio.md).
+
 ### Epic 6: app và shipper — 2026-10-04
 
 App mở miễn phí từ ngày5, mặc định tắt cho save cũ; bật/tắt trong chuẩn bị qua transaction checkpoint hiện có. Không lưu giữa ca. Đơn app1–3pizza cùng món: book shipper trước bake, từng bánh tiêu hao FEFO tại bake rồi đóng hộp/tích vào đơn. Theo yêu cầu tiếp theo, đủ hộp và rider tới thì **bấm Giao bánh hoàn tất/nhận tiền ngay**, không thời gian chuyến hoặc phạt đến trễ. Doanh thu gross/phí riêng/net cash; XP/mục tiêu một outcome/đơn, lượng pizza bán riêng. Cấu hình tạm: hạn90s, shipper tới10s (mưa15s), phí5xu; hết hạn chưa giao hủy. Một booking, giao xong giải phóng shipper/trả slot ngay. Availability nhân viên đóng băng đầu ca; default false, Epic8 cung cấp roster thật, không thuê/lương giả. Nhân viên cũng chốt đơn ngay nhưng vẫn trở về20s/mưa30s trước nhận đơn tiếp, chặn chốt ngày trong lúc về. Ngày6/7/8/9 lần lượt mưa/cao điểm/bình thường/lễ hội, lặp4ngày; event/app đóng băng đầu ca. Giữ Pause/background lease và UI đã duyệt. Xem [spec Epic6](implementation-artifacts/spec-6-delivery-and-events.md).

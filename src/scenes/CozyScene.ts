@@ -160,7 +160,10 @@ export class CozyScene extends Phaser.Scene {
     this.game.canvas.setAttribute('tabindex','0');document.addEventListener('keydown',this.settingsKeyDown);
     this.scale.on('resize',this.motionChange);
     this.lifecycle=this.sharedLifecycle??new PlayLifecycle(this.runtime);
-    this.browserLifecycle=new BrowserPlayLifecycle(this.lifecycle,()=>{this.audio.silence();this.dirty=true;});
+    const unsubscribeAudio=this.runtime.subscribeAudio(effect=>this.audio.effect(effect));
+    const unsubscribeAudioBoundary=this.runtime.subscribeTimeBoundary(phase=>{if(phase==='after')this.syncOvenAudio();});
+    this.events.once('shutdown',()=>{unsubscribeAudio();unsubscribeAudioBoundary();this.audio.silence();});
+    this.browserLifecycle=new BrowserPlayLifecycle(this.lifecycle,()=>{this.syncOvenAudio();this.dirty=true;});
     this.preferenceUnsubscribe=this.preferences?.subscribe(this.motionChange);
     this.unsubscribeSave=this.campaignSession?.subscribe(()=>{this.saveDismissed=false;this.dirty=true;});
     this.events.once('shutdown',()=>{this.expressLease?.release();this.expressLease=undefined;this.expressIngredient=null;});
@@ -182,10 +185,15 @@ export class CozyScene extends Phaser.Scene {
   private get textScale():number{return Math.max(1,Math.min(2,parseFloat(getComputedStyle(document.documentElement).fontSize)/16));}
   private hold(reason:'user'|'order'):void{if(!this.scenePauses.has(reason))this.scenePauses.set(reason,this.runtime.acquirePause(reason));}
   private release(reason:'user'|'order'):void{this.scenePauses.get(reason)?.release();this.scenePauses.delete(reason);}
+  private syncOvenAudio():void{
+    const oven=this.runtime.productionActive?this.runtime.ovenState:this.runtime.state;
+    this.audio.syncOven(oven?.stage==='baking'&&oven.ovenSeconds<this.runtime.bakeTiming.perfectStart,this.runtime.pauses.length>0);
+  }
   update(_time:number,delta:number):void{
     const event=this.runtime.campaignEvent;
     if(event.id&&!event.acknowledged&&this.runtime.shopOpen&&!this.campaignEventLease&&!this.runtime.pauses.length&&!this.campaignSession?.view.pending){this.campaignEventLease=this.runtime.acquirePause('order');this.dirty=true;}
     this.lifecycle.frame(performance.now(),this.runtime.pauses.length===0&&this.runtime.simulationActive);
+    this.syncOvenAudio();
     if(this.runtime.day===1&&this.runtime.shopOpen&&this.runtime.shiftClock.phase==='awaiting-close'&&!this.runtime.pauses.length&&this.runtime.canCloseDay)this.finishDay();
     if(this.runtime.shopPhase==='summary'&&!this.warnedPayrollDays.has(this.runtime.day)&&!this.runtime.pauses.length&&!this.campaignSession?.view.pending){
       this.warnedPayrollDays.add(this.runtime.day);this.summaryTab='summary';
@@ -454,7 +462,7 @@ export class CozyScene extends Phaser.Scene {
     canvas.dataset.commercialCash=String(this.runtime.commercialState.cash);
     canvas.dataset.reducedMotion=String(this.reducedMotion);
     canvas.dataset.audio=this.audio.status;canvas.dataset.muted=String(this.audio.muted);
-    canvas.dataset.audioSettings=JSON.stringify({effectsVolume:this.audio.effectsVolume,musicAvailable:false});
+    canvas.dataset.audioSettings=JSON.stringify({effectsVolume:this.audio.effectsVolume,musicAvailable:true,musicEnabled:this.audio.musicEnabled,musicTrack:this.audio.musicTrack});
     canvas.dataset.bands=JSON.stringify(PLAY_BANDS);canvas.dataset.textScale=String(this.textScale);
     canvas.dataset.shop=this.runtime.productionActive?this.runtime.shopPhase:'freeplay';
     canvas.dataset.recipe=this.runtime.selectedRecipe;
@@ -1076,7 +1084,7 @@ export class CozyScene extends Phaser.Scene {
     this.layer.add(this.add.image(layout.x,layout.y,REFERENCE_PAUSE_ART.key).setOrigin(0).setDisplaySize(layout.width,layout.height));
     const hit=(id:string,rect:{x:number;y:number;width:number;height:number},enabled:boolean,action:()=>void)=>this.hit(id,rect.x,rect.y,rect.width,rect.height,enabled,action);
     hit('resume',layout.buttons.resume,this.scenePauses.has('user')||this.lifecycle.needsContinue||this.runtime.pauses.includes('gap'),()=>this.resumePause());
-    hit('pause-settings',layout.buttons.settings,true,()=>{this.hold('user');this.pauseSettings=true;this.dirty=true;});
+    hit('pause-settings',layout.buttons.settings,true,()=>{this.hold('user');this.audio.effect('settings');this.pauseSettings=true;this.dirty=true;});
     hit('main-menu',layout.buttons.menu,!!this.returnToMenu,()=>{this.pauseSettings=false;this.returnToMenu?.();});
     this.game.canvas.dataset.pausePanel=JSON.stringify(layout);
   }

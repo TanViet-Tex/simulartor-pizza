@@ -151,7 +151,7 @@ export class MainMenuScene extends Phaser.Scene {
     this.button('menu-continue', 76, top+step, 208, height, 'Tiếp tục', 'continue', PAPER, '#985025', mainEnabled && hasSession,
       () => this.actions.continue(), entrance, hasSession ? save?.day?`Ngày ${save.day}`:undefined : 'Chưa có phiên đang chơi');
     this.button('menu-settings', 76, top+2*step, 208, height, 'Cài đặt', 'settings', 0xf5c6a5, '#985025', mainEnabled,
-      () => { this.dialog = 'settings'; this.focusId = ''; this.draw(); }, entrance);
+      () => { this.audio.effect('settings');this.dialog = 'settings'; this.focusId = ''; this.draw(); }, entrance);
     if (this.dialog !== 'none') this.drawDialog();
     this.drawFocus(); this.publish();
   }
