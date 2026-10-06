@@ -8,7 +8,7 @@ describe('real stock ledger', () => {
     expect(stock.buy('dough',1,1)).toBe(false);expect(stock.buy('dough',1,2)).toBe(true);expect(stock.lots[stock.lots.length-1]).toMatchObject({day:2,expiry:3,unitCost:6});
     stock.reserve('day2','cheese',120);expect(stock.commit('day2',['dough','sauce','cheese'],2)).toBe(true);
     expect(stock.ledger(1)).toEqual({purchases:40,consumed:0});expect(stock.ledger(2)).toEqual({purchases:6,consumed:15});
-    expect(stock.settle(2)).toEqual({expired:15,rent:20});expect(stock.lots).toEqual([expect.objectContaining({ingredient:'dough',quantity:1,unitCost:6,expiry:3})]);
+    expect(stock.settle(2)).toEqual({expired:12,rent:20});expect(stock.lots).toEqual([expect.objectContaining({ingredient:'sauce',quantity:1,expiry:1000001}),expect.objectContaining({ingredient:'dough',quantity:1,unitCost:6,expiry:3})]);
   });
   it('rejects unsupported dates without cash or ledger mutations',()=>{
     const stock=new CozyStock();for(const day of [0,1000001,-1,NaN,.5]){expect(stock.buy('cheese',1,day)).toBe(false);expect(stock.settle(day)).toEqual({expired:0,rent:0});}
@@ -20,7 +20,7 @@ describe('real stock ledger', () => {
     expect(stock.lots).toEqual([
       { id: 1, ingredient: 'dough', quantity: 1, unitCost: 5, day: 1, expiry: 2 },
       { id: 2, ingredient: 'dough', quantity: 2, unitCost: 5, day: 1, expiry: 2 },
-      { id: 3, ingredient: 'sauce', quantity: 3, unitCost: 3, day: 1, expiry: 2 },
+      { id: 3, ingredient: 'sauce', quantity: 3, unitCost: 3, day: 1, expiry: 1000001 },
       { id: 4, ingredient: 'cheese', quantity: 3, unitCost: 7, day: 1, expiry: 2 },
       { id: 5, ingredient: 'mushroom', quantity: 2, unitCost: 5, day: 1, expiry: 1 },
     ]);

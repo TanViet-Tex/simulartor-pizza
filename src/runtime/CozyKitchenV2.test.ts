@@ -33,7 +33,7 @@ describe('direct kitchen gameplay',()=>{
     expect(r.selectTicket(r.tickets[3].id)).toBe(true);expect(r.selectedTicketId).toBe(r.tickets[3].id);
   });
   it('bakes eight mixed ingredients, consumes each once and scores wrong recipe on delivery',()=>{
-    const r=new CozyRuntime(false,true,schedule());const ids=STOCK_INGREDIENTS.slice(0,8);for(const id of ids)expect(r.buy(id,1)).toBe(true);
+    const r=CozyRuntime.restoreCheckpoint(fundedShopCheckpoint(22000),false,schedule())!;for(const recipe of ['sausage','chicken-bbq','seafood','pepperoni','vegetable'] as const)r.buyRecipe(recipe,'unlock-'+recipe);const ids=STOCK_INGREDIENTS.filter(id=>!['sauce-white','sauce-pesto','sauce-hot'].includes(id)).slice(0,8);for(const id of ids)expect(r.buy(id,1)).toBe(true);
     const cash=r.state.cash;expect(r.openShop()).toBe(true);oven(r,ids);expect(r.dispatch({type:'bake'})).toBe(false);
     for(const id of ids)expect(r.owned(id)).toBe(0);time(r,6);expect(r.dispatch({type:'extract'})).toBe(true);
     expect(r.dispatch({type:'deliver',commandId:'mixed'})).toBe(true);expect(r.deliveryPending).not.toBeNull();expect(r.confirmDelivery()).toBe(true);

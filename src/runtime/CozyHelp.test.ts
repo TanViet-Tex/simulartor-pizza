@@ -10,7 +10,7 @@ function buy(r:CozyRuntime,q=2){for(const id of ['dough','sauce','cheese'] as co
 function serve(r:CozyRuntime,quality:'good'|'raw'|'burnt'='good'){
   const id=r.selectedTicketId;for(const ingredient of recipeIngredients(r.selectedRecipe))r.dispatch({type:'ingredient',ingredient});
   expect(r.dispatch({type:'bake'})).toBe(true);time(r,quality==='raw'?1:quality==='burnt'?r.bakeTiming.perfectEnd+.05:r.bakeTiming.perfectStart);
-  if(quality!=='burnt')r.dispatch({type:'extract'});
+  r.dispatch({type:'extract'});
   expect(r.dispatch({type:'deliver',commandId:'serve-'+id})).toBe(true);if(r.deliveryPending)r.confirmDelivery();
   if(r.shopPhase==='delivered')r.continueShift();return id;
 }
@@ -39,7 +39,7 @@ it('resolves good gift once without commercial XP, sales, rating, reputation, go
   const id=serve(r);expect(r.helpState).toMatchObject({decision:'accepted',outcome:'succeeded',giftCost:15});
   expect(r.customerProgress).toMatchObject({relationship:2,reputation:rep});expect(r.progression).toMatchObject({xp,cheeseSales:1,goal:{stats:{delivered:0,sales:0,stars:[]}}});
   expect(r.state.cash).toBe(cash);expect(r.dispatch({type:'deliver',targetId:id,commandId:'duplicate'})).toBe(false);
-  r.closeDay();expect(r.daySummary).toMatchObject({delivered:0,abandoned:0,revenue:0,rewards:0,rating:null,cost:15,expired:15,profit:-50,accounts:{giftCost:15},reviews:[]});
+  r.closeDay();expect(r.daySummary).toMatchObject({delivered:0,abandoned:0,revenue:0,rewards:0,rating:null,cost:15,expired:12,profit:-47,accounts:{giftCost:15},reviews:[]});
   expect(r.daySummary!.accounts.endingCash).toBe(r.state.cash);
 });
 it.each(['raw','burnt'] as const)('fails %s help once without commercial penalties',quality=>{

@@ -39,7 +39,8 @@ describe('cozy day-one interaction fixture', () => {
     const game = new CozyOrder(); prepare(game); game.dispatch({ type: 'bake' });
     game.tick(8.05);
     expect(game.state.stage).toBe('burnt');
-    for(const type of ['extract','box','deliver','bake'] as const)expect(game.dispatch({type})).toBe(false);
+    expect(game.dispatch({type:'extract'})).toBe(true);
+    for(const type of ['box','deliver','bake'] as const)expect(game.dispatch({type})).toBe(false);
     expect(game.dispatch({type:'discard'})).toBe(true);
     expect(game.state).toMatchObject({stage:'assembly',ingredients:[],ovenSeconds:0,cash:300,reputation:50,energy:80});
     prepare(game);game.dispatch({type:'bake'});game.tick(6);

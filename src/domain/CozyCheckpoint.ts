@@ -9,7 +9,7 @@ import {STAFF_RULES} from '../config/staffCatalog';
 import {recipeDefinition,defaultRecipePercents} from '../config/recipeCatalog';
 import {CozyProgression,type ProgressionSnapshot,type GoalView} from './CozyProgression';
 import {validateHelpCheckpoint,type CozyHelpCheckpoint} from './CozyHelp';
-import {datedIngredientPrice,expressIngredientPrice,validateStockSnapshot,STOCK_RECIPES,STOCK_INGREDIENTS,type StockIngredient,type StockRecipe,type CozyStockSnapshot} from './CozyStock';
+import {datedIngredientPrice,expressIngredientPrice,ingredientExpiry,validateStockSnapshot,STOCK_RECIPES,STOCK_INGREDIENTS,type StockIngredient,type StockRecipe,type CozyStockSnapshot} from './CozyStock';
 import {closeAccounts,type DayAccounts} from './DayAccounts';
 import {referralEligibility} from './CustomerProgression';
 import type {CozyViability} from './CozyViability';
@@ -181,6 +181,8 @@ function validatedCheckpoint(value:unknown):CozyCheckpoint|null {
   });
   if(s.reports.reduce((sum,r)=>sum+(r.accounts.capitalPurchases??0),0)+upgrades.pendingSpent+recipePurchases.pendingSpent+shop.pendingSpent+staff.pendingSpent!==upgrades.spent+recipePurchases.spent+shop.spent+staff.spent)return null;
   if(legacy){stock.activeDay=closed+1;const last=reports[reports.length-1];if(last?.ending==='complete'){const inventory=CozyStock.restore(stock)!;const viability=cozyViability(stock.cash,4,ownership,id=>inventory.available(id,4));last.ending=viability.viable?null:'insolvent';last.viability=viability;s.terminal=!viability.viable;s.day=s.terminal?3:4;}}
+  stock.lots=stock.lots.map(l=>({...l,expiry:ingredientExpiry(l.ingredient,l.day)}));
+  for(const report of reports)report.accounts.inventory.lots=report.accounts.inventory.lots.map(l=>({...l,expiry:ingredientExpiry(l.ingredient,l.day)}));
   return structuredClone({...(s.testCodeReceipt?{testCodeReceipt:{...s.testCodeReceipt}}:{}),... (s.campaignEventSeed!==undefined?{campaignEventSeed:s.campaignEventSeed}:{}),campaignEndDay,staff,shop,deliveryAppEnabled:s.deliveryAppEnabled??false,ownedRecipes:ownership,recipePurchases,upgrades:{...upgrades},customerMemory:{accepted:[...memory.accepted],declined:[...memory.declined]},contentId:COZY_CONTENT_VERSION,day:s.day,terminal:s.terminal,stock,progression:master,help,menu:s.menu.filter(id=>ownership.includes(id)),prices:{...s.prices},recipe:s.recipe,reports:reports.map(compactCozyReport),cumulativeProfit:s.cumulativeProfit,reputation:s.reputation,relationship:s.relationship,relationshipDays:[...s.relationshipDays],regularDay1Stars:s.regularDay1Stars,regularLatestStars:s.regularLatestStars,referral:s.referral?{...s.referral}:null});
 }
 export function validateCozyCheckpoint(value:unknown):CozyCheckpoint|null {try{return validatedCheckpoint(value);}catch{return null;}}

@@ -1,3 +1,4 @@
+import {isNonExpiring} from '../config/ingredientCatalog';
 import Phaser from 'phaser';
 import {hubListWindow} from './HubListWindow';
 import type {CozyLot,StockIngredient} from '../domain/CozyStock';
@@ -19,10 +20,10 @@ export class ReferenceStock{
     const text=ui.text.bind(ui),panel=ui.panel.bind(ui);
     const projected=input.rows.map(row=>{
       const validLots=row.lots.filter(lot=>lot.quantity>0&&lot.day<=input.day&&lot.expiry>=input.day);
-      const nearestExpiry=validLots.length?Math.min(...validLots.map(lot=>lot.expiry)):null;
+      const nearestExpiry=!isNonExpiring(row.id)&&validLots.length?Math.min(...validLots.map(lot=>lot.expiry)):null;
       return {...row,validLots,nearestExpiry,low:input.low!==null&&row.usable<=input.low,expiring:input.expiryDays!==null&&nearestExpiry!==null&&nearestExpiry-input.day<=input.expiryDays};
     });
-    const filtered=projected.filter(row=>input.filter==='all'||input.filter==='low'&&(input.low===null||row.low)||input.filter==='expiry'&&(input.expiryDays===null||row.expiring));
+    const filtered=projected.filter(row=>input.filter==='all'||input.filter==='low'&&(input.low===null||row.low)||input.filter==='expiry'&&!isNonExpiring(row.id)&&(input.expiryDays===null||row.expiring));
     ui.background();ui.header({title:'Kho nguyên liệu',subtitle:`Chuẩn bị ngày ${input.day}`,cash:input.cash,pause:input.pause});ui.navigation('stock',input.tab);
     ui.frame({x:8,y:133,width:344,height:46});
     const stats=[{label:'Tổng nguyên liệu',value:`${projected.length} loại`,icon:'stock'},{label:'Sắp hết',value:input.low===null?'Chọn ngưỡng':`${projected.filter(row=>row.low).length} loại`,icon:'warning'},{label:'Sắp hết hạn',value:input.expiryDays===null?'Chọn ngưỡng':`${projected.filter(row=>row.expiring).length} loại`,icon:'clock'}];
@@ -49,7 +50,7 @@ export class ReferenceStock{
       text(73,y+25,row.usable===0?'Hết hàng':`Còn ${row.usable} phần`,11,row.usable===0?colors.danger:colors.muted,false,132);
       if(row.reserved)text(73,y+38,`Giữ cho đơn: ${row.reserved} phần`,9,colors.muted,false,132);
       panel(209,y+8,106,34,row.usable===0||row.expiring?colors.inset:colors.highlight);
-      text(262,y+14,row.nearestExpiry===null?'Chưa có lô dùng được':`Gần nhất: ngày ${row.nearestExpiry}`,9,row.expiring?colors.danger:colors.ink,true,100);
+      text(262,y+14,isNonExpiring(row.id)?'Không hết hạn':row.nearestExpiry===null?'Chưa có lô dùng được':`Gần nhất: ngày ${row.nearestExpiry}`,9,row.expiring?colors.danger:colors.ink,true,100);
       text(262,y+28,`${row.validLots.length} lô · Xem chi tiết`,9,colors.muted,true,100);text(326,y+17,'›',23,colors.muted,true);
     });
     if(!rows.length){text(177,105,'Không có nguyên liệu phù hợp',14,colors.ink,true);text(177,129,'Chọn bộ lọc khác để xem Kho.',11,colors.muted,true);}

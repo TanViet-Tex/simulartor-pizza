@@ -44,6 +44,8 @@ describe('transient gameplay audio notifications',()=>{
     r.dispatch({type:'ingredient',ingredient:'dough'});r.dispatch({type:'ingredient',ingredient:'sauce'});
     expect(effects).toEqual(['sauce']);
     const direct=new CozyRuntime(false),directEffects:CozyAudioEffect[]=[];direct.subscribeAudio(effect=>directEffects.push(effect));
+    expect(direct.dispatch({type:'ingredient',ingredient:'sauce-white'})).toBe(false);
+    direct.dispatch({type:'ingredient',ingredient:'dough'});direct.dispatch({type:'bake'});direct.advanceElapsed(6000);direct.dispatch({type:'extract'});
     direct.dispatch({type:'ingredient',ingredient:'sauce-white'});direct.dispatch({type:'ingredient',ingredient:'sauce-white'});
     expect(directEffects).toEqual(['sauce']);
   });

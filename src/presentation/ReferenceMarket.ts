@@ -1,3 +1,4 @@
+import {isNonExpiring} from '../config/ingredientCatalog';
 import Phaser from 'phaser';
 import {hubListWindow,type HubDrag} from './HubListWindow';
 import {STOCK_INGREDIENTS,ingredientName,type StockIngredient} from '../domain/CozyStock';
@@ -48,10 +49,15 @@ export class ReferenceMarket{
         text(73,y+6,row.name,HUB_THEME.typography.body,colors.muted,false,120);
         const required=row.recipes.map(recipe=>recipeDefinition(recipe).name).join(' / ');
         text(73,y+25,required?'Mua: '+required:'Chưa có công thức phù hợp',10,colors.muted,false,242);
+        if(isNonExpiring(id))text(73,y+37,'Không hết hạn',9,colors.muted,false,120);
         ctx.save();ctx.strokeStyle=colors.muted;ctx.lineWidth=2;ctx.beginPath();ctx.arc(307,y+17,6,Math.PI,0);ctx.stroke();ctx.fillStyle=colors.muted;ctx.fillRect(298,y+17,18,15);ctx.restore();
         return;
       }
-      text(73,y+6,row.name,HUB_THEME.typography.body,colors.ink,false,120);text(73,y+24,`${row.unitPrice} xu · Kho: ${row.available}`,HUB_THEME.typography.meta,colors.muted,false,120);text(73,y+37,`${row.total} xu · ${row.remainingCash>=0?'Còn '+row.remainingCash:'Thiếu '+(-row.remainingCash)}`,HUB_THEME.typography.meta,row.remainingCash<0?colors.danger:colors.muted,false,120);
+      const permanent=isNonExpiring(id);
+      text(73,y+(permanent?4:6),row.name,HUB_THEME.typography.body,colors.ink,false,120);
+      text(73,y+(permanent?20:24),`${row.unitPrice} xu · Kho: ${row.available}`,permanent?10:HUB_THEME.typography.meta,colors.muted,false,120);
+      if(permanent)text(73,y+30,'Không hết hạn',9,colors.muted,false,120);
+      text(73,y+(permanent?40:37),`${row.total} xu · ${row.remainingCash>=0?'Còn '+row.remainingCash:'Thiếu '+(-row.remainingCash)}`,permanent?9:HUB_THEME.typography.meta,row.remainingCash<0?colors.danger:colors.muted,false,120);
       panel(196,y+10,80,30,colors.quantity,colors.quantity,6);text(209,y+16,'−',18,colors.stepperInk,true);panel(222,y+11,27,28,colors.field,colors.field,3);text(235,y+17,String(row.quantity),14,colors.ink,true);text(262,y+16,'+',18,colors.stepperInk,true);
       ui.button(282,y+8,49,34,'Mua',input.canBuy&&row.quantity>0,HUB_THEME.typography.action);
     });

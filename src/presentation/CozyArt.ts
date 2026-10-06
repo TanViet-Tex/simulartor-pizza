@@ -1,3 +1,4 @@
+import {bakeTiming} from '../config/bakeTiming';
 import Phaser from 'phaser';
 import { UI_THEME } from './theme';
 export const UI = UI_THEME.colors;
@@ -49,28 +50,33 @@ export class CozyArt {
     for(let y=307;y<429;y+=14){this.g.lineStyle(1,0xffdc98,.32).lineBetween(17,y,214,y);this.g.lineStyle(1,0x9e6236,.22).lineBetween(20,y+5,203,y+6);}
     for(let i=0;i<70;i++){const x=16+(i*37)%200,y=304+(i*23)%122;this.circle(x,y,i%3?.5:1,0xf9dab0);}
   }
-  pizza(x:number,y:number,r:number,ingredients:readonly string[],boxed=false):void{
+  pizza(x:number,y:number,r:number,ingredients:readonly string[],boxed=false,appearance?:{seconds:number;timing:ReturnType<typeof bakeTiming>;finishing?:readonly string[]}):void{
     if(boxed){this.panel(x-r-7,y-r-5,r*2+14,r*2+10,0xe1b775,0x956235,5);this.round(x-r+1,y-r+3,r*2-2,r*2-6,4,0xf8db9b);}
     if(!ingredients.includes('dough'))return;
-    this.ellipse(x+2,y+5,r*2+5,r*1.73,0x945029);
-    this.ellipse(x,y,r*2,r*1.78,0xe8a958);this.ellipse(x,y-2,r*1.9,r*1.67,0xffdfa0);
-    this.ellipse(x,y-3,r*1.72,r*1.48,0xefc281);
-    for(let i=0;i<28;i++){const a=i*Math.PI/14;this.ellipse(x+Math.cos(a)*r*.91,y-1+Math.sin(a)*r*.77,5,3,0xf7ca82);}
+    const gold=appearance?Math.min(1,appearance.seconds/appearance.timing.perfectStart):1;
+    const burn=appearance?appearance.seconds>appearance.timing.perfectEnd?Math.max(.78,Math.min(1,(appearance.seconds-appearance.timing.perfectEnd)/(appearance.timing.gaugeEnd-appearance.timing.perfectEnd))):0:0;
+    const mix=(a:number,b:number,t:number)=>{let c=0;for(const shift of [16,8,0])c|=Math.round(((a>>shift)&255)*(1-t)+((b>>shift)&255)*t)<<shift;return c;};
+    const cook=(color:number)=>appearance?mix(mix(mix(color,0xffefc8,(1-gold)*.45),0xa75c24,gold*.08),0x24180f,burn*.93):color;
+    this.ellipse(x+2,y+5,r*2+5,r*1.73,cook(0x945029));
+    this.ellipse(x,y,r*2,r*1.78,cook(0xe8a958));this.ellipse(x,y-2,r*1.9,r*1.67,cook(0xffdfa0));
+    this.ellipse(x,y-3,r*1.72,r*1.48,cook(0xefc281));
+    for(let i=0;i<28;i++){const a=i*Math.PI/14;this.ellipse(x+Math.cos(a)*r*.91,y-1+Math.sin(a)*r*.77,5,3,cook(0xf7ca82));}
     for(const ingredient of ingredients){
     if(['sauce','sauce-white','sauce-bbq','sauce-pesto','sauce-hot'].includes(ingredient)){
-      const color:Record<string,number>={sauce:0xda4524,'sauce-white':0xffecd0,'sauce-bbq':0x763122,'sauce-pesto':0x668c25,'sauce-hot':0xed6320};
+      const color:Record<string,number>={sauce:cook(0xda4524),'sauce-white':cook(0xffecd0),'sauce-bbq':cook(0x763122),'sauce-pesto':cook(0x668c25),'sauce-hot':cook(0xed6320)};
       if(ingredient!=='sauce'){this.ellipse(x,y-3,r*1.64,r*1.39,color[ingredient]);continue;}
-      this.ellipse(x,y-3,r*1.64,r*1.39,0xda4524);this.ellipse(x,y-5,r*1.5,r*1.25,0xed5830);
-      for(let i=0;i<4;i++)this.g.lineStyle(2,0xb73323,.45).strokeEllipse(x+2,y-3,r*(.35+i*.29),r*(.26+i*.25));
-      for(let i=0;i<29;i++){const a=i*2.4,d=Math.sqrt(i/29)*r*.7;this.ellipse(x+Math.cos(a)*d,y-3+Math.sin(a)*d*.8,3,2,0xff9d48);}
+      this.ellipse(x,y-3,r*1.64,r*1.39,cook(0xda4524));this.ellipse(x,y-5,r*1.5,r*1.25,cook(0xed5830));
+      for(let i=0;i<4;i++)this.g.lineStyle(2,cook(0xb73323),.45).strokeEllipse(x+2,y-3,r*(.35+i*.29),r*(.26+i*.25));
+      for(let i=0;i<29;i++){const a=i*2.4,d=Math.sqrt(i/29)*r*.7;this.ellipse(x+Math.cos(a)*d,y-3+Math.sin(a)*d*.8,3,2,cook(0xff9d48));}
     }
-    if(ingredient==='cheese')for(let i=0;i<82;i++){const a=i*2.4,d=Math.sqrt(i/82)*r*.72,px=x+Math.cos(a)*d,py=y-3+Math.sin(a)*d*.8;this.g.lineStyle(Math.max(1,r/23),i%3?0xffe7a0:0xf6bf53,1).lineBetween(px-2,py-2,px+4,py+2);}
-    if(ingredient==='sausage'||ingredient==='pepperoni')for(let i=0;i<7;i++){const a=i*2.4;this.ellipse(x+Math.cos(a)*r*.49,y-3+Math.sin(a)*r*.4,r*.3,r*.25,ingredient==='sausage'?0xcb3d2d:0xa52c24);}
+    if(appearance&&ingredient==='cheese'&&gold>0){this.ellipse(x,y-3,r*1.58*gold,r*1.31*gold,cook(0xffd259));for(let i=0;i<16;i++){const a=i*2.4,d=Math.sqrt(i/16)*r*.65;this.ellipse(x+Math.cos(a)*d,y-3+Math.sin(a)*d*.8,r*.17*gold,r*.1*gold,cook(0xffe89d));}}
+    if(ingredient==='cheese')for(let i=0;i<82;i++){const a=i*2.4,d=Math.sqrt(i/82)*r*.72,px=x+Math.cos(a)*d,py=y-3+Math.sin(a)*d*.8;this.g.lineStyle(Math.max(1,r/23),i%3?cook(0xffe7a0):cook(0xf6bf53),1).lineBetween(px-2,py-2,px+4,py+2);}
+    if(ingredient==='sausage'||ingredient==='pepperoni')for(let i=0;i<7;i++){const a=i*2.4;this.ellipse(x+Math.cos(a)*r*.49,y-3+Math.sin(a)*r*.4,r*.3,r*.25,ingredient==='sausage'?cook(0xcb3d2d):cook(0xa52c24));}
     if(ingredient==='mushroom')for(let i=0;i<7;i++){
       const a=i*2.4,px=x+Math.cos(a)*r*.5,py=y-3+Math.sin(a)*r*.42;
-      this.round(px-r*.035,py,r*.07,r*.13,r*.02,0xffe2b5);this.ellipse(px,py,r*.23,r*.15,0xbc8967);
+      this.round(px-r*.035,py,r*.07,r*.13,r*.02,cook(0xffe2b5));this.ellipse(px,py,r*.23,r*.15,cook(0xbc8967));
     }
-    const colors:Record<string,number>={pepper:0x5baa28,onion:0xc49add,corn:0xffd04b,olive:0x302e24,chicken:0xeeb480,shrimp:0xfc8055,squid:0xffd3c1,ham:0xe88587,pineapple:0xffd85a};
+    const colors:Record<string,number>={pepper:cook(0x5baa28),onion:cook(0xc49add),corn:cook(0xffd04b),olive:cook(0x302e24),chicken:cook(0xeeb480),shrimp:cook(0xfc8055),squid:cook(0xffd3c1),ham:cook(0xe88587),pineapple:cook(0xffd85a)};
     if(ingredient in colors)for(let i=0;i<9;i++){
       const seed=ingredient.length*1.37,a=i*2.4+seed,d=Math.sqrt((i+.5)/10)*r*.65,px=x+Math.cos(a)*d,py=y-3+Math.sin(a)*d*.8,size=r*.15;
       if(['onion','olive','squid'].includes(ingredient)){this.g.lineStyle(Math.max(1,r*.045),colors[ingredient],1).strokeEllipse(px,py,size*1.5,size);}
@@ -78,6 +84,11 @@ export class CozyArt {
       else if(['ham','pineapple','chicken'].includes(ingredient))this.round(px-size/2,py-size/2,size,size*.7,size*.15,colors[ingredient]);
       else this.ellipse(px,py,size,ingredient==='corn'?size*.6:size*.85,colors[ingredient]);
     }
+    }
+    const drizzle:Record<string,number>={'sauce-white':0xfffaf0,'sauce-pesto':0x66a536,'sauce-hot':0xf05b2c};
+    for(const [index,id] of (appearance?.finishing??[]).entries()){
+      const offset=(index-1)*r*.09;this.g.lineStyle(Math.max(1.4,r*.055),drizzle[id],1).beginPath();
+      for(let i=0;i<=6;i++){const dy=-r*.53+i*r*1.04/6,dx=(i%2?1:-1)*r*.43+offset;if(i===0)this.g.moveTo(x+dx,y-3+dy);else this.g.lineTo(x+dx,y-3+dy);}this.g.strokePath();
     }
   }
   leaves():void{

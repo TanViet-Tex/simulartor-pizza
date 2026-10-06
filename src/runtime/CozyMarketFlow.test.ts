@@ -10,7 +10,7 @@ it('buys before opening, consumes actual lots once and buys for the next day wit
   const r=runtime();
   for(const id of ['dough','sauce','cheese'] as const)expect(buy(r,id,2,'day1-'+id)).toBe(true);
   expect(r.state.cash).toBe(270);expect(r.stockLots).toHaveLength(3);
-  expect(r.stockLots.every(l=>l.day===1&&l.expiry===2&&l.quantity===2)).toBe(true);
+  expect(r.stockLots.every(l=>l.day===1&&l.expiry===ingredientExpiry(l.ingredient,1)&&l.quantity===2)).toBe(true);
   const lots=r.stockLots;expect(r.openShop()).toBe(true);expect(r.stockLots).toEqual(lots);
   for(const ingredient of ['dough','sauce','cheese'] as const)expect(r.dispatch({type:'ingredient',ingredient})).toBe(true);
   expect(r.stockLots).toEqual(lots);expect(r.dispatch({type:'bake'})).toBe(true);expect(r.dispatch({type:'bake'})).toBe(false);
@@ -53,5 +53,5 @@ it('preserves legacy checkpoint stock and cash while buying at its current prepa
   expect(loaded.state.cash).toBe(checkpoint.stock.cash);expect(loaded.stockLots).toEqual(checkpoint.stock.lots);
   expect(buy(loaded,'sauce',1,'restored')).toBe(true);
   expect(loaded.stockLots[loaded.stockLots.length-1]).toMatchObject({ingredient:'sauce',day:checkpoint.day,quantity:1,unitCost:datedIngredientPrice('sauce',checkpoint.day)});
-  expect(loaded.completedReports).toEqual(checkpoint.reports);
+  expect(loaded.completedReports).toEqual(checkpoint.reports.map(({progressionArchive:_,...report})=>report));
 });

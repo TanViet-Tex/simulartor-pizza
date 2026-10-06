@@ -36,6 +36,10 @@ _Tệp này chứa các quy tắc và patterns quan trọng mà AI agent phải 
 
 ## Critical Implementation Rules
 
+### Sốt ăn kèm và hình bánh theo nướng — 2026-10-06
+
+Kem trắng/pesto/cay là finishingSauces riêng từng pizza, dùng sau extracted và trước boxed (raw/ready/burnt); mỗi loại một lần, tiêu hao FEFO một phần và cộng bakedCost/giftCost thực. Không nằm trong ingredients/công thức/highlight hoặc đổi qualifyingCheese. Ba sốt mở mua ngay, BBQ/cà chua vẫn theo quyền công thức hiện hành. Cả năm sốt dùng expiry sentinel hữu hạn1000001, không hủy qua ngày; validate nhận đúng expiry cũ day+1 rồi chuẩn hóa sau checksum/đối soát, giữ lượng còn lưu và giá vốn, không phục hồi sốt đã mất khỏi save. Chợ/Kho ghi Không hết hạn, vẫn giữ tổng/số dư thật. Hình bánh vẽ từng lớp theo ovenSeconds/timing, phô mai tan dần; cháy sẫm khi vượt perfectEnd và giữ hình sau extracted. Sốt zíc zắc vẽ cuối không áp màu nướng. Oven dùng Graphics động hiện có, không redraw toàn UI mỗi tick; deliverySource chỉ có sau lấy bánh. Xem [spec](implementation-artifacts/spec-finishing-sauces-and-bake-appearance.md).
+
 ### Tiền trên HUD và thanh toán — 2026-10-06
 
 Mỗi cash transaction có transient receipt net delta một lần, không đọc cash diff khi redraw hay replay save. Nested giao bánh gom giá/phí/VIP/thưởng (app+95, VIP+550 trong test); mua/chi hiện đỏ, nhận xanh, stroke tối dưới HUD. CashFeedback ở ngoài layer redraw,32px giữa slot/x lệch10, bay8px+fade1000ms hoặc chỉ fade khi reducedMotion; cleanup tween/text/unsubscribe khi xong/rời scene. Luật tiền/schema/layout giữ nguyên. Payment dùng thanh toán.mp3, preload, cùng mộtvoice,75%effectsVolume theo steering “nhỏ lại tý”; mute/effect volume vẫn áp dụng. Đây là asset thứ8 được người dùng yêu cầu thêm. Xem [spec](implementation-artifacts/spec-cash-feedback.md).

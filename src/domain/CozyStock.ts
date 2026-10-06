@@ -1,5 +1,6 @@
 import {supplierPrice,SUPPLIER_THRESHOLD} from '../config/cozyContinuity';
 import {INGREDIENT_CATALOG,type IngredientId} from '../config/ingredientCatalog';
+import {isNonExpiring,NON_EXPIRING_DAY} from '../config/ingredientCatalog';
 import {RECIPE_CATALOG,type RecipeId} from '../config/recipeCatalog';
 import { EXPRESS_PRICE_MULTIPLIER } from '../config/kitchenEconomy';
 const catalog = INGREDIENT_CATALOG;
@@ -13,7 +14,7 @@ export function recipeIngredients(recipe: StockRecipe): StockIngredient[] {
 }
 export function ingredientPrice(id: StockIngredient): number { return catalog.find(item => item.id === id)!.basePrice; }
 export function datedIngredientPrice(id: StockIngredient, day: number): number { return Math.round(ingredientPrice(id) * [1, 1.1, .9][(day - 1)%3]!); }
-export function ingredientExpiry(id: StockIngredient, day: number): number { return day + catalog.find(item=>item.id===id)!.expiryOffset; }
+export function ingredientExpiry(id: StockIngredient, day: number): number { return isNonExpiring(id)?NON_EXPIRING_DAY:day + catalog.find(item=>item.id===id)!.expiryOffset; }
 export function recipePrice(id: StockRecipe): number { return recipes.find(item => item.id === id)!.price; }
 export function ingredientName(id: StockIngredient): string { return catalog.find(item => item.id === id)!.name; }
 export function expressIngredientPrice(id:StockIngredient,day:number) { return Math.ceil(datedIngredientPrice(id,day)*EXPRESS_PRICE_MULTIPLIER); }
@@ -29,7 +30,7 @@ export function validateStockSnapshot(value:unknown):CozyStockSnapshot|null {
   const s=value as CozyStockSnapshot,whole=(n:unknown,min=0,max=1000000)=>Number.isSafeInteger(n)&&Number(n)>=min&&Number(n)<=max;
   const eventLoss=Array.isArray(s.books)?s.books.reduce((sum,b)=>sum+(b?.eventLoss===200?200:0),0):0;
   if(!whole(s.cash,-20-eventLoss)||!whole(s.nextLot,1,1000000000)||!whole(s.activeDay,1,1000000)||!Array.isArray(s.lots)||s.lots.length>300||!Array.isArray(s.books)||s.books.length>1000000||!Array.isArray(s.settlements)||s.settlements.length>1000000)return null;
-  if(s.lots.some(l=>!l||!whole(l.id,1,999999999)||l.id>=s.nextLot||!STOCK_INGREDIENTS.includes(l.ingredient)||!whole(l.quantity,1,100)||!whole(l.day,1,1000000)||![datedIngredientPrice(l.ingredient,l.day),expressIngredientPrice(l.ingredient,l.day),supplierPrice(datedIngredientPrice(l.ingredient,l.day),SUPPLIER_THRESHOLD)].includes(l.unitCost)||l.expiry!==ingredientExpiry(l.ingredient,l.day))||new Set(s.lots.map(l=>l.id)).size!==s.lots.length)return null;
+  if(s.lots.some(l=>!l||!whole(l.id,1,999999999)||l.id>=s.nextLot||!STOCK_INGREDIENTS.includes(l.ingredient)||!whole(l.quantity,1,100)||!whole(l.day,1,1000000)||![datedIngredientPrice(l.ingredient,l.day),expressIngredientPrice(l.ingredient,l.day),supplierPrice(datedIngredientPrice(l.ingredient,l.day),SUPPLIER_THRESHOLD)].includes(l.unitCost)||(l.expiry!==ingredientExpiry(l.ingredient,l.day)&&!(isNonExpiring(l.ingredient)&&l.expiry===l.day+1)))||new Set(s.lots.map(l=>l.id)).size!==s.lots.length)return null;
   if(s.books.some(b=>!b||!whole(b.day,1,1000000)||!whole(b.purchases)||!whole(b.ordinaryPurchases??0,0,b.purchases)||!whole(b.consumed)||(b.eventLoss!==undefined&&b.eventLoss!==200))||new Set(s.books.map(b=>b.day)).size!==s.books.length)return null;
   if(s.settlements.some(b=>!b||!whole(b.day,1,1000000)||!whole(b.expired)||b.rent!==20)||new Set(s.settlements.map(b=>b.day)).size!==s.settlements.length)return null;
   return {cash:s.cash,nextLot:s.nextLot,activeDay:s.activeDay,lots:s.lots.map(l=>({...l})),books:s.books.map(b=>({...b})),settlements:s.settlements.map(b=>({...b}))};
@@ -47,7 +48,7 @@ export class CozyStock {
   private activeDay=1;
   private express = new Map<string,{receipt:ExpressReceipt;received:boolean}>();
   exportCheckpoint():CozyStockSnapshot {return {cash:this.money,nextLot:this.nextLot,activeDay:this.activeDay,lots:this.inventory.map(l=>({...l})),books:[...this.books].map(([day,b])=>({day,...b})),settlements:[...this.settlements].map(([day,b])=>({day,...b}))};}
-  static restore(value:unknown):CozyStock|null {const s=validateStockSnapshot(value);if(!s)return null;const stock=new CozyStock();stock.money=s.cash;stock.nextLot=s.nextLot;stock.activeDay=s.activeDay;stock.inventory=s.lots;stock.books=new Map(s.books.map(({day,...b})=>[day,b]));stock.settlements=new Map(s.settlements.map(({day,...b})=>[day,b]));return stock;}
+  static restore(value:unknown):CozyStock|null {const s=validateStockSnapshot(value);if(!s)return null;const stock=new CozyStock();stock.money=s.cash;stock.nextLot=s.nextLot;stock.activeDay=s.activeDay;stock.inventory=s.lots.map(l=>({...l,expiry:ingredientExpiry(l.ingredient,l.day)}));stock.books=new Map(s.books.map(({day,...b})=>[day,b]));stock.settlements=new Map(s.settlements.map(({day,...b})=>[day,b]));return stock;}
   ledger(day:number) { const book=this.books.get(day);return {purchases:book?.purchases??0,consumed:book?.consumed??0}; }
   consumedByIngredient(day:number):{ingredient:StockIngredient;cost:number}[] {return [...(this.ingredientCosts.get(day)??[])].map(([ingredient,cost])=>({ingredient,cost}));}
   private book(day:number) { if(!this.books.has(day))this.books.set(day,{purchases:0,consumed:0});return this.books.get(day)!; }

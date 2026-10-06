@@ -19,6 +19,12 @@ Tài liệu này là nguồn hiện hành cho **bố cục và phong cách màn 
 
 ## Màn chơi cần giữ
 
+### Sốt ăn kèm và hình bánh — yêu cầu 2026-10-06
+
+Người dùng yêu cầu thay riêng hình pizza theo thời gian nướng thật và ba sốt kem trắng/pesto/cay thành sốt ăn kèm. Giữ khung bếp/lò/thớt, các ô chai/nguyên liệu, nút, header và bố cục hub. Sốt chỉ xịt sau lấy bánh trước đóng hộp, đường zíc zắc trắng/xanh/đỏ cam nằm trong mặt bánh và vẽ trên topping; không highlight như nguyên liệu bắt buộc. Sống nhạt, nướng vàng dần, chín phô mai tan/viền vàng nâu, cháy sẫm; lấy khỏi lò giữ hình tương ứng. Chợ/Kho ghi Không hết hạn cho năm sốt trong hàng hiện có, vẫn giữ giá/tổng/số dư và mua lẻ/giỏ như cũ.
+
+Ảnh kiểm chứng Chromium360×640 của phạm vi yêu cầu, không thay ảnh mốc trước: [sống](ui-baseline/finishing-sauces-2026-10-06/raw.png), [chín/sốt](ui-baseline/finishing-sauces-2026-10-06/cooked-with-sauces.png), [cháy/sốt](ui-baseline/finishing-sauces-2026-10-06/burnt-with-sauces.png), [Chợ](ui-baseline/finishing-sauces-2026-10-06/market-sauces.png), [chi tiết Kho](ui-baseline/finishing-sauces-2026-10-06/stock-sauce-lots.png). Đây là bản triển khai để người dùng xem, không tự đánh dấu ảnh mới đã được duyệt. Xem [spec](spec-finishing-sauces-and-bake-appearance.md).
+
 ### Phản hồi tiền trên HUD — yêu cầu 2026-10-06
 
 Hiện tiền thực nhận “+N xu” xanh hoặc tiền chi “−N xu” đỏ, viền tối, ngay dưới ô tiền: anchor bếp340/36, hub350/44. Text tạm14px, bay8px và fade trong1000ms; reducedMotion chỉfade. Nhiều receipt cách32px và x lệch10px xen kẽ, không đổi geometry/art/nút/luật tiền. Không popup, không replay khi redraw/save. Xem [spec](spec-cash-feedback.md).

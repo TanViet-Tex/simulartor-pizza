@@ -19,7 +19,7 @@ it('separates cash purchases from business cost, spoilage and retained historica
   const snapshot=r.daySummary;r.buy('dough',1);r.buy('mushroom',1);expect(r.state.cash).toBe(278);expect(r.daySummary).toEqual(snapshot);
   a.inventory.lots[0]!.quantity=999;expect(r.daySummary!.accounts.inventory.units).toBe(3);
   expect(r.openNextDay()).toBe(true);r.closeDay();const b=identities(r);
-  expect(b).toMatchObject({startingCash:290,openingInventoryValue:15,purchases:12,consumed:0,expired:21,rent:20,endingCash:258,profit:-41,cumulativeProfit:-36,inventory:{units:1,value:6}});
+  expect(b).toMatchObject({startingCash:290,openingInventoryValue:15,purchases:12,consumed:0,expired:18,rent:20,endingCash:258,profit:-38,cumulativeProfit:-33,inventory:{units:2,value:9}});
   const cash=r.state.cash;expect(r.closeDay()).toBe(false);expect(r.state.cash).toBe(cash);
 });
 it('counts discarded and remade stock once with no stock refund',()=>{

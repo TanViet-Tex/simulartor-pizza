@@ -22,4 +22,9 @@ const entries = [
   { id: 'pineapple', name: 'Dứa', basePrice: 5, color: 0xfacf45 },
 ] as const;
 export type IngredientId=typeof entries[number]['id'];
+export const FINISHING_SAUCES = ['sauce-white','sauce-pesto','sauce-hot'] as const;
+export type FinishingSauce = typeof FINISHING_SAUCES[number];
+export function isFinishingSauce(id:string):id is FinishingSauce { return (FINISHING_SAUCES as readonly string[]).includes(id); }
+export function isNonExpiring(id:string):boolean { return id.startsWith('sauce'); }
+export const NON_EXPIRING_DAY = 1000001;
 export const INGREDIENT_CATALOG=entries.map(item=>({...item,unit:'ph\u1ea7n' as const,icon:item.id,expiryOffset:item.id==='mushroom'||item.id==='sausage'?0:1,group:item.id==='dough'?'dough':item.id.startsWith('sauce')?'sauce':item.id==='cheese'?'cheese':['sausage','pepperoni','chicken','ham'].includes(item.id)?'meat':['shrimp','squid'].includes(item.id)?'seafood':'vegetable'}));

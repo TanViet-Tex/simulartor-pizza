@@ -1,3 +1,4 @@
+import {isFinishingSauce,isNonExpiring} from '../config/ingredientCatalog';
 import {TestCodePanel} from '../presentation/TestCodePanel';
 import type {HubDrag} from '../presentation/HubListWindow';
 import {drawModalBackdrop} from '../presentation/ModalBackdrop';
@@ -212,7 +213,7 @@ export class CozyScene extends Phaser.Scene {
     if(this.pendingFinalResults&&!this.runtime.pauses.length&&!this.campaignSession?.view.pending){this.pendingFinalResults=false;this.openFinalResults();}
     const s=this.runtime.state;
     this.frameTickets=this.runtime.tickets;this.frameExpress=this.runtime.expressOrders;
-    const sig=[s.stage,s.ingredients.join(','),!this.runtime.productionActive&&s.ovenSeconds>=this.runtime.bakeTiming.perfectStart,this.runtime.ovenState?.stage,this.runtime.ovenOwner,this.frameExpress.map(o=>o.id).join(','),this.frameTickets.map(t=>`${t.id}:${t.packed}:${t.riderState}:${t.stage}`).join(','),this.runtime.selectedTicketId,this.runtime.tutorialActive,this.runtime.pauseRevision,this.runtime.shopRevision,this.runtime.shiftClock.phase,this.runtime.deliveryStatus.phase].join('|');
+    const sig=[s.stage,s.ingredients.join(','),s.finishingSauces.join(','),s.extracted,!this.runtime.productionActive&&s.ovenSeconds>=this.runtime.bakeTiming.perfectStart,this.runtime.ovenState?.stage,this.runtime.ovenOwner,this.frameExpress.map(o=>o.id).join(','),this.frameTickets.map(t=>`${t.id}:${t.packed}:${t.riderState}:${t.stage}`).join(','),this.runtime.selectedTicketId,this.runtime.tutorialActive,this.runtime.pauseRevision,this.runtime.shopRevision,this.runtime.shiftClock.phase,this.runtime.deliveryStatus.phase].join('|');
     if(this.dirty||sig!==this.signature){this.signature=sig;this.draw();}
     const oven=this.runtime.productionActive?this.runtime.ovenState:s;
     const heatSignature=`${oven?.stage}:${oven?.ovenSeconds??0}`;
@@ -398,9 +399,9 @@ export class CozyScene extends Phaser.Scene {
       const source=this.textures.get(PIZZA_BOX_ART.key).getSourceImage();
       const box=this.add.image(120,344,PIZZA_BOX_ART.key).setDisplaySize(108,108*source.height/source.width);
       this.layer.add(box);
-    }else if(s.stage!=='baking'&&!(s.stage==='burnt'&&this.runtime.ovenState)&&s.ingredients.includes('dough')){
-      this.art.pizza(120,343,51,s.ingredients);
-      if(s.stage==='burnt')this.art.g.fillStyle(0x32140b,.65).fillEllipse(120,340,93,78);
+    }else if(s.stage!=='baking'&&!(s.stage==='burnt'&&!s.extracted)&&s.ingredients.includes('dough')){
+      this.art.pizza(120,343,51,s.ingredients,false,{seconds:s.ovenSeconds,timing:this.runtime.bakeTiming,finishing:s.finishingSauces});
+
     }
     if(this.runtime.needsRemake)this.hit('remake',18,298,204,80,true,()=>this.runtime.remake());
     else this.hit('dough-board',18,298,204,80,assembly,()=>this.useIngredient('dough'));
@@ -465,7 +466,7 @@ export class CozyScene extends Phaser.Scene {
     if(this.campaignSession?.view.state==='temporary'&&!this.notification&&!this.newCampaignConfirmation&&!this.finalOpen)this.label(180, this.runtime.shopPhase==='summary'||this.runtime.postTutorialPreparation?572:611,'Chơi tạm không lưu · tải lại sẽ mất phiên',9,cream,330);
     for(const [id,zone] of this.hitZones)if(!this.controls.some(control=>control.id===id)){zone.destroy();this.hitZones.delete(id);}
     this.staticGraphics.bake(this.layer);
-    const canvas=this.game.canvas;canvas.dataset.screen=this.endedDayNotice!==null?'day-ended-notice':this.preparationHub?'preparation-hub':this.runtime.shopPhase==='summary'?'day-summary':'game';canvas.dataset.day=String(this.runtime.day);canvas.dataset.daySummary=JSON.stringify(this.runtime.daySummary);canvas.dataset.summaryTab=this.summaryTab;canvas.dataset.stage=s.stage;canvas.dataset.ingredients=s.ingredients.join(',');canvas.dataset.oven=String(s.ovenSeconds);canvas.dataset.cash=String(s.cash);canvas.dataset.paused=this.runtime.pauses.join(',');canvas.dataset.controls=JSON.stringify(this.controls);canvas.dataset.booted='true';
+    const canvas=this.game.canvas;canvas.dataset.screen=this.endedDayNotice!==null?'day-ended-notice':this.preparationHub?'preparation-hub':this.runtime.shopPhase==='summary'?'day-summary':'game';canvas.dataset.day=String(this.runtime.day);canvas.dataset.daySummary=JSON.stringify(this.runtime.daySummary);canvas.dataset.summaryTab=this.summaryTab;canvas.dataset.stage=s.stage;canvas.dataset.ingredients=s.ingredients.join(',');canvas.dataset.finishingSauces=s.finishingSauces.join(',');canvas.dataset.extracted=String(s.extracted);canvas.dataset.oven=String(s.ovenSeconds);canvas.dataset.cash=String(s.cash);canvas.dataset.paused=this.runtime.pauses.join(',');canvas.dataset.controls=JSON.stringify(this.controls);canvas.dataset.booted='true';
     canvas.setAttribute('aria-label',`Tiệm pizza. Ngày ${this.runtime.day}. ${s.cash} xu. ${this.runtime.productionActive?this.runtime.shopMessage:s.feedback}`);
     canvas.dataset.campaignProgress=JSON.stringify({day:this.runtime.day,endDay:this.runtime.campaignEndDay});
     canvas.dataset.campaignResults=JSON.stringify(this.runtime.campaignResults);
@@ -523,13 +524,13 @@ export class CozyScene extends Phaser.Scene {
       bottleLabel.setScale(Math.min(12/bottleLabel.width,6/bottleLabel.height));
       const sauceName=this.label(x+w/2,y+27,name,9,available?cream:muted);
       sauceName.setScale(Math.min(1,(w-8)/sauceName.width,12/sauceName.height));
-      this.hit(id,x,y,w,h,available&&(assembly||this.runtime.productionActive&&this.runtime.available(id)<=0),()=>this.useIngredient(id));if(this.runtime.productionActive)this.stockBadge(id,x,y,w);
+      this.hit(id,x,y,w,h,available&&(isFinishingSauce(id)?s.extracted&&['raw','ready','burnt'].includes(s.stage)&&!s.finishingSauces.includes(id):assembly||this.runtime.productionActive&&this.runtime.available(id)<=0),()=>this.useIngredient(id));if(this.runtime.productionActive)this.stockBadge(id,x,y,w);
     });
   }
   private get neededIngredients():readonly StockIngredient[]{
     const s=this.runtime.state;
     if(s.stage!=='assembly'||this.runtime.selectedExpired||this.runtime.productionActive&&!this.runtime.tutorialActive&&!this.runtime.selectedTicket)return [];
-    return recipeIngredients(this.runtime.selectedRecipe).filter(id=>!s.ingredients.includes(id));
+    return recipeIngredients(this.runtime.selectedRecipe).filter(id=>!isFinishingSauce(id)&&!s.ingredients.includes(id));
   }
   private ingredientState(x:number,y:number,w:number,h:number,available:boolean,selected:boolean,needed=false):void{
     this.graphics();
@@ -543,7 +544,7 @@ export class CozyScene extends Phaser.Scene {
     if(order){this.dynamic(()=>this.frameExpress.find(p=>p.id===order.id)?.remaining??0,(g,value)=>g.lineStyle(2,0x76cf6e,1).beginPath().arc(x+w/2,y+17,15,-Math.PI/2,-Math.PI/2+Math.PI*2*(1-value/order.duration)).strokePath());const text=this.label(x+w/2,y+5,`${Math.ceil(order.remaining)}s`,10,cream);this.timers.push({text,read:()=>`${Math.ceil(this.frameExpress.find(p=>p.id===order.id)?.remaining??0)}s`});}
   }
   private ovens():void{
-    const s=this.runtime.productionActive?this.runtime.ovenState??this.runtime.state:this.runtime.state,occupied=this.runtime.productionActive?!!this.runtime.ovenState:s.stage==='baking'||s.stage==='burnt';
+    const s=this.runtime.productionActive?this.runtime.ovenState??this.runtime.state:this.runtime.state,occupied=this.runtime.productionActive?!!this.runtime.ovenState:!s.extracted&&(s.stage==='baking'||s.stage==='burnt');
     for(let i=0;i<2;i++){
       const {x,y,w,h}=KITCHEN.oven(i);
       const frame='oven-empty';
@@ -552,14 +553,13 @@ export class CozyScene extends Phaser.Scene {
       if(i){this.icon('lock',x+w/2,y+30,23,.85);this.label(x+w/2,y+48,'Chưa mở khóa',9,muted);}
       else{
         if(occupied){
-          this.graphics(true);this.art.pizza(x+w/2,y+28,20,s.ingredients);
-          if(s.stage==='burnt')this.art.g.fillStyle(0x32140b,.65).fillEllipse(x+w/2,y+28,40,30);
-          const pizza=this.art.g,clip=this.make.graphics({x:0,y:0});clip.fillStyle(0xffffff).fillRect(x+13,y+13,w-27,30);
+          this.dynamic(()=>this.runtime.ovenState?.ovenSeconds??this.runtime.state.ovenSeconds,(g,seconds)=>new CozyArt(g).pizza(x+w/2,y+28,20,s.ingredients,false,{seconds,timing:this.runtime.bakeTiming}));
+          const pizza=this.dynamicVisuals[this.dynamicVisuals.length-1].graphics,clip=this.make.graphics({x:0,y:0});clip.fillStyle(0xffffff).fillRect(x+13,y+13,w-27,30);
           const mask=clip.createGeometryMask();pizza.setMask(mask);pizza.once('destroy',()=>{mask.destroy();clip.destroy();});
         }
         this.heatBar=this.add.graphics().setData('dynamic',true);this.layer.add(this.heatBar);
         const active=this.runtime.state;
-        const baking=occupied&&s.stage==='baking';
+        const baking=occupied&&!s.extracted&&['baking','burnt'].includes(s.stage);
         const canExtract=baking&&(this.runtime.productionActive||s.ovenSeconds>=this.runtime.bakeTiming.perfectStart);
         const canBake=!occupied&&active.stage==='assembly'&&this.runtime.bakeReady&&!this.runtime.selectedExpired;
         this.hit(baking?'extract':occupied?'oven-1':'bake',x,y,w,h,canExtract||canBake||occupied&&this.runtime.productionActive,()=>{
@@ -663,6 +663,7 @@ export class CozyScene extends Phaser.Scene {
     this.hit(discardable?'discard':'clear',x,y,w,h,discardable||s.stage==='assembly'&&s.ingredients.length>0,()=>{if(discardable){if(production)this.runtime.requestDiscard();else this.runtime.dispatch({type:'discard'});}else for(const ingredient of [...this.runtime.state.ingredients])this.runtime.dispatch({type:'ingredient',ingredient});});
   }
   private useIngredient(ingredient:StockIngredient):void{
+    if(isFinishingSauce(ingredient)&&this.runtime.state.finishingSauces.includes(ingredient))return;
     if(this.runtime.productionActive&&this.runtime.available(ingredient)<=0&&(this.runtime.state.stage!=='assembly'||!this.runtime.state.ingredients.includes(ingredient))){
       this.expressIngredient=ingredient;this.expressQuantity=1;this.expressLease=this.runtime.acquirePause('order');this.dirty=true;return;
     }
@@ -799,7 +800,7 @@ export class CozyScene extends Phaser.Scene {
   private openStockLot(id:StockIngredient):void{
     if(this.runtime.pauses.length)return;
     const day=this.runtime.preparationDay,lots=this.runtime.stockLots.filter(l=>l.ingredient===id).sort((a,b)=>a.expiry-b.expiry||a.id-b.id);
-    this.hubDetail={title:ingredientName(id),body:`Có thể dùng: ${this.runtime.available(id)} phần · Giữ cho đơn: ${this.runtime.reserved(id)} phần.\n\n`+(lots.length?lots.map(l=>`Lô ngày ${l.day}: ${l.quantity} phần\nDùng đến hết ngày ${l.expiry} · ${l.unitCost} xu/phần\n${l.expiry<day?'Đã hết hạn':l.day>day?'Chưa đến ngày sử dụng':'Còn dùng được'}`).join('\n\n'):'Chưa có lô nguyên liệu này.'),lease:this.runtime.acquirePause('order')};this.stockDrag.active=false;this.dirty=true;
+    this.hubDetail={title:ingredientName(id),body:`Có thể dùng: ${this.runtime.available(id)} phần · Giữ cho đơn: ${this.runtime.reserved(id)} phần.\n\n`+(lots.length?lots.map(l=>`Lô ngày ${l.day}: ${l.quantity} phần\n${isNonExpiring(id)?'Không hết hạn':'Dùng đến hết ngày '+l.expiry} · ${l.unitCost} xu/phần\n${l.expiry<day?'Đã hết hạn':l.day>day?'Chưa đến ngày sử dụng':'Còn dùng được'}`).join('\n\n'):'Chưa có lô nguyên liệu này.'),lease:this.runtime.acquirePause('order')};this.stockDrag.active=false;this.dirty=true;
   }
   private hubDetailDialog():void{
     const detail=this.hubDetail!;this.summaryModalVeil();this.notice(detail.title,detail.body,'hub-detail-close','Đã hiểu',()=>this.closeHubPanels(),true,14);

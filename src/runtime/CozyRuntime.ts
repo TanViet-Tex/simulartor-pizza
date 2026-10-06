@@ -1,3 +1,4 @@
+import {isFinishingSauce} from '../config/ingredientCatalog';
 import {marketForecast} from '../domain/MarketForecast';
 import type {MarketBasketEntry} from '../domain/CozyStock';
 import {LEGACY_EVENT_SEED} from '../config/campaignEvents';
@@ -412,7 +413,7 @@ export class CozyRuntime {
   get lastDelivery() { return this.completed ? { ...this.completed } : null; }
   get lastResult() { return this.result ? {...this.result,reasons:[...this.result.reasons]} : null; }
   get deliveryPending() { return this.pendingDelivery ? {...this.pendingDelivery,reasons:[...this.pendingDelivery.reasons]} : null; }
-  get deliverySource() { const t=this.active.get(this.sourceId); return t && ['raw','ready','boxed','burnt'].includes(t.order.state.stage) ? {id:t.id,name:t.name,recipe:t.recipe,stage:t.order.state.stage} : null; }
+  get deliverySource() { const t=this.active.get(this.sourceId); return t && t.order.state.extracted && ['raw','ready','boxed','burnt'].includes(t.order.state.stage) ? {id:t.id,name:t.name,recipe:t.recipe,stage:t.order.state.stage} : null; }
   get selectedExpired() { return this.abandoned.has(this.ticket); }
   get abandonedPizzas() { return [...this.abandoned.values()].map(t=>({id:t.id,name:t.name})); }
   get shopRevision() { return this.revision; }
@@ -440,7 +441,7 @@ export class CozyRuntime {
   private blocked(except?: CozyPause) { return !this.saveGuard()||[...this.reasons].some(reason => reason !== except); }
   ingredientAccess(id:StockIngredient){
     const recipes=STOCK_RECIPES.filter(recipe=>recipeIngredients(recipe).includes(id));
-    return {unlocked:recipes.some(recipe=>this.recipeOwnership.has(recipe)),recipes};
+    return {unlocked:isFinishingSauce(id)||recipes.some(recipe=>this.recipeOwnership.has(recipe)),recipes};
   }
   get marketForecast(){
     const day=this.preparationDay,menu=this.menuRecipes;
@@ -576,7 +577,7 @@ export class CozyRuntime {
   private deliverNow(sourceId:string,targetId:string,commandId:string,confirmed:boolean):boolean {
     if(this.deliveredCommands.has(commandId))return false;
     const source=this.active.get(sourceId),target=this.active.get(targetId);
-    if(!source||!target||target.deadline<=this.elapsed||!['raw','ready','boxed','burnt'].includes(source.order.state.stage))return this.shopFeedback('Khách đã rời đi hoặc bánh chưa sẵn sàng. Không thể giao.');
+    if(!source||!source.order.state.extracted||!target||target.deadline<=this.elapsed||!['raw','ready','boxed','burnt'].includes(source.order.state.stage))return this.shopFeedback('Khách đã rời đi hoặc bánh chưa sẵn sàng. Không thể giao.');
     if(source.source!==target.source||source.source==='app'&&sourceId!==targetId)return false;
     if(target.source==='app')return this.packApp(target,commandId,confirmed);
     const s=source.order.state;
@@ -829,6 +830,16 @@ export class CozyRuntime {
   private applyTicketIntent(t:Ticket,intent:CozyIntent):boolean{
     if(!this.saveGuard()||this.reasons.size||!this.shiftOpen||this.phase!=='making'||!this.active.has(t.id)||t.deadline<=this.elapsed)return false;
     const order=t.order,s=order.state;
+    if(intent.type==='ingredient'&&isFinishingSauce(intent.ingredient)){
+      const id=intent.ingredient;
+      if(!s.extracted||!['raw','ready','burnt'].includes(s.stage)||s.finishingSauces.includes(id)||this.available(id)<1)return false;
+      const key=t.id+':finishing:'+id,before=this.stock.ledger(this.currentDay).consumed;
+      if(!this.stock.reserveIngredients(key,[id],t.deadline,this.currentDay))return false;
+      if(!this.stock.commit(key,[id],this.currentDay)){this.stock.release(key);return false;}
+      order.dispatch(intent);const cost=this.stock.ledger(this.currentDay).consumed-before;t.bakedCost=(t.bakedCost??0)+cost;
+      if(t.giftBooked){this.dailyGiftCost+=cost;this.help.giftCost+=cost;}
+      this.event('finishing:'+t.id+':'+id);this.revision++;this.notifyIntentAudio(intent,true);return true;
+    }
     if(intent.type==='ingredient'&&(t.committed&&s.stage==='assembly'||!s.ingredients.includes(intent.ingredient)&&this.available(intent.ingredient)<1))return false;
     if(intent.type==='bake'){
       if(t.source==='app'&&(!this.shiftStaff&&this.courier?.ticketId!==t.id))return this.shopFeedback('Book shipper trước khi nướng đơn app.');
