@@ -12,6 +12,7 @@ import { MenuSteam } from '../presentation/MenuSteam';
 import type {CozySaveView} from '../runtime/CozyCampaignSession';
 import {drawCompactNotification,drawNotificationFrame,drawNotificationClose,drawNotificationButton,preloadNotificationFrames,type NotificationLayout} from '../presentation/NotificationFrame';
 import {modalText} from '../presentation/ModalText';
+import {UI_RASTER_SCALE,uiCanvas,strengthenIllustrations} from '../presentation/UiRaster';
 
 export const MAIN_MENU_BACKGROUND = { key: 'main-menu-background', url: 'assets/main-menu-background.png', type: 'image' as const };
 type MenuActions = {testCode?:TestCodeActions;hasSession:()=>boolean;start:()=>void;continue:()=>void;initialize?:()=>void;save?:()=>CozySaveView;subscribe?:(listener:()=>void)=>()=>void;retryRead?:()=>void;retrySave?:()=>void;recover?:()=>void;temporary?:()=>void};
@@ -44,6 +45,7 @@ export class MainMenuScene extends Phaser.Scene {
   preload():void{preloadNotificationFrames(this);preloadSettingsArt(this);}
 
   create(): void {
+    strengthenIllustrations(this);
     if(!this.audioCleanupRegistered){this.audioCleanupRegistered=true;this.game.events.once(Phaser.Core.Events.DESTROY,()=>this.audio.destroy());}
     this.dialog = 'none'; this.focusId = ''; this.keyboardFocus = false; this.elapsed = 0;
     this.wind = new MenuWind(this, MAIN_MENU_BACKGROUND.key);
@@ -114,7 +116,7 @@ export class MainMenuScene extends Phaser.Scene {
     const text = this.add.text(x, y, value, {
       fontFamily: UI_THEME.typography.fontFamily, fontSize: `${size}px`, fontStyle: 'bold', color,
       align: 'center', ...(width ? { wordWrap: { width, useAdvancedWrap: true } } : {}), padding: { top: 2, bottom: 2 },
-    }).setOrigin(.5);
+    }).setResolution(UI_RASTER_SCALE).setOrigin(.5);
     layer.add(text); return text;
   }
 
@@ -132,13 +134,13 @@ export class MainMenuScene extends Phaser.Scene {
     // clip glyphs. A single image rotates the complete lettering consistently.
     const titleKey='menu-sign-lettering';
     if(!this.textures.exists(titleKey)){
-      const texture=this.textures.createCanvas(titleKey,300,150)!;
+      const texture=uiCanvas(this,titleKey,300,150);
       for(const text of titleTexts)texture.context.drawImage(text.canvas,
-        text.x-30-text.displayOriginX,text.y-55-text.displayOriginY);
+        text.x-30-text.displayOriginX,text.y-55-text.displayOriginY,text.width,text.height);
       texture.refresh();
     }
     for(const text of titleTexts)text.setVisible(false);
-    const titleImage=this.add.image(180,55,titleKey).setOrigin(.5,0);
+    const titleImage=this.add.image(180,55,titleKey).setOrigin(.5,0).setDisplaySize(300,150);
     this.interfaceLayer.add(titleImage);
     this.wind.attachTitle(titleTexts,titleImage);
     const hasSession = this.actions.hasSession(), mainEnabled = this.dialog === 'none';
@@ -157,13 +159,14 @@ export class MainMenuScene extends Phaser.Scene {
   }
 
   private button(id: string, x: number, y: number, width: number, height: number, title: string, icon: 'play' | 'continue' | 'settings' | 'none', fill: number, color: string, enabled: boolean, action: () => void, entrance = false, subtitle?: string, textSize = 23): void {
+    const secondary=/Quay lại|Về Quán/i.test(title);if(secondary){fill=0x241b15;color='#fff0d5';}
     const footerIndex=this.notification?.ids.indexOf(id)??-1;
     if(footerIndex>=0)({x,y,width,height}=this.notification!.layout.footer[footerIndex]);
     else if(this.notification){y=this.notificationY(y);width=Math.min(width,284);x=Math.max(38,Math.min(322-width,x));}
     const container = this.add.container(x + width / 2, y + height / 2);
     this.interfaceLayer.add(container);
     const g = this.add.graphics(); container.add(g);
-    if(footerIndex<0&&this.notification){
+    if(secondary||footerIndex<0&&this.notification){
       drawNotificationButton(this,container,-width/2,-height/2,width,height);
       if(!enabled){const shade=this.add.graphics();shade.fillStyle(0x000000,.4).fillRoundedRect(-width/2,-height/2,width,height,height/2);container.add(shade);}
     }else if(footerIndex<0){

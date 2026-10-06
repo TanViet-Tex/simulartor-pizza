@@ -1,3 +1,4 @@
+import {uiCanvas} from './UiRaster';
 import {isNonExpiring} from '../config/ingredientCatalog';
 import Phaser from 'phaser';
 import {hubListWindow,type HubDrag} from './HubListWindow';
@@ -19,7 +20,7 @@ let serial=0;
 export class ReferenceMarket{
   constructor(private scene:Phaser.Scene,private layer:Phaser.GameObjects.Container,private hit:Hit,private sync:(render:()=>void)=>void){}
   draw(input:{access:(id:StockIngredient)=>{unlocked:boolean;recipes:StockRecipe[]};basketTotal:number;reservePercent:number;suggest:()=>void;buyAll:()=>void;unitPrice:(id:StockIngredient)=>number;supplier:{familiar:boolean;purchased:number;threshold:number};day:number;cash:number;canBuy:boolean;readOnlyReason:string;canScroll:()=>boolean;filter:MarketFilter;offset:number;drag:MarketDrag;quantities:Partial<Record<StockIngredient,number>>;available:(id:StockIngredient)=>number;quantity:(id:StockIngredient,delta:number)=>void;buy:(id:StockIngredient)=>void;editQuantity:(id:StockIngredient)=>void;scroll:(offset:number)=>void;setFilter:(filter:MarketFilter)=>void;tab:(id:'summary'|'market'|'stock'|'shop'|'missions')=>void;pause:()=>void;price:()=>void;footer:{id:string;title:string;enabled:boolean;action:()=>void}}):void{
-    const key=`market-window-${serial++}`,texture=this.scene.textures.createCanvas(key,360,640)!,ctx=texture.context;
+    const key=`market-window-${serial++}`,texture=uiCanvas(this.scene,key,360,640),ctx=texture.context;
     const ui=new HubCanvasUI(this.scene,ctx,this.hit),colors=HUB_THEME.colors;
     const frame=ui.frame.bind(ui),text=ui.text.bind(ui),panel=ui.panel.bind(ui);
     ui.background();ui.header({title:'Chợ nguyên liệu',subtitle:`Chuẩn bị ngày ${input.day}`,cash:input.cash,pause:input.pause});
@@ -39,7 +40,7 @@ export class ReferenceMarket{
     ui.button(204,543,132,34,'Mua tất cả',input.canBuy&&input.basketTotal>0,14);this.hit('market-buy-all',204,543,132,34,input.canBuy&&input.basketTotal>0,input.buyAll);
     ui.footer(input.footer);
     this.scene.game.canvas.dataset.hubTheme='pizza-cartoon-v1';
-    texture.refresh();this.layer.add(this.scene.add.image(0,0,key).setOrigin(0));
+    texture.refresh();this.layer.add(this.scene.add.image(0,0,key).setOrigin(0).setDisplaySize(360,640));
     this.layer.getAt<Phaser.GameObjects.Image>(this.layer.length-1).once('destroy',()=>this.scene.textures.remove(key));
     hubListWindow(this.scene,this.layer,{key:listKey,viewport,height:rows.length*rowHeight,offset,drag:input.drag,allowed:input.canScroll,
       paint:(listUI,ctx)=>{const panel=listUI.panel.bind(listUI),text=listUI.text.bind(listUI),ui=listUI;

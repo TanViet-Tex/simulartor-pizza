@@ -1,3 +1,4 @@
+import {uiCanvas} from './UiRaster';
 import type Phaser from 'phaser';
 
 export const SETTINGS_ART={key:'reference-settings-source',url:'assets/references/Cài đặt tiệm pizza ấm cúng.png'};
@@ -9,7 +10,7 @@ export function preloadSettingsArt(scene:Phaser.Scene):void {
 export function drawSettingsArt(scene:Phaser.Scene,layer:Phaser.GameObjects.Container):void {
   const key='reference-settings-frame';
   if(!scene.textures.exists(key)){
-    const art=scene.textures.createCanvas(key,360,640)!,ctx=art.context;
+    const art=uiCanvas(scene,key,360,640),ctx=art.context;
     const source=scene.textures.get(SETTINGS_ART.key).getSourceImage() as HTMLImageElement;
     const s=336/868,x=(v:number)=>12+(v-38)*s,y=(v:number)=>34+(v-132)*s;
     // Rasterize the source silhouette: Phaser 4 WebGL container masks are not
@@ -29,7 +30,7 @@ export function drawSettingsArt(scene:Phaser.Scene,layer:Phaser.GameObjects.Cont
     ctx.drawImage(source,161,1410,622,57,x(161),590,622*s,22);
     art.refresh();
   }
-  layer.add(scene.add.image(0,0,key).setOrigin(0));
+  layer.add(scene.add.image(0,0,key).setOrigin(0).setDisplaySize(360,640));
 }
 
 export type SettingsIcon='music'|'record'|'code'|'motion';

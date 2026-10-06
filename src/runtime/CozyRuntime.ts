@@ -460,7 +460,7 @@ export class CozyRuntime {
   private blocked(except?: CozyPause) { return !this.saveGuard()||[...this.reasons].some(reason => reason !== except); }
   ingredientAccess(id:StockIngredient){
     const recipes=STOCK_RECIPES.filter(recipe=>recipeIngredients(recipe).includes(id));
-    return {unlocked:isFinishingSauce(id)||recipes.some(recipe=>this.recipeOwnership.has(recipe)),recipes};
+    return {unlocked:id.startsWith('sauce')||recipes.some(recipe=>this.recipeOwnership.has(recipe)),recipes};
   }
   get marketForecast(){
     const day=this.preparationDay,menu=this.menuRecipes;
@@ -699,6 +699,24 @@ export class CozyRuntime {
     const selected=this.active.get(this.ticket);if(selected&&(selected.source==='app'||selected.quantity>1)&&selected.packed.length===selected.quantity)return false;
     if (!this.saveGuard() || !this.productionActive || this.reasons.size || !(this.active.has(this.ticket)||this.abandoned.has(this.ticket)) || !(['raw', 'ready', 'burnt','boxed'].includes(this.order.state.stage)||this.selectedExpired&&this.order.state.stage==='baking')) return false;
     this.discardId = this.ticket; this.pause('discard'); this.revision++; return true;
+  }
+  /** The trash operates on the pizza physically on the board, even when the
+   * player is reading another ticket. Older parallel leftovers stay reachable.
+   */
+  get workbenchDiscardId():string|null {
+    const candidates=[this.productionId,...this.abandoned.keys(),this.ticket];
+    for(const id of candidates){
+      if(!id)continue;const t=this.active.get(id)??this.abandoned.get(id);if(!t)continue;
+      if(!this.abandoned.has(id)&&(t.source==='app'||t.quantity>1)&&t.packed.length===t.quantity)continue;
+      if(['raw','ready','burnt','boxed'].includes(t.order.state.stage)||this.abandoned.has(id)&&t.order.state.stage==='baking')return id;
+      // An occupied board has priority over old leftovers, even before baking.
+      if(id===this.productionId)return null;
+    }
+    return null;
+  }
+  requestWorkbenchDiscard():boolean {
+    const id=this.workbenchDiscardId;if(!id)return false;
+    if(!this.selectPizza(id))return false;return this.requestDiscard();
   }
   cancelDiscard(): boolean {
     if (!this.discardId || this.blocked('discard')) return false;

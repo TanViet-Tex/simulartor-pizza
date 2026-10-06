@@ -10,6 +10,22 @@ function shop(custom:CozyScheduleDependencies=deps){const r=new CozyRuntime(fals
 function cook(r:CozyRuntime){for(const ingredient of ['dough','sauce','cheese'] as const)expect(r.dispatch({type:'ingredient',ingredient})).toBe(true);expect(r.dispatch({type:'bake'})).toBe(true);r.advanceElapsed(6000);expect(r.dispatch({type:'extract'})).toBe(true);expect(r.dispatch({type:'box'})).toBe(true);}
 
 describe('dough-first single production order',()=>{
+  it('trash prioritizes the physical expired owner while another live ticket is inspected, then recovers legacy leftovers',()=>{
+    const r=shop(),first=r.selectedTicketId;cook(r);r.advanceElapsed(14000);const second=r.tickets[1].id;r.selectTicket(second);r.advanceElapsed(100000);
+    // Historical RAM sessions could contain parallel abandoned pizzas; no save
+    // field is introduced to manufacture these leftovers in new campaigns.
+    const history=(r as unknown as {abandoned:Map<string,{id:string;order:unknown}>}).abandoned;
+    history.set('legacy-leftover',{...history.get(first)!,id:'legacy-leftover'});
+    expect(r.workbenchDiscardId).toBe(first);expect(r.selectedTicketId).toBe(second);
+    expect(r.requestWorkbenchDiscard()).toBe(true);expect(r.selectedTicketId).toBe(first);expect(r.confirmDiscard()).toBe(true);
+    expect(r.productionOwnerId).toBeNull();r.selectTicket(second);expect(r.workbenchDiscardId).toBe('legacy-leftover');
+    const remaining=r.stockLots;expect(r.requestWorkbenchDiscard()).toBe(true);expect(r.confirmDiscard()).toBe(true);expect(r.abandonedPizzas).toEqual([]);expect(r.stockLots).toEqual(remaining);
+    r.selectTicket(second);expect(r.dispatch({type:'ingredient',ingredient:'dough'})).toBe(true);
+  });
+  it('trash targets the live physical owner rather than another selected assembly and cancellation keeps it intact',()=>{
+    const r=shop(),first=r.selectedTicketId;cook(r);r.advanceElapsed(14000);const second=r.tickets[1].id;r.selectTicket(second);
+    expect(r.workbenchDiscardId).toBe(first);expect(r.requestWorkbenchDiscard()).toBe(true);expect(r.cancelDiscard()).toBe(true);expect(r.workbenchState?.stage).toBe('boxed');expect(r.productionOwnerId).toBe(first);expect(r.abandonedPizzas).toEqual([]);
+  });
   it('rejects toppings without effects and retains ownership after clearing dough',()=>{
     const r=shop(),effects:CozyAudioEffect[]=[];r.subscribeAudio(effect=>effects.push(effect));const stock=JSON.stringify(r.stockLots),cash=r.state.cash;
     expect(r.canUseIngredient('sauce')).toBe(false);expect(r.dispatch({type:'ingredient',ingredient:'sauce'})).toBe(false);expect(effects).toEqual([]);expect(JSON.stringify(r.stockLots)).toBe(stock);expect(r.state.cash).toBe(cash);

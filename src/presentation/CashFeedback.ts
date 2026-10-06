@@ -1,3 +1,4 @@
+import {UI_RASTER_SCALE} from './UiRaster';
 import type Phaser from 'phaser';
 import {UI_THEME} from './theme';
 
@@ -18,7 +19,7 @@ export class CashFeedback {
     const anchor=this.anchor(),y=anchor.y+slot*32;
     const text=this.scene.add.text(anchor.x-(slot%2)*10,y,`${receipt.amount>0?'+':''}${receipt.amount} xu`,{
       fontFamily:UI_THEME.typography.fontFamily,fontSize:'14px',fontStyle:'bold',color:receipt.amount>0?'#75e96a':'#ff7474',stroke:'#302017',strokeThickness:3,
-    }).setOrigin(1,0).setDepth(70);
+    }).setResolution(UI_RASTER_SCALE).setOrigin(1,0).setDepth(70);
     if(text.width>100)text.setScale(100/text.width);
     const effect:Effect={receipt,slot,text,startY:y,reduced:this.reduced()};this.effects.add(effect);
     const dispose=()=>{if(this.effects.delete(effect))text.destroy();};

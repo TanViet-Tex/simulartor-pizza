@@ -1,11 +1,11 @@
 // The approved cartoon direction supersedes the initial red-button/2px-radius spec.
 export const UI_THEME = Object.freeze({
   colors: Object.freeze({
-    hud:0x71352e, customer:0xae5b50, dark:0x3e291f, paper:0xfff0d8,
-    ink:0x362018, border:0xc69a6e, gold:0xffc34c, selected:0xff765f,
+    hud:0x612820, customer:0x9f4537, dark:0x2b1c14, paper:0xfff0d8,
+    ink:0x28150f, border:0xd9a75c, gold:0xffc34c, selected:0xff765f,
     green:0x35be48, greenEdge:0x1d7532, wood:0xb7743d,
   }),
-  text: Object.freeze({cream:'#fff0d8',ink:'#362018',muted:'#dfceba',accent:'#ac3022',board:'#442619',wood:'#724323'}),
+  text: Object.freeze({cream:'#fff0d8',ink:'#28150f',muted:'#f0dfc8',accent:'#ac3022',board:'#321a0d',wood:'#583015'}),
   typography: Object.freeze({fontFamily:'Trebuchet MS, Arial, sans-serif',letterSpacing:0,lineSpacing:0,minSize:9}),
   spacing: Object.freeze([4,8,12,16,24]),
   radii: Object.freeze({tile:9,panel:11,modal:20}),

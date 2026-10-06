@@ -1,3 +1,4 @@
+import {UI_RASTER_SCALE} from './UiRaster';
 import type Phaser from 'phaser';
 import {drawModalBackdrop} from './ModalBackdrop';
 import {drawNotificationFrame,drawNotificationButton,drawNotificationClose,type NotificationRect} from './NotificationFrame';
@@ -63,9 +64,9 @@ export class TestCodePanel {
     layer=content;const layout=drawNotificationFrame(scene,layer,'two',170,330);
     scene.game.canvas.dataset.testCodeOffset=String(offset);
     const close=drawNotificationClose(scene,layer,layout);if(close)register('test-code-close',close,true,this.close);
-    const text=(y:number,value:string,size:number)=>layer.add(scene.add.text(180,y,value,{fontFamily:UI_THEME.typography.fontFamily,fontSize:`${size}px`,fontStyle:'bold',color:'#362018',align:'center',wordWrap:{width:276}}).setOrigin(.5,0));
+    const text=(y:number,value:string,size:number)=>layer.add(scene.add.text(180,y,value,{fontFamily:UI_THEME.typography.fontFamily,fontSize:`${size}px`,fontStyle:'bold',color:'#362018',align:'center',wordWrap:{width:276}}).setResolution(UI_RASTER_SCALE).setOrigin(.5,0));
     text(layout.titleY+10,'Nhập mã',22);text(285,'Mã nhận xu thử chức năng',15);text(378,feedback,14);
-    ['test-code-cancel','test-code-receive'].forEach((id,index)=>{const r=layout.footer[index];drawNotificationButton(scene,layer,r.x,r.y,r.width,r.height);layer.add(scene.add.text(r.x+r.width/2,r.y+r.height/2,index?save?.canRetry&&this.submitted?'Thử lại':'Nhận xu':'Quay lại',{fontFamily:UI_THEME.typography.fontFamily,fontSize:'16px',fontStyle:'bold',color:'#fff0d5'}).setOrigin(.5));register(id,r,index?!busy&&!this.received:true,index?()=>this.accept():this.close);});
+    ['test-code-cancel','test-code-receive'].forEach((id,index)=>{const r=layout.footer[index];drawNotificationButton(scene,layer,r.x,r.y,r.width,r.height);layer.add(scene.add.text(r.x+r.width/2,r.y+r.height/2,index?save?.canRetry&&this.submitted?'Thử lại':'Nhận xu':'Quay lại',{fontFamily:UI_THEME.typography.fontFamily,fontSize:'16px',fontStyle:'bold',color:'#fff0d5'}).setResolution(UI_RASTER_SCALE).setOrigin(.5));register(id,r,index?!busy&&!this.received:true,index?()=>this.accept():this.close);});
     scene.game.canvas.dataset.testCodeFeedback=feedback;
   }
   destroy():void{this.destroyed=true;cancelAnimationFrame(this.redraw);document.removeEventListener('keydown',this.keyDown);this.element.removeEventListener('focus',this.viewportChanged);this.element.removeEventListener('blur',this.viewportChanged);this.viewport?.removeEventListener('resize',this.viewportChanged);this.viewport?.removeEventListener('scroll',this.viewportChanged);window.removeEventListener('resize',this.viewportChanged);window.removeEventListener('scroll',this.viewportChanged);this.element.remove();this.canvas.focus();delete this.canvas.dataset.testCodeFeedback;delete this.canvas.dataset.testCodeOffset;delete this.canvas.dataset.testCodeReward;}

@@ -36,6 +36,12 @@ _Tệp này chứa các quy tắc và patterns quan trọng mà AI agent phải 
 
 ## Critical Implementation Rules
 
+### Giao diện đậm, chữ rõ và sốt mở mua — yêu cầu 2026-10-07
+
+Người dùng giao triển khai toàn bộ note: tăng độ đậm/tương phản trên mọi màn/panel; chữ và canvas UI dùng raster 2× với kích thước logic không đổi; nút phụ Quay lại/Về Quán đồng bộ nền tối, viền vàng/kem theo ảnh. Giữ bố cục ngoài nội dung thẻ Menu & Giá bán được yêu cầu chỉnh theo reference: hình/tên/vốn, −/giá/+, bật bán và lãi thật; vẫn ba thẻ/trang, giá 80–140% và quyền công thức thật. Thay đổi menu chuẩn bị qua campaign session/checkpoint, không lưu giữa ca.
+
+Cả năm sốt luôn mở mua, gồm cà chua và BBQ; thay riêng quy định quyền công thức cho sốt, giữ khóa các nguyên liệu khác. Giá/tồn/giá vốn/không hết hạn không đổi. Tám ô món trong bếp luôn giữ catalog; không dùng chúng làm ô “Bánh bỏ” kèm tên khách. Bánh khách bỏ đi vẫn bỏ qua bàn/thùng rác và xác nhận hiện có, ưu tiên bánh của đơn đang chiếm bàn. Xem implementation-artifacts/spec-bold-ui-and-menu-cleanup.md; ảnh triển khai để người dùng xem, chưa tự coi đã được duyệt.
+
 ### Sốt ăn kèm và hình bánh theo nướng — 2026-10-06
 
 Kem trắng/pesto/cay là finishingSauces riêng từng pizza, dùng sau extracted và trước boxed (raw/ready/burnt); mỗi loại một lần, tiêu hao FEFO một phần và cộng bakedCost/giftCost thực. Không nằm trong ingredients/công thức/highlight hoặc đổi qualifyingCheese. Ba sốt mở mua ngay, BBQ/cà chua vẫn theo quyền công thức hiện hành. Cả năm sốt dùng expiry sentinel hữu hạn1000001, không hủy qua ngày; validate nhận đúng expiry cũ day+1 rồi chuẩn hóa sau checksum/đối soát, giữ lượng còn lưu và giá vốn, không phục hồi sốt đã mất khỏi save. Chợ/Kho ghi Không hết hạn, vẫn giữ tổng/số dư thật. Hình bánh vẽ từng lớp theo ovenSeconds/timing, phô mai tan dần; cháy sẫm khi vượt perfectEnd và giữ hình sau extracted. Sốt zíc zắc vẽ cuối không áp màu nướng. Oven dùng Graphics động hiện có, không redraw toàn UI mỗi tick; deliverySource chỉ có sau lấy bánh. Xem [spec](implementation-artifacts/spec-finishing-sauces-and-bake-appearance.md).

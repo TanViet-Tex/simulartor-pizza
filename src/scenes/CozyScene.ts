@@ -12,6 +12,7 @@ import {STAFF_CATALOG,STAFF_RULES,type StaffRole} from '../config/staffCatalog';
 import {SHOP_INSTALL_LOCATIONS} from '../presentation/ShopPlacement';
 import {ReferenceStock,type StockFilter} from '../presentation/ReferenceStock';
 import {ReferenceShop,SHOP_ART,type ShopPage} from '../presentation/ReferenceShop';
+import {UI_RASTER_SCALE,strengthenIllustrations} from '../presentation/UiRaster';
 import {ReferenceMissions} from '../presentation/ReferenceMissions';
 import {stockRows} from '../presentation/StockPlanning';
 import {drawStockPlanner} from '../presentation/StockPlannerPanel';
@@ -155,6 +156,7 @@ export class CozyScene extends Phaser.Scene {
     for(const asset of [...REFERENCE_KITCHEN_MANIFEST,PIZZA_BOX_ART])if(!this.textures.exists(asset.key))this.load.image(asset.key,`${import.meta.env.BASE_URL}${asset.url}`);
   }
   create():void{
+    strengthenIllustrations(this);
     registerReferenceKitchenFrames(this);
     registerCustomerPortraitFrames(this);
     this.dirty=true;this.signature='';this.inspectedOrderId=null;this.inspectedRecipe=null;this.inspectionMode='';this.priceDraft=null;this.statementOpen=false;this.queueUpgradeNotice=false;this.layer=this.add.container();this.staticGraphics=new StaticGraphics(this);this.motion=window.matchMedia('(prefers-reduced-motion: reduce)');
@@ -236,7 +238,7 @@ export class CozyScene extends Phaser.Scene {
       if(n.title){notificationTitle=true;n.title=false;x=180;y=n.layout.titleY;size=Math.min(size,20);width=276;}
       else {y=this.notificationY(y);width=Math.min(width||284,284);}
     }
-    const text=this.add.text(x,y,value,{fontFamily:UI_THEME.typography.fontFamily,fontSize:`${Math.max(size,UI_THEME.typography.minSize)}px`,fontStyle:'bold',color,align,lineSpacing:UI_THEME.typography.lineSpacing,padding:{top:1,bottom:1},...(width?{wordWrap:{width,useAdvancedWrap:true}}:{})}).setLetterSpacing(UI_THEME.typography.letterSpacing);
+    const text=this.add.text(x,y,value,{fontFamily:UI_THEME.typography.fontFamily,fontSize:`${Math.max(size,UI_THEME.typography.minSize)}px`,fontStyle:'bold',color,align,lineSpacing:UI_THEME.typography.lineSpacing,padding:{top:1,bottom:1},...(width?{wordWrap:{width,useAdvancedWrap:true}}:{})}).setResolution(UI_RASTER_SCALE).setLetterSpacing(UI_THEME.typography.letterSpacing);
     if(align==='center')text.setOrigin(.5,0);
     if(this.notification&&!this.notificationButtonLabel&&!notificationTitle){const body=this.notification.layout.body;text.setY(Math.min(y,body.y+body.height-text.height));}
     this.layer.add(text);return text;
@@ -336,9 +338,11 @@ export class CozyScene extends Phaser.Scene {
     });
   }
   private button(id:string,x:number,y:number,w:number,h:number,title:string,enabled:boolean,action:()=>void,fill:number=UI.green):void{
+    const secondary=/Quay lại|Về Quán/i.test(title);if(secondary)fill=UI.dark;
     const footerIndex=this.notification?.ids.indexOf(id)??-1;
     if(footerIndex>=0){
       const rect=this.notification!.layout.footer[footerIndex];({x,y,width:w,height:h}=rect);
+      if(secondary)drawNotificationButton(this,this.layer,x,y,w,h);
       if(!enabled){this.graphics();this.art.g.fillStyle(0x000000,.45).fillRoundedRect(x,y,w,h,h/2);}
       this.notificationButtonLabel=true;
       const text=this.label(x+w/2,y,title,16,enabled?cream:muted,w-14);
@@ -351,7 +355,7 @@ export class CozyScene extends Phaser.Scene {
       return;
     }
     if(this.notification){y=this.notificationY(y);w=Math.min(w,284);x=Math.max(38,Math.min(322-w,x));}
-    if(this.notification){
+    if(this.notification||secondary){
       drawNotificationButton(this,this.layer,x,y,w,h);
       if(!enabled){this.graphics();this.art.g.fillStyle(0x000000,.4).fillRoundedRect(x,y,w,h,h/2);}
     }else{
@@ -643,12 +647,7 @@ export class CozyScene extends Phaser.Scene {
       this.art.pizza(0,0,18,recipeIngredients(recipe));this.art.g.restore();
       this.label(x+w/2,y+27,name,10,available?cream:muted,w-6);
       this.ingredientState(x,y,w,h,available,recipe===this.runtime.selectedRecipe);
-      if(!production||i>=Math.min(3,this.runtime.abandonedPizzas.length))this.hit('recipe-'+i,x,y,w,h,available,()=>{this.inspectedRecipe=recipe as StockRecipe;this.hold('order');});
-    });
-    if(production)this.runtime.abandonedPizzas.slice(0,3).forEach((pizza,i)=>{
-      const {x,y,w,h}=KITCHEN.recipe(i);this.graphics();this.art.panel(x,y,w,h,UI.dark,UI.border,8);
-      this.label(x+w/2,y+4,'Bánh bỏ\n'+pizza.name,11,cream,w-6);
-      this.hit('expired-pizza-'+pizza.id,x,y,w,h,true,()=>{this.runtime.selectPizza(pizza.id);this.runtime.requestDiscard();});
+      this.hit('recipe-'+i,x,y,w,h,available,()=>{this.inspectedRecipe=recipe as StockRecipe;this.hold('order');});
     });
   }
   private inventory():void{
@@ -661,9 +660,9 @@ export class CozyScene extends Phaser.Scene {
       this.ingredientState(x,y,w,h,available,available&&s.ingredients.includes(id as StockIngredient),needed.includes(id as StockIngredient));
       this.hit(id,x,y,w,h,available&&this.runtime.canUseIngredient(id as StockIngredient),()=>this.useIngredient(id as StockIngredient));if(production)this.stockBadge(id as StockIngredient,x,y,w);
     });
-    const {x,y,w,h}=KITCHEN.ingredient(19),discardable=this.runtime.selectedExpired||['raw','ready','boxed','burnt'].includes(s.stage);
-    this.label(x+w/2,y+27,'Xóa tất cả',9,cream);
-    this.hit(discardable?'discard':'clear',x,y,w,h,discardable||s.stage==='assembly'&&s.ingredients.length>0,()=>{if(discardable){if(production)this.runtime.requestDiscard();else this.runtime.dispatch({type:'discard'});}else for(const ingredient of [...this.runtime.state.ingredients])this.runtime.dispatch({type:'ingredient',ingredient});});
+    const {x,y,w,h}=KITCHEN.ingredient(19),discardable=production?this.runtime.workbenchDiscardId!==null:['raw','ready','boxed','burnt'].includes(s.stage);
+    this.label(x+w/2,y+27,discardable?'Bỏ bánh':'Xóa tất cả',9,cream);
+    this.hit(discardable?'discard':'clear',x,y,w,h,discardable||s.stage==='assembly'&&s.ingredients.length>0,()=>{if(discardable){if(production)this.runtime.requestWorkbenchDiscard();else this.runtime.dispatch({type:'discard'});}else for(const ingredient of [...this.runtime.state.ingredients])this.runtime.dispatch({type:'ingredient',ingredient});});
   }
   private useIngredient(ingredient:StockIngredient):void{
     if(!this.runtime.canUseIngredient(ingredient))return;
@@ -715,10 +714,14 @@ export class CozyScene extends Phaser.Scene {
   private closePrice(apply=false):void{
     if(this.runtime.pauses.some(p=>p!=='order'))return;
     const draft=this.priceDraft;this.priceDraft=null;this.priceLease?.release();this.priceLease=undefined;
-    if(apply&&draft&&!this.runtime.dispatch({type:'menu.configure',...draft})){
+    if(apply&&draft&&!this.applyMenu(draft.recipe,draft.percent,draft.enabled)){
       this.priceDraft=draft;this.priceError=this.runtime.shopMessage;this.priceLease=this.runtime.acquirePause('order');
     }
     this.dirty=true;
+  }
+  private applyMenu(recipe:StockRecipe,percent:number,enabled:boolean):boolean {
+    const accepted=this.campaignSession?this.campaignSession.configureMenu(recipe,percent,enabled):this.runtime.configureMenu(recipe,percent,enabled);
+    this.dirty=true;return accepted;
   }
   private priceDialog():void{
     const draft=this.priceDraft;if(!draft)return;
@@ -780,7 +783,7 @@ export class CozyScene extends Phaser.Scene {
         new ReferenceStock(this,this.layer,(...args)=>this.hit(...args),render=>this.syncListHits(render)).draw({day:this.runtime.preparationDay,cash:this.runtime.state.cash,rows:stockRows(this.runtime.stockLots,this.runtime.preparationDay,id=>this.runtime.reserved(id)),filter:this.stockFilter,low:this.stockLow,expiryDays:this.stockExpiry,offset:this.stockOffset,drag:this.stockDrag,canScroll:()=>this.runtime.pauses.length===0,scroll:n=>{this.stockOffset=n;},setFilter:f=>this.setStockFilter(f),detail:id=>this.openStockLot(id),suggestions:()=>this.openStockPlanner(),market:()=>tab('market'),tab,pause:()=>this.hold('user')});return;
       }
       if(this.summaryTab==='shop'){
-        new ReferenceShop(this,this.layer,(...args)=>this.hit(...args)).draw({staff:this.runtime.staffState,employee:role=>this.openStaffHire(role),shop:this.runtime.shopState,item:id=>this.openShopItem(id),app:()=>this.openDeliveryApp('settings'),deliveryApp:{...this.runtime.deliveryApp,eventName:this.runtime.deliveryApp.nextEvent.name},day:this.runtime.preparationDay,cash:this.runtime.state.cash,page:this.shopPage,canAct:this.runtime.canSetPrices,ovenLevel:this.runtime.ovenLevel,queueCapacity:this.runtime.queueCapacity,ovenPrice:this.runtime.upgradePrice('oven'),queuePrice:this.runtime.upgradePrice('queue'),menuPage:this.shopMenuPage,pageMenu:page=>{this.shopMenuPage=page;this.dirty=true;},buy:id=>this.openRecipePurchase(id),recipes:RECIPE_CATALOG.map(r=>r.id).map(id=>({id,name:recipeName(id),price:this.runtime.customerProgress.prices[id],cost:recipeIngredients(id).reduce((n,item)=>n+this.runtime.price(item),0),enabled:this.runtime.menuRecipes.includes(id),owned:this.runtime.ownedRecipes.includes(id),purchasePrice:recipeDefinition(id).purchasePrice})),open:page=>{this.shopPage=page;this.dirty=true;},price:id=>this.choosePrice(id),upgrade:kind=>this.openHubUpgrade(kind),tab,pause:()=>this.hold('user'),footer});return;
+        new ReferenceShop(this,this.layer,(...args)=>this.hit(...args)).draw({staff:this.runtime.staffState,employee:role=>this.openStaffHire(role),shop:this.runtime.shopState,item:id=>this.openShopItem(id),app:()=>this.openDeliveryApp('settings'),deliveryApp:{...this.runtime.deliveryApp,eventName:this.runtime.deliveryApp.nextEvent.name},day:this.runtime.preparationDay,cash:this.runtime.state.cash,page:this.shopPage,canAct:this.runtime.canSetPrices,ovenLevel:this.runtime.ovenLevel,queueCapacity:this.runtime.queueCapacity,ovenPrice:this.runtime.upgradePrice('oven'),queuePrice:this.runtime.upgradePrice('queue'),menuPage:this.shopMenuPage,pageMenu:page=>{this.shopMenuPage=page;this.dirty=true;},buy:id=>this.openRecipePurchase(id),configure:(id,percent,enabled)=>{this.applyMenu(id,percent,enabled);},recipes:RECIPE_CATALOG.map(r=>r.id).map(id=>({id,name:recipeName(id),price:this.runtime.customerProgress.prices[id],percent:this.runtime.customerProgress.pricePercents[id],cost:recipeIngredients(id).reduce((n,item)=>n+this.runtime.price(item),0),enabled:this.runtime.menuRecipes.includes(id),owned:this.runtime.ownedRecipes.includes(id),purchasePrice:recipeDefinition(id).purchasePrice})),open:page=>{this.shopPage=page;this.dirty=true;},price:id=>this.choosePrice(id),upgrade:kind=>this.openHubUpgrade(kind),tab,pause:()=>this.hold('user'),footer});return;
       }
       if(this.summaryTab==='missions'){
         new ReferenceMissions(this,this.layer,(...args)=>this.hit(...args)).draw({day:this.runtime.preparationDay,cash:this.runtime.state.cash,progress:this.runtime.progression,ending:!!summary?.ending,tab,pause:()=>this.hold('user'),footer});return;

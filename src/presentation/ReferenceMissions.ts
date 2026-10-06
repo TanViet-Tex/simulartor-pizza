@@ -1,3 +1,4 @@
+import {uiCanvas} from './UiRaster';
 import type Phaser from 'phaser';
 import type {CozyRuntime} from '../runtime/CozyRuntime';
 import {HubCanvasUI,type HubHit,type HubTab} from './HubCanvasUI';
@@ -6,7 +7,7 @@ let serial=0;
 export class ReferenceMissions{
   constructor(private scene:Phaser.Scene,private layer:Phaser.GameObjects.Container,private hit:HubHit){}
   draw(input:{day:number;cash:number;progress:CozyRuntime['progression'];ending:boolean;tab:(id:HubTab)=>void;pause:()=>void;footer:{id:string;title:string;enabled:boolean;action:()=>void}}):void{
-    const key=`missions-${serial++}`,texture=this.scene.textures.createCanvas(key,360,640)!,ui=new HubCanvasUI(this.scene,texture.context,this.hit),p=input.progress,c=HUB_THEME.colors;
+    const key=`missions-${serial++}`,texture=uiCanvas(this.scene,key,360,640),ui=new HubCanvasUI(this.scene,texture.context,this.hit),p=input.progress,c=HUB_THEME.colors;
     ui.background();ui.header({title:'Nhiệm vụ',subtitle:`Ngày ${input.day} · Cấp ${p.level}`,cash:input.cash,pause:input.pause});ui.navigation('missions',input.tab);
     const status=(s:string)=>s==='completed'?'Hoàn thành':s==='expired'?'Đã hết hạn':'Đang thực hiện';
     ui.frame({x:8,y:133,width:344,height:147});ui.text(22,145,`Mục tiêu ngày ${p.goal.day}`,19);ui.text(22,176,p.goal.description,14,c.ink,false,313);ui.text(22,204,p.goal.progress,18,c.muted);
@@ -19,6 +20,6 @@ export class ReferenceMissions{
     const latest=p.goals[p.goals.length-1];
     ui.text(22,525,latest?`Ngày ${latest.day}: ${status(latest.status)} · ${latest.progress}`:'Đơn thương mại: 10 XP; 4–5 sao thêm 5 XP.',11,c.muted,false,314);
     ui.text(22,550,latest?(p.claims.includes(`goal.day-${latest.day}`)?'Ngày đã chốt: nhận 20 xu + 10 XP':'Ngày đã chốt: không đạt thưởng'):input.ending?'Quán thiếu vốn · Xem tổng kết':'Thưởng tự cộng đúng một lần; không cần bấm nhận.',10,c.muted,false,314);
-    ui.footer(input.footer);texture.refresh();const image=this.scene.add.image(0,0,key).setOrigin(0);this.layer.add(image);image.once('destroy',()=>this.scene.textures.remove(key));this.scene.game.canvas.dataset.missionsView=JSON.stringify(p);
+    ui.footer(input.footer);texture.refresh();const image=this.scene.add.image(0,0,key).setOrigin(0).setDisplaySize(360,640);this.layer.add(image);image.once('destroy',()=>this.scene.textures.remove(key));this.scene.game.canvas.dataset.missionsView=JSON.stringify(p);
   }
 }

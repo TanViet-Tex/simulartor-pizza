@@ -79,6 +79,15 @@ export class CozyCampaignSession {
     catch{this.install(CozyRuntime.restoreCheckpoint(before)!);this.publish();return false;}
     void this.writePending();return true;
   }
+  configureMenu(recipe:import('../domain/CozyStock').StockRecipe,percent:number,enabled:boolean):boolean {
+    if(!this.allowed()||!this.current||!this.current.canSetPrices)return false;
+    const before=this.current.exportCheckpoint();
+    if(!this.current.configureMenu(recipe,percent,enabled))return false;
+    if(this.status==='temporary'){this.publish();return true;}
+    try{this.pending={kind:'upgrade',tutorial:false,request:{campaignId:this.saved!.campaignId,commitId:this.id(),sourceRevision:this.saved!.revision,payload:this.current.exportCheckpoint(),...(this.confirmedRecovery?{confirmedRecovery:true}:{})}};}
+    catch{this.install(CozyRuntime.restoreCheckpoint(before)!);this.publish();return false;}
+    void this.writePending();return true;
+  }
   buyShopItem(id:import('../domain/ShopEffects').ShopItemId,commandId:string):boolean {return this.stageShop(r=>r.buyShopItem(id,commandId),commandId);}
   placeShopItem(id:import('../domain/ShopEffects').ShopItemId,placed:boolean,commandId:string):boolean {return this.stageShop(r=>r.placeShopItem(id,placed,commandId),commandId);}
   upgradeShop(kind:'oven'|'queue',commandId:string):boolean {return this.stageShop(r=>r.upgradeShop(kind,commandId),commandId);}

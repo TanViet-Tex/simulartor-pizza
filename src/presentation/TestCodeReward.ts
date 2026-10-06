@@ -1,3 +1,4 @@
+import {uiCanvas,UI_RASTER_SCALE} from './UiRaster';
 import type Phaser from 'phaser';
 import {UI_THEME} from './theme';
 import type {NotificationRect} from './NotificationFrame';
@@ -9,7 +10,7 @@ export function drawTestCodeReward(scene:Phaser.Scene,layer:Phaser.GameObjects.C
   if(!scene.textures.exists(artKey)){
     // Phaser 4 WebGL containers do not apply legacy GeometryMask. Rasterize the
     // static source slices once with a Canvas2D silhouette clip for both renderers.
-    const art=scene.textures.createCanvas(artKey,360,640)!;const ctx=art.context,source=texture.getSourceImage() as HTMLImageElement;
+    const art=uiCanvas(scene,artKey,360,640);const ctx=art.context,source=texture.getSourceImage() as HTMLImageElement;
     ctx.beginPath();ctx.roundRect(x,top+20,width,height-20,26);ctx.ellipse(180,top+22,61,18,0,0,Math.PI*2);ctx.ellipse(180,top+20,25,25,0,0,Math.PI*2);ctx.clip();
     ctx.fillStyle='#ffedbd';ctx.fillRect(x,top,width,height);
     for(const [sx,sy,sw,sh,dx,dy,dw,dh] of [
@@ -27,8 +28,8 @@ export function drawTestCodeReward(scene:Phaser.Scene,layer:Phaser.GameObjects.C
     ] as const)ctx.drawImage(source,sx,sy,sw,sh,dx,dy,dw,dh);
     art.refresh();
   }
-  layer.add(scene.add.image(0,0,artKey).setOrigin(0));
-  const text=(y:number,value:string,size:number,color='#583319')=>layer.add(scene.add.text(180,y,value,{fontFamily:UI_THEME.typography.fontFamily,fontSize:`${size}px`,fontStyle:'bold',color,align:'center',wordWrap:{width:272}}).setOrigin(.5,0));
+  layer.add(scene.add.image(0,0,artKey).setOrigin(0).setDisplaySize(360,640));
+  const text=(y:number,value:string,size:number,color='#583319')=>layer.add(scene.add.text(180,y,value,{fontFamily:UI_THEME.typography.fontFamily,fontSize:`${size}px`,fontStyle:'bold',color,align:'center',wordWrap:{width:272}}).setResolution(UI_RASTER_SCALE).setOrigin(.5,0));
   text(184,'Nhập mã thành công!',22);text(330,`+${coins.toLocaleString('vi-VN')} xu`,29,'#a85805');text(378,'Bạn đã nhận được xu thưởng từ mã quà tặng.',15);
   for(const index of [0,1]){
     const r={x:38+index*146,y:440,width:136,height:48};

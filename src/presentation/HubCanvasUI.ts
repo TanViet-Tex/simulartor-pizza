@@ -10,6 +10,7 @@ export type HubHit = (id:string,x:number,y:number,w:number,h:number,enabled:bool
 /** Canvas painter only: the caller owns its texture, input zones and cleanup. */
 export class HubCanvasUI {
   constructor(private scene:Phaser.Scene,private ctx:CanvasRenderingContext2D,private hit:HubHit){}
+  get context():CanvasRenderingContext2D{return this.ctx;}
 
   text(x:number,y:number,value:string,size:number=12,color:string=HUB_THEME.colors.ink,center=false,max=0):void {
     const ctx=this.ctx;ctx.save();
@@ -60,7 +61,9 @@ export class HubCanvasUI {
   }
 
   button(x:number,y:number,w:number,h:number,title:string,enabled=true,size=13):void {
-    this.panel(x,y,w,h,enabled?HUB_THEME.colors.action:HUB_THEME.colors.disabled,HUB_THEME.colors.actionEdge,HUB_THEME.radii.button);
+    const radius=Math.min(h/2,w/2);
+    this.panel(x,y,w,h,enabled?HUB_THEME.colors.action:HUB_THEME.colors.disabled,HUB_THEME.colors.actionEdge,radius);
+    const ctx=this.ctx;ctx.save();ctx.beginPath();ctx.roundRect(x+1.5,y+1.5,w-3,h-4,Math.max(2,radius-1));ctx.strokeStyle=HUB_THEME.colors.actionEdge;ctx.lineWidth=2;ctx.stroke();ctx.beginPath();ctx.roundRect(x+3.5,y+3.5,w-7,h-8,Math.max(2,radius-3));ctx.strokeStyle=HUB_THEME.colors.cream;ctx.globalAlpha=enabled?.8:.4;ctx.lineWidth=1;ctx.stroke();ctx.restore();
     this.text(x+w/2,y+(h-size)/2-1,title,size,HUB_THEME.colors.cream,true,w-8);
   }
 

@@ -1,3 +1,4 @@
+import {UI_RASTER_SCALE} from './UiRaster';
 import Phaser from 'phaser';
 import {UI_THEME} from './theme';
 import {modalText} from './ModalText';
@@ -39,7 +40,7 @@ export function drawNotificationFrame(scene:Phaser.Scene,layer:Phaser.GameObject
 
 export function drawNotificationClose(scene:Phaser.Scene,layer:Phaser.GameObjects.Container,layout:NotificationLayout):NotificationRect|undefined{
   const r=layout.close;if(!r)return;
-  layer.add(scene.add.text(r.x+r.width/2,r.y+r.height/2,'×',{fontFamily:'Arial',fontSize:'22px',color:'#fff0d5',fontStyle:'bold'}).setOrigin(.5));
+  layer.add(scene.add.text(r.x+r.width/2,r.y+r.height/2,'×',{fontFamily:'Arial',fontSize:'22px',color:'#fff0d5',fontStyle:'bold'}).setResolution(UI_RASTER_SCALE).setOrigin(.5));
   return r;
 }
 
@@ -60,7 +61,7 @@ export function drawNotificationButton(scene:Phaser.Scene,layer:Phaser.GameObjec
 /** Content-sized notice: preserve the crest and bottom border, stretch only blank paper. */
 export function drawCompactNotification(scene:Phaser.Scene,layer:Phaser.GameObjects.Container,title:string,message:string,size=14,textScale=1):NotificationLayout{
   const texture=scene.textures.get('notification-frame-one'),source=texture.getSourceImage(),width=332,scale=width/source.width,padding=18,border=14,inset=border+padding,gap=14;
-  const heading=scene.add.text(180,0,title,{fontFamily:UI_THEME.typography.fontFamily,fontSize:'20px',fontStyle:'bold',color:UI_THEME.text.ink,wordWrap:{width:width-inset*2},padding:{top:1,bottom:1}}).setOrigin(.5,0);
+  const heading=scene.add.text(180,0,title,{fontFamily:UI_THEME.typography.fontFamily,fontSize:'20px',fontStyle:'bold',color:UI_THEME.text.ink,wordWrap:{width:width-inset*2},padding:{top:1,bottom:1}}).setResolution(UI_RASTER_SCALE).setOrigin(.5,0);
   const measure=scene.add.text(0,0,message,{fontFamily:UI_THEME.typography.fontFamily,fontSize:`${size*textScale}px`,fontStyle:'bold',wordWrap:{width:width-inset*2},padding:{top:2,bottom:2}});
   const headerHeight=300*scale,titleOffset=headerHeight,bottomPadding=48;
   const bodyHeight=Math.min(Math.max(18,measure.height),600-titleOffset-heading.height-gap*2-48-bottomPadding);measure.destroy();

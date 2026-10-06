@@ -1,3 +1,4 @@
+import {uiCanvas} from './UiRaster';
 import {isNonExpiring} from '../config/ingredientCatalog';
 import Phaser from 'phaser';
 import {hubListWindow} from './HubListWindow';
@@ -15,7 +16,7 @@ let serial=0;
 export class ReferenceStock{
   constructor(private scene:Phaser.Scene,private layer:Phaser.GameObjects.Container,private hit:HubHit,private sync:(render:()=>void)=>void){}
   draw(input:{day:number;cash:number;rows:readonly StockRow[];filter:StockFilter;low:number|null;expiryDays:number|null;offset:number;drag:MarketDrag;canScroll:()=>boolean;scroll:(n:number)=>void;setFilter:(f:StockFilter)=>void;detail:(id:StockIngredient)=>void;suggestions:()=>void;market:()=>void;tab:(tab:HubTab)=>void;pause:()=>void}):void{
-    const key=`stock-window-${serial++}`,texture=this.scene.textures.createCanvas(key,360,640)!,ctx=texture.context;
+    const key=`stock-window-${serial++}`,texture=uiCanvas(this.scene,key,360,640),ctx=texture.context;
     const ui=new HubCanvasUI(this.scene,ctx,this.hit),colors=HUB_THEME.colors;
     const text=ui.text.bind(ui),panel=ui.panel.bind(ui);
     const projected=input.rows.map(row=>{
@@ -39,7 +40,7 @@ export class ReferenceStock{
     panel(17,541,321,24,colors.inset);ui.icon('market',24,546,18);text(49,548,'Gợi ý mua theo menu & số phần',12,colors.ink,false,269);text(324,545,'›',20,colors.muted,true);this.hit('stock-suggestions',17,539,321,31,true,input.suggestions);
     text(180,567,'Ưu tiên lô gần hết hạn · Không dùng lô hết hạn',9,colors.muted,true,322);
     ui.footer({id:'summary-stock-market',title:'Đi chợ mua thêm →',enabled:true,action:input.market});
-    texture.refresh();this.layer.add(this.scene.add.image(0,0,key).setOrigin(0));
+    texture.refresh();this.layer.add(this.scene.add.image(0,0,key).setOrigin(0).setDisplaySize(360,640));
     this.layer.getAt<Phaser.GameObjects.Image>(this.layer.length-1).once('destroy',()=>this.scene.textures.remove(key));
     hubListWindow(this.scene,this.layer,{key:listKey,viewport,height:rows.length*rowHeight,offset,drag:input.drag,allowed:input.canScroll,
       paint:(listUI,ctx)=>{const panel=listUI.panel.bind(listUI),text=listUI.text.bind(listUI);

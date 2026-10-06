@@ -14,7 +14,7 @@ export class CozyArt {
   ellipse(x:number,y:number,w:number,h:number,c:number):void{this.g.fillStyle(c,1).fillEllipse(x,y,w,h);}
   panel(x:number,y:number,w:number,h:number,c:number=UI.dark,border:number=UI.border,r:number=UI_THEME.radii.panel):void{
     this.round(x,y+3,w,h,r,0x47281c);this.round(x,y,w,h,r,c,border,1.6);
-    this.g.lineStyle(1,0xffd5a5,.16).beginPath().moveTo(x+r,y+3).lineTo(x+w-r,y+3).strokePath();
+    this.g.lineStyle(1,0xffd5a5,.32).beginPath().moveTo(x+r,y+3).lineTo(x+w-r,y+3).strokePath();
   }
   background():void{
     this.rect(0,0,360,640,UI.wood);

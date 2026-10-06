@@ -3,9 +3,9 @@ import {UI_THEME} from './theme';
 /** Scoped management-screen tokens. Kitchen/menu keep their approved global theme. */
 export const HUB_THEME = Object.freeze({
   colors: Object.freeze({
-    ink:'#442412', paper:'#fff3de', border:'#bd8b55', cream:'#fff0d5',
-    muted:'#86502b', active:'#b85b37', activeEdge:'#8c4229', wood:'#9c5c35', woodEdge:'#714125',
-    action:'#282a28', actionEdge:'#cda974', disabled:'#706659',
+    ink:'#2a160b', paper:'#fff2d6', border:'#a86d2c', cream:'#fff3cf',
+    muted:'#623619', active:'#a53c20', activeEdge:'#712610', wood:'#804021', woodEdge:'#512710',
+    action:'#241b15', actionEdge:'#e5b95e', disabled:'#685447',
     highlight:'#fff9ed', shadow:'#754221', danger:'#b3482c', inset:'#f5dfbe',
     quantity:'#efd2a9', stepperInk:'#6f4023', field:'#fff7e4', track:'#edd4b0', thumb:'#9d7955',
   }),

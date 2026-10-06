@@ -1,5 +1,24 @@
 # Công việc để xử lý riêng
 
+## 2026-10-07 — Đồng bộ nút, mở sốt và làm đậm giao diện
+
+Ban đầu chỉ ghi chú; người dùng đã yêu cầu triển khai toàn bộ các mục dưới đây. Theo dõi kết quả tại `spec-bold-ui-and-menu-cleanup.md`:
+
+**Đã triển khai và kiểm chứng:** 52 unit test, 5 luồng Chromium 360×640 và build đạt; ba review độc lập hoàn tất, một lỗi cuộn chữ mới đã sửa và có kiểm tra pixel. Các mục dưới đây đã xử lý, không còn chờ code.
+
+- Đồng bộ nút “Quay lại” ở Tổng kết, Kho, Chợ, Quán và Nhiệm vụ theo ảnh mới: dạng viên thuốc, nền nâu đen đậm, viền vàng/kem nhiều lớp, chữ kem sáng đậm, bóng đổ phía dưới. Giữ vị trí và chức năng nút hiện có.
+- Các loại sốt luôn mở khóa, không yêu cầu mở công thức và không khóa lại khi thay menu. Khi triển khai cần rà cả giao diện và logic mua, giữ giá/tồn kho/giá vốn hiện hành.
+- Chỉnh phần “Menu & Giá bán” sát ảnh tham chiếu nhất có thể. Ảnh đính kèm lượt này chỉ thể hiện nút “Quay lại”, chưa đủ mô tả bố cục toàn panel; cần đối chiếu ảnh tham chiếu panel sẵn có hoặc lấy thêm ảnh trước khi quyết định bố cục mới.
+- Theo bổ sung của người dùng: **toàn bộ giao diện, trên tất cả các màn và panel**, đều chỉnh màu đậm theo ảnh tham chiếu; không giới hạn ở nút hoặc Menu & Giá bán. Chữ trên mọi màn phải sắc nét, rõ và dễ đọc, tăng tương phản chữ/nền, kiểm tra font, viền chữ và độ nét khi render để tránh mờ hoặc nhòe. Áp dụng đồng bộ cho nền, khung, nút, HUD, tab và thông báo; giữ bố cục, vị trí nút, số ô và luật gameplay ngoài thay đổi đã yêu cầu.
+
+Ảnh triển khai là bằng chứng để người dùng xem, không tự coi kết quả mới đã được duyệt. Mốc UI ghi phạm vi thay đổi rõ ràng mà người dùng yêu cầu, giữ các phần bố cục ngoài phạm vi.
+
+## 2026-10-07 — Ba ô món đầu hiển thị sai tên/hình
+
+Người dùng báo qua ảnh màn chơi: ba ô đầu trong bảng món hiện tên khách thay hình và tên pizza mong đợi; các ô phía sau vẫn hiện pizza như Pepperoni, Rau củ, Gà BBQ, Hải sản, Giăm bông dứa. Điều tra mã nguồn xác định đó là overlay “Bánh bỏ” kèm tên khách của `abandonedPizzas`, không phải tên công thức bị hỏng. Dòng “Chọn đơn để xem chi tiết” khi chưa chọn đơn không phải lỗi được báo.
+
+Người dùng đã giao sửa cùng nhóm giao diện trên: giữ tám ô món đúng catalog, chuyển khả năng bỏ bánh hết hạn về thao tác bàn/thùng rác hiện có, không bỏ đường phục hồi gameplay. Theo dõi kiểm chứng tại `spec-bold-ui-and-menu-cleanup.md`.
+
 ## 2026-10-06 — Assertion report legacy trong CozyMarketFlow
 
 Test “preserves legacy checkpoint stock and cash while buying at its current preparation day” so sánh completedReports với checkpoint.reports còn progressionArchive; selector hiện không xuất trường archive. Cùng lỗi tái hiện với CozyRuntime từ baseline c8408f7 (3test khác trong suite đạt). Không do quyền nguyên liệu/dự báo/bulk. Cần cập nhật assertion theo contract report trong lượt riêng; không sửa báo cáo/gameplay để làm xanh test. Bản Chợ mới có27unit tập trung đạt.

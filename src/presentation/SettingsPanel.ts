@@ -1,3 +1,4 @@
+import {UI_RASTER_SCALE} from './UiRaster';
 import type Phaser from 'phaser';
 import type {PlayAudio} from './PlayAudio';
 import type {MenuPreferences} from './MenuPreferences';
@@ -16,7 +17,7 @@ export function drawSettingsPanel(scene:Phaser.Scene,layer:Phaser.GameObjects.Co
     mute:{x:187,y:326,width:130,height:48},
     code:{x:92,y:404,width:225,height:48},motion:{x:187,y:467,width:130,height:48},back:{x:76,y:542,width:208,height:48},
   };
-  const text=(x:number,y:number,value:string,size=17,color='#472310',originX=0,width?:number)=>layer.add(scene.add.text(x,y,value,{fontFamily:UI_THEME.typography.fontFamily,fontSize:`${size}px`,fontStyle:'bold',color,align:originX===.5?'center':'left',wordWrap:width?{width}:undefined,padding:{top:2,bottom:2}}).setOrigin(originX,0));
+  const text=(x:number,y:number,value:string,size=17,color='#472310',originX=0,width?:number)=>layer.add(scene.add.text(x,y,value,{fontFamily:UI_THEME.typography.fontFamily,fontSize:`${size}px`,fontStyle:'bold',color,align:originX===.5?'center':'left',wordWrap:width?{width}:undefined,padding:{top:2,bottom:2}}).setResolution(UI_RASTER_SCALE).setOrigin(originX,0));
   const button=(action:SettingsAction,title:string,enabled:boolean,callback:()=>void,size=16)=>{
     const r=controls[action],g=scene.add.graphics();
     g.fillStyle(0x6a351a).fillRoundedRect(r.x-2,r.y+2,r.width+4,r.height+2,r.height/2);

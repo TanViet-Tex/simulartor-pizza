@@ -13,6 +13,16 @@ const settle=()=>new Promise<void>(resolve=>setTimeout(resolve,0));
 async function setup(funded=false){let id=0;const port=new MemoryPort(),session=new CozyCampaignSession(port,()=>`id-${++id}`);await session.load();const r=(await session.start(false))!;if(funded){port.value!.payload=fundedShopCheckpoint();port.value!.checksum=checkpointChecksum(port.value!.payload);const loaded=(await session.load())!;return {port,session,r:loaded};}return {port,session,r};}
 function open(r:CozyRuntime){for(const id of ['dough','sauce','cheese'] as const)r.buy(id,1);expect(r.openShop()).toBe(true);}
 describe('Cozy prepare/commit/confirm session',()=>{
+  it('saves real menu prices and selling state together, rejects concurrent edits and retries the same payload',async()=>{
+    const {session,port,r}=await setup();port.fail=true;
+    expect(session.configureMenu('cheese',105,true)).toBe(true);expect(session.configureMenu('mushroom',100,false)).toBe(false);await settle();
+    expect(session.view.state).toBe('error');expect(CozyRuntime.restoreCheckpoint(port.value!.payload)!.customerProgress.pricePercents.cheese).toBe(100);
+    const pending=port.calls[port.calls.length-1];port.fail=false;await session.retry();expect(port.calls[port.calls.length-1]).toEqual(pending);
+    expect(session.configureMenu('mushroom',100,false)).toBe(true);await settle();const restored=(await session.load())!;
+    expect(restored.customerProgress.pricePercents.cheese).toBe(105);expect(restored.menuRecipes).toEqual(['cheese']);
+    expect(session.configureMenu('cheese',105,false)).toBe(false);expect(session.configureMenu('sausage',100,true)).toBe(false);
+    restored.openShop();expect(session.configureMenu('cheese',100,true)).toBe(false);expect(r.state.cash).toBe(300);session.destroy();
+  });
   it('grants test funds only after commit, once per campaign, with retry and owned pauses intact',async()=>{
     const {session,port,r}=await setup();const menu=r.acquirePause('menu'),user=r.acquirePause('user'),editor=r.acquirePause('order');port.fail=true;
     const receipts:number[]=[];r.subscribeCash(receipt=>receipts.push(receipt.amount));

@@ -5,6 +5,8 @@ import {ingredientName} from '../domain/CozyStock';
 import {customerPortraitFrame,customerPortraitFit} from './CustomerPortraits';
 import {UI_THEME} from './theme';
 import {drawHubShell} from './HubHeader';
+import {uiCanvas,UI_RASTER_SCALE} from './UiRaster';
+import {HubCanvasUI} from './HubCanvasUI';
 
 export const SUMMARY_ART=[
   {key:'reference-summary',url:'assets/references/bảng tổng kết.png'},
@@ -13,7 +15,7 @@ export const SUMMARY_ART=[
 ] as const;
 type Rect={x:number;y:number;width:number;height:number};
 type Hit=(id:string,x:number,y:number,w:number,h:number,enabled:boolean,action:()=>void)=>void;
-const ink='#442412',wood='#86603e',green='#345f28';
+const ink='#2a160b',wood='#623619',green='#245020';
 const recipeNames=Object.fromEntries(RECIPE_CATALOG.map(r=>[r.id,r.name]));
 let scrollSerial=0;
 export function preloadSummaryArt(scene:Phaser.Scene):void{for(const art of SUMMARY_ART)if(!scene.textures.exists(art.key))scene.load.image(art.key,`${import.meta.env.BASE_URL}${art.url}`);}
@@ -22,7 +24,7 @@ export function preloadSummaryArt(scene:Phaser.Scene):void{for(const art of SUMM
 export class ReferenceSummary {
   constructor(private readonly scene:Phaser.Scene,private readonly layer:Phaser.GameObjects.Container,private readonly hit:Hit,private readonly textScale=1){}
   text(x:number,y:number,value:string,size=12,color=ink,width=0,center=false,scaled=false):Phaser.GameObjects.Text{
-    const text=this.scene.add.text(x,y,value,{fontFamily:UI_THEME.typography.fontFamily,fontSize:`${size*(scaled?this.textScale:1)}px`,fontStyle:'bold',color,lineSpacing:2,...(width?{wordWrap:{width,useAdvancedWrap:true}}:{})});
+    const text=this.scene.add.text(x,y,value,{fontFamily:UI_THEME.typography.fontFamily,fontSize:`${size*(scaled?this.textScale:1)}px`,fontStyle:'bold',color,lineSpacing:2,...(width?{wordWrap:{width,useAdvancedWrap:true}}:{})}).setResolution(UI_RASTER_SCALE);
     if(center)text.setOrigin(.5,0);this.layer.add(text);return text;
   }
   private crop(key:string,source:Rect,target:Rect):Phaser.GameObjects.Image{
@@ -35,7 +37,7 @@ export class ReferenceSummary {
     // Round the paper too, so transparent outer corners expose the backdrop.
     const paperKey=`summary-paper-${target.width}-${target.height}-${d}`;
     if(!this.scene.textures.exists(paperKey)){
-      const paper=this.scene.textures.createCanvas(paperKey,Math.ceil(target.width),Math.ceil(target.height))!,ctx=paper.context;
+      const paper=uiCanvas(this.scene,paperKey,Math.ceil(target.width),Math.ceil(target.height)),ctx=paper.context;
       ctx.beginPath();ctx.roundRect(0,0,target.width,target.height,d);ctx.clip();
       ctx.drawImage(this.scene.textures.get('reference-summary').getSourceImage() as HTMLImageElement,875,390,10,12,0,0,target.width,target.height);paper.refresh();
     }
@@ -128,9 +130,9 @@ export class ReferenceSummary {
     this.text(23,526,r?`${r.goal.status==='completed'?'✓':'○'} ${r.goal.description}`:'Mục tiêu được tính khi mở ca bán.',10,wood,308);
     this.frame('reference-summary',{x:20,y:1428,width:902,height:88},{x:8,y:551,width:344,height:32});
     this.icon({x:46,y:1434,width:140,height:74},17,554,40,23);this.text(66,559,input.stockUnits?`Kho còn ${input.stockUnits} phần · Kiểm tra nguyên liệu ›`:'Kho trống · Kiểm tra nguyên liệu ›',11,wood,275);this.hit('summary-stock-alert',10,549,340,33,true,()=>input.tab('stock'));
-    this.frame('reference-summary',{x:24,y:1528,width:896,height:114},{x:10,y:590,width:340,height:43});
-    const black=this.scene.add.graphics().fillStyle(0x282a28).fillRoundedRect(16,595,328,32,11);this.layer.add(black);
-    this.text(180,599,input.footer.title,19,'#fff0d5',315,true);this.hit(input.footer.id,12,587,336,48,input.footer.enabled,input.footer.action);
+    const footerKey=`summary-footer-${scrollSerial++}`,footer=uiCanvas(this.scene,footerKey,360,50);footer.context.translate(0,-590);
+    new HubCanvasUI(this.scene,footer.context,this.hit).footer(input.footer);footer.refresh();
+    const footerImage=this.scene.add.image(0,590,footerKey).setOrigin(0).setDisplaySize(360,50);this.layer.add(footerImage);footerImage.once('destroy',()=>this.scene.textures.remove(footerKey));
     this.scene.game.canvas.dataset.referenceSummary=JSON.stringify({profit:r?.profit??null,stockUnits:input.stockUnits,xp,day:r?.day??input.day});
   }
   modalFrame(kind:'reviews'|'finance',day:number):Rect{
@@ -187,7 +189,7 @@ export class ReferenceSummary {
     // A viewport-sized texture avoids both legacy masks and GPU texture-size
     // limits for long lists. Keep detached row sources, redraw only the window.
     const key=`summary-scroll-${scrollSerial++}`;
-    const texture=this.scene.textures.createCanvas(key,viewport.width,Math.ceil(viewport.height))!;
+    const texture=uiCanvas(this.scene,key,viewport.width,Math.ceil(viewport.height));
     this.scene.game.canvas.dataset.summaryBodyTexture=JSON.stringify({width:viewport.width,height:Math.ceil(viewport.height)});
     const context=texture.context,draws:((context:CanvasRenderingContext2D)=>void)[]=[],canvases:HTMLCanvasElement[]=[];
     const textValues:string[]=[];
@@ -208,14 +210,14 @@ export class ReferenceSummary {
       }
       this.layer.remove(object,true);
     }
-    const body=this.scene.add.image(viewport.x,viewport.y,key).setOrigin(0).setCrop(0,0,viewport.width,viewport.height);this.layer.add(body);
+    const body=this.scene.add.image(viewport.x,viewport.y,key).setOrigin(0).setDisplaySize(viewport.width,Math.ceil(viewport.height));this.layer.add(body);
     this.scene.game.canvas.dataset.summaryModalText=JSON.stringify(textValues);
     this.scene.game.canvas.dataset.summaryBodyTextScale=String(this.textScale);
     const zone=this.scene.add.zone(viewport.x,viewport.y,viewport.width,viewport.height).setOrigin(0).setDepth(11).setInteractive();this.layer.add(zone);
     zone.once('destroy',()=>{this.scene.textures.remove(key);for(const canvas of canvases){canvas.width=0;canvas.height=0;}});
     const region={...viewport,offset:0,max:Math.max(0,contentHeight-viewport.height)},regions=JSON.parse(this.scene.game.canvas.dataset.modalScroll||'[]');regions.push(region);
     const publish=()=>{this.scene.game.canvas.dataset.modalScroll=JSON.stringify(regions);};
-    const paint=()=>{context.setTransform(1,0,0,1,0,0);context.clearRect(0,0,viewport.width,viewport.height);context.translate(-viewport.x,-viewport.y-region.offset);for(const draw of draws)draw(context);texture.refresh();};paint();publish();
+    const paint=()=>{context.setTransform(UI_RASTER_SCALE,0,0,UI_RASTER_SCALE,0,0);context.clearRect(0,0,viewport.width,Math.ceil(viewport.height));context.translate(-viewport.x,-viewport.y-region.offset);for(const draw of draws)draw(context);texture.refresh();};paint();publish();
     const scroll=(delta:number)=>{region.offset=Phaser.Math.Clamp(region.offset+delta,0,region.max);paint();publish();};let last:number|undefined;
     zone.on('pointerdown',(p:Phaser.Input.Pointer)=>last=p.y);zone.on('pointermove',(p:Phaser.Input.Pointer)=>{if(p.isDown&&last!==undefined){scroll(last-p.y);last=p.y;}});zone.on('pointerup',()=>last=undefined);zone.on('pointerout',()=>last=undefined);zone.on('wheel',(_p:unknown,_x:number,dy:number)=>scroll(dy));
   }

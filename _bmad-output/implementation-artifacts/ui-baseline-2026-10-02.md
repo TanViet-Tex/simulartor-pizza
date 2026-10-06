@@ -7,6 +7,14 @@ date: '2026-10-02'
 
 # Giao diện hiện tại là mốc cho các lần triển khai sau
 
+### Màu đậm, chữ rõ và Menu & Giá bán — yêu cầu 2026-10-07
+
+Người dùng yêu cầu thay phong cách màu/chữ trên **toàn bộ giao diện**: nền gỗ/nâu đậm hơn, tương phản rõ, chữ sắc nét; giữ geometry ngoài phần thẻ Menu & Giá bán được yêu cầu sửa. Các nút phụ/hub dùng nền nâu đen, bo tròn dạng viên thuốc, viền vàng/kem nhiều lớp và chữ kem theo ảnh Quay lại. Header, năm tab, footer, số ô bếp và các vị trí nút giữ nguyên. Raster chữ/canvas 2×, kích thước logic không đổi; tranh nguồn tăng tương phản một lần, không filter ô nhập native hoặc thay màu gameplay theo overlay.
+
+Menu & Giá bán đối chiếu `Menu và giá bán pizza-1.png`: hình pizza/tên, vốn thật, cụm −/giá/+, toggle bán và lãi dự kiến; ba thẻ/trang với phân trang/shell hiện có. Món chưa sở hữu vẫn mua công thức thật, không lấy số liệu/quyền trong ảnh. Cả năm sốt mở mua độc lập công thức/menu. Tám ô món không còn bị che bởi “Bánh bỏ” tên khách; bánh hết hạn xử lý qua bàn/thùng rác hiện có.
+
+Ảnh triển khai để người dùng xem, không tự xác nhận đã được duyệt: [Menu & giá](ui-baseline/bold-ui-2026-10-07/bold-menu-price.png), [Chợ](ui-baseline/bold-ui-2026-10-07/bold-market.png), [Kho](ui-baseline/bold-ui-2026-10-07/bold-stock.png), [Quán](ui-baseline/bold-ui-2026-10-07/bold-shop.png), [Nhiệm vụ](ui-baseline/bold-ui-2026-10-07/bold-missions.png), [Tổng kết](ui-baseline/bold-ui-2026-10-07/bold-closed-summary.png), [Cài đặt](ui-baseline/bold-ui-2026-10-07/bold-settings.png), [bếp](ui-baseline/bold-ui-2026-10-07/bold-expired-pizza.png), [menu chính](ui-baseline/bold-ui-2026-10-07/bold-main-menu.png). Chi tiết tại [spec](spec-bold-ui-and-menu-cleanup.md).
+
 ### Dự báo và giỏ Chợ — yêu cầu 2026-10-06
 
 Người dùng yêu cầu gợi ý mua/nguyên liệu khóa/mua tất cả, sau đó yêu cầu Mua lẻ mua ngay không popup. Giữ header/năm tab/filter/frame/list321×318/hàng53px/footer mở quán. Header trong thân hiện tổng giỏ và dự phòng/giá ngày/ưu đãi; vùng chữ dưới list thêm hai nút Gợi ý mua hôm nay/Mua tất cả. Không đổi số dòng hoặc vị trí nút mở ngày. Ô khóa giữ icon nguyên liệu, tên và icon khóa/tên công thức cần mua; không có stepper/Mua khả dụng. Quantity0 cho bỏ dòng khỏi giỏ. Mua tất cả dùng khung xác nhận chung có danh sách cuộn, tổng/số dư/Hủy/Mua tất cả. Mua lẻ nhập Kho ngay, không popup hoặc mở ca.

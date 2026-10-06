@@ -2,6 +2,7 @@ import type Phaser from 'phaser';
 import {HUB_THEME} from './HubTheme';
 import type {HubHit,HubTab} from './HubCanvasUI';
 import {CAMPAIGN_LAST_DAY} from '../config/campaignRules';
+import {uiCanvas} from './UiRaster';
 
 export const HUB_HEADER_ART={key:'shared-hub-header',url:'assets/references/Giao diện game pizza gỗ tối giản.png'};
 let serial=0;
@@ -41,7 +42,7 @@ export function paintHubNavigation(scene:Phaser.Scene,ctx:CanvasRenderingContext
 }
 /** Retained background/header layer; content renderers keep their existing coordinates. */
 export function drawHubShell(scene:Phaser.Scene,layer:Phaser.GameObjects.Container,hit:HubHit,input:{title:string;subtitle:string;cash:number;pause:()=>void;active:HubTab;tab:(id:HubTab)=>void}):void{
-  const key=`hub-shell-${serial++}`,texture=scene.textures.createCanvas(key,360,640)!;
+  const key=`hub-shell-${serial++}`,texture=uiCanvas(scene,key,360,640);
   paintHubWood(texture.context);paintHubHeader(scene,texture.context,hit,input);paintHubNavigation(scene,texture.context,hit,input.active,input.tab);texture.refresh();
-  const image=scene.add.image(0,0,key).setOrigin(0);layer.add(image);image.once('destroy',()=>scene.textures.remove(key));
+  const image=scene.add.image(0,0,key).setOrigin(0).setDisplaySize(360,640);layer.add(image);image.once('destroy',()=>scene.textures.remove(key));
 }
