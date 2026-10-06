@@ -433,3 +433,5 @@ Người dùng yêu cầu triển khai bảy asset âm thanh. Giữ nguyên geom
 ### Gợi ý nguyên liệu và nhãn chai sốt — yêu cầu 2026-10-06
 
 Ô nguyên liệu còn thiếu của pizza trong đơn đang chọn có viền vàng và nền sáng; bỏ highlight khi đã thêm, tính lại khi bỏ/xóa nguyên liệu hoặc đổi đơn. Các ô khác giữ nguyên và vẫn dùng được theo luật hiện có. Không dấu tích hoặc màu xanh/đỏ. Năm chai sốt có nhãn giấy kem trên thân, tên đầy đủ bên dưới. Giữ art chai, geometry và hitbox; chỉ thay phần được yêu cầu. Xem [spec](spec-ingredient-hints-and-sauce-labels.md).
+
+Theo yêu cầu chỉnh tiếp: tên đầy đủ của sốt chuyển từ y+31 lên y+27 trong ô, giới hạn chiều rộng w−8 và chiều cao12px, không tràn mép dưới. Nhãn thân chai, highlight và hitbox giữ nguyên. Xem [spec](spec-customer-density-and-sauce-names.md).

@@ -9,11 +9,11 @@ import {deliverySchedule,type DeliveryScheduleSlot} from '../config/deliveryEven
 it('forecasts day one deterministically, adds reserve once to shared needs and subtracts usable inventory',()=>{
   const r=new CozyRuntime(false,true),before=r.exportCheckpoint();
   const forecast=r.marketForecast;
-  expect(forecast.day).toBe(1);expect(forecast.portions.reduce((n,p)=>n+p.quantity,0)).toBe(6);
-  expect(forecast.rows.find(row=>row.ingredient==='dough')).toMatchObject({needed:7,available:0,missing:7});
+  expect(forecast.day).toBe(1);expect(forecast.portions.reduce((n,p)=>n+p.quantity,0)).toBe(10);
+  expect(forecast.rows.find(row=>row.ingredient==='dough')).toMatchObject({needed:11,available:0,missing:11});
   expect(r.marketForecast).toEqual(forecast);expect(r.exportCheckpoint()).toEqual(before);
   expect(r.buy('dough',2,'stock')).toBe(true);
-  expect(r.marketForecast.rows.find(row=>row.ingredient==='dough')).toMatchObject({needed:7,available:2,missing:5});
+  expect(r.marketForecast.rows.find(row=>row.ingredient==='dough')).toMatchObject({needed:11,available:2,missing:9});
 });
 
 it('blends only recent detailed history while preserving scheduled count and excluding disabled recipes',()=>{

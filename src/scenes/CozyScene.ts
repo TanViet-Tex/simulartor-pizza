@@ -511,7 +511,8 @@ export class CozyScene extends Phaser.Scene {
       this.graphics();this.art.g.fillStyle(0xfff1d4,1).fillRoundedRect(x+w/2-7,y+15,14,9,2);
       const bottleLabel=this.label(x+w/2,y+16,['CÀ','KEM','BBQ','PESTO','CAY'][i],9,ink);
       bottleLabel.setScale(Math.min(12/bottleLabel.width,6/bottleLabel.height));
-      this.label(x+w/2,y+31,name,9,available?cream:muted);
+      const sauceName=this.label(x+w/2,y+27,name,9,available?cream:muted);
+      sauceName.setScale(Math.min(1,(w-8)/sauceName.width,12/sauceName.height));
       this.hit(id,x,y,w,h,available&&(assembly||this.runtime.productionActive&&this.runtime.available(id)<=0),()=>this.useIngredient(id));if(this.runtime.productionActive)this.stockBadge(id,x,y,w);
     });
   }

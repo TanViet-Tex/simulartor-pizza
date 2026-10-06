@@ -61,6 +61,13 @@ test('missing ingredient hints follow additions, removal, clear and the selected
   await expect.poll(hints).toEqual(['dough','sauce','cheese']);
   const labels=JSON.parse((await canvas.getAttribute('data-labels'))!);
   for(const text of ['CÀ','KEM','BBQ','PESTO','CAY'])expect(labels.some((label:{text:string})=>label.text===text)).toBe(true);
+  const layout=JSON.parse((await canvas.getAttribute('data-kitchen-layout'))!);
+  for(const [index,name] of ['Cà chua','Kem trắng','BBQ','Pesto','Sốt cay'].entries()){
+    const cell=layout.ingredients[index],label=labels.find((label:{text:string;y:number})=>label.text===name&&label.y>=cell.y);
+    expect(label.y+label.height,name).toBeLessThanOrEqual(cell.y+cell.h-2);
+    expect(label.x,name).toBeGreaterThanOrEqual(cell.x+3);
+    expect(label.x+label.width,name).toBeLessThanOrEqual(cell.x+cell.w-3);
+  }
   await page.screenshot({path:info.outputPath('ingredient-hints-and-sauce-labels.png')});
   await tap(page,'dough');await expect.poll(hints).toEqual(['sauce','cheese']);
   await tap(page,'dough');await expect.poll(hints).toEqual(['dough','sauce','cheese']);

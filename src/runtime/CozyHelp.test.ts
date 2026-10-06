@@ -3,16 +3,26 @@ import {CozyRuntime,validateHelpState} from './CozyRuntime';
 import {validateHelpCheckpoint} from '../domain/CozyHelp';
 import {recipeIngredients} from '../domain/CozyStock';
 import type {ScheduleFactory} from '../config/cozySchedule';
+import {helpOfferEligible} from '../domain/HelpOffers';
+const helpSeed=Array.from({length:100},(_,i)=>i).find(helpOfferEligible)!;
 function time(r:CozyRuntime,s:number){for(let i=0;i<Math.round(s*20);i++){r.advance(50);if(r.bargainPending)r.resolveBargain(false);}}
 function buy(r:CozyRuntime,q=2){for(const id of ['dough','sauce','cheese'] as const)r.buy(id,q);}
 function serve(r:CozyRuntime,quality:'good'|'raw'|'burnt'='good'){
   const id=r.selectedTicketId;for(const ingredient of recipeIngredients(r.selectedRecipe))r.dispatch({type:'ingredient',ingredient});
-  expect(r.dispatch({type:'bake'})).toBe(true);time(r,quality==='raw'?1:quality==='burnt'?6:3);
+  expect(r.dispatch({type:'bake'})).toBe(true);time(r,quality==='raw'?1:quality==='burnt'?r.bakeTiming.perfectEnd+.05:r.bakeTiming.perfectStart);
   if(quality!=='burnt')r.dispatch({type:'extract'});
   expect(r.dispatch({type:'deliver',commandId:'serve-'+id})).toBe(true);if(r.deliveryPending)r.confirmDelivery();
   if(r.shopPhase==='delivered')r.continueShift();return id;
 }
-function day2(){const r=new CozyRuntime(false,true);buy(r,3);r.openShop();time(r,10);serve(r);r.closeDay();r.openNextDay();time(r,10);return r;}
+function day2(seed=helpSeed){const r=new CozyRuntime(false,true,{eventSeed:seed});buy(r,3);r.openShop();time(r,10);serve(r);r.closeDay();r.openNextDay();time(r,10);return r;}
+it('skips help in non-selected campaigns without losing the first commercial visit',()=>{
+  const seed=Array.from({length:100},(_,i)=>i).find(seed=>!helpOfferEligible(seed))!;
+  const r=day2(seed);expect(r.helpPending).toBeNull();expect(r.pauses).not.toContain('help');
+  expect(r.tickets[0]).toMatchObject({help:false,kind:'hurry'});expect(r.shiftClock.total).toBe(15);
+  r.closeDay();const checkpoint=r.exportCheckpoint(),restored=CozyRuntime.restoreCheckpoint(checkpoint,false)!;
+  expect(restored.campaignEvents.seed).toBe(seed);expect(helpOfferEligible(restored.campaignEvents.seed)).toBe(false);
+  expect(restored.marketForecast).toEqual(r.marketForecast);
+});
 it('gates actual Day2 help, pauses before ticket/reservation, declines without economic consequences',()=>{
   const r=day2(),cash=r.state.cash,rep=r.customerProgress,stock=r.stockLots,xp=r.progression.xp;
   expect(r.helpPending).toMatchObject({canAccept:true});expect(r.tickets).toEqual([]);expect(r.pauses).toContain('help');
@@ -48,12 +58,12 @@ it.each(['expired','closed'] as const)('resolves %s help failure once and releas
   expect(r.helpState.outcome).toBe('failed');
 });
 it('disables help with exact stock or omitted preference reason, preserves nested pause ownership',()=>{
-  const r=new CozyRuntime(false,true);buy(r,1);r.openShop();time(r,10);serve(r);r.closeDay();buy(r,1);r.openNextDay();time(r,10);
+  const r=new CozyRuntime(false,true,{eventSeed:helpSeed});buy(r,1);r.openShop();time(r,10);serve(r);r.closeDay();buy(r,1);r.openNextDay();time(r,10);
   const hidden=r.acquirePause('visibility'),second=r.acquirePause('help');expect(r.resolveHelp(true)).toBe(false);hidden.release();expect(r.resolveHelp(false)).toBe(false);second.release();
   expect(r.resolveHelp(true)).toBe(true);expect(r.pauses).toEqual([]);
   const omitted=day2();omitted.resolveHelp(false);omitted.closeDay(); // state is detached even after closure
   const view=omitted.helpState;view.claims.push('bad');expect(omitted.helpState.claims).toEqual([]);
-  const s=new CozyRuntime(false,true);buy(s,1);s.openShop();time(s,10);serve(s);s.closeDay();s.selectRecipe('mushroom');s.buy('mushroom',1);buy(s,1);s.configureMenu('cheese',100,false);s.openNextDay();time(s,10);
+  const s=new CozyRuntime(false,true,{eventSeed:helpSeed});buy(s,1);s.openShop();time(s,10);serve(s);s.closeDay();s.selectRecipe('mushroom');s.buy('mushroom',1);buy(s,1);s.configureMenu('cheese',100,false);s.openNextDay();time(s,10);
   expect(s.helpPending).toMatchObject({canAccept:false});expect(s.helpPending!.reason).toContain('thực đơn');expect(s.resolveHelp(true)).toBe(false);expect(s.resolveHelp(false)).toBe(true);
 });
 it('Day3 thanks grants twenty cash once separately from sales and XP',()=>{
@@ -70,11 +80,11 @@ it('wrong commercial pizza given to help fails once and books its actual cost as
   expect(r.helpState).toMatchObject({outcome:'failed',giftCost:21});expect(r.customerProgress.relationship).toBe(0);expect(r.progression.xp).toBe(xp);r.closeDay();
   expect(r.daySummary).toMatchObject({cost:21,revenue:0,delivered:0,accounts:{giftCost:21}});expect(r.daySummary!.reviews.some(review=>review.name==='Linh')).toBe(false);
 });
-it('stock shortage disables help and a relationship already at zero cannot go negative',()=>{
+it('permits help before stocking ingredients and a relationship already at zero cannot go negative',()=>{
   const schedule:ScheduleFactory=day=>({day,duration:180,grace:120,slots:day===1?[{id:'regular',at:0,kind:'regular',opportunity:'commercial',commercialOrdinal:1,takeaway:false}]:[{id:'other',at:0,kind:'picky',opportunity:'commercial',commercialOrdinal:1,takeaway:false},{id:'help',at:1,kind:'regular',opportunity:'help',commercialOrdinal:null,takeaway:false}]});
   const r=new CozyRuntime(false,true,{schedule});buy(r,2);r.openShop();serve(r,'raw');r.closeDay();r.openNextDay();time(r,1);
-  expect(r.helpPending).toMatchObject({canAccept:false});expect(r.helpPending!.reason).toContain('Còn thiếu');expect(r.resolveHelp(true)).toBe(false);r.resolveHelp(false);expect(r.customerProgress.relationship).toBe(0);
-  const zero=new CozyRuntime(false,true);buy(zero,2);zero.openShop();time(zero,10);serve(zero,'raw');zero.closeDay();zero.openNextDay();time(zero,10);zero.resolveHelp(true);serve(zero,'raw');expect(zero.helpState.outcome).toBe('failed');expect(zero.customerProgress.relationship).toBe(0);
+  expect(r.helpPending).toMatchObject({canAccept:true,reason:''});expect(r.resolveHelp(true)).toBe(true);expect(r.customerProgress.relationship).toBe(0);
+  const zero=new CozyRuntime(false,true,{schedule});buy(zero,2);zero.openShop();serve(zero,'raw');zero.closeDay();zero.openNextDay();time(zero,1);zero.resolveHelp(true);zero.selectTicket(zero.tickets.find(t=>t.help)!.id);serve(zero,'raw');expect(zero.helpState.outcome).toBe('failed');expect(zero.customerProgress.relationship).toBe(0);
 });
 it('a help pizza sold to a commercial ticket is consumed cost but no longer gift cost',()=>{
   const schedule:ScheduleFactory=day=>({day,duration:180,grace:120,slots:day===1?[{id:'regular',at:0,kind:'regular',opportunity:'commercial',commercialOrdinal:1,takeaway:false}]:[{id:'help',at:0,kind:'regular',opportunity:'help',commercialOrdinal:null,takeaway:false},{id:'other',at:1,kind:'picky',opportunity:'commercial',commercialOrdinal:1,takeaway:false}]});
@@ -89,8 +99,8 @@ it('validates detached checkpoint choices and active views rather than accepting
   expect(validateHelpState({...valid,ticketId:null,offer:null,giftCost:0,thanksPending:false})).not.toBeNull();
   expect(validateHelpState({...valid,outcome:'pending',ticketId:null,offer:null,giftCost:0,thanksPending:false})).toBeNull();
 });
-it('explains full capacity at the help choice and never reserves a fourth ticket',()=>{
-  const schedule:ScheduleFactory=day=>({day,duration:180,grace:120,slots:day===1?[{id:'regular',at:0,kind:'regular',opportunity:'commercial',commercialOrdinal:1,takeaway:false}]:[0,1,2,3].map(i=>({id:'slot-'+i,at:i,kind:i===3?'regular':'picky',opportunity:i===3?'help':'commercial',commercialOrdinal:i===3?null:i+1,takeaway:false}))});
-  const r=new CozyRuntime(false,true,{schedule,resolveRecipe:()=> 'cheese'});buy(r,5);r.openShop();serve(r);r.closeDay();r.openNextDay();time(r,3);
-  expect(r.tickets).toHaveLength(3);expect(r.helpPending).toMatchObject({canAccept:false});expect(r.helpPending!.reason).toContain('3 phiếu');expect(r.resolveHelp(true)).toBe(false);expect(r.reserved('dough')).toBe(3);r.resolveHelp(false);
+it('explains full capacity at the help choice and never creates a fifth ticket',()=>{
+  const schedule:ScheduleFactory=day=>({day,duration:180,grace:120,slots:day===1?[{id:'regular',at:0,kind:'regular',opportunity:'commercial',commercialOrdinal:1,takeaway:false}]:[0,1,2,3,4].map(i=>({id:'slot-'+i,at:i,kind:i===4?'regular':'picky',opportunity:i===4?'help':'commercial',commercialOrdinal:i===4?null:i+1,takeaway:false}))});
+  const r=new CozyRuntime(false,true,{schedule,resolveRecipe:()=> 'cheese'});buy(r,5);r.openShop();serve(r);r.closeDay();r.openNextDay();time(r,4);
+  expect(r.tickets).toHaveLength(4);expect(r.helpPending).toMatchObject({canAccept:false});expect(r.helpPending!.reason).toContain('Hàng chờ đã đầy');expect(r.resolveHelp(true)).toBe(false);expect(r.reserved('dough')).toBe(0);r.resolveHelp(false);
 });

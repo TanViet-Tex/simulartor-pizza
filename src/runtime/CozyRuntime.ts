@@ -4,6 +4,7 @@ import {LEGACY_EVENT_SEED} from '../config/campaignEvents';
 import {VIP_RULES} from '../config/vipCustomers';
 import {isVipArrival,vipQualifies,type VipReceipt,type VipRoll} from '../domain/VipCustomers';
 import {chooseCampaignEvent,validCampaignEventSeed,type CampaignLossEvent,type CampaignEventRoll} from '../domain/CampaignEvents';
+import {helpOfferEligible} from '../domain/HelpOffers';
 import {CAMPAIGN_LAST_DAY} from '../config/campaignRules';
 import {cozyCampaignResults,type CozyCampaignResults} from '../domain/CozyCampaignResults';
 import {shopItem} from '../config/shopCatalog';
@@ -435,7 +436,7 @@ export class CozyRuntime {
   }
   get marketForecast(){
     const day=this.preparationDay,menu=this.menuRecipes;
-    let schedule=validateCozySchedule((this.scheduleDependencies.schedule??threeDaySchedule)(day,{regularDay1Stars:this.regularDay1Stars,regularLatestStars:this.regularLatestStars,helpSucceeded:this.help.outcome==='succeeded',referral:day>=4?this.reputation>=55:!!this.referral?.eligible}));
+    let schedule=validateCozySchedule((this.scheduleDependencies.schedule??threeDaySchedule)(day,{regularDay1Stars:this.regularDay1Stars,regularLatestStars:this.regularLatestStars,helpSucceeded:this.help.outcome==='succeeded',helpOfferEligible:helpOfferEligible(this.eventSeed),referral:day>=4?this.reputation>=55:!!this.referral?.eligible}));
     if(!this.scheduleDependencies.schedule)schedule=deliverySchedule(schedule,this.appEnabled&&day>=DELIVERY_RULES.unlockDay);
     schedule=shopSchedule(schedule,this.shopState.effects.visitors);
     const scheduled:Partial<Record<StockRecipe,number>>={};
@@ -493,7 +494,7 @@ export class CozyRuntime {
     if (!this.saveGuard() || !this.productionActive || this.reasons.size || this.phase !== 'preparation' || this.currentDay>this.campaignLastDay || this.closedDays.has(this.currentDay)) return false;
     if (this.shiftOpen) return this.returnToOrders();
     if (!this.canOpen) return this.shopFeedback(this.missingReason);
-    this.schedule=validateCozySchedule((this.scheduleDependencies.schedule??threeDaySchedule)(this.currentDay,{regularDay1Stars:this.regularDay1Stars,regularLatestStars:this.regularLatestStars,helpSucceeded:this.help.outcome==='succeeded',referral:this.currentDay>=4?this.reputation>=55:!!this.referral?.eligible}));
+    this.schedule=validateCozySchedule((this.scheduleDependencies.schedule??threeDaySchedule)(this.currentDay,{regularDay1Stars:this.regularDay1Stars,regularLatestStars:this.regularLatestStars,helpSucceeded:this.help.outcome==='succeeded',helpOfferEligible:helpOfferEligible(this.eventSeed),referral:this.currentDay>=4?this.reputation>=55:!!this.referral?.eligible}));
     this.shiftEvent=deliveryEvent(this.currentDay);this.shiftRoles=this.staff.acquired.map(a=>a.role);this.shiftStaff=this.shiftRoles.includes('delivery')||!!this.scheduleDependencies.deliveryStaffAvailable?.();this.staffJobs.clear();this.payrollWarning='';this.shiftApp=this.appEnabled&&this.currentDay>=5;if(!this.scheduleDependencies.schedule)this.schedule=deliverySchedule(this.schedule,this.shiftApp);
     this.frozenShopEffects=this.shopState.effects;this.schedule=shopSchedule(this.schedule,this.frozenShopEffects.visitors);
     const history=this.reports.flatMap(report=>report.campaignEvent?[{...report.campaignEvent,day:report.day}]:[]);

@@ -2,7 +2,7 @@ import type {RecipeId} from './recipeCatalog';
 import type {CustomerKind} from './ordinaryCustomers';
 
 export type ScheduleRecipe=RecipeId;
-export type ScheduleEligibility=Readonly<{regularDay1Stars:number|null;regularLatestStars:number|null;helpSucceeded:boolean;referral:boolean}>;
+export type ScheduleEligibility=Readonly<{regularDay1Stars:number|null;regularLatestStars:number|null;helpSucceeded:boolean;referral:boolean;helpOfferEligible?:boolean}>;
 export type ScheduleSlot=Readonly<{id:string;at:number;kind:CustomerKind;opportunity:'commercial'|'help'|'referral';commercialOrdinal:number|null;takeaway:boolean}>;
 export type CozySchedule=Readonly<{day:number;duration:number;grace:number;slots:readonly ScheduleSlot[]}>;
 export type ScheduleFactory=(day:number,eligibility:ScheduleEligibility)=>CozySchedule;
@@ -19,9 +19,10 @@ export function validateCozySchedule(input:CozySchedule):CozySchedule {
 }
 
 const DAYS=Object.freeze([
-  Object.freeze({duration:180,times:Object.freeze([10,35,60,85,110,135])}),
-  Object.freeze({duration:210,times:Object.freeze(Array.from({length:8},(_,i)=>10+22*i))}),
-  Object.freeze({duration:240,times:Object.freeze(Array.from({length:10},(_,i)=>10+20*i))}),
+  Object.freeze({duration:180,times:Object.freeze(Array.from({length:10},(_,i)=>10+16*i))}),
+  Object.freeze({duration:210,times:Object.freeze(Array.from({length:15},(_,i)=>10+12*i))}),
+  Object.freeze({duration:240,times:Object.freeze(Array.from({length:20},(_,i)=>10+11*i))}),
+  Object.freeze({duration:240,times:Object.freeze(Array.from({length:25},(_,i)=>10+9*i))}),
 ]);
 
 /** The recipe cycle is the published GDD design proposal, not a change to menu artwork. */
@@ -35,15 +36,15 @@ export function resolveScheduleRecipe<R extends ScheduleRecipe>(slot:ScheduleSlo
 }
 
 export const threeDaySchedule:ScheduleFactory=(day,eligibility)=>{
-  const definition=DAYS[Math.min(2,day-1)];if(!definition||!Number.isSafeInteger(day)||day>1000000)throw new Error('Invalid campaign day');
+  const definition=DAYS[day>=8?3:Math.min(2,day-1)];if(!definition||!Number.isSafeInteger(day)||day>1000000)throw new Error('Invalid campaign day');
   let commercialOrdinal=0;
   const slots:ScheduleSlot[]=definition.times.map((at,i)=>{
-    const help=day===2&&i===0&&eligibility.regularDay1Stars!==null&&eligibility.regularDay1Stars>=3;
+    const help=day===2&&i===0&&eligibility.helpOfferEligible!==false&&eligibility.regularDay1Stars!==null&&eligibility.regularDay1Stars>=3;
     const returns=day>=3&&i===0&&(eligibility.helpSucceeded||(eligibility.regularLatestStars!==null&&eligibility.regularLatestStars>=4));
-    const kind:CustomerKind=day===1?(['regular','picky','bargain','picky','bargain','bargain'] as const)[i]:i===0?(help||returns?'regular':'bargain'):(['hurry','picky','bargain'] as const)[(i-1)%3];
+    const kind:CustomerKind=i===0?(day===1||help||returns?'regular':'hurry'):i%10===9?'bargain':i%2===1?'hurry':'picky';
     if(!help)commercialOrdinal++;
     return {id:`day-${day}-slot-${i+1}`,at,kind,opportunity:help?'help':'commercial',commercialOrdinal:help?null:commercialOrdinal,takeaway:!help&&commercialOrdinal%3===0};
   });
   if(day>=3&&eligibility.referral){commercialOrdinal++;slots.push({id:`day-${day}-referral`,at:210,kind:'hurry',opportunity:'referral',commercialOrdinal,takeaway:commercialOrdinal%3===0});}
-  return validateCozySchedule({day,duration:definition.duration,grace:120,slots});
+  return validateCozySchedule({day,duration:definition.duration,grace:120,slots:slots.sort((a,b)=>a.at-b.at)});
 };

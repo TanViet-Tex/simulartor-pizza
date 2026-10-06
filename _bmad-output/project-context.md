@@ -36,6 +36,10 @@ _Tệp này chứa các quy tắc và patterns quan trọng mà AI agent phải 
 
 ## Critical Implementation Rules
 
+### Lịch khách và giảm thông báo — 2026-10-06
+
+Theo yêu cầu mới, lượt nền ngày1=10, ngày2=15, ngày3–7=20, ngày8–30=25. Thời lượng ca180/210/240s và biến động mưa/cao điểm/lễ hội/app/giới thiệu/bonus Quán giữ nguyên; đây là lượt dự kiến, không đảm bảo nhận đủ khi hàng chờ đầy/menu không bán. Lịch bắt đầu10s, khoảng cách16/12/11/9s; lượt giới thiệu210s chèn đúng thứ tự. Mặc cả chỉ tại index9/19 (khoảng10%). Linh ngày2 vẫn cần đánh giá ngày1≥3, nay thêm cơ hội25% theo channel hash seed save riêng, dùng đồng nhất ở lịch thật/dự báo; không đổi khi reload, không thêm field save hay thay thưởng/luật nhận từ chối. Nguồn [spec](implementation-artifacts/spec-customer-density-and-sauce-names.md).
+
 ### Dự báo Chợ, quyền nguyên liệu và giỏ mua — 2026-10-06
 
 Chợ dự báo ngày sắp mở từ lịch khách thực (cả sự kiện/app/bonus Quán), menu đang bán đã sở hữu và tối đa3báo cáo chi tiết gần nhất; ngày đầu/thiếu dữ liệu dùng lịch mặc định. `marketForecast.ts` cấu hình dự phòng10%, historyWeight50%; cộng nhu cầu nguyên liệu trước dự phòng, trừ kho usable đúng ngày/còn hạn một lần. Gợi ý chỉ điền lượng thiếu, chỉnh0–100 và không tự mua/mở ca.
