@@ -1,3 +1,4 @@
+import type {HubDrag} from '../presentation/HubListWindow';
 import {drawModalBackdrop} from '../presentation/ModalBackdrop';
 import {drawSettingsPanel} from '../presentation/SettingsPanel';
 import {RECIPE_CATALOG,recipeDefinition} from '../config/recipeCatalog';
@@ -78,7 +79,7 @@ export class CozyScene extends Phaser.Scene {
   private purchaseSerial=0;
   private stockFilter:StockFilter='all';
   private stockOffset=0;
-  private stockDrag={active:false,startY:0,offset:0};
+  private stockDrag:HubDrag={active:false,startY:0,offset:0};
   private stockLow:number|null=null;
   private stockExpiry:number|null=null;
   private shopMenuPage=0;
@@ -98,7 +99,7 @@ export class CozyScene extends Phaser.Scene {
   private stockPortions:Partial<Record<StockRecipe,number>>={};
   private marketFilter:MarketFilter='all';
   private marketOffset=0;
-  private marketDrag={active:false,startY:0,offset:0};
+  private marketDrag:HubDrag={active:false,startY:0,offset:0};
   private marketQuantities:Partial<Record<StockIngredient,number>>={};
   private marketQuantityEditor?:{id:StockIngredient;input:MarketQuantityInput;lease:PauseLease};
   private marketPurchase:{id:StockIngredient;quantity:number;total:number;commandId:string}|null=null;
@@ -244,7 +245,21 @@ export class CozyScene extends Phaser.Scene {
     modalText(this,this.layer,40,y,280,height,value,size,color,this.textScale);
     if(this.textScale>1&&!this.notification)this.label(180,y+height+2,'Vuốt phần chữ để đọc tiếp',10,wood);
   }
+  private hubTap?:{id:string;pointerId:number};
+  private listHit(id:string):boolean{
+    if(id.startsWith('stock-item-'))return true;
+    const row=/^market-(quantity|minus|plus|buy)-(.+)$/.exec(id);
+    return !!row&&STOCK_INGREDIENTS.includes(row[2] as StockIngredient);
+  }
+  private syncListHits(render:()=>void):void{
+    this.controls=this.controls.filter(c=>!this.listHit(c.id));this.visibleActions=this.visibleActions.filter(c=>!this.listHit(c.id));
+    for(const id of this.tapRects.keys())if(this.listHit(id))this.tapRects.delete(id);
+    render();this.game.canvas.dataset.controls=JSON.stringify(this.controls);
+  }
   private hit(id:string,x:number,y:number,w:number,h:number,enabled:boolean,action:()=>void):void{
+    const list=this.listHit(id),top=id.startsWith('stock-item-')?223:219,bottom=id.startsWith('stock-item-')?535:537;
+    const rawY=y,rawH=h;
+    if(list){y=Math.max(top,y);h=Math.max(0,Math.min(bottom,rawY+rawH)-y);enabled=enabled&&h>0;}
     this.tapRects.set(id,{x,y,w,h});
     if(this.campaignSession&&['loading','saving','error','recovery'].includes(this.campaignSession.view.state))enabled=enabled&&(['pause','mute'].includes(id)||id.startsWith('summary-tab-')||id.startsWith('summary-figure-')||id==='summary-statement-close'||id.startsWith('save-'));
     if(this.runtime.productionActive&&!this.runtime.tutorialActive&&this.runtime.shopPhase!=='making'&&this.runtime.shopPhase!=='delivered'&&!this.runtime.pauses.length){
@@ -258,15 +273,26 @@ export class CozyScene extends Phaser.Scene {
     const scale=Math.min((canvasBounds.width||360)/360,(canvasBounds.height||640)/640),min=Math.ceil(UI_THEME.minTouch/scale);
     const width=Math.max(w,min),height=Math.max(h,min);
     x=Math.max(0,Math.min(360-width,x-(width-w)/2));y=Math.max(0,Math.min(640-height,y-(height-h)/2));w=width;h=height;
+    if(list){const expandedBottom=Math.min(bottom,y+h);y=Math.max(top,y);h=Math.max(0,expandedBottom-y);}
     this.controls.push({id,x,y,width:w,height:h,enabled});
     // Keep input objects alive across clock redraws so a timed tap cannot fall
     // between Phaser removing the previous region and registering its replacement.
     let zone=this.hitZones.get(id);
-    if(!zone){zone=this.add.zone(x,y,w,h).setOrigin(0).setDepth(10).setInteractive({useHandCursor:true});this.hitZones.set(id,zone);}
+    if(!zone){zone=this.add.zone(x,y,w,h).setOrigin(0).setDepth(10).setInteractive(new Phaser.Geom.Rectangle(0,0,w,h),Phaser.Geom.Rectangle.Contains);this.hitZones.set(id,zone);}
     zone.setPosition(x,y).setSize(w,h);zone.input?.hitArea.setTo(0,0,w,h);
     if(zone.input)zone.input.enabled=true;
+    if(list&&rawY+rawH<=top||list&&rawY>=bottom)zone.disableInteractive();
     if(zone.listenerCount('pointerdown')||zone.listenerCount('pointerup'))return;
-    zone.on(id.startsWith('stock-item-')?'pointerup':'pointerdown',(pointer:Phaser.Input.Pointer)=>{
+    if(list)zone.on('pointerdown',(pointer:Phaser.Input.Pointer)=>{
+      const target=[...this.tapRects].find(([key,c])=>this.listHit(key)&&pointer.x>=c.x&&pointer.x<=c.x+c.w&&pointer.y>=c.y&&pointer.y<=c.y+c.h)?.[0]??id;
+      this.hubTap={id:target,pointerId:pointer.id};
+    });
+    zone.on(list?'pointerup':'pointerdown',(pointer:Phaser.Input.Pointer)=>{
+      if(list){const drag=id.startsWith('stock-item-')?this.stockDrag:this.marketDrag;
+        if(!drag.controller?.canTap(pointer.id)||this.hubTap?.pointerId!==pointer.id)return;
+        const target=[...this.tapRects].find(([key,c])=>this.listHit(key)&&pointer.x>=c.x&&pointer.x<=c.x+c.w&&pointer.y>=c.y&&pointer.y<=c.y+c.h)?.[0]??id;
+        if(target!==this.hubTap.id)return;this.hubTap=undefined;
+      }
       // On shorter portrait screens enlarged touch padding may overlap. The
       // visible button beneath the finger always wins over a neighbour's padding.
       const touched=[...this.tapRects].find(([key,c])=>this.controls.some(active=>active.id===key)&&pointer.x>=c.x&&pointer.x<=c.x+c.w&&pointer.y>=c.y&&pointer.y<=c.y+c.h);
@@ -706,7 +732,7 @@ export class CozyScene extends Phaser.Scene {
       const reports=this.runtime.completedReports,previous=summary?reports.find(r=>r.day===summary.day-1):undefined;
       const tab=(id:'summary'|'market'|'stock'|'shop'|'missions')=>{this.summaryTab=id;this.stockDrag.active=false;this.marketDrag.active=false;this.dirty=true;};
       if(this.summaryTab==='stock'){
-        new ReferenceStock(this,this.layer,(...args)=>this.hit(...args)).draw({day:this.runtime.preparationDay,cash:this.runtime.state.cash,rows:stockRows(this.runtime.stockLots,this.runtime.preparationDay,id=>this.runtime.reserved(id)),filter:this.stockFilter,low:this.stockLow,expiryDays:this.stockExpiry,offset:this.stockOffset,drag:this.stockDrag,canScroll:()=>this.runtime.pauses.length===0,scroll:n=>{this.stockOffset=n;this.dirty=true;},setFilter:f=>this.setStockFilter(f),detail:id=>this.openStockLot(id),suggestions:()=>this.openStockPlanner(),market:()=>tab('market'),tab,pause:()=>this.hold('user')});return;
+        new ReferenceStock(this,this.layer,(...args)=>this.hit(...args),render=>this.syncListHits(render)).draw({day:this.runtime.preparationDay,cash:this.runtime.state.cash,rows:stockRows(this.runtime.stockLots,this.runtime.preparationDay,id=>this.runtime.reserved(id)),filter:this.stockFilter,low:this.stockLow,expiryDays:this.stockExpiry,offset:this.stockOffset,drag:this.stockDrag,canScroll:()=>this.runtime.pauses.length===0,scroll:n=>{this.stockOffset=n;},setFilter:f=>this.setStockFilter(f),detail:id=>this.openStockLot(id),suggestions:()=>this.openStockPlanner(),market:()=>tab('market'),tab,pause:()=>this.hold('user')});return;
       }
       if(this.summaryTab==='shop'){
         new ReferenceShop(this,this.layer,(...args)=>this.hit(...args)).draw({staff:this.runtime.staffState,employee:role=>this.openStaffHire(role),shop:this.runtime.shopState,item:id=>this.openShopItem(id),app:()=>this.openDeliveryApp('settings'),deliveryApp:{...this.runtime.deliveryApp,eventName:this.runtime.deliveryApp.nextEvent.name},day:this.runtime.preparationDay,cash:this.runtime.state.cash,page:this.shopPage,canAct:this.runtime.canSetPrices,ovenLevel:this.runtime.ovenLevel,queueCapacity:this.runtime.queueCapacity,ovenPrice:this.runtime.upgradePrice('oven'),queuePrice:this.runtime.upgradePrice('queue'),menuPage:this.shopMenuPage,pageMenu:page=>{this.shopMenuPage=page;this.dirty=true;},buy:id=>this.openRecipePurchase(id),recipes:RECIPE_CATALOG.map(r=>r.id).map(id=>({id,name:recipeName(id),price:this.runtime.customerProgress.prices[id],cost:recipeIngredients(id).reduce((n,item)=>n+this.runtime.price(item),0),enabled:this.runtime.menuRecipes.includes(id),owned:this.runtime.ownedRecipes.includes(id),purchasePrice:recipeDefinition(id).purchasePrice})),open:page=>{this.shopPage=page;this.dirty=true;},price:id=>this.choosePrice(id),upgrade:kind=>this.openHubUpgrade(kind),tab,pause:()=>this.hold('user'),footer});return;
@@ -715,7 +741,7 @@ export class CozyScene extends Phaser.Scene {
         new ReferenceMissions(this,this.layer,(...args)=>this.hit(...args)).draw({day:this.runtime.preparationDay,cash:this.runtime.state.cash,progress:this.runtime.progression,ending:!!summary?.ending,tab,pause:()=>this.hold('user'),footer});return;
       }
       if(this.summaryTab==='market'){
-        new ReferenceMarket(this,this.layer,(...args)=>this.hit(...args)).draw({unitPrice:id=>this.runtime.price(id),supplier:this.runtime.supplier,day:this.runtime.preparationDay,cash:this.runtime.state.cash,canBuy,readOnlyReason:summary?.ending?'Chặng bán hàng đã kết thúc · Chợ chỉ để xem':'Mua đang bị khóa · Hãy xử lý lưu tiến độ',canScroll:()=>this.runtime.pauses.length===0,filter:this.marketFilter,offset:this.marketOffset,drag:this.marketDrag,quantities:this.marketQuantities,available:id=>this.runtime.available(id),quantity:(id,delta)=>{this.marketQuantities[id]=Phaser.Math.Clamp((this.marketQuantities[id]??1)+delta,1,100);this.dirty=true;},buy:id=>this.openMarketPurchase(id),editQuantity:id=>this.openMarketQuantity(id),scroll:offset=>{this.marketOffset=offset;this.dirty=true;},setFilter:filter=>{this.marketFilter=filter;this.marketOffset=0;this.dirty=true;},tab:id=>{this.summaryTab=id;this.dirty=true;},pause:()=>this.hold('user'),price:()=>this.choosePrice(this.runtime.selectedRecipe),footer});
+        new ReferenceMarket(this,this.layer,(...args)=>this.hit(...args),render=>this.syncListHits(render)).draw({unitPrice:id=>this.runtime.price(id),supplier:this.runtime.supplier,day:this.runtime.preparationDay,cash:this.runtime.state.cash,canBuy,readOnlyReason:summary?.ending?'Chặng bán hàng đã kết thúc · Chợ chỉ để xem':'Mua đang bị khóa · Hãy xử lý lưu tiến độ',canScroll:()=>this.runtime.pauses.length===0,filter:this.marketFilter,offset:this.marketOffset,drag:this.marketDrag,quantities:this.marketQuantities,available:id=>this.runtime.available(id),quantity:(id,delta)=>{this.marketQuantities[id]=Phaser.Math.Clamp((this.marketQuantities[id]??1)+delta,1,100);this.dirty=true;},buy:id=>this.openMarketPurchase(id),editQuantity:id=>this.openMarketQuantity(id),scroll:offset=>{this.marketOffset=offset;},setFilter:filter=>{this.marketFilter=filter;this.marketOffset=0;this.dirty=true;},tab:id=>{this.summaryTab=id;this.dirty=true;},pause:()=>this.hold('user'),price:()=>this.choosePrice(this.runtime.selectedRecipe),footer});
         return;
       }
       this.referenceSummary().summary({report:summary,day:this.runtime.day,cash:this.runtime.state.cash,xp:summary?.progression.xp??this.runtime.progression.xp,previousXp:summary?(previous?.progression.xp??0):this.runtime.progression.xp,stockUnits:this.runtime.stockLots.reduce((n,lot)=>n+lot.quantity,0),ending:!!summary?.ending,paused:this.runtime.pauses.length>0,footer,tab:id=>{this.summaryTab=id;this.dirty=true;},pause:()=>this.hold('user'),finance:()=>this.openStatement(),reviews:()=>this.openReviews()});

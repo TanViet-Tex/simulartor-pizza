@@ -28,7 +28,7 @@ async function fixture(page:Page,mode:'regular'|'poor'|'terminal'='regular'){
     ${mode==='terminal'?"runtime.buy('shrimp',24);runtime.openShop();runtime.closeDay();":''}
     let guarded=false;runtime.attachSaveGuard(()=>!guarded);
     window.marketFixture={runtime,advance:seconds=>{for(let i=0;i<seconds*20;i++)runtime.advance(50);},guard:value=>{guarded=value;window.dispatchEvent(new Event('resize'));}};
-    new Phaser.Game({type:Phaser.AUTO,parent:'fixture',width:360,height:640,scale:{mode:Phaser.Scale.FIT,autoCenter:Phaser.Scale.CENTER_BOTH},scene:[new CozyScene(runtime)]});
+    const game=new Phaser.Game({type:Phaser.AUTO,parent:'fixture',width:360,height:640,scale:{mode:Phaser.Scale.FIT,autoCenter:Phaser.Scale.CENTER_BOTH},scene:[new CozyScene(runtime)]});window.marketFixture.game=game;
   `},bundle:true,platform:'browser',format:'iife',minify:true,define:{'import.meta.env.BASE_URL':'"/"'},write:false});
   await page.route('**/assets/index-*.js',route=>route.abort());await page.goto('/');
   await page.setContent('<style>html,body{margin:0;height:100%;overflow:hidden}#fixture{width:100%;height:100%}</style><div id="fixture"></div>');
@@ -156,6 +156,9 @@ test('quantity number opens numeric input, validates integers and buys the chose
   await input.fill('37');await page.screenshot({path:info.outputPath('market-quantity-input.png')});await input.press('Enter');
   await expect(input).toHaveCount(0);await expect.poll(async()=>(await data(page,'market-rows')).find((r:Row)=>r.id==='dough')?.quantity).toBe(37);
   await expect(canvas).toHaveAttribute('data-cash','300');
+  await tap(page,'market-quantity-dough');await input.fill('12');await tap(page,'market-quantity-cancel');
+  await expect(input).toHaveCount(0);expect((await data(page,'market-rows')).find((r:Row)=>r.id==='dough').quantity).toBe(37);
+  await tap(page,'market-quantity-dough');await input.fill('37');await tap(page,'market-quantity-apply');await expect(input).toHaveCount(0);
   await tap(page,'market-quantity-dough');
   for(const invalid of ['101','0','-2','2.5','1e2','1000','']){
     await input.fill(invalid);await expect.poll(async()=>((await data(page,'controls')) as Control[]).find(c=>c.id==='market-quantity-apply')?.enabled).toBe(false);
@@ -213,7 +216,7 @@ test('large quantity keeps every shortfall digit visible inside the market row',
     const state=window as unknown as {marketMoneyPaints:{value:string;width:number;x:number;font:string}[]};state.marketMoneyPaints=[];
     const original=CanvasRenderingContext2D.prototype.fillText;
     CanvasRenderingContext2D.prototype.fillText=function(value,x,y,maxWidth){
-      if(this.canvas.width===360&&this.canvas.height===640&&value.includes('1000'))state.marketMoneyPaints.push({value,width:this.measureText(value).width,x,font:this.font});
+      if(this.canvas.width===360&&value.includes('1000'))state.marketMoneyPaints.push({value,width:this.measureText(value).width,x,font:this.font});
       if(maxWidth===undefined)original.call(this,value,x,y);else original.call(this,value,x,y,maxWidth);
     };
   });
@@ -234,4 +237,51 @@ test('market ingredient sheet has actual transparent background and no brown til
   });
   expect(alpha.corner).toBe(0);expect(alpha.emptyCell).toBe(0);expect(alpha.bottle).toBeGreaterThan(200);
   await page.locator('canvas').screenshot({path:info.outputPath('market-transparent-ingredients.png')});
+});
+
+test('market and stock retain their list textures and input while dragging across frames',async({page},info)=>{
+  const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));await fixture(page);
+  const canvas=page.locator('canvas'),cash=await canvas.getAttribute('data-cash'),stock=await data(page,'stock');
+  for(const tab of ['market','stock']){
+    if(tab==='stock')await tap(page,'summary-tab-stock');
+    const baseline=await page.evaluate(tab=>{
+      const game=(window as unknown as {marketFixture:{game:{textures:{list:Record<string,unknown>};scene:{scenes:{input:{listenerCount:(event:string)=>number};hitZones:Map<string,unknown>}[]}}}}).marketFixture.game;
+      const key=Object.keys(game.textures.list).find(k=>k.startsWith(tab+'-window-')&&k.endsWith('-list'))!;
+      const scene=game.scene.scenes[0],saved={key,texture:game.textures.list[key],zones:[...scene.hitZones.values()],listeners:['wheel','pointerdown','pointermove','pointerup'].map(e=>scene.input.listenerCount(e))};
+      (window as unknown as {scrollBaseline:typeof saved}).scrollBaseline=saved;return {key,zones:saved.zones.length,listeners:saved.listeners};
+    },tab);
+    const b=(await canvas.boundingBox())!;
+    // Begin directly on a Mua button / stock row: moving must suppress its tap.
+    const x=tab==='market'?306:130;
+    await page.mouse.move(b.x+x*b.width/360,b.y+448*b.height/640);await page.mouse.down();
+    for(let i=1;i<=20;i++){await page.mouse.move(b.x+x*b.width/360,b.y+(448-i*8)*b.height/640);await page.evaluate(()=>new Promise<void>(resolve=>requestAnimationFrame(()=>resolve())));}
+    await page.mouse.up();
+    await expect.poll(async()=>(await data(page,tab+'-scroll')).offset).toBeGreaterThan(100);
+    expect(await data(page,'hub-detail')).toBeNull();expect(await data(page,'market-purchase')).toBeNull();
+    const retained=await page.evaluate(()=>{
+      const game=(window as unknown as {marketFixture:{game:{textures:{list:Record<string,unknown>};scene:{scenes:{input:{listenerCount:(event:string)=>number};hitZones:Map<string,unknown>}[]}}}}).marketFixture.game;
+      const saved=(window as unknown as {scrollBaseline:{key:string;texture:unknown;zones:unknown[];listeners:number[]}}).scrollBaseline,scene=game.scene.scenes[0];
+      return {key:saved.key,sameTexture:game.textures.list[saved.key]===saved.texture,sameZones:saved.zones.every(z=>[...scene.hitZones.values()].includes(z)),zones:scene.hitZones.size,listeners:['wheel','pointerdown','pointermove','pointerup'].map(e=>scene.input.listenerCount(e))};
+    });
+    expect(retained).toMatchObject({...baseline,sameTexture:true,sameZones:true});
+    const controls=await data(page,'controls') as Control[];
+    expect(new Set(controls.map(c=>c.id)).size).toBe(controls.length);
+    expect(controls.filter(c=>c.enabled&&(c.id.startsWith('stock-item-')||/^market-(buy|quantity|minus|plus)-/.test(c.id))).every(c=>c.y>=(tab==='market'?219:223)&&c.y+c.height<=(tab==='market'?537:535))).toBe(true);
+    await canvas.screenshot({path:info.outputPath(tab+'-retained-scroll.png')});
+    // Correct current row remains actionable after the scroll.
+    const target=controls.find(c=>c.enabled&&c.height>=48&&(tab==='market'?c.id.startsWith('market-buy-'):c.id.startsWith('stock-item-')))!;
+    await tap(page,target.id);
+    const offset=(await data(page,tab+'-scroll')).offset;
+    await page.mouse.move(b.x+130*b.width/360,b.y+350*b.height/640);await page.mouse.wheel(0,200);
+    expect((await data(page,tab+'-scroll')).offset).toBe(offset);
+    await tap(page,tab==='market'?'market-purchase-cancel':'hub-detail-close');
+    await expect(canvas).toHaveAttribute('data-cash',cash!);expect(await data(page,'stock')).toEqual(stock);
+    await tap(page,'summary-tab-shop');
+    const cleared=await page.evaluate(tab=>{
+      const game=(window as unknown as {marketFixture:{game:{textures:{list:Record<string,unknown>};scene:{scenes:{input:{listenerCount:(event:string)=>number}}[]}}}}).marketFixture.game;
+      return {keys:Object.keys(game.textures.list).filter(k=>k.startsWith(tab+'-window-')),wheel:game.scene.scenes[0].input.listenerCount('wheel')};
+    },tab);
+    expect(cleared).toEqual({keys:[],wheel:0});
+  }
+  expect(errors).toEqual([]);
 });
