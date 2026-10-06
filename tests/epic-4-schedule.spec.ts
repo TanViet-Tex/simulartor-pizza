@@ -21,7 +21,7 @@ async function serve(page:Page){
   const primary=((await data(page,'controls')) as Control[]).find(c=>c.id===(ticket.takeaway?'box':'deliver'))!;
   expect(primary).toMatchObject({x:8,y:411,height:48});
   if(ticket.takeaway)await tap(page,'box');else expect(primary.width).toBe(216);
-  await tap(page,'deliver');expect((await data(page,'result')).stars).toBe(5);await tap(page,'continue-shift');
+  await tap(page,'deliver');expect((await data(page,'result')).stars).toBe(5);await expect(page.locator('canvas')).toHaveAttribute('data-shop','making');
 }
 test('day-one appointments show real service, fixed clock, grace and explicit manual close',async({page},info)=>{
   test.setTimeout(480000);const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));

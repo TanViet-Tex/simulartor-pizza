@@ -45,13 +45,15 @@ test('reference grid uses real touch coordinates through resize and modal blocki
   expect(errors).toEqual([]);
 });
 
-test('missing ingredient hints follow additions, removal, clear and the selected order',async({page},info)=>{
+test('ingredient hints follow each order and deliveries continue without acknowledgement',async({page},info)=>{
+  test.setTimeout(60000);
   const pathSpecifier='node:path',paths=await import(pathSpecifier);
   const fixture=await build({stdin:{resolveDir:paths.resolve('.'),loader:'ts',contents:`
     import Phaser from 'phaser';import {CozyScene} from './src/scenes/CozyScene';import {CozyRuntime} from './src/runtime/CozyRuntime';
     const runtime=new CozyRuntime(false,true,{schedule:day=>({day,duration:120,grace:20,slots:[0,1].map((at,i)=>({id:'hint-'+i,at,kind:'regular',opportunity:'commercial',commercialOrdinal:i+1,takeaway:true}))}),resolveRecipe:slot=>slot.id==='hint-0'?'cheese':'mushroom'});
     for(const id of ['dough','sauce','cheese','mushroom'])runtime.buy(id,3);
     runtime.openShop();runtime.advanceElapsed(1100);runtime.selectTicket(runtime.tickets.find(t=>t.recipe==='cheese').id);
+    Object.assign(window,{hintRuntime:runtime});
     new Phaser.Game({type:Phaser.AUTO,parent:'fixture',width:360,height:640,scale:{mode:Phaser.Scale.FIT,autoCenter:Phaser.Scale.CENTER_BOTH},scene:[new CozyScene(runtime)]});
   `},bundle:true,platform:'browser',format:'iife',define:{'import.meta.env.BASE_URL':'"/"'},write:false});
   await page.route('**/assets/index-*.js',route=>route.abort());await page.goto('/');
@@ -81,4 +83,19 @@ test('missing ingredient hints follow additions, removal, clear and the selected
   await tap(page,'clear');await expect.poll(hints).toEqual(['dough','sauce','cheese','mushroom']);
   await tap(page,'ticket-'+first.id);await expect.poll(hints).toEqual(['dough','sauce','cheese']);
   await expect(canvas).toHaveAttribute('data-ingredients','mushroom');
+  const cashBefore=Number(await canvas.getAttribute('data-cash'));
+  await tap(page,'clear');
+  for(const ingredients of [['dough','sauce','cheese'],['dough','sauce','cheese','mushroom']]){
+    for(const id of ingredients)await tap(page,id);
+    await tap(page,'bake');
+    await page.evaluate(()=>{const r=(window as any).hintRuntime;r.advanceElapsed(r.bakeTiming.perfectStart*1000);});
+    await tap(page,'extract');await tap(page,'box');await tap(page,'deliver');
+    await expect(canvas).toHaveAttribute('data-shop','making');
+    expect(JSON.parse((await canvas.getAttribute('data-controls'))!).some((c:Control)=>c.id==='continue-shift')).toBe(false);
+    expect(JSON.parse((await canvas.getAttribute('data-labels'))!).some((l:{text:string})=>l.text==='Đã giao pizza!')).toBe(false);
+  }
+  await expect(canvas).toHaveAttribute('data-tickets','[]');
+  await expect(canvas).toHaveAttribute('data-stage','assembly');
+  await expect(canvas).toHaveAttribute('data-cash',String(cashBefore+115));
+  await expect(canvas).toHaveAttribute('data-paused','');
 });

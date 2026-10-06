@@ -19,7 +19,7 @@ async function serve(page:Page,screenshot?:string){
   await tap(page,'bake');await page.clock.runFor(3100);await tap(page,'extract');
   if(ticket.takeaway)await tap(page,'box');await tap(page,'deliver');
   expect((await data(page,'result')).stars).toBe(5);
-  if(await page.locator('canvas').getAttribute('data-shop')==='delivered')await tap(page,'continue-shift');
+  if(await page.locator('canvas').getAttribute('data-shop')==='delivered')await expect(page.locator('canvas')).toHaveAttribute('data-shop','making');
 }
 test('goals grant separate rewards and sausage unlocks in the existing next-day UI',async({page})=>{
   test.setTimeout(300000);const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));

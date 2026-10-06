@@ -36,6 +36,10 @@ _Tệp này chứa các quy tắc và patterns quan trọng mà AI agent phải 
 
 ## Critical Implementation Rules
 
+### Giao bánh tiếp tục ca ngay — 2026-10-06
+
+Theo yêu cầu mới, ca thật không hiện popup “Đã giao pizza” hoặc nút Tiếp tục ca. Scene chuyển phase delivered→making qua continueShift có guard hiện hành trước khi vẽ/cập nhật ca; không vượt save/pause lease. Giao còn đơn tự chọn tiếp như cũ. Tiền/XP/thưởng/báo cáo và xác nhận giao sai món giữ nguyên; tutorial/freeplay vẫn có kết thúc riêng. Xem [spec](implementation-artifacts/spec-remove-delivery-acknowledgement.md).
+
 ### Lịch khách và giảm thông báo — 2026-10-06
 
 Theo yêu cầu mới, lượt nền ngày1=10, ngày2=15, ngày3–7=20, ngày8–30=25. Thời lượng ca180/210/240s và biến động mưa/cao điểm/lễ hội/app/giới thiệu/bonus Quán giữ nguyên; đây là lượt dự kiến, không đảm bảo nhận đủ khi hàng chờ đầy/menu không bán. Lịch bắt đầu10s, khoảng cách16/12/11/9s; lượt giới thiệu210s chèn đúng thứ tự. Mặc cả chỉ tại index9/19 (khoảng10%). Linh ngày2 vẫn cần đánh giá ngày1≥3, nay thêm cơ hội25% theo channel hash seed save riêng, dùng đồng nhất ở lịch thật/dự báo; không đổi khi reload, không thêm field save hay thay thưởng/luật nhận từ chối. Nguồn [spec](implementation-artifacts/spec-customer-density-and-sauce-names.md).

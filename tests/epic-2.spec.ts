@@ -18,7 +18,7 @@ async function serve(page:Page,id:string){
  expect(detail.lines[1]).toContain(`${ticket.finalPrice} xu`);expect(detail.lines[2]).toContain(`Giá ≤${ticket.maxPricePercent}%`);
  for(const c of ['dough','sauce','cheese',...(ticket.recipe==='mushroom'?['mushroom']:[]),'bake'])await tap(page,c);
  await page.clock.runFor(3100);await tap(page,'extract');if(ticket.takeaway)await tap(page,'box');await tap(page,'deliver');
- if(await page.locator('canvas').getAttribute('data-shop')==='delivered')await tap(page,'continue-shift');
+ if(await page.locator('canvas').getAttribute('data-shop')==='delivered')await expect(page.locator('canvas')).toHaveAttribute('data-shop','making');
 }
 async function labels(page:Page){return (await data(page,'labels')).map((l:{text:string})=>l.text).join(' ');}
 test('canonical Day 1 personalities, final prices and progression retain approved geometry',async({page},info)=>{

@@ -54,7 +54,7 @@ test('completed pizza produces truthful revenue, cost and customer review on sum
   await expect(canvas).toHaveAttribute('data-shop','preparation');await page.clock.pauseAt(await page.evaluate(()=>Date.now()+1000));controlledPages.add(page);await provision(page);
   for(const id of ['dough','sauce','cheese','bake'])await tap(page,id);
   await page.clock.runFor(3500);await expect(canvas).toHaveAttribute('data-heat','perfect');await tap(page,'extract');await tap(page,'deliver');
-  await expect(canvas).toHaveAttribute('data-cash','320');await tap(page,'continue-shift');await tap(page,'end-day');await tap(page,'confirm-end-day');
+  await expect(canvas).toHaveAttribute('data-cash','320');await expect(page.locator('canvas')).toHaveAttribute('data-shop','making');await tap(page,'end-day');await tap(page,'confirm-end-day');
   await expect(canvas).toHaveAttribute('data-screen','day-summary');await expect(canvas).toHaveAttribute('data-cash','300');
   const summary=JSON.parse(await canvas.getAttribute('data-day-summary')??'null');
   expect(summary).toMatchObject({day:1,revenue:50,profit:15,delivered:1});

@@ -61,7 +61,7 @@ test('regular market purchase enters stock and is used once through the next-day
   await tap(page,'bake');expect((await data(page,'stock')).filter((s:{id:string})=>['dough','sauce','cheese'].includes(s.id)).map((s:{owned:number})=>s.owned)).toEqual([1,1,1]);
   await page.evaluate(()=>{(window as unknown as {marketFixture:{advance:(n:number)=>void}}).marketFixture.advance(6);});
   await expect(canvas).toHaveAttribute('data-heat','perfect');await tap(page,'extract');await tap(page,'box');await tap(page,'deliver');
-  await tap(page,'continue-shift');await tap(page,'end-day');await tap(page,'confirm-end-day');await expect(canvas).toHaveAttribute('data-screen','day-ended-notice');await tap(page,'day-ended-understood');await expect(canvas).toHaveAttribute('data-screen','day-summary');
+  await expect(page.locator('canvas')).toHaveAttribute('data-shop','making');await tap(page,'end-day');await tap(page,'confirm-end-day');await expect(canvas).toHaveAttribute('data-screen','day-ended-notice');await tap(page,'day-ended-understood');await expect(canvas).toHaveAttribute('data-screen','day-summary');
   const report=await data(page,'day-summary');expect(report).toMatchObject({purchases:30,cost:15,revenue:50,profit:15,cash:300});
   await tap(page,'summary-tab-market');await tap(page,'market-filter-base');
   const dough=(await data(page,'market-rows')).find((r:Row)=>r.id==='dough');expect(dough).toMatchObject({unitPrice:6,available:1});

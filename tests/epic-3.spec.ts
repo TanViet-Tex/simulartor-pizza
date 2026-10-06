@@ -25,7 +25,7 @@ test('preparation prices and next-day purchases preserve geometry and closed acc
   await tap(page,'market-open');await page.clock.runFor(10000);expect((await data(page,'tickets'))[0].finalPrice).toBe(60);
   for(const id of ['dough','sauce','cheese','bake'])await tap(page,id);
   await page.clock.runFor(3100);for(const id of ['extract','deliver'])await tap(page,id);
-  await tap(page,'continue-shift');await tap(page,'market-prepare');
+  await expect(page.locator('canvas')).toHaveAttribute('data-shop','making');await tap(page,'market-prepare');
   expect(((await data(page,'controls')) as Control[]).find(c=>c.id==='market-buy-dough')!.enabled).toBe(false);
   expect(await labels(page)).toContain('không mua thêm');await tap(page,'market-orders');
   for(const id of ['end-day','confirm-end-day'])await tap(page,id); await expect.poll(async()=>{await page.clock.runFor(100);return (await data(page,'save-state'))?.state;}).toBe('ready'); await page.clock.runFor(100);

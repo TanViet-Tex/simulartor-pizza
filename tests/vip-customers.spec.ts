@@ -25,7 +25,7 @@ test('day10 VIP keeps six slots, labels rules, serves twice and preserves separa
  await expect.poll(async()=>(await data(page,'labels')).some((l:any)=>l.text.includes('VIP ·'))).toBe(true);expect((await data(page,'kitchen-layout')).customerFrames).toHaveLength(6);await page.locator('canvas').screenshot({path:info.outputPath('vip-order.png')});
  await tap(page,'order');await expect.poll(async()=>(await data(page,'labels')).some((l:any)=>l.text.includes('VIP: 1 bánh'))).toBe(true);await tap(page,'close-order');
  await serve(page);await expect.poll(async()=>(await data(page,'labels')).some((l:any)=>l.text.includes('Thưởng VIP: +500'))).toBe(true);await page.locator('canvas').screenshot({path:info.outputPath('vip-reward.png')});expect(await active(page)).toEqual(before);
- await tap(page,'continue-shift');await page.evaluate(()=>(window as any).vipTest.tick(60));await serve(page);await tap(page,'continue-shift');
+ await expect(page.locator('canvas')).toHaveAttribute('data-shop','making');await page.evaluate(()=>(window as any).vipTest.tick(60));await serve(page);await expect(page.locator('canvas')).toHaveAttribute('data-shop','making');
  await tap(page,'end-day');await tap(page,'confirm-end-day');await expect.poll(async()=>(await data(page,'save-state'))?.state).toBe('ready');
  const saved=await active(page),report=saved.payload.reports.at(-1);expect(report.day).toBe(10);expect(report.revenue).toBe(100);expect(report.rewards).toBe(1000);expect(report.reviews.map((r:any)=>r.vip.coins)).toEqual([500,500]);
  await tap(page,'summary-figure-0');await expect.poll(async()=>await data(page,'summary-modal-text')).toContain('VIP: 1000 xu');await page.locator('canvas').screenshot({path:info.outputPath('vip-finance.png')});
@@ -33,7 +33,7 @@ test('day10 VIP keeps six slots, labels rules, serves twice and preserves separa
 });
 
 test('VIP day-save failure retries the same bonus and reload never pays again',async({page})=>{
- await fixture(page);const before=await active(page);await page.evaluate(()=>{const r=(window as any).vipTest.runtime;for(const id of ['dough','sauce','cheese'])r.buy(id,1);});await tap(page,'summary-open-first-day');await serve(page);await tap(page,'continue-shift');
+ await fixture(page);const before=await active(page);await page.evaluate(()=>{const r=(window as any).vipTest.runtime;for(const id of ['dough','sauce','cheese'])r.buy(id,1);});await tap(page,'summary-open-first-day');await serve(page);await expect(page.locator('canvas')).toHaveAttribute('data-shop','making');
  await page.evaluate(()=>{const put=IDBObjectStore.prototype.put;IDBObjectStore.prototype.put=function(value:any,key?:IDBValidKey){if(key==='active'&&value.payload?.reports?.at(-1)?.day===10&&!sessionStorage.getItem('vip-failed')){sessionStorage.setItem('vip-failed','1');this.transaction.abort();throw new DOMException('VIP test','QuotaExceededError');}return key===undefined?put.call(this,value):put.call(this,value,key);};});
  await tap(page,'end-day');await tap(page,'confirm-end-day');await expect.poll(async()=>(await data(page,'save-state'))?.state).toBe('error');expect(await active(page)).toEqual(before);await tap(page,'save-retry');await expect.poll(async()=>(await data(page,'save-state'))?.state).toBe('ready');
  const saved=await active(page);expect(saved.payload.reports.at(-1).rewards).toBe(500);await page.evaluate(()=>{void (window as any).vipTest.restore();});await expect(page.locator('canvas')).toHaveAttribute('data-cash',String(saved.payload.stock.cash));expect(await active(page)).toEqual(saved);

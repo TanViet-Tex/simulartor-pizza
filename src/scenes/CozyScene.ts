@@ -192,6 +192,8 @@ export class CozyScene extends Phaser.Scene {
     this.audio.syncOven(oven?.stage==='baking'&&!ready,this.runtime.pauses.length>0,ready);
   }
   update(_time:number,delta:number):void{
+    // A completed delivery returns to the shift without an acknowledgement modal.
+    if(this.runtime.productionActive&&this.runtime.shopPhase==='delivered')this.runtime.continueShift();
     const event=this.runtime.campaignEvent;
     if(event.id&&!event.acknowledged&&this.runtime.shopOpen&&!this.campaignEventLease&&!this.runtime.pauses.length&&!this.campaignSession?.view.pending){this.campaignEventLease=this.runtime.acquirePause('order');this.dirty=true;}
     this.lifecycle.frame(performance.now(),this.runtime.pauses.length===0&&this.runtime.simulationActive);
@@ -448,7 +450,7 @@ export class CozyScene extends Phaser.Scene {
     else if(this.runtime.deliveryPending)this.deliveryDialog();
     else if(this.runtime.bargainPending)this.bargainDialog();
     else if(this.runtime.helpPending||this.runtime.thanksPending)this.helpDialog();
-    else if(s.stage==='delivered'&&(!this.runtime.productionActive||this.runtime.shopPhase==='delivered'))this.success();
+    else if(s.stage==='delivered'&&!this.runtime.productionActive)this.success();
     if(this.expressIngredient)this.expressDialog();
     if(!this.testCodePanel&&this.campaignSession&&(['saving','error','loading','recovery'].includes(this.campaignSession.view.state)&&!this.saveDismissed||this.reloadConfirmation))this.saveDialog();
     else if(this.newCampaignConfirmation)this.newCampaignDialog();
@@ -1156,27 +1158,7 @@ export class CozyScene extends Phaser.Scene {
     }
   };
   private success():void{
-    if(!this.runtime.productionActive){
-      const s=this.runtime.state,wrong=s.feedback.includes('không đúng');
-      this.notice(wrong?'Đã giao sai món':'Chiếc pizza đầu tiên!',s.feedback+'\n'+(wrong?'Không nhận tiền · −1 uy tín':`+${recipePrice(this.runtime.selectedRecipe)} xu · +1 uy tín`),'replay','Chơi lại Ngày 1',()=>this.runtime.dispatch({type:'reset'}),true,13);return;
-    }
-    if(this.runtime.day!==1||this.campaignSession){
-      const result=this.runtime.lastResult;
-      const detail=`${this.runtime.lastDelivery?.name??'Khách'} đã nhận món. Cảm ơn bạn!\n`+(result?.help?this.runtime.shopMessage:`${result?.stars??5} sao · +${this.runtime.lastDelivery?.price??0} xu · +${result?.xpDelta??0} XP\n${result?.reasons.join(', ')||'Đúng món và chín vừa.'}\nUy tín ${(result?.reputationDelta??0)>0?'+':''}${result?.reputationDelta??0} · Quan hệ +${result?.relationshipDelta??0}\nThưởng nhiệm vụ: +${result?.rewardCoins??0} xu · +${result?.rewardReputation??0} uy tín${result?.vip?`\nThưởng VIP: +${result.vipRewardCoins??0} · +${result.vipRewardReputation??0} uy tín`:''}`);
-      this.notice('Đã giao pizza!',detail,'continue-shift','Tiếp tục ca',()=>this.runtime.continueShift(),true,12);return;
-    }
-    this.notificationFrame([this.runtime.productionActive?'continue-shift':'replay'],285,470,460);
-    if(this.runtime.productionActive){
-      this.label(180,240,'Đã giao pizza!',21,ink);this.label(180,285,`${this.runtime.lastDelivery?.name??'Khách'} đã nhận món. Cảm ơn bạn!`,13,ink);
-      this.explanation(309,36,this.runtime.lastResult?.help?this.runtime.shopMessage:`${this.runtime.lastResult?.stars??5} sao · +${this.runtime.lastDelivery?.price??0} xu · +${this.runtime.lastResult?.xpDelta??0} XP\n${this.runtime.lastResult?.reasons.join(', ')||'Đúng món và chín vừa.'}\nUy tín ${(this.runtime.lastResult?.reputationDelta??0)>0?'+':''}${this.runtime.lastResult?.reputationDelta??0} · Quan hệ +${this.runtime.lastResult?.relationshipDelta??0}\nThưởng nhiệm vụ: +${this.runtime.lastResult?.rewardCoins??0} xu · +${this.runtime.lastResult?.rewardReputation??0} uy tín`,12,wood);
-      this.button('continue-shift',64,355,232,48,'Tiếp tục ca',true,()=>this.runtime.continueShift());
-      if(this.runtime.day===1&&!this.campaignSession)this.button('replay',64,422,232,48,'Chơi lại Ngày 1',true,()=>this.runtime.dispatch({type:'reset'}),UI.dark);
-    }else {
-      const s=this.runtime.state,wrong=s.feedback.includes('không đúng');
-      this.label(180,240,wrong?'Đã giao sai món':'Chiếc pizza đầu tiên!',21,ink);
-      this.label(180,285,s.feedback,13,ink,278);
-      this.label(180,327,wrong?'Không nhận tiền · −1 uy tín':`+${recipePrice(this.runtime.selectedRecipe)} xu · +1 uy tín`,14,wood);
-      this.button('replay',64,355,232,54,'Chơi lại Ngày 1',true,()=>this.runtime.dispatch({type:'reset'}));
-    }
+    const s=this.runtime.state,wrong=s.feedback.includes('không đúng');
+    this.notice(wrong?'Đã giao sai món':'Chiếc pizza đầu tiên!',s.feedback+'\n'+(wrong?'Không nhận tiền · −1 uy tín':`+${recipePrice(this.runtime.selectedRecipe)} xu · +1 uy tín`),'replay','Chơi lại Ngày 1',()=>this.runtime.dispatch({type:'reset'}),true,13);
   }
 }

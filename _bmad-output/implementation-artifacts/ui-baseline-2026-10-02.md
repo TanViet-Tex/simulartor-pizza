@@ -19,6 +19,10 @@ Tài liệu này là nguồn hiện hành cho **bố cục và phong cách màn 
 
 ## Màn chơi cần giữ
 
+### Bỏ popup giao bánh — yêu cầu 2026-10-06
+
+Sau khi giao trong ca thật, không hiện “Đã giao pizza” và không cần bấm Tiếp tục ca; trở lại bếp ngay. Xác nhận sai món và kết thúc tutorial/freeplay giữ nguyên. Không thêm toast hoặc đổi bố cục. Xem [spec](spec-remove-delivery-acknowledgement.md).
+
 ### Hành vi rời tab — yêu cầu 2026-10-04
 
 Người dùng xác nhận chuyển tab/bấm ra ngoài vẫn chạy game; chỉ bấm Pause mới dừng. Bỏ tự mở recovery/Tiếp tục do visibility hoặc frame gap. Pause/Cài đặt/Menu và các modal hiện có vẫn dừng theo lease riêng; không đổi hình/vùng nút/bố cục. Đồng bộ thời gian đã trôi khi browser cho chạy lại, không cộng thời gian đã Pause. Quyết định này thay riêng hành vi auto-pause trong các phần lịch sử bên dưới. Xem [spec](spec-background-play-until-manual-pause.md).
