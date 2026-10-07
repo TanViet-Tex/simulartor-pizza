@@ -48,30 +48,47 @@ function mainMenu(): Phaser.Scene {
   const preferences = new MenuPreferences();
   const session = new CozyCampaignSession(new CozySaveRepository());
   let initialized=false;
+  let menu:MainMenuScene,opening=false;
+  const launch=async(operation:()=>CozyRuntime|null|Promise<CozyRuntime|null>)=>{
+    if(opening)return;opening=true;menu.showEntryLoading(0);
+    // Let the waiting UI paint before save validation and scene setup begin.
+    await new Promise<void>(resolve=>requestAnimationFrame(()=>requestAnimationFrame(()=>resolve())));
+    try{enterPlay(await operation());}catch{menu.clearEntryLoading();opening=false;}
+  };
   const enterPlay = (runtime:CozyRuntime | null) => {
-    if (!runtime) return;
-    game.scene.stop('MainMenuScene');
+    if (!runtime) {menu.clearEntryLoading();opening=false;return;}
+    const waiting=menu.sys.isActive(),lease=waiting?runtime.acquirePause('menu'):undefined;
+    if(waiting)menu.showEntryLoading(10);
     if (game.scene.getScene('CozyScene')) game.scene.remove('CozyScene');
-    game.scene.add('CozyScene',new CozyScene(runtime,preferences,() => {
+    const play=new CozyScene(runtime,preferences,() => {
       session.returnToMenu();
       game.scene.stop('CozyScene');
       game.scene.start('MainMenuScene');
-    },playAudio,session.lifecycle??undefined,session,enterPlay),true);
+    },playAudio,session.lifecycle??undefined,session,enterPlay,waiting?{
+      progress:progress=>menu.showEntryLoading(10+progress*85),
+      ready:()=>{
+        menu.showEntryLoading(100);
+        requestAnimationFrame(()=>requestAnimationFrame(()=>{game.scene.stop('MainMenuScene');lease?.release();opening=false;}));
+      },
+      cancel:()=>lease?.release(),
+    }:undefined);
+    try{game.scene.add('CozyScene',play,true);}catch(error){lease?.release();throw error;}
+    if(waiting)game.scene.bringToTop('MainMenuScene');else opening=false;
   };
   game.events.once(Phaser.Core.Events.DESTROY,() => preferences.destroy());
   game.events.once(Phaser.Core.Events.DESTROY,() => session.destroy());
-  return new MainMenuScene(preferences,{
+  return menu=new MainMenuScene(preferences,{
     hasSession:() => session.hasSession,
-    start:() => {void session.start(mode!=='shop').then(enterPlay);},
-    continue:() => enterPlay(session.continue()),
+    start:() => {void launch(()=>session.start(mode!=='shop'));},
+    continue:() => {void launch(()=>session.continue());},
     testCode:{message:value=>session.testCodeMessage(value),claim:value=>session.claimTestCode(value),claimed:()=>!!session.runtime?.testCodeClaimed,save:()=>session.view,retry:()=>{void session.retry();}},
     save:()=>session.view,
     subscribe:listener=>session.subscribe(listener),
     initialize:()=>{if(initialized)return;initialized=true;void session.load().then(runtime=>{if(mode==='shop'){if(runtime)enterPlay(runtime);else if(session.view.state==='ready')void session.start(false).then(enterPlay);}});},
     retryRead:()=>{void session.load().then(runtime=>{if(runtime&&mode==='shop')enterPlay(runtime);});},
-    retrySave:()=>{void session.retry().then(enterPlay);},
-    recover:()=>enterPlay(session.confirmRecovery()),
-    temporary:()=>enterPlay(session.temporary(mode!=='shop')),
+    retrySave:()=>{void launch(()=>session.retry());},
+    recover:()=>{void launch(()=>session.confirmRecovery());},
+    temporary:()=>{void launch(()=>session.temporary(mode!=='shop'));},
   },playAudio);
 }
 const game = new Phaser.Game({

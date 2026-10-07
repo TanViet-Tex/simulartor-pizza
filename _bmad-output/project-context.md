@@ -443,3 +443,8 @@ Theo chỉnh tiếp 2026-10-07: lớp phủ nền phía sau tutorial và thông 
 ### Vốn khởi đầu — yêu cầu 2026-10-07
 
 Game mới bắt đầu500xu, dùng INITIAL_CASH chung cho kho/runtime/đơn tập. Checkpoint mới lưu initialCash=500 để khôi phục và đối chiếu thu chi; save cũ thiếu trường này giữ vốn300xu và số dư thật, không cộng thêm tiền hoặc xóa tiến độ.
+
+
+### Màn tải từ menu — 2026-10-08
+
+Bắt đầu/Tiếp tục giữ menu phía sau khung thông báo gọn có chữ “Đang tải dữ liệu…”, thanh xanh và phần trăm. 0% chờ đọc/ghi save; 10% có runtime; 10–95% theo Phaser loader; 100% khi scene đã create. Không tăng bằng bộ đếm giả. Chặn input và Escape khi chờ, pause bằng lease menu riêng đến khi màn chơi sẵn sàng; lỗi save trả giao diện retry hiện có. Không đổi vị trí/art các nút menu. Ảnh: [màn tải](implementation-artifacts/ui-baseline/menu-loading-2026-10-08/menu-loading.png).

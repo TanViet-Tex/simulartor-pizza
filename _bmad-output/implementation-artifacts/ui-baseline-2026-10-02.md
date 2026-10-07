@@ -505,3 +505,8 @@ Kiểm chứng: build/typecheck đạt;5kiểm tra Chromium360×640 liên quan �
 
 
 Theo chỉnh tiếp 2026-10-07: lớp phủ nền phía sau tutorial và thông báo dùng chung opacity60% (thay30%/28%). Focus và khung nội dung vẫn sáng. Số tiền cách mép trong khung5px trong cả bếp và hub, tự fit số lớn; giữ nguyên bounds và luật tiền.
+
+
+### Màn tải từ menu — 2026-10-08
+
+Bắt đầu/Tiếp tục giữ menu phía sau khung thông báo gọn có chữ “Đang tải dữ liệu…”, thanh xanh và phần trăm. 0% chờ đọc/ghi save; 10% có runtime; 10–95% theo Phaser loader; 100% khi scene đã create. Không tăng bằng bộ đếm giả. Chặn input và Escape khi chờ, pause bằng lease menu riêng đến khi màn chơi sẵn sàng; lỗi save trả giao diện retry hiện có. Không đổi vị trí/art các nút menu. Ảnh: [màn tải](ui-baseline/menu-loading-2026-10-08/menu-loading.png).

@@ -40,11 +40,30 @@ export class MainMenuScene extends Phaser.Scene {
   private notification?:{layout:NotificationLayout;ids:string[];start:number;end:number;title:boolean};
   private notificationButtonLabel=false;
   private audioCleanupRegistered=false;
+  private entryProgress:number|null=null;
+  private loadingBar?:Phaser.GameObjects.Graphics;
+  private loadingPercent?:Phaser.GameObjects.Text;
+  private loadingBounds?:{x:number;y:number;width:number};
+
+  showEntryLoading(progress:number):void {
+    const first=this.entryProgress===null;
+    this.entryProgress=Math.max(this.entryProgress??0,Math.min(100,Math.round(progress)));
+    if(first)this.draw();else this.paintLoadingProgress();
+  }
+  clearEntryLoading():void {this.entryProgress=null;this.draw();}
+  private paintLoadingProgress():void {
+    const percent=this.entryProgress??0,r=this.loadingBounds;
+    if(r&&this.loadingBar){this.loadingBar.clear().fillStyle(0xffefd0).fillRoundedRect(r.x,r.y,r.width,12,6);if(percent>0)this.loadingBar.fillStyle(SAGE).fillRoundedRect(r.x,r.y,r.width*percent/100,12,6);}
+    this.loadingPercent?.setText(`${percent}%`);
+    this.game.canvas.dataset.menuLoadingProgress=String(percent);
+    this.game.canvas.setAttribute('aria-label',`Đang tải dữ liệu. ${percent} phần trăm.`);
+  }
 
   constructor(private readonly preferences: MenuPreferences, private readonly actions: MenuActions,private readonly audio=new PlayAudio()) { super('MainMenuScene'); }
   preload():void{preloadNotificationFrames(this);preloadSettingsArt(this);}
 
   create(): void {
+    this.entryProgress=null;
     strengthenIllustrations(this);
     if(!this.audioCleanupRegistered){this.audioCleanupRegistered=true;this.game.events.once(Phaser.Core.Events.DESTROY,()=>this.audio.destroy());}
     this.dialog = 'none'; this.focusId = ''; this.keyboardFocus = false; this.elapsed = 0;
@@ -122,7 +141,9 @@ export class MainMenuScene extends Phaser.Scene {
 
   private draw(entrance = false): void {
     const save=this.actions.save?.();
-    if(this.dialog!=='settings'&&this.dialog!=='new-session')this.dialog=save?.state==='loading'||save?.state==='saving'?'loading':save?.state==='error'?'save-error':save?.state==='recovery'?'recovery':'none';
+    if(this.entryProgress!==null)this.dialog='loading';
+    else if(this.dialog!=='settings'&&this.dialog!=='new-session')this.dialog=save?.state==='loading'||save?.state==='saving'?'loading':save?.state==='error'?'save-error':save?.state==='recovery'?'recovery':'none';
+    this.loadingBar=undefined;this.loadingPercent=undefined;this.loadingBounds=undefined;delete this.game.canvas.dataset.menuLoadingProgress;
     this.notification=undefined;this.game.canvas.dataset.settingsPanel='';this.game.canvas.dataset.modalBackdrop='';this.game.canvas.dataset.notificationFrame='';this.game.canvas.dataset.modalScroll='[]';
     this.tweens.killAll(); this.interfaceLayer.removeAll(true); this.targets = [];
     const titleTexts=[
@@ -238,9 +259,12 @@ export class MainMenuScene extends Phaser.Scene {
     const ids=this.dialog==='new-session'?['menu-new-confirm','menu-new-cancel']:this.dialog==='recovery'?['menu-recover-confirm','menu-retry-read']:[save?.canRetry?'menu-save-retry':'menu-retry-read'];
     if(this.dialog==='loading'){
       const scale=Math.max(1,Math.min(2,parseFloat(getComputedStyle(document.documentElement).fontSize)/16));
-      const layout=drawCompactNotification(this,this.interfaceLayer,'Tiến độ chiến dịch',save?.message??'Đang tải tiến độ…',14,scale);
-      this.notification={layout,ids,start:layout.body.y,end:layout.body.y+layout.body.height,title:false};
-      this.button(ids[0],0,0,0,0,'Đang tải…','none',SAGE,'#fff6df',false,()=>{},false,undefined,16);return;
+      const layout=drawCompactNotification(this,this.interfaceLayer,'Đang tải dữ liệu…',this.entryProgress!==null?'Chuẩn bị mở tiệm pizza.':save?.message??'Đang đọc tiến độ…',14,scale);
+      const footer=layout.footer[0];
+      this.loadingBounds={x:footer.x+12,y:footer.y+8,width:footer.width-24};
+      this.loadingBar=this.add.graphics();this.interfaceLayer.add(this.loadingBar);
+      this.loadingPercent=this.text(this.interfaceLayer,180,footer.y+33,'0%',14,'#fff0d5');
+      this.paintLoadingProgress();return;
     }
     if(this.dialog==='new-session'){
       const scale=Math.max(1,Math.min(2,parseFloat(getComputedStyle(document.documentElement).fontSize)/16));
@@ -286,7 +310,7 @@ export class MainMenuScene extends Phaser.Scene {
   private keyDown = (event: KeyboardEvent): void => {
     if(document.activeElement!==this.game.canvas)return;
     if(this.testCodePanel)return;
-    if (event.key === 'Escape' && this.dialog !== 'none') { event.preventDefault(); this.dialog = 'none'; this.focusId = ''; this.draw(); return; }
+    if (event.key === 'Escape' && this.dialog !== 'none') { event.preventDefault();if(this.dialog==='loading')return; this.dialog = 'none'; this.focusId = ''; this.draw(); return; }
     const enabled = this.targets.filter(target => !target.disabled);
     if (!enabled.length) return;
     if (event.key === 'Tab' || event.key === 'ArrowDown' || event.key === 'ArrowUp') {
@@ -330,6 +354,6 @@ export class MainMenuScene extends Phaser.Scene {
       return { text: text.text, x: bounds.x, y: bounds.y, width: bounds.width, height: bounds.height,
         font: text.style.fontFamily, size: text.style.fontSize, spacing: text.letterSpacing, color: text.style.color };
     }));
-    canvas.setAttribute('aria-label', `Tiệm Pizza Ấm Áp. ${this.dialog === 'settings' ? `Cài đặt. Giảm chuyển động ${this.preferences.reducedMotion ? 'bật' : 'tắt'}.` : this.dialog === 'new-session' ? 'Xác nhận bắt đầu phiên mới. Phiên đang chơi sẽ được thay thế.' : `Bắt đầu. ${this.actions.hasSession() ? 'Tiếp tục phiên đang chơi.' : 'Tiếp tục chưa khả dụng vì chưa có phiên đang chơi.'} Cài đặt.`}`);
+    canvas.setAttribute('aria-label',this.dialog==='loading'?`Đang tải dữ liệu. ${this.entryProgress??0} phần trăm.`: `Tiệm Pizza Ấm Áp. ${this.dialog === 'settings' ? `Cài đặt. Giảm chuyển động ${this.preferences.reducedMotion ? 'bật' : 'tắt'}.` : this.dialog === 'new-session' ? 'Xác nhận bắt đầu phiên mới. Phiên đang chơi sẽ được thay thế.' : `Bắt đầu. ${this.actions.hasSession() ? 'Tiếp tục phiên đang chơi.' : 'Tiếp tục chưa khả dụng vì chưa có phiên đang chơi.'} Cài đặt.`}`);
   }
 }

@@ -159,8 +159,14 @@ export class CozyScene extends Phaser.Scene {
   private reloadConfirmation=false;
   private notification?:{layout:NotificationLayout;ids:string[];start:number;end:number;title:boolean;fitting?:{frames:Phaser.GameObjects.GameObject[];heading?:Phaser.GameObjects.Text}};
   private notificationButtonLabel=false;
-  constructor(private readonly runtime:CozyRuntime,private readonly preferences?:MenuPreferences,private readonly returnToMenu?:()=>void,private readonly audio=new PlayAudio(),private readonly sharedLifecycle?:PlayLifecycle,private readonly campaignSession?:CozyCampaignSession,private readonly replaceRuntime?:(runtime:CozyRuntime)=>void){super('CozyScene');}
+  constructor(private readonly runtime:CozyRuntime,private readonly preferences?:MenuPreferences,private readonly returnToMenu?:()=>void,private readonly audio=new PlayAudio(),private readonly sharedLifecycle?:PlayLifecycle,private readonly campaignSession?:CozyCampaignSession,private readonly replaceRuntime?:(runtime:CozyRuntime)=>void,private readonly loading?:{progress:(progress:number)=>void;ready:()=>void;cancel:()=>void}){super('CozyScene');}
   preload():void{
+    if(this.loading){
+      const {progress,ready,cancel}=this.loading;
+      this.load.on(Phaser.Loader.Events.PROGRESS,progress);
+      this.events.once(Phaser.Scenes.Events.CREATE,ready);
+      this.events.once(Phaser.Scenes.Events.SHUTDOWN,()=>{this.load.off(Phaser.Loader.Events.PROGRESS,progress);cancel();});
+    }
     preloadMarketArt(this);
     for(const asset of SHOP_ART)if(!this.textures.exists(asset.key))this.load.image(asset.key,`${import.meta.env.BASE_URL}${asset.url}`);
     preloadSummaryArt(this);
