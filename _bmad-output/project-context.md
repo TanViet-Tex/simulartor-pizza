@@ -36,6 +36,10 @@ _Tệp này chứa các quy tắc và patterns quan trọng mà AI agent phải 
 
 ## Critical Implementation Rules
 
+### Epic 7 — phạm vi tiếp theo, quyết định 2026-10-07
+
+Đang chuẩn bị triển khai: bỏ lò thứ hai/thay mục bằng Nước (công dụng chưa chốt); tủ lạnh kéo dài hạn bảo quản gấp4 (cần chốt xử lý từng lô/giá); bỏ mục Bàn làm pizza, món thay cập nhật sau, không bỏ bàn thao tác hoặc Bàn ghế khách hiện có. Mở rộng lần 1: 4→5 ô, +10% khách quầy; lần 2: 5→6 ô, tổng +30% khách quầy; burst2/3 độc lập sức chứa giữ nguyên, không tự nhân app. Quảng bá có phí/hiện số tốp khách hôm đó từ cùng lịch seeded, chỉ mở thông tin, không tăng khách. Không có hư hỏng/sửa chữa trongEpic7; không thay sự kiện mất tiềnEpic9. Quyết định này thay các đề xuất cũ tương ứng bên dưới; chưa có code/storyready và không tự gán giá/tác dụng chưa chốt. Xem implementation-artifacts/requirement-epic7-next-scope.md.
+
 ### Đồng hồ và ngân sách lượt đơn — yêu cầu 2026-10-07
 
 Lịch Cozy dùng chung cấu hình cho runtime/dự báo/HUD: chuẩn bị5giây từ08:50→09:00, không sinh khách/app hoặc tiêu hao thời gian mở bán/kiên nhẫn; bán09:00→21:00 với ngày1=180s,2–5=210s,6–10=240s,11–20=270s,21+=300s; grace120s vẫn giữ. Pause dừng cả chuẩn bị/bán/grace. HUD thêmHH:mm ngay bên phảiPause, đóng cửa ghi “Đã đóng cửa · xử lý đơn còn lại” và countdown riêng trong vùngHUD hiện có; giữ các khu vực khác.

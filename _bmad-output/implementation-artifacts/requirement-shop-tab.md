@@ -8,6 +8,10 @@ source: user
 
 # Tab Quán — thiết kế đề xuất
 
+## Phạm vi tiếp theo — quyết định 2026-10-07
+
+Bỏ lò thứ hai, thay mục đó bằng Nước; tủ lạnh giữ thực phẩm lâu gấp4; bỏ Bàn làm pizza, món thay cập nhật sau. Mở rộng lần 1: 4→5 ô, +10% khách quầy; lần 2: 5→6 ô, tổng +30% khách quầy. Quảng bá có phí, chỉ cho xem số tốp/lượt khách hôm đó, không tăng khách; không có hư hỏng/sửa chữa. Các đoạn đề xuất cũ tương ứng bên dưới được thay bởi [phạm vi mới](requirement-epic7-next-scope.md), nơi ghi các luật còn cần chốt. Chưa triển khai UI/gameplay trong lượt ghi quyết định này; giữ các nhóm và bố cục ngoài đúng mục được yêu cầu thay.
+
 ## Cập nhật Epic 5 — 2026-10-04
 
 Menu & giá có đủ tám pizza, ba thẻ mỗi trang; các món đã sở hữu cho chọn bán/chỉnh giá, món chưa có hiển thị giá mua và số tiền thiếu. Mua công thức chỉ trong chuẩn bị, có xác nhận/hủy; tiền và sở hữu lưu atomic. Lỗi lưu chặn mở ca, có thử lại, không mua/trừ lần hai. Phô mai/Nấm mở sẵn; quyền mở ở save cũ được giữ. Giá vốn dự kiến dùng giá mua thực tế của ngày chuẩn bị, gồm ưu đãi nhà cung cấp nếu đủ điều kiện. Giá mua/giá bán/định lượng là cấu hình tạm trong [spec Epic 5](spec-5-1-expanded-ingredient-and-recipe-catalog.md). Trang trí/Tiện nghi/Nhân viên chưa được triển khai thêm trong Epic 5; các sáu mục và bố cục Quán giữ nguyên.

@@ -11,6 +11,10 @@ requirements_updated: 2026-10-04
 
 # GDD - Game quản lý tiệm pizza
 
+### Epic 7 — quyết định thay thế 2026-10-07
+
+Để chuẩn bị đợt tiếp theo: bỏ lò thứ hai/thay bằng Nước (công dụng chưa chốt); tủ lạnh bảo quản gấp4 (giá/cách tính hạn từng lô cần chốt); bỏ Bàn làm pizza, món thay cập nhật sau; mở rộng lần 1: 4→5 ô, +10% khách quầy; lần 2: 5→6 ô, tổng +30% khách quầy. Quảng bá có phí/cho xem số tốp khách dự kiến hôm đó, chỉ mở thông tin, không tăng khách; phí/thời điểm còn cần chốt. **Không có hư hỏng/sửa chữa** trongEpic7, các đề xuất sửa chữa thiết bị bên dưới không còn là việc cần triển khai. Chưa đổi code, không tự đổi luật tiền/kho/save hoặc suy thêm tác dụng. Chi tiết [phạm vi mới](../../implementation-artifacts/requirement-epic7-next-scope.md).
+
 > Người dùng đã duyệt GDD v0.2 và epics.md để làm đầu vào kiến trúc. Các nhãn “đề xuất/chờ duyệt” bên dưới được giữ nguyên như nội dung bản v0.2 tại thời điểm duyệt; luật demo trong bản này là baseline đã duyệt, vẫn cần playtest. Các quyết định được ghi rõ là để sau demo/kiến trúc vẫn còn mở. Chưa được sửa code game cho đến khi người dùng duyệt kiến trúc.
 
 ## Trạng thái và nguồn yêu cầu

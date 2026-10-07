@@ -4,7 +4,7 @@
 
 ## Goal
 
-Cho người chơi đầu tư vào quán bằng trang trí, thiết bị, tiện nghi, tu sửa/mở rộng và quảng bá, với tác dụng gameplay thật, chi phí rõ và tiến độ lưu nhất quán. Đây là phần kinh tế sau demo, phụ thuộc E05; nhân sự thuộc E08. 12 món Trang trí/Tiện nghi đã chốt giá/tác dụng/vị trí; bàn ghế4000xu tăng10% kiên nhẫn. Sức chứa mặc định4, chỉ mở rộng lần1 lên6, tối đa6. Thiết bị mới, tác dụng mở rộng lần2 và quảng bá còn thiếu quyết định nên chưa thể bật toàn bộ nghiệp vụ.
+Cho người chơi đầu tư vào quán bằng trang trí, thiết bị, tiện nghi, tu sửa/mở rộng và quảng bá, với tác dụng gameplay thật, chi phí rõ và tiến độ lưu nhất quán. Đây là phần kinh tế sau demo, phụ thuộc E05; nhân sự thuộc E08. 12 món Trang trí/Tiện nghi đã chốt giá/tác dụng/vị trí; bàn ghế4000xu tăng10% kiên nhẫn. Luật mới: mặc định 4 ô, lần 1 lên 5 ô/+10% khách quầy, lần 2 lên 6 ô/tổng +30%. Code hiện vẫn dùng luật cũ 4→6; thiết bị mới và phí quảng bá còn cần chốt trước triển khai.
 
 ## Stories
 
@@ -16,13 +16,15 @@ Cho người chơi đầu tư vào quán bằng trang trí, thiết bị, tiện
 
 ## Requirements & Constraints
 
+- **Mốc mới2026-10-07:** bỏ lò thứ hai/thay bằng Nước; tủ lạnh bảo quản gấp4; bỏ Bàn làm pizza, món thay cập nhật sau; mở rộng lần 1: 4→5 ô, +10% khách quầy; lần 2: 5→6 ô, tổng +30% khách quầy; quảng bá trả tiền chỉ để biết số tốp/lượt hôm đó, không tăng khách; không có hư hỏng/sửa chữa. Các điểm còn cần chốt nằm trong [phạm vi tiếp theo](requirement-epic7-next-scope.md). Đây là planning, không phải chức năng đã triển khai. Sức chứa tối đa 6 ô; burst2–3 độc lập sức chứa giữ nguyên.
+
 - Mỗi loại đồ sở hữu một bản; mua không tự đặt. Chỉ mua/đặt/cất trong chuẩn bị. Xem/hủy không trừ tiền; thiếu tiền báo số còn thiếu; cất giữ sở hữu, không bán/hoàn tiền. Kiểm tra lại điều kiện trên trạng thái thật khi xác nhận.
 - Trang trí tăng kỳ vọng khách: cây để bàn 3%, tranh pizza 5%, đèn trang trí 5%, bảng hiệu 8%, chậu cây lớn 5%, rèm cửa 3%. Tiện nghi tăng kiên nhẫn: ghế chờ 5%, Wi-Fi 8%, quạt đứng 5%, máy lạnh 10%, loa 5%; bàn ghế khách +10% kiên nhẫn, không tăng sức chứa.
 - Chỉ đồ đang đặt/kích hoạt có tác dụng. Cộng phần trăm trên gốc; quạt/máy lạnh lấy mức cao hơn. Cap khách 30%, kiên nhẫn 40%; toàn danh mục hiện đạt 29%/38%, không sửa item để chạm cap. Ví dụ gốc 60 giây với ghế và Wi-Fi thành 67.8 giây.
 - Chốt bộ hiệu ứng khi mở ngày; mỗi khách dùng kiên nhẫn gốc của mình. Bonus khách phải nối scheduler thật, tăng kỳ vọng chứ không bảo đảm lượng khách cố định; giữ chính sách đầy hàng chờ/sức chứa. Không đổi đồ trong ca hoặc tự tăng giá, sao, tốc độ nướng.
 - Không chỗ chờ phụ/overflow hoặc hàng avatar cuộn. Giữ6 ô khách cố định, không cap8/10. Mở rộng không tự cho phép thay bố cục bếp hoặc thêm tác dụng cho lần2. Chi phí mua thiết bị/nâng cấp là dòng tiền, không trừ lại trong lợi nhuận; lương chỉ xuất hiện khi có dữ liệu nhân sự E08 thật.
-- Các quyết định còn thiếu: chỉ số/giá/nâng cấp tủ lạnh, bàn pizza và thiết bị mới; tác dụng/điều kiện mở rộng lần2; nguồn hư hỏng và sửa chữa. Lò cấp2/3 giá2000/5000, mở rộng lần1 giá6000 đã chốt; mở rộng lần2 giá10000 nhưng chưa có tác dụng.
-- Quảng bá vẫn thuộc E07: tờ rơi, giảm giá món mới và trang trí thu hút nhóm khách. Chưa có story hoặc bảng chi phí, thời hạn, nhóm đích, mức giảm giá, giới hạn/cách cộng với bonus khác; không tự tạo chương trình quảng bá hoặc lợi ích miễn phí.
+- Các quyết định còn thiếu: công dụng/giá Nước; giá/điều kiện tủ lạnh và cách nhân hạn từng lô; cách cộng bonus mở rộng với trang trí. Món thay Bàn làm pizza chờ cập nhật, không xây hai lò hoặc nhánh hư hỏng. Lò cấp2/3 giá2000/5000, mở rộng lần1 giá6000 đã chốt; mở rộng lần2 giá10000.
+- Quảng bá vẫn thuộc E07: có phí và cho xem số tốp khách dự kiến hôm đó từ lịch seeded chung. Chỉ xem thông tin, không tăng khách; chưa chốt phí/thời điểm/phạm vi quầy–app; các đề xuất tờ rơi/giảm giá cũ không tự trở thành yêu cầu đã duyệt.
 - Kiểm tra tập trung nghiệp vụ, modal, gameplay và save: thiếu tiền/hủy/điều kiện sai, double-tap/retry, lưu lỗi, vị trí sai, mua chưa đặt, đặt/cất, công thức bonus/cap/sức chứa, reload và save cũ. Full browser matrix chỉ khi hoàn tất Epic 1 hoặc trước release.
 
 ## Technical Decisions

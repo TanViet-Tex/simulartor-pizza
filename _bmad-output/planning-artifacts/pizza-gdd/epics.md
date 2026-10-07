@@ -118,20 +118,24 @@ Luồng giao đã chốt và được triển khai theo spec2026-10-04. Phí/h�
 
 ## E07 - Quán, thiết bị, tiện nghi, mở rộng và quảng bá
 
+### Quyết định mới — 2026-10-07, chuẩn bị triển khai
+
+Bỏ lò thứ hai, thay mục đó bằng Nước (công dụng/giá chưa chốt). Tủ lạnh kéo dài hạn bảo quản gấp4; cần chốt cách áp dụng từng lô và giá/điều kiện. Bỏ mục Bàn làm pizza, món thay sẽ cập nhật sau; giữ bàn thao tác hiện tại và Bàn ghế khách. Mở rộng lần 1: 4→5 ô, +10% khách quầy; lần 2: 5→6 ô, tổng +30% khách quầy; không tăng burst hoặc đơn app. Quảng bá có phí và hiển thị số tốp khách dự kiến từ lịch seeded thật; chỉ mở thông tin, không tăng khách. **Không có hư hỏng/sửa chữa**: loại khỏi Epic7. Những mô tả lò2/bàn mới/hư hỏng và đề xuất quảng bá cũ bên dưới là lịch sử, chỉ yêu cầu đã chốt trong [phạm vi mới](../../implementation-artifacts/requirement-epic7-next-scope.md) được dùng cho đợt tiếp theo. Chưa code hoặc đánh dấu các story còn thiếu done.
+
 Sau demo; P08, P09, phần thiết bị của P15. Trụ cột kinh tế. Phụ thuộc E05. Theo chỉ định người dùng 2026-10-04, nhân sự/P06 chuyển sang E08; quảng bá và các yêu cầu cũ ngoài nhân sự vẫn giữ ở E07.
 
 - Người chơi quản lý trang trí, thiết bị, tiện nghi và mở rộng quán; từng chức năng chỉ kích hoạt khi thông số/điều kiện đã chốt.
 - Người chơi phát tờ rơi, giảm giá món mới và trang trí để thu hút nhóm khách.
-- Người chơi thấy lương, thuê, sửa chữa, quảng bá và nâng cấp trong kết quả kinh doanh.
+- Người chơi thấy lương, thuê, quảng bá và nâng cấp trong kết quả kinh doanh; không có hư hỏng/sửa chữa thiết bị.
 
-Điều kiện trước triển khai: chốt giá/điều kiện/tác dụng trang trí, thiết bị, tiện nghi, mở rộng; quy tắc đặt/cất/nâng cấp, nguồn hư hỏng và sửa chữa. Chi phí lương hiển thị từ dữ liệu nhân sự E08 khi hệ thống đó có thật; không bịa lương trong UI E07.
+Điều kiện trước triển khai phần còn lại: chốt giá/điều kiện của Nước/tủ lạnh, quy tắc hạn bảo quản gấp4, cách tính bonus mở rộng10%/20% và số ô, phí/thông tin quảng bá theo tài liệu mới. Chi phí lương dùng dữ liệu nhân sự E08 hiện có.
 
 Backlog theo [tab Quán](../../implementation-artifacts/requirement-shop-tab.md):
 
 **Bổ sung chức năng 2026-10-04:** [Trang trí/Tiện nghi](../../implementation-artifacts/requirement-decoration-and-amenity-effects.md) chốt bonus từng đồ, chỉ sở hữu một bản/loại, đặt/cất, cộng trên gốc (cap khách30%, kiên nhẫn40%, quạt/máy lạnh lấy max, bàn ghế+10% kiên nhẫn, không tăng sức chứa), chốt hiệu ứng đầu ngày và nối sinh khách thật. Các ghi chú chưa chốt bên dưới chỉ áp dụng phần còn thiếu như nguồn giá/điều kiện/vị trí, thiết bị/mở rộng. Giá theo cấu hình dự án, không ảnh. Chưa code hoặc xem references.
 
 - **7.1 — Sở hữu và bố trí trang trí:** xem đồ/giá/công dụng/điều kiện → xác nhận mua; đủ tiền, số tiền thiếu, một giao dịch/một quyền sở hữu; đồ có rồi không bắt mua lại; Đặt vào quán/Cất đi. Sở hữu/bố trí lưu cùng tiến độ theo hợp đồng checkpoint cần chi tiết hóa.
-- **7.2 — Thiết bị và tiện nghi:** lò/tủ lạnh/bàn pizza, ghế chờ/Wi-Fi/máy lạnh/loa; phân biệt hỗ trợ sản xuất và trải nghiệm khách. Giá/chỉ số/tác dụng/nâng cấp chưa chốt thì hiển thị chưa triển khai, không tự tạo bonus từ ảnh. Mua/lưu một lần, giữ quy tắc gameplay đã chốt.
+- **7.2 — Thiết bị và tiện nghi:** giữ lò hiện có, thay lò thứ hai bằng Nước, tủ lạnh bảo quản gấp4; bỏ Bàn làm pizza, món thay chờ cập nhật. Ghế chờ/Wi-Fi/máy lạnh/loa đã có. Giá/chỉ số/điều kiện còn thiếu phải chốt trước triển khai, không tự tạo bonus từ ảnh. Mua/lưu một lần, giữ quy tắc gameplay đã chốt.
 - **7.3 — Tu sửa và mở rộng:** xem giá/điều kiện/diện tích/chỗ ngồi → xác nhận → ghi nhận cấp nâng cấp. Thông số và tác động phải chốt; không tự tăng cap đơn hoặc thay bố cục bếp. Lưu cấp nâng cấp cùng tiến độ.
 
 - **7.4 — Hiệu ứng ngày từ đồ đang đặt:** tính từ dữ liệu catalog/bố trí, không từ chỉ số đã nhân; chốt mỗi ngày, kiên nhẫn từng khách nhân trên gốc, tăng kỳ vọng khách nối scheduler thật, giữ sức chứa. Không đổi đồ trong ca hoặc tự tăng giá/sao/tốc độ nướng. Kiểm tra không nhân đôi khi reload; vị trí/sức chứa và cách tăng kỳ vọng khách cần chi tiết hóa. Phụ thuộc7.1/7.2 cho dữ liệu đồ đặt.
