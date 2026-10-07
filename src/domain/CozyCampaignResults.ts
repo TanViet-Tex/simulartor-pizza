@@ -1,3 +1,4 @@
+import {INITIAL_CASH} from '../config/campaignRules';
 import type {CozyDaySummary} from './CozyCheckpoint';
 import {progressionLevel,type ProgressionSnapshot} from './CozyProgression';
 
@@ -10,7 +11,7 @@ export type CozyCampaignResults=Readonly<{
 /** Reports remain the only persisted source for campaign totals. */
 export function cozyCampaignResults(reports:readonly CozyDaySummary[],progression:ProgressionSnapshot,endDay:number):CozyCampaignResults {
   const last=reports[reports.length-1];
-  return Object.freeze({daysCompleted:reports.length,endDay,ending:last?.ending??null,cash:last?.cash??300,
+  return Object.freeze({daysCompleted:reports.length,endDay,ending:last?.ending??null,cash:last?.cash??INITIAL_CASH,
     xp:progression.xp,level:progressionLevel(progression.xp),reputation:last?.reputation??50,
     cumulativeProfit:reports.reduce((n,r)=>n+r.profit,0),revenue:reports.reduce((n,r)=>n+r.revenue,0),
     orders:reports.reduce((n,r)=>n+r.delivered,0),

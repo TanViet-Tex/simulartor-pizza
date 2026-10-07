@@ -438,3 +438,8 @@ NotificationFrame: thông báo chữ ngắn một/hai nút fit nội dung thực
 
 
 Theo chỉnh tiếp 2026-10-07: lớp phủ nền phía sau tutorial và thông báo dùng chung opacity60% (thay30%/28%). Focus và khung nội dung vẫn sáng. Số tiền cách mép trong khung5px trong cả bếp và hub, tự fit số lớn; giữ nguyên bounds và luật tiền.
+
+
+### Vốn khởi đầu — yêu cầu 2026-10-07
+
+Game mới bắt đầu500xu, dùng INITIAL_CASH chung cho kho/runtime/đơn tập. Checkpoint mới lưu initialCash=500 để khôi phục và đối chiếu thu chi; save cũ thiếu trường này giữ vốn300xu và số dư thật, không cộng thêm tiền hoặc xóa tiến độ.

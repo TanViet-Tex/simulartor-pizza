@@ -13,13 +13,13 @@ describe('cozy day-one interaction fixture', () => {
     expect(game.dispatch({type:'ingredient',ingredient:'dough'})).toBe(true);
     expect(game.state.ingredients).toEqual([]);
     expect(game.dispatch({type:'ingredient',ingredient:'cheese'})).toBe(false);
-    expect(game.state.cash).toBe(300);
+    expect(game.state.cash).toBe(500);
   });
   it('discards a boxed mixed pizza without refunding stock or resetting progress',()=>{
     const game=new CozyOrder();prepare(game);game.dispatch({type:'ingredient',ingredient:'pepperoni'});
     game.dispatch({type:'bake'});game.tick(6);game.dispatch({type:'extract'});game.dispatch({type:'box'});
     expect(game.dispatch({type:'discard'})).toBe(true);
-    expect(game.state).toMatchObject({stage:'assembly',ingredients:[],cash:300,reputation:50});
+    expect(game.state).toMatchObject({stage:'assembly',ingredients:[],cash:500,reputation:50});
   });
   it('requires ingredients, cooking and boxing in order; delivery is single-use', () => {
     const game = new CozyOrder();
@@ -33,9 +33,9 @@ describe('cozy day-one interaction fixture', () => {
     game.tick(30); expect(game.state.stage).toBe('ready');
     expect(game.dispatch({ type: 'deliver' })).toBe(false);
     game.dispatch({ type: 'box' }); game.dispatch({ type: 'deliver' });
-    expect(game.state).toMatchObject({ cash: 350, reputation: 51, energy: 75 });
+    expect(game.state).toMatchObject({ cash: 550, reputation: 51, energy: 75 });
     expect(game.dispatch({ type: 'deliver' })).toBe(false);
-    expect(game.state.cash).toBe(350);
+    expect(game.state.cash).toBe(550);
   });
   it('keeps the green window inclusive and burns only after its end', () => {
     const game = new CozyOrder(); prepare(game); game.dispatch({ type: 'bake' });
@@ -51,7 +51,7 @@ describe('cozy day-one interaction fixture', () => {
     expect(game.dispatch({type:'extract'})).toBe(true);
     for(const type of ['box','deliver','bake'] as const)expect(game.dispatch({type})).toBe(false);
     expect(game.dispatch({type:'discard'})).toBe(true);
-    expect(game.state).toMatchObject({stage:'assembly',ingredients:[],ovenSeconds:0,cash:300,reputation:50,energy:80});
+    expect(game.state).toMatchObject({stage:'assembly',ingredients:[],ovenSeconds:0,cash:500,reputation:50,energy:80});
     prepare(game);game.dispatch({type:'bake'});game.tick(6);
     expect(game.dispatch({type:'extract'})).toBe(true);
   });
@@ -60,7 +60,7 @@ describe('cozy day-one interaction fixture', () => {
     game.dispatch({ type: 'ingredient', ingredient: 'cheese' });
     expect(game.state.ingredients).toHaveLength(2);
     expect(game.dispatch({ type: 'bake' })).toBe(true);
-    game.dispatch({ type: 'reset' }); expect(game.state.cash).toBe(300);
+    game.dispatch({ type: 'reset' }); expect(game.state.cash).toBe(500);
     expect(game.state.ingredients).toHaveLength(0);
   });
   it('does not release another pause owner or catch up after long frame gaps', () => {

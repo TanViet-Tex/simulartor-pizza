@@ -3,6 +3,7 @@ import {INGREDIENT_CATALOG,type IngredientId} from '../config/ingredientCatalog'
 import {isNonExpiring,NON_EXPIRING_DAY} from '../config/ingredientCatalog';
 import {RECIPE_CATALOG,type RecipeId} from '../config/recipeCatalog';
 import { EXPRESS_PRICE_MULTIPLIER } from '../config/kitchenEconomy';
+import {INITIAL_CASH} from '../config/campaignRules';
 import {drinkDefinition,type DrinkId} from '../config/drinkCatalog';
 import {emptyDrinkInventory,validateDrinkInventory,drinkInventoryValue,isDrinkId,type DrinkInventory} from './DrinkStock';
 const catalog = INGREDIENT_CATALOG;
@@ -45,7 +46,7 @@ export class CozyStock {
   private inventory: CozyLot[] = [];
   private nextLot = 1;
   private tickets = new Map<string, Reservation>();
-  private money = 300;
+  private money = INITIAL_CASH;
   private books = new Map<number, { purchases:number; ordinaryPurchases?:number; eventLoss?:number; drinkConsumed?:number; consumed:number }>();
   private ingredientCosts=new Map<number,Map<StockIngredient,number>>();
   private settlements=new Map<number,{expired:number;rent:number}>();

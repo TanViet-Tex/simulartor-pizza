@@ -12,7 +12,7 @@ describe('real stock ledger', () => {
   });
   it('rejects unsupported dates without cash or ledger mutations',()=>{
     const stock=new CozyStock();for(const day of [0,1000001,-1,NaN,.5]){expect(stock.buy('cheese',1,day)).toBe(false);expect(stock.settle(day)).toEqual({expired:0,rent:0});}
-    expect(stock.cash).toBe(300);expect(stock.lots).toEqual([]);
+    expect(stock.cash).toBe(500);expect(stock.lots).toEqual([]);
   });
   it('records each Day 1 purchase lot and consumes FIFO with exact unit cost conservation', () => {
     const stock = new CozyStock();
@@ -25,7 +25,7 @@ describe('real stock ledger', () => {
       { id: 5, ingredient: 'mushroom', quantity: 2, unitCost: 5, day: 1, expiry: 1 },
     ]);
     const totalCost = stock.lots.reduce((sum, lot) => sum + lot.quantity * lot.unitCost, 0);
-    expect(stock.cash + totalCost).toBe(300);
+    expect(stock.cash + totalCost).toBe(500);
     stock.reserve('pizza', 'cheese', 60); stock.commit('pizza', ['dough', 'sauce', 'cheese']);
     expect(stock.lots.some(lot => lot.id === 1)).toBe(false);
     expect(stock.lots.find(lot => lot.id === 2)?.quantity).toBe(2);
@@ -38,11 +38,11 @@ describe('real stock ledger', () => {
     for (const id of STOCK_INGREDIENTS) expect(stock.owned(id)).toBe(0);
     for (const qty of [0, -1, .5, NaN, Infinity, 101]) expect(stock.buy('cheese', qty)).toBe(false);
     expect(stock.buy('cheese', 100)).toBe(false);
-    expect(stock.cash).toBe(300); expect(stock.owned('cheese')).toBe(0);
-    expect(stock.buy('dough', 2)).toBe(true); expect(stock.cash).toBe(290);
-    expect(stock.buy('sauce', 2)).toBe(true); expect(stock.cash).toBe(284);
-    expect(stock.buy('cheese', 2)).toBe(true); expect(stock.cash).toBe(270);
-    expect(stock.buy('mushroom', 2)).toBe(true); expect(stock.cash).toBe(260);
+    expect(stock.cash).toBe(500); expect(stock.owned('cheese')).toBe(0);
+    expect(stock.buy('dough', 2)).toBe(true); expect(stock.cash).toBe(490);
+    expect(stock.buy('sauce', 2)).toBe(true); expect(stock.cash).toBe(484);
+    expect(stock.buy('cheese', 2)).toBe(true); expect(stock.cash).toBe(470);
+    expect(stock.buy('mushroom', 2)).toBe(true); expect(stock.cash).toBe(460);
   });
   it('excludes reserved units across simultaneous tickets, releases unused stock and prevents duplicate consumption', () => {
     const stock = new CozyStock();

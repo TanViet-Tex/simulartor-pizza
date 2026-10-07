@@ -2,6 +2,7 @@ import { recipeIngredients, recipePrice, type StockRecipe,type StockIngredient }
 export type CozyIngredient = StockIngredient;
 export { BAKE_TIMING as COZY_BAKE } from '../config/bakeTiming';
 import { bakeTiming } from '../config/bakeTiming';
+import {INITIAL_CASH} from '../config/campaignRules';
 import {isFinishingSauce,type FinishingSauce} from '../config/ingredientCatalog';
 export type CozyStage = 'assembly' | 'baking' | 'raw' | 'burnt' | 'ready' | 'boxed' | 'delivered';
 export type CozyIntent = { type: 'ingredient'; ingredient: CozyIngredient } | { type: 'deliver'; sourceId?: string; targetId?: string; commandId?: string } | { type: 'bake' | 'extract' | 'discard' | 'box' | 'reset' };
@@ -17,7 +18,7 @@ export interface CozyState {
   feedback: string;
 }
 
-const fresh = (): CozyState => ({ stage: 'assembly', ingredients: [], finishingSauces: [], extracted:false, ovenSeconds: 0, cash: 300, reputation: 50, energy: 80, feedback: 'Một chiếc pizza phô mai mang đi.' });
+const fresh = (): CozyState => ({ stage: 'assembly', ingredients: [], finishingSauces: [], extracted:false, ovenSeconds: 0, cash: INITIAL_CASH, reputation: 50, energy: 80, feedback: 'Một chiếc pizza phô mai mang đi.' });
 
 // This isolated fixture never reads or writes a campaign checkpoint.
 export class CozyOrder {
