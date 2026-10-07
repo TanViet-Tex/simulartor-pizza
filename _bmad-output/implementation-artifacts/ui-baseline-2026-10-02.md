@@ -27,6 +27,10 @@ Tài liệu này là nguồn hiện hành cho **bố cục và phong cách màn 
 
 ## Màn chơi cần giữ
 
+### Đồng hồ bên phải Pause — yêu cầu 2026-10-07
+
+Người dùng yêu cầu thêm giờ24hHH:mm ngay bên phảiPause: Bắt đầu ngày hiện08:50, chuẩn bị5giây đến09:00, sau đó bán đến21:00 theo thời lượng từng nhóm ngày. Giờ luôn hiện độc lập với đồng hồ lò. Tại21:00, HUD hiện “Đã đóng cửa · xử lý đơn còn lại” và countdown grace120giây trong vùngHUD sẵn có. Pause dừng tất cả đồng hồ. Giữ header ngày/tiền, hàng khách, panel đơn, bàn bếp/lò, số ô và vị trí các nút khác. Xem [spec](spec-shift-clock-and-customer-budget.md); đây là phạm vi thay đổi người dùng yêu cầu, không cho phép reflow các phần khác.
+
 ### Sốt ăn kèm và hình bánh — yêu cầu 2026-10-06
 
 Người dùng yêu cầu thay riêng hình pizza theo thời gian nướng thật và ba sốt kem trắng/pesto/cay thành sốt ăn kèm. Giữ khung bếp/lò/thớt, các ô chai/nguyên liệu, nút, header và bố cục hub. Sốt chỉ xịt sau lấy bánh trước đóng hộp, đường zíc zắc trắng/xanh/đỏ cam nằm trong mặt bánh và vẽ trên topping; không highlight như nguyên liệu bắt buộc. Sống nhạt, nướng vàng dần, chín phô mai tan/viền vàng nâu, cháy sẫm; lấy khỏi lò giữ hình tương ứng. Chợ/Kho ghi Không hết hạn cho năm sốt trong hàng hiện có, vẫn giữ giá/tổng/số dư và mua lẻ/giỏ như cũ.

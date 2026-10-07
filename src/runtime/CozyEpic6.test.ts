@@ -37,8 +37,8 @@ describe('delivery schedule',()=>{
   const count=(day:number,on:boolean)=>deliverySchedule(threeDaySchedule(day,eligibility),on).slots as DeliveryScheduleSlot[];
   expect(count(4,true).filter(s=>s.source==='app')).toHaveLength(0);
   expect(count(5,true).filter(s=>s.source==='app').map(s=>s.quantity)).toEqual([1,2]);
-  expect(count(6,false)).toHaveLength(14);expect(count(6,true).filter(s=>s.source==='app')).toHaveLength(3);
-  expect(count(7,false)).toHaveLength(22);expect(count(9,false)).toHaveLength(28);
+  for(const day of [5,6,7,9]){expect(count(day,false)).toHaveLength(threeDaySchedule(day,eligibility).slots.length);expect(count(day,true)).toHaveLength(count(day,false).length);}
+  expect(count(6,true).filter(s=>s.source==='app')).toHaveLength(3);
   expect(count(9,true).filter(s=>s.source==='app').map(s=>s.quantity)).toEqual([1,3]);
   expect(count(10,true)).toEqual(count(10,true));expect(deliveryEvent(10).id).toBe('rain');expect(deliveryEvent(8).id).toBe('normal');
  });

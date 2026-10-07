@@ -11,15 +11,18 @@ export function deliveryEvent(day:number):DeliveryEvent {
 }
 export function deliveryTiming(event:DeliveryEventId){return {waitSeconds:event==='rain'?15:10,travelSeconds:0,returnSeconds:event==='rain'?30:20,fee:DELIVERY_RULES.fee};}
 export function deliverySchedule(base:CozySchedule,enabled:boolean):CozySchedule {
- const event=deliveryEvent(base.day),slots:DeliveryScheduleSlot[]=base.slots.filter((_slot,i)=>event.id!=='rain'||i%3!==2).map(slot=>({...slot,source:'shop',quantity:1}));
- let ordinal=base.slots.reduce((n,s)=>Math.max(n,s.commercialOrdinal??0),0);
- const add=(at:number,id:string,source:'shop'|'app',quantity:1|2|3)=>{
-  if(at>=base.duration)return;
-  while(slots.some(s=>s.at===at))at+=.05;
-  if(at>=base.duration)return;
-  slots.push({id:`day-${base.day}-${id}`,at,kind:'hurry',opportunity:'commercial',commercialOrdinal:++ordinal,takeaway:source==='app',source,quantity});
- };
- if(event.id==='rush'||event.id==='festival')for(const [i,at] of (event.id==='rush'?[45,125]:[45,125,205]).entries())add(at,`event-counter-${i+1}`,'shop',1);
- if(enabled&&base.day>=DELIVERY_RULES.unlockDay)for(const [i,at] of (event.id==='rain'?[55,115,175]:[75,155]).entries())add(at,`app-${i+1}`,'app',event.id==='festival'&&i===1?3:i%2===0?1:2);
- return validateCozySchedule({...base,slots:slots.sort((a,b)=>a.at-b.at)});
+ const event=deliveryEvent(base.day),slots:DeliveryScheduleSlot[]=base.slots.map(slot=>({...slot,source:'shop',quantity:1}));
+ // The seeded budget already includes app orders. Weather keeps its delivery rules,
+ // while the new explicit day bands replace the former event density adjustments.
+ if(enabled&&base.day>=DELIVERY_RULES.unlockDay){
+  const positions=event.id==='rain'?[.23,.48,.73]:[.31,.65];
+  for(const [i,fraction] of positions.entries()){
+   const target=base.duration*fraction;
+   const eligible=slots.map((slot,index)=>({slot,index})).filter(({slot})=>slot.source==='shop'&&slot.opportunity==='commercial'&&slot.kind!=='regular'&&slot.at>0);
+   const chosen=eligible.sort((a,b)=>Math.abs(a.slot.at-target)-Math.abs(b.slot.at-target)||a.index-b.index)[0];
+   if(!chosen)continue;
+   slots[chosen.index]={...chosen.slot,id:`day-${base.day}-app-${i+1}`,kind:'hurry',source:'app',takeaway:true,quantity:event.id==='festival'&&i===1?3:i%2===0?1:2};
+  }
+ }
+ return validateCozySchedule({...base,slots});
 }

@@ -36,6 +36,12 @@ _Tệp này chứa các quy tắc và patterns quan trọng mà AI agent phải 
 
 ## Critical Implementation Rules
 
+### Đồng hồ và ngân sách lượt đơn — yêu cầu 2026-10-07
+
+Lịch Cozy dùng chung cấu hình cho runtime/dự báo/HUD: chuẩn bị5giây từ08:50→09:00, không sinh khách/app hoặc tiêu hao thời gian mở bán/kiên nhẫn; bán09:00→21:00 với ngày1=180s,2–5=210s,6–10=240s,11–20=270s,21+=300s; grace120s vẫn giữ. Pause dừng cả chuẩn bị/bán/grace. HUD thêmHH:mm ngay bên phảiPause, đóng cửa ghi “Đã đóng cửa · xử lý đơn còn lại” và countdown riêng trong vùngHUD hiện có; giữ các khu vực khác.
+
+Ngân sách nền tại quán+app trước bonus trang trí/giới thiệu:15–20/22–28/28–36/36–46/46–60 theo cùng các nhóm ngày. Seed chiến dịch/ngày ổn định, dự báo và lịch thật dùng cùng pipeline. App thay lượt thương mại trong ngân sách, không cộng thêm lượt; các điều chỉnh mật độ mưa/cao điểm/lễ hội cũ được thay bởi ngân sách mới, giữ loại sự kiện/phí/thời gian giao/số bánh mỗi đơn. Khách đầu tiên tại09:00, đầu thưa/giữa đông/cuối giảm; tốp tối đa2 đến ngày5,3 từ ngày6, không phụ thuộc sức chứa4/6. Bonus/giới thiệu nằm trong ca; dự báo tính từng bánh/sốt. Không đổi schema/checkpoint hoặc xóa tiến độ. Quyết định này thay mọi con số mật độ/thời lượng/burst cũ bên dưới. Xem implementation-artifacts/spec-shift-clock-and-customer-budget.md.
+
 ### Giao diện đậm, chữ rõ và sốt mở mua — yêu cầu 2026-10-07
 
 Người dùng giao triển khai toàn bộ note: tăng độ đậm/tương phản trên mọi màn/panel; chữ và canvas UI dùng raster 2× với kích thước logic không đổi; nút phụ Quay lại/Về Quán đồng bộ nền tối, viền vàng/kem theo ảnh. Giữ bố cục ngoài nội dung thẻ Menu & Giá bán được yêu cầu chỉnh theo reference: hình/tên/vốn, −/giá/+, bật bán và lãi thật; vẫn ba thẻ/trang, giá 80–140% và quyền công thức thật. Thay đổi menu chuẩn bị qua campaign session/checkpoint, không lưu giữa ca.

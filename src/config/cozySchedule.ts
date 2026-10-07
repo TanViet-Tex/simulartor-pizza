@@ -4,12 +4,30 @@ import type {CustomerKind} from './ordinaryCustomers';
 export type ScheduleRecipe=RecipeId;
 export type ScheduleEligibility=Readonly<{regularDay1Stars:number|null;regularLatestStars:number|null;helpSucceeded:boolean;referral:boolean;helpOfferEligible?:boolean;queueCapacity?:4|6;customerSeed?:number|string}>;
 export type ScheduleSlot=Readonly<{id:string;at:number;kind:CustomerKind;opportunity:'commercial'|'help'|'referral';commercialOrdinal:number|null;takeaway:boolean}>;
-export type CozySchedule=Readonly<{day:number;duration:number;grace:number;slots:readonly ScheduleSlot[]}>;
+export type CozySchedule=Readonly<{day:number;duration:number;grace:number;preparation?:number;slots:readonly ScheduleSlot[]}>;
 export type ScheduleFactory=(day:number,eligibility:ScheduleEligibility)=>CozySchedule;
 const onTick=(seconds:number)=>Number.isFinite(seconds)&&Math.abs(seconds*20-Math.round(seconds*20))<1e-8;
 
+export const COZY_HOURS=Object.freeze({preparation:5,startMinutes:8*60+50,openMinutes:9*60,closeMinutes:21*60,grace:120});
+const DAY_BANDS=Object.freeze([
+  {through:1,duration:180,min:15,max:20,burst:2},
+  {through:5,duration:210,min:22,max:28,burst:2},
+  {through:10,duration:240,min:28,max:36,burst:3},
+  {through:20,duration:270,min:36,max:46,burst:3},
+  {through:1000000,duration:300,min:46,max:60,burst:3},
+].map(band=>Object.freeze(band)));
+export function cozyDayRules(day:number){
+  if(!Number.isSafeInteger(day)||day<1||day>1000000)throw new Error('Invalid campaign day');
+  return DAY_BANDS.find(band=>day<=band.through)!;
+}
+export function cozyClockMinutes(elapsed:number,duration:number,preparationElapsed:number,preparation:number):number{
+  if(preparationElapsed<preparation)return Math.floor(COZY_HOURS.startMinutes+(COZY_HOURS.openMinutes-COZY_HOURS.startMinutes)*preparationElapsed/preparation);
+  return Math.min(COZY_HOURS.closeMinutes,Math.floor(COZY_HOURS.openMinutes+(COZY_HOURS.closeMinutes-COZY_HOURS.openMinutes)*elapsed/duration));
+}
+export function formatCozyTime(minutes:number):string{return `${Math.floor(minutes/60).toString().padStart(2,'0')}:${(minutes%60).toString().padStart(2,'0')}`;}
+
 export function validateCozySchedule(input:CozySchedule):CozySchedule {
-  if(!Number.isInteger(input.day)||input.day<1||input.day>1000000||!onTick(input.duration)||input.duration<=0||!onTick(input.grace)||input.grace<0)throw new Error('Invalid Cozy schedule');
+  if(!Number.isInteger(input.day)||input.day<1||input.day>1000000||!onTick(input.duration)||input.duration<=0||!onTick(input.grace)||input.grace<0||input.preparation!==undefined&&(!onTick(input.preparation)||input.preparation<0))throw new Error('Invalid Cozy schedule');
   const ids=new Set<string>();let last=-1;
   const slots=input.slots.map(slot=>{
     if(!slot.id.trim()||ids.has(slot.id)||!onTick(slot.at)||slot.at<0||slot.at>=input.duration||slot.at<last||!['regular','hurry','picky','bargain'].includes(slot.kind)||!['commercial','help','referral'].includes(slot.opportunity)||typeof slot.takeaway!=='boolean'||(slot.opportunity==='help'?(slot.commercialOrdinal!==null||slot.takeaway):(!Number.isInteger(slot.commercialOrdinal)||slot.commercialOrdinal!<=0)))throw new Error('Invalid Cozy schedule slot');
@@ -36,14 +54,16 @@ export function resolveScheduleRecipe<R extends ScheduleRecipe>(slot:ScheduleSlo
 }
 
 export const threeDaySchedule:ScheduleFactory=(day,eligibility)=>{
-  if(!Number.isSafeInteger(day)||day<1||day>1000000)throw new Error('Invalid campaign day');
-  const duration=day===1?180:day===2?210:240,capacity=eligibility.queueCapacity===6?6:4;
-  // Grandfathered saves can exceed the 30-day campaign; retain its final density.
-  const count=day===1?20:day<=5?40+Math.floor(customerSample(eligibility.customerSeed??0,day)*11):50+2*(Math.min(day,30)-6);
+  const rules=cozyDayRules(day),duration=rules.duration;
+  const count=rules.min+Math.floor(customerSample(eligibility.customerSeed??0,day)*(rules.max-rules.min+1));
   // Most groups contain one arrival; every eighth group is an occasional burst.
   const groups:number[]=[];
-  for(let remaining=count;remaining>0;){const size=Math.min(remaining,(groups.length+1)%8===0?capacity:1);groups.push(size);remaining-=size;}
-  const times=groups.flatMap((size,group)=>Array<number>(size).fill(Math.round((10+group*(duration-20)/(groups.length-1))*20)/20));
+  for(let remaining=count;remaining>0;){const size=Math.min(remaining,(groups.length+1)%8===0?rules.burst:1);groups.push(size);remaining-=size;}
+  // Invert a density curve: 20% early, 60% middle, 20% late. First arrival is opening.
+  const times=groups.flatMap((size,group)=>{
+    const p=group/(groups.length-1),fraction=p<.2?p/.2*.3:p<.8?.3+(p-.2)/.6*.4:.7+(p-.8)/.2*.3;
+    return Array<number>(size).fill(Math.round(fraction*duration*.95*20)/20);
+  });
   let commercialOrdinal=0;
   const slots:ScheduleSlot[]=Array.from({length:count},(_,i)=>{
     const at=times[i];
@@ -54,8 +74,8 @@ export const threeDaySchedule:ScheduleFactory=(day,eligibility)=>{
     return {id:`day-${day}-slot-${i+1}`,at,kind,opportunity:help?'help':'commercial',commercialOrdinal:help?null:commercialOrdinal,takeaway:!help&&commercialOrdinal%3===0};
   });
   if(day>=3&&eligibility.referral){
-    commercialOrdinal++;let at=210;while(slots.some(slot=>slot.at===at))at=Math.round((at+.05)*20)/20;
+    commercialOrdinal++;let at=Math.round(duration*.875*20)/20;while(slots.some(slot=>slot.at===at))at=Math.round((at+.05)*20)/20;
     slots.push({id:`day-${day}-referral`,at,kind:'hurry',opportunity:'referral',commercialOrdinal,takeaway:commercialOrdinal%3===0});
   }
-  return validateCozySchedule({day,duration,grace:120,slots:slots.sort((a,b)=>a.at-b.at)});
+  return validateCozySchedule({day,duration,preparation:COZY_HOURS.preparation,grace:COZY_HOURS.grace,slots:slots.sort((a,b)=>a.at-b.at)});
 };

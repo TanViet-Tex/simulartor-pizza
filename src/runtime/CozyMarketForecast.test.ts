@@ -8,15 +8,39 @@ import {marketForecast} from '../domain/MarketForecast';
 import type {CozyDaySummary} from '../domain/CozyCheckpoint';
 import {threeDaySchedule} from '../config/cozySchedule';
 import {deliverySchedule,type DeliveryScheduleSlot} from '../config/deliveryEvents';
+import {shopSchedule} from '../domain/ShopSchedule';
+import {recipeIngredients} from '../domain/CozyStock';
+import type {StockIngredient} from '../domain/CozyStock';
 
 it('forecasts day one deterministically, adds reserve once to shared needs and subtracts usable inventory',()=>{
   const r=new CozyRuntime(false,true),before=r.exportCheckpoint();
   const forecast=r.marketForecast;
-  expect(forecast.day).toBe(1);const pizzas=forecast.portions.reduce((n,p)=>n+p.quantity,0),needed=Math.ceil(pizzas*1.1);expect(pizzas).toBeGreaterThanOrEqual(20);
+  expect(forecast.day).toBe(1);const pizzas=forecast.portions.reduce((n,p)=>n+p.quantity,0),needed=Math.ceil(pizzas*1.1);expect(pizzas).toBeGreaterThanOrEqual(15);
   expect(forecast.rows.find(row=>row.ingredient==='dough')).toMatchObject({needed,available:0,missing:needed});
   expect(r.marketForecast).toEqual(forecast);expect(r.exportCheckpoint()).toEqual(before);
   expect(r.buy('dough',2,'stock')).toBe(true);
   expect(r.marketForecast.rows.find(row=>row.ingredient==='dough')).toMatchObject({needed,available:2,missing:needed-2});
+});
+
+it.each([1,5,6,11,21])('matches day %i seeded counter/app budget and forecasts every pizza and requested sauce before reserve',day=>{
+  const r=new CozyRuntime(false,true,{eventSeed:2718});r.claimTestCode('VIETVUIVE');
+  for(let d=1;d<day;d++){expect(d===1?r.openShop():r.openNextDay()).toBe(true);expect(r.closeDay()).toBe(true);}
+  if(day>=5)expect(r.configureDeliveryApp(true,'on')).toBe(true);
+  expect(r.buyShopItem('shop-sign','sign')).toBe(true);expect(r.placeShopItem('shop-sign',true,'place-sign')).toBe(true);
+  const forecast=r.marketForecast,schedule=shopSchedule(deliverySchedule(threeDaySchedule(day,{regularDay1Stars:null,regularLatestStars:null,helpSucceeded:false,referral:false,customerSeed:2718}),day>=5),r.shopState.effects.visitors);
+  const needs=new Map<StockIngredient,number>();let pizzas=0;
+  for(const slot of schedule.slots){
+    const first=resolveScheduleRecipe(slot,r.menuRecipes)!;const source=slot as DeliveryScheduleSlot;
+    let items=customerPizzaRequests(2718,day,slot,r.menuRecipes,first,()=>0,source.source==='app'?source.quantity:undefined);
+    if(source.source!=='app'&&isVipArrival(2718,day,slot.id))items=items.slice(0,1);
+    pizzas+=items.length;
+    for(const item of items)for(const id of [...recipeIngredients(item.recipe),...item.finishingSauces])needs.set(id,(needs.get(id)??0)+1);
+  }
+  expect(pizzas).toBeGreaterThan(schedule.slots.length);
+  expect(forecast.portions.reduce((n,p)=>n+p.quantity,0)).toBe(pizzas);
+  for(const [ingredient,count] of needs)expect(forecast.rows.find(row=>row.ingredient===ingredient)?.needed).toBe(Math.ceil(count*1.1));
+  expect(day===1?r.openShop():r.openNextDay()).toBe(true);expect(r.shiftClock.total).toBe(schedule.slots.length);
+  expect(r.shiftClock.duration).toBe(schedule.duration);expect(r.tickets).toEqual([]);
 });
 
 it('blends only recent detailed history while preserving scheduled count and excluding disabled recipes',()=>{

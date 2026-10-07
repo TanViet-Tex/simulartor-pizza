@@ -395,8 +395,13 @@ export class CozyScene extends Phaser.Scene {
     });
     this.inspectedOrderId=this.orderQueue.inspectedId;
     this.hit('pause',18,5,32,29,true,()=>this.hold('user'));
+    if(this.runtime.productionActive)this.timer(86,8,()=>this.runtime.shiftClock.displayTime,16,cream);
     this.label(180,0,this.runtime.productionActive?`Ngày ${this.runtime.day}/${this.runtime.campaignEndDay}`:`Ngày ${this.runtime.day}`,18);
-    this.timer(189,23,()=>this.runtime.productionActive&&(!this.runtime.ovenOwner||this.runtime.shiftClock.phase==='awaiting-close')?this.shiftTimeText():`Lò ${timerText(Math.floor(this.runtime.ovenState?.ovenSeconds??this.runtime.state.ovenSeconds))}`,10,'#ead1b3');
+    if(this.runtime.productionActive&&['grace','awaiting-close'].includes(this.runtime.shiftClock.phase)){
+      this.layer.add(this.add.rectangle(122,30,146,14,0x4b281b));
+      this.label(122,23,'Đã đóng cửa · xử lý đơn còn lại',9,cream);
+      this.timer(224,23,()=>this.runtime.shiftClock.phase==='awaiting-close'?'Chốt ngày':timerText(this.runtime.shiftClock.remaining),9,cream);
+    }else this.timer(189,23,()=>this.runtime.productionActive&&!this.runtime.ovenOwner?this.shiftTimeText():`Lò ${timerText(Math.floor(this.runtime.ovenState?.ovenSeconds??this.runtime.state.ovenSeconds))}`,10,'#ead1b3');
     if(this.runtime.shopOpen)this.hit('end-day',133,22,114,20,this.runtime.canCloseDay,()=>{this.hold('user');this.endDayConfirmation=true;this.dirty=true;});
     this.label(306,10,`${s.cash}`,17,ink);
     this.customers();this.orderCard();this.recipes();this.graphics();
@@ -556,7 +561,8 @@ export class CozyScene extends Phaser.Scene {
       const {x,y,w,h}=KITCHEN.oven(i);
       const frame='oven-empty';
       this.referenceSprite(frame,x+w/2,y+h/2,w,h)?.setTint(i?0x99877b:0xffffff);
-      this.label(x+w/2,y-15,i?'Lò 2':'Lò 1',12,cream);
+      if(!i&&occupied&&this.runtime.productionActive&&this.runtime.shiftClock.phase==='grace')this.timer(x+w/2,y-15,()=>`Lò 1 · ${timerText(Math.floor(this.runtime.ovenState?.ovenSeconds??0))}`,12,cream);
+      else this.label(x+w/2,y-15,i?'Lò 2':'Lò 1',12,cream);
       if(i){this.icon('lock',x+w/2,y+30,23,.85);this.label(x+w/2,y+48,'Chưa mở khóa',9,muted);}
       else{
         if(occupied){
@@ -586,7 +592,7 @@ export class CozyScene extends Phaser.Scene {
   }
   private shiftTimeText():string{
     const clock=this.runtime.shiftClock;
-    return clock.phase==='awaiting-close'?'Chốt ngày':`${clock.phase==='grace'?'Chờ':'Ca'} ${timerText(clock.remaining)}`;
+    return clock.phase==='awaiting-close'?'Chốt ngày':clock.phase==='preparing'?`Chuẩn bị ${Math.ceil(clock.remaining)}s`:clock.phase==='grace'?`Còn ${timerText(clock.remaining)}`:'Mở bán';
   }
   private customers():void{
     if(this.runtime.productionActive&&this.runtime.queueCapacity===4)for(let i=4;i<6;i++){

@@ -23,7 +23,7 @@ import { customerProfile } from '../config/customerCatalog';
 import {OVEN_UPGRADE_PRICES,QUEUE_UPGRADE_PRICE} from '../config/kitchenEconomy';
 import { CUSTOMER_PROFILES, type CustomerKind } from '../config/ordinaryCustomers';
 import { menuPrice, agreedPrice, priceAccepted, reputationResult, relationshipResult, referralEligibility } from '../domain/CustomerProgression';
-import {threeDaySchedule,validateCozySchedule,resolveScheduleRecipe,type CozySchedule,type ScheduleFactory,type ScheduleSlot} from '../config/cozySchedule';
+import {COZY_HOURS,cozyDayRules,cozyClockMinutes,formatCozyTime,threeDaySchedule,validateCozySchedule,resolveScheduleRecipe,type CozySchedule,type ScheduleFactory,type ScheduleSlot} from '../config/cozySchedule';
 import { deliveryResult } from '../domain/DeliveryResult';
 import {closeAccounts} from '../domain/DayAccounts';
 import {compactCozyReport,expandCozyReport,reportProgression,COZY_CONTENT_VERSION,validateCozyCheckpoint,type CozyCheckpoint,type CozyDaySummary,type CozyReview} from '../domain/CozyCheckpoint';
@@ -207,6 +207,9 @@ export class CozyRuntime {
   private message = 'Mở ca; chạm ô hết nguyên liệu để đặt hỏa tốc.';
   private revision = 0;
   private elapsed = 0;
+  private preparationElapsed=0;
+  private displayedMinute=-1;
+  private displayedTime='08:50';
   private serial = 0;
   private ticket = '';
   private active = new Map<string, Ticket>();
@@ -370,9 +373,11 @@ export class CozyRuntime {
   /** Story 4.2 supplies all enabled unlocked recipes at this boundary. */
   eligibleMenuRecipes():readonly StockRecipe[]{return this.menuFor(this.currentDay);}
   get shiftClock(){
-    const duration=this.schedule?.duration??[180,210,240][Math.min(2,this.currentDay-1)]!,grace=this.schedule?.grace??120;
-    const phase=!this.shiftOpen?'preparation':this.elapsed<duration?'serving':this.elapsed<duration+grace?'grace':'awaiting-close';
-    return {phase,elapsed:this.elapsed,duration,grace,remaining:Math.max(0,(phase==='grace'?duration+grace:duration)-this.elapsed),attempted:this.processedArrivals.size,total:this.schedule?.slots.length??0};
+    const duration=this.schedule?.duration??cozyDayRules(this.currentDay).duration,grace=this.schedule?.grace??COZY_HOURS.grace,preparation=this.schedule?.preparation??0;
+    const phase=!this.shiftOpen?'preparation':this.preparationElapsed<preparation?'preparing':this.elapsed<duration?'serving':this.elapsed<duration+grace?'grace':'awaiting-close';
+    const minute=this.shiftOpen?cozyClockMinutes(this.elapsed,duration,this.preparationElapsed,preparation):COZY_HOURS.startMinutes;
+    if(minute!==this.displayedMinute){this.displayedMinute=minute;this.displayedTime=formatCozyTime(minute);}
+    return {phase,displayTime:this.displayedTime,elapsed:this.elapsed,duration,grace,preparation,preparationElapsed:this.preparationElapsed,remaining:Math.max(0,phase==='preparing'?preparation-this.preparationElapsed:(phase==='grace'?duration+grace:duration)-this.elapsed),attempted:this.processedArrivals.size,total:this.schedule?.slots.length??0};
   }
   get daySummary():CozyDaySummary|null {return this.summary?structuredClone(this.summary):null;}
   get preparationDay() {return this.canPrepareNextDay?this.currentDay+1:this.currentDay;}
@@ -464,15 +469,18 @@ export class CozyRuntime {
   }
   get marketForecast(){
     const day=this.preparationDay,menu=this.menuRecipes;
-    let schedule=validateCozySchedule((this.scheduleDependencies.schedule??threeDaySchedule)(day,{queueCapacity:this.queueCapacity as 4|6,customerSeed:String(this.eventSeed),regularDay1Stars:this.regularDay1Stars,regularLatestStars:this.regularLatestStars,helpSucceeded:this.help.outcome==='succeeded',helpOfferEligible:helpOfferEligible(this.eventSeed),referral:day>=4?this.reputation>=55:!!this.referral?.eligible}));
-    if(!this.scheduleDependencies.schedule)schedule=deliverySchedule(schedule,this.appEnabled&&day>=DELIVERY_RULES.unlockDay);
-    schedule=shopSchedule(schedule,this.shopState.effects.visitors);
+    const schedule=this.buildSchedule(day);
     const scheduled:Partial<Record<StockRecipe,number>>={},finishing:Partial<Record<StockIngredient,number>>={};
     for(const slot of schedule.slots){
       const recipe=this.scheduleDependencies.resolveRecipe?this.scheduleDependencies.resolveRecipe(slot,menu,this.recipe):resolveScheduleRecipe(slot,menu);
       if(recipe&&menu.includes(recipe)){let items=this.scheduleDependencies.resolveItems?.(slot,menu,recipe)??(!this.scheduleDependencies.schedule?customerPizzaRequests(this.eventSeed,day,slot,menu,recipe,id=>menuPrice(recipePrice(id),this.pricing[id])!,(slot as DeliveryScheduleSlot).source==='app'?(slot as DeliveryScheduleSlot).quantity:undefined):Array.from({length:(slot as DeliveryScheduleSlot).quantity??1},()=>({recipe,price:0,finishingSauces:[]})));if((slot as DeliveryScheduleSlot).source!=='app'&&isVipArrival(this.eventSeed,day,slot.id,this.scheduleDependencies.vipRoll))items=items.slice(0,1);for(const item of items){scheduled[item.recipe]=(scheduled[item.recipe]??0)+1;for(const id of item.finishingSauces)finishing[id]=(finishing[id]??0)+1;}}
     }
     return marketForecast(day,menu,scheduled,this.reports,id=>this.stock.available(id,day),undefined,finishing);
+  }
+  private buildSchedule(day:number):CozySchedule {
+    let schedule=validateCozySchedule((this.scheduleDependencies.schedule??threeDaySchedule)(day,{queueCapacity:this.queueCapacity as 4|6,customerSeed:String(this.eventSeed),regularDay1Stars:this.regularDay1Stars,regularLatestStars:this.regularLatestStars,helpSucceeded:this.help.outcome==='succeeded',helpOfferEligible:helpOfferEligible(this.eventSeed),referral:day>=4?this.reputation>=55:!!this.referral?.eligible}));
+    if(!this.scheduleDependencies.schedule)schedule=deliverySchedule(schedule,this.appEnabled&&day>=DELIVERY_RULES.unlockDay);
+    return shopSchedule(schedule,this.shopState.effects.visitors);
   }
   quoteMarketBasket(entries:readonly {ingredient:StockIngredient;quantity:number}[]){
     if(!entries.length||entries.length>19||new Set(entries.map(e=>e.ingredient)).size!==entries.length||entries.some(e=>!this.ingredientAccess(e.ingredient).unlocked||!Number.isSafeInteger(e.quantity)||e.quantity<1||e.quantity>100))return null;
@@ -527,23 +535,26 @@ export class CozyRuntime {
     if (!this.saveGuard() || !this.productionActive || this.reasons.size || this.phase !== 'preparation' || this.currentDay>this.campaignLastDay || this.closedDays.has(this.currentDay)) return false;
     if (this.shiftOpen) return this.returnToOrders();
     if (!this.canOpen) return this.shopFeedback(this.missingReason);
-    this.schedule=validateCozySchedule((this.scheduleDependencies.schedule??threeDaySchedule)(this.currentDay,{queueCapacity:this.queueCapacity as 4|6,customerSeed:String(this.eventSeed),regularDay1Stars:this.regularDay1Stars,regularLatestStars:this.regularLatestStars,helpSucceeded:this.help.outcome==='succeeded',helpOfferEligible:helpOfferEligible(this.eventSeed),referral:this.currentDay>=4?this.reputation>=55:!!this.referral?.eligible}));
-    this.shiftEvent=deliveryEvent(this.currentDay);this.shiftRoles=this.staff.acquired.map(a=>a.role);this.shiftStaff=this.shiftRoles.includes('delivery')||!!this.scheduleDependencies.deliveryStaffAvailable?.();this.staffJobs.clear();this.payrollWarning='';this.shiftApp=this.appEnabled&&this.currentDay>=5;if(!this.scheduleDependencies.schedule)this.schedule=deliverySchedule(this.schedule,this.shiftApp);
-    this.frozenShopEffects=this.shopState.effects;this.schedule=shopSchedule(this.schedule,this.frozenShopEffects.visitors);
+    this.schedule=this.buildSchedule(this.currentDay);this.preparationElapsed=0;this.accumulator=0;
+    this.shiftEvent=deliveryEvent(this.currentDay);this.shiftRoles=this.staff.acquired.map(a=>a.role);this.shiftStaff=this.shiftRoles.includes('delivery')||!!this.scheduleDependencies.deliveryStaffAvailable?.();this.staffJobs.clear();this.payrollWarning='';this.shiftApp=this.appEnabled&&this.currentDay>=DELIVERY_RULES.unlockDay;
+    this.frozenShopEffects=this.shopState.effects;
     const history=this.reports.flatMap(report=>report.campaignEvent?[{...report.campaignEvent,day:report.day}]:[]);
     this.appliedCampaignEvent=chooseCampaignEvent(this.eventSeed,this.currentDay,history,this.scheduleDependencies.eventRoll);
     if(this.appliedCampaignEvent&&!this.stock.applyCampaignLoss(this.currentDay))throw new Error('Campaign event applied twice');
     this.campaignEventAcknowledged=false;
     this.shiftOpen = true; this.phase = 'making';
     this.capitalPurchases=this.pendingUpgradeSpent+this.pendingRecipeSpent+this.shop.pendingSpent+this.staff.pendingSpent;this.pendingUpgradeSpent=0;this.pendingRecipeSpent=0;this.shop.pendingSpent=0;this.staff.pendingSpent=0;
-    while(this.schedule.slots[this.arrival]?.at===0){const before=this.arrival;this.processArrival(this.schedule.slots[this.arrival].id);if(this.reasons.size||this.arrival===before)break;}
+    this.processDueArrivals();
     this.revision++; return true;
   }
   /** Atomic scheduled arrival. A failed slot is consumed rather than queued for retry. */
   processArrival(arrivalId:string):boolean {return this.cashTransaction(()=>this.processArrivalNow(arrivalId));}
+  private processDueArrivals():void {
+    while(this.schedule!.slots[this.arrival]&&this.elapsed>=this.schedule!.slots[this.arrival].at&&this.elapsed<this.schedule!.duration){const before=this.arrival;this.processArrival(this.schedule!.slots[this.arrival].id);if(this.reasons.size||this.arrival===before)break;}
+  }
   private processArrivalNow(arrivalId: string): boolean {
     const slot=this.schedule?.slots[this.arrival];
-    if (!this.saveGuard() || !this.productionActive || !this.shiftOpen || !['making','delivered'].includes(this.phase) || this.reasons.size || !slot||arrivalId!==slot.id||this.processedArrivals.has(arrivalId)||this.elapsed<slot.at||this.elapsed>=this.schedule!.duration) return false;
+    if (!this.saveGuard() || !this.productionActive || !this.shiftOpen || this.preparationElapsed<(this.schedule?.preparation??0) || !['making','delivered'].includes(this.phase) || this.reasons.size || !slot||arrivalId!==slot.id||this.processedArrivals.has(arrivalId)||this.elapsed<slot.at||this.elapsed>=this.schedule!.duration) return false;
     this.processedArrivals.add(arrivalId);this.arrival++;
     if(slot.opportunity==='help'){
       if(this.help.decision!=='unseen'||this.help.offer)return false;
@@ -968,6 +979,13 @@ export class CozyRuntime {
       } else if (!this.production) this.order.tick(.05);
       else if (this.shiftOpen && this.phase !== 'preparation' && this.phase !== 'summary') {
         for(const pending of this.expressPending.values()){pending.remaining=Math.max(0,Math.round((pending.remaining-.05)*1e6)/1e6);if(!pending.remaining&&this.stock.receiveExpress(pending.id)){this.expressPending.delete(pending.id);this.event('express-received:'+pending.id);this.revision++;}}
+        const preparation=this.schedule!.preparation??0;
+        if(this.preparationElapsed<preparation){
+          this.preparationElapsed=Math.min(preparation,Math.round((this.preparationElapsed+.05)*1e6)/1e6);
+          if(this.preparationElapsed===preparation)this.processDueArrivals();
+          if(this.reasons.size)break;
+          continue;
+        }
         this.deliveryTime=Math.round((this.deliveryTime+.05)*1e6)/1e6;this.tickCourier(.05);
         const end=this.schedule!.duration+this.schedule!.grace;
         if(this.elapsed>=end)continue;
@@ -985,7 +1003,7 @@ export class CozyRuntime {
           this.result={targetId:id,name:t.name,recipe:t.recipe,help:!!t.help,price:0,stars:1,reasons:[reason],outcome:'expired',...feedback};
           this.message = t.help?reason+' · Món giúp chưa hoàn thành. Quan hệ '+feedback.relationshipDelta+'; không phạt uy tín.':t.committed?reason+' · 1 sao. Bỏ bánh còn lại, không hoàn nguyên liệu.':reason+' · 1 sao. Nguyên liệu đã giữ được trả về kho.';
         }
-        while(this.schedule!.slots[this.arrival]&&this.elapsed>=this.schedule!.slots[this.arrival].at&&this.elapsed<this.schedule!.duration){const before=this.arrival;this.processArrival(this.schedule!.slots[this.arrival].id);if(this.reasons.size||this.arrival===before)break;}
+        this.processDueArrivals();
         if(this.reasons.size)break;
         this.tickStaff(.05);
       }
