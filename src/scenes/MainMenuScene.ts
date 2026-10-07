@@ -258,12 +258,10 @@ export class MainMenuScene extends Phaser.Scene {
     const save=this.actions.save?.();
     const ids=this.dialog==='new-session'?['menu-new-confirm','menu-new-cancel']:this.dialog==='recovery'?['menu-recover-confirm','menu-retry-read']:[save?.canRetry?'menu-save-retry':'menu-retry-read'];
     if(this.dialog==='loading'){
-      const scale=Math.max(1,Math.min(2,parseFloat(getComputedStyle(document.documentElement).fontSize)/16));
-      const layout=drawCompactNotification(this,this.interfaceLayer,'Đang tải dữ liệu…',this.entryProgress!==null?'Chuẩn bị mở tiệm pizza.':save?.message??'Đang đọc tiến độ…',14,scale);
-      const footer=layout.footer[0];
-      this.loadingBounds={x:footer.x+12,y:footer.y+8,width:footer.width-24};
+      this.text(this.interfaceLayer,180,292,'Đang tải dữ liệu…',20,'#fff0d5',300);
+      this.loadingBounds={x:60,y:326,width:240};
       this.loadingBar=this.add.graphics();this.interfaceLayer.add(this.loadingBar);
-      this.loadingPercent=this.text(this.interfaceLayer,180,footer.y+33,'0%',14,'#fff0d5');
+      this.loadingPercent=this.text(this.interfaceLayer,180,358,'0%',16,'#fff0d5');
       this.paintLoadingProgress();return;
     }
     if(this.dialog==='new-session'){

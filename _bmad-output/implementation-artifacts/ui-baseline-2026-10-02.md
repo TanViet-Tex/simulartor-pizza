@@ -510,3 +510,5 @@ Theo chỉnh tiếp 2026-10-07: lớp phủ nền phía sau tutorial và thông 
 ### Màn tải từ menu — 2026-10-08
 
 Bắt đầu/Tiếp tục giữ menu phía sau khung thông báo gọn có chữ “Đang tải dữ liệu…”, thanh xanh và phần trăm. 0% chờ đọc/ghi save; 10% có runtime; 10–95% theo Phaser loader; 100% khi scene đã create. Không tăng bằng bộ đếm giả. Chặn input và Escape khi chờ, pause bằng lease menu riêng đến khi màn chơi sẵn sàng; lỗi save trả giao diện retry hiện có. Không đổi vị trí/art các nút menu. Ảnh: [màn tải](ui-baseline/menu-loading-2026-10-08/menu-loading.png).
+
+Theo chỉnh tiếp 2026-10-08: màn tải bỏ khung thông báo và câu phụ, chỉ có chữ “Đang tải dữ liệu…”, thanh tiến trình rộng240px và phần trăm trên nền menu tối. Tiến trình tải, khóa input, retry và pause giữ nguyên.

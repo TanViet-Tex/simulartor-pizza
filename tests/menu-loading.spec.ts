@@ -18,6 +18,7 @@ test('menu reports actual asset progress and blocks repeat actions until the gam
   const percent=Number(await canvas.getAttribute('data-menu-loading-progress'));expect(percent).toBeLessThan(100);
   expect(JSON.parse(await canvas.getAttribute('data-labels')??'[]').some((t:{text:string})=>t.text==='Đang tải dữ liệu…')).toBe(true);
   await expect(canvas).toHaveAttribute('data-menu-targets','[]');
+  await expect(canvas).toHaveAttribute('data-notification-frame','');
   await page.keyboard.press('Escape');await expect(canvas).toHaveAttribute('data-menu-dialog','loading');
   await page.touchscreen.tap(180,550);await expect(canvas).toHaveAttribute('data-screen','menu');
   await canvas.screenshot({path:info.outputPath('menu-loading.png')});release();
