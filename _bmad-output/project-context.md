@@ -433,3 +433,5 @@ Tutorial chỉnh gọn theo yêu cầu tiếp: khung rộng280px, cao theo chữ
 Tutorial chuyển bước: container spotlight riêng giữ qua redraw/save, tween240ms chỉ cập nhật graphics/card; không redraw toàn scene theo từng frame. Tạm chặn thao tác khi focus đang chuyển. ReducedMotion bỏ tween. Saving tutorial không hiện popup chờ mỗi bước nhưng vẫn guard input; lỗi giữ UI retry và lease save.
 
 CashHeader là nguồn chung của khung/icon/chữ tiền bếp và hub; tutorial focus toàn bounds component, không hard-code vùng chỉ có số. Không đổi cash/accounting.
+
+NotificationFrame: thông báo chữ ngắn một/hai nút fit nội dung thực, đệm12/gap10/bottom18 cho one; giữ art và footer. Xác nhận có điều khiển phụ dự trù riêng để không chồng chữ; nội dung dài cuộn, nút không chạy theo scroll. Form native/illustration không dùng bộ fit thuần chữ. Tiền, hành vi xác nhận và pause lease không đổi.

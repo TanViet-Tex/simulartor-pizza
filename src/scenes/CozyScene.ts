@@ -157,7 +157,7 @@ export class CozyScene extends Phaser.Scene {
   private newCampaignConfirmation=false;
   private newCampaignLease?:PauseLease;
   private reloadConfirmation=false;
-  private notification?:{layout:NotificationLayout;ids:string[];start:number;end:number;title:boolean};
+  private notification?:{layout:NotificationLayout;ids:string[];start:number;end:number;title:boolean;fitting?:{frames:Phaser.GameObjects.GameObject[];heading?:Phaser.GameObjects.Text}};
   private notificationButtonLabel=false;
   constructor(private readonly runtime:CozyRuntime,private readonly preferences?:MenuPreferences,private readonly returnToMenu?:()=>void,private readonly audio=new PlayAudio(),private readonly sharedLifecycle?:PlayLifecycle,private readonly campaignSession?:CozyCampaignSession,private readonly replaceRuntime?:(runtime:CozyRuntime)=>void){super('CozyScene');}
   preload():void{
@@ -261,6 +261,7 @@ export class CozyScene extends Phaser.Scene {
   private clearFeedback():void{for(const effect of this.feedback){effect.tween?.remove();effect.timer?.remove(false);effect.object.destroy();}this.feedback.clear();}
   private graphics(dynamic=false):void{const g=this.add.graphics();if(dynamic)g.setData('dynamic',true);this.layer.add(g);this.art=new CozyArt(g);}
   private label(x:number,y:number,value:string,size=12,color:string=cream,width=0,align:'left'|'center'='center'):Phaser.GameObjects.Text{
+    if(this.notification?.fitting?.heading&&!this.notificationButtonLabel)return this.fitNotification(value,size);
     let notificationTitle=false;
     if(this.notification&&!this.notificationButtonLabel){
       const n=this.notification;
@@ -270,7 +271,7 @@ export class CozyScene extends Phaser.Scene {
     const text=this.add.text(x,y,value,{fontFamily:UI_THEME.typography.fontFamily,fontSize:`${Math.max(size,UI_THEME.typography.minSize)}px`,fontStyle:'bold',color,align,lineSpacing:UI_THEME.typography.lineSpacing,padding:{top:1,bottom:1},...(width?{wordWrap:{width,useAdvancedWrap:true}}:{})}).setResolution(UI_RASTER_SCALE).setLetterSpacing(UI_THEME.typography.letterSpacing);
     if(align==='center')text.setOrigin(.5,0);
     if(this.notification&&!this.notificationButtonLabel&&!notificationTitle){const body=this.notification.layout.body;text.setY(Math.min(y,body.y+body.height-text.height));}
-    this.layer.add(text);return text;
+    this.layer.add(text);if(notificationTitle&&this.notification?.fitting)this.notification.fitting.heading=text;return text;
   }
   private icon(name:string,x:number,y:number,size:number,alpha=1):Phaser.GameObjects.Image|undefined{
     const key=`pizza-icon-${name}`;
@@ -299,6 +300,7 @@ export class CozyScene extends Phaser.Scene {
     const text=this.label(x,y,read(),size,color,width);text.setFontFamily('monospace');this.timers.push({text,read});
   }
   private explanation(y:number,height:number,value:string,size=13,color:string=ink):void{
+    if(this.notification?.fitting?.heading){this.fitNotification(value,size);return;}
     if(this.notification){const bottom=this.notificationY(y+height);y=this.notificationY(y);height=Math.max(18,Math.min(bottom-y,this.notification.layout.body.y+this.notification.layout.body.height-y));}
     modalText(this,this.layer,40,y,280,height,value,size,color,this.textScale);
     if(this.textScale>1&&!this.notification)this.label(180,y+height+2,'Vuốt phần chữ để đọc tiếp',10,wood);
@@ -387,7 +389,7 @@ export class CozyScene extends Phaser.Scene {
       }
       return;
     }
-    if(this.notification){y=this.notificationY(y);w=Math.min(w,284);x=Math.max(38,Math.min(322-w,x));}
+    if(this.notification){y=id==='mute'&&this.notification.ids[0]==='cancel-end-day'?this.notification.layout.body.y+this.notification.layout.body.height-h:this.notificationY(y);w=Math.min(w,284);x=Math.max(38,Math.min(322-w,x));}
     if(this.notification||secondary){
       drawNotificationButton(this,this.layer,x,y,w,h);
       if(!enabled){this.graphics();this.art.g.fillStyle(0x000000,.4).fillRoundedRect(x,y,w,h,h/2);}
@@ -402,7 +404,14 @@ export class CozyScene extends Phaser.Scene {
   }
   private notificationY(y:number):number{const n=this.notification!;return n.layout.body.y+Math.max(0,Math.min(1,(y-n.start)/(n.end-n.start)))*n.layout.body.height;}
   private notificationFrame(ids:string[],start:number,end:number,height=420):void{
-    this.veil();this.notification={layout:drawNotificationFrame(this,this.layer,ids.length===2?'two':'one',(640-height)/2,height),ids,start,end,title:true};
+    this.veil();const first=this.layer.length;
+    this.notification={layout:drawNotificationFrame(this,this.layer,ids.length===2?'two':'one',(640-height)/2,height),ids,start,end,title:true};
+    if(['confirm-discard','confirm-delivery','accept-bargain','accept-help','market-new-cancel','cancel-end-day','fridge-cancel','staff-hire-cancel','delivery-app-cancel','hub-upgrade-cancel','recipe-buy-cancel','advertising-close','market-purchase-cancel'].includes(ids[0]))this.notification.fitting={frames:this.layer.list.slice(first)};
+  }
+  private fitNotification(message:string,size:number):Phaser.GameObjects.Text{
+    const n=this.notification!,fit=n.fitting!,title=fit.heading!.text;fit.heading!.destroy();for(const frame of fit.frames)frame.destroy();
+    n.layout=drawCompactNotification(this,this.layer,title,message,size,this.textScale,n.layout.variant,n.ids[0]==='cancel-end-day'?58:0);n.fitting=undefined;n.title=false;
+    return this.layer.list.find(object=>object instanceof Phaser.GameObjects.Text&&object.text===message) as Phaser.GameObjects.Text;
   }
   private notice(title:string,message:string,id:string,buttonTitle:string,action:()=>void,enabled=true,size=14):void{
     this.notification=undefined;this.veil();this.game.canvas.dataset.modalScroll='[]';

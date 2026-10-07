@@ -59,11 +59,19 @@ export function drawNotificationButton(scene:Phaser.Scene,layer:Phaser.GameObjec
 }
 
 /** Content-sized notice: preserve the crest and bottom border, stretch only blank paper. */
-export function drawCompactNotification(scene:Phaser.Scene,layer:Phaser.GameObjects.Container,title:string,message:string,size=14,textScale=1):NotificationLayout{
-  const texture=scene.textures.get('notification-frame-one'),source=texture.getSourceImage(),width=332,scale=width/source.width,padding=18,border=14,inset=border+padding,gap=14;
+export function drawCompactNotification(scene:Phaser.Scene,layer:Phaser.GameObjects.Container,title:string,message:string,size=14,textScale=1,variant:NotificationVariant='one',extraBody=0):NotificationLayout{
+  const texture=scene.textures.get('notification-frame-one'),source=texture.getSourceImage(),width=332,scale=width/source.width,padding=12,border=14,inset=border+padding,gap=10;
   const heading=scene.add.text(180,0,title,{fontFamily:UI_THEME.typography.fontFamily,fontSize:'20px',fontStyle:'bold',color:UI_THEME.text.ink,wordWrap:{width:width-inset*2},padding:{top:1,bottom:1}}).setResolution(UI_RASTER_SCALE).setOrigin(.5,0);
   const measure=scene.add.text(0,0,message,{fontFamily:UI_THEME.typography.fontFamily,fontSize:`${size*textScale}px`,fontStyle:'bold',wordWrap:{width:width-inset*2},padding:{top:2,bottom:2}});
-  const headerHeight=300*scale,titleOffset=headerHeight,bottomPadding=48;
+  if(variant==='two'){
+    const two=scene.textures.get('notification-frame-two').getSourceImage(),twoScale=width/two.width,footerHeight=(two.height-800)*twoScale,bodyOffset=Math.max(105,65+heading.height+gap);
+    const bodyHeight=Math.min(Math.max(18,measure.height),600-bodyOffset-gap-footerHeight+8*twoScale-extraBody);measure.destroy();
+    const height=Math.max(410*twoScale+footerHeight+8,bodyOffset+bodyHeight+extraBody+gap+footerHeight-8*twoScale),top=(640-height)/2;
+    const layout=drawNotificationFrame(scene,layer,'two',top,height);layout.body={x:14+inset,y:top+bodyOffset,width:width-inset*2,height:bodyHeight+extraBody};
+    heading.setY(layout.titleY);layer.add(heading);modalText(scene,layer,layout.body.x,layout.body.y,layout.body.width,bodyHeight,message,size,UI_THEME.text.ink,textScale);
+    scene.game.canvas.dataset.notificationFrame=JSON.stringify(layout);return layout;
+  }
+  const headerHeight=300*scale,titleOffset=headerHeight,bottomPadding=18;
   const bodyHeight=Math.min(Math.max(18,measure.height),600-titleOffset-heading.height-gap*2-48-bottomPadding);measure.destroy();
   const height=titleOffset+heading.height+gap+bodyHeight+gap+48+bottomPadding,top=(640-height)/2,bodyY=top+titleOffset+heading.height+gap;
   const cornerWidth=150*scale,cornerHeight=(source.height-1220)*scale,baseHeight=(source.height-1290)*scale;

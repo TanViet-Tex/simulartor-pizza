@@ -37,14 +37,14 @@ test('one-button queue notice dims the background and retains independent pause 
   await expect(canvas).toHaveAttribute('data-stage','assembly');const cash=await canvas.getAttribute('data-cash');
   await tap(page,'queue-locked-4');await variant(page,'one');await visibleCorners(page);
   const layout=JSON.parse(await canvas.getAttribute('data-notification-frame')||'{}');
-  expect(layout.bounds.width).toBe(332);expect(layout.bounds.height).toBeLessThan(350);
+  expect(layout.bounds.width).toBe(332);expect(layout.bounds.height).toBeLessThan(300);
   expect(layout.bounds.y+layout.bounds.height/2).toBe(320);
-  expect(layout.body.x-layout.bounds.x-14).toBe(18);
-  expect(layout.footer[0].y-layout.body.y-layout.body.height).toBe(14);
+  expect(layout.body.x-layout.bounds.x-14).toBe(12);
+  expect(layout.footer[0].y-layout.body.y-layout.body.height).toBe(10);
   expect(layout.footer[0].height).toBe(48);
-  expect(layout.bounds.y+layout.bounds.height-layout.footer[0].y-layout.footer[0].height).toBe(48);
+  expect(layout.bounds.y+layout.bounds.height-layout.footer[0].y-layout.footer[0].height).toBe(18);
   const heading=JSON.parse(await canvas.getAttribute('data-labels')||'[]').find((label:{text:string})=>label.text.includes('Ô hàng chờ'));
-  expect(layout.body.y-heading.y-heading.height).toBe(14);
+  expect(layout.body.y-heading.y-heading.height).toBe(10);
   expect(JSON.parse(await canvas.getAttribute('data-controls')??'[]').map((c:{id:string})=>c.id)).toEqual(['queue-upgrade-close']);
   const bounds=(await canvas.boundingBox())!;await page.touchscreen.tap(bounds.x+45*bounds.width/360,bounds.y+514*bounds.height/640);
   await expect(canvas).toHaveAttribute('data-ingredients','');await expect(canvas).toHaveAttribute('data-cash',cash!);
@@ -53,18 +53,21 @@ test('one-button queue notice dims the background and retains independent pause 
   await tap(page,'queue-upgrade-close');await expect(canvas).toHaveAttribute('data-paused','order');
   await page.evaluate(()=>{(window as unknown as {otherNoticeLease:any}).otherNoticeLease.release();});await expect(canvas).toHaveAttribute('data-paused','');
   await tap(page,'end-day');await variant(page,'two');
+  const confirmation=JSON.parse(await canvas.getAttribute('data-notification-frame')||'{}'),region=JSON.parse(await canvas.getAttribute('data-modal-scroll')||'[]')[0],mute=JSON.parse(await canvas.getAttribute('data-controls')||'[]').find((c:{id:string})=>c.id==='mute');
+  expect(confirmation.bounds.height).toBeLessThan(450);expect(mute.y).toBeGreaterThanOrEqual(region.y+region.height);
   await canvas.screenshot({path:info.outputPath('notification-end-day.png')});
   await tap(page,'notification-close');await expect(canvas).toHaveAttribute('data-paused','');
 });
 
 test('menu confirmation uses two-button art, cancels without resetting and settings remains functional',async({page},info)=>{
-  await page.goto('/');const canvas=page.locator('canvas');await tap(page,'menu-start',true);
-  await tap(page,'dough');await tap(page,'pause');await tap(page,'main-menu');await tap(page,'menu-start',true);
+  await page.goto('/?mode=shop');const canvas=page.locator('canvas');
+  await tap(page,'pause');await tap(page,'main-menu');await tap(page,'menu-start',true);
   await expect(canvas).toHaveAttribute('data-menu-dialog','new-session');await variant(page,'two');await visibleCorners(page);
+  const layout=JSON.parse(await canvas.getAttribute('data-notification-frame')||'{}');expect(layout.bounds.height).toBeLessThan(300);expect(layout.footer[0].y-layout.body.y-layout.body.height).toBeCloseTo(10);
   await canvas.screenshot({path:info.outputPath('notification-two.png')});
-  await tap(page,'notification-close',true);await tap(page,'menu-settings',true);await variant(page,'one');
+  await tap(page,'notification-close',true);await tap(page,'menu-settings',true);await expect(canvas).toHaveAttribute('data-menu-dialog','settings');
   await tap(page,'menu-motion',true);await expect(canvas).toHaveAttribute('data-menu-reduced-motion','true');
-  await tap(page,'menu-settings-close',true);await tap(page,'menu-continue',true);await expect(canvas).toHaveAttribute('data-ingredients','dough');
+  await tap(page,'menu-settings-close',true);await tap(page,'menu-continue',true);await expect(canvas).toHaveAttribute('data-cash','300');await expect(canvas).toHaveAttribute('data-screen','preparation-hub');
 });
 
 test('order information grows to fit at 200% without moving the close action',async({page},info)=>{

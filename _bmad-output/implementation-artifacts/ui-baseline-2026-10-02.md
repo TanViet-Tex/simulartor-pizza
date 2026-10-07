@@ -496,3 +496,9 @@ Chuyển bước tutorial theo chỉnh tiếp: focus chuyển dần và thẻ fa
 Ô tiền đồng bộ theo yêu cầu tiếp: dùng chung CashHeader (khung nâu/kem/viền vàng, icon xu, chữ17px tự fit số lớn) trong bếp và hub. Giữ bounds bếp247/5/100/28 và hub290/12/65/28 để không che bảng tiêu đề. Focus tutorial tiền bao toàn bounds bếp, gồm icon/viền.
 
 Ảnh kiểm tra ô tiền: [focus cả khung](ui-baseline/interactive-tutorial-2026-10-07/cash-full-focus.png), [Tổng kết](ui-baseline/interactive-tutorial-2026-10-07/summary-cash.png). Build/typecheck và2testChromium360×640 liên quan đạt.
+
+### Khung thông báo gọn theo nội dung — 2026-10-07
+
+Thông báo một nút giảm padding ngang18→12px, khoảng chữ/nút14→10px, đệm dưới48→18px; giữ crest/art và nút48px. Xác nhận thuần chữ hai nút đo nội dung để co chiều cao, giữ art hai nút, chỗ riêng cho điều khiển phụ và khả năng cuộn khi chữ dài. Menu xác nhận chiến dịch mới dùng cùng cách fit. Các form có ô nhập/hình xem trước giữ vùng cần cho điều khiển, không đổi luật tiền/save/pause.
+
+Kiểm chứng: build/typecheck đạt;5kiểm tra Chromium360×640 liên quan đạt (thông báo ngắn/pause, xác nhận menu, chữ200%, cuộn dài, quảng bá). Ảnh: [một nút](ui-baseline/compact-notifications-2026-10-07/notification-one.png), [hai nút](ui-baseline/compact-notifications-2026-10-07/notification-two.png), [cuối ngày](ui-baseline/compact-notifications-2026-10-07/notification-end-day.png).

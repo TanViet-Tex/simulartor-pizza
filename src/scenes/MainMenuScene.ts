@@ -242,7 +242,11 @@ export class MainMenuScene extends Phaser.Scene {
       this.notification={layout,ids,start:layout.body.y,end:layout.body.y+layout.body.height,title:false};
       this.button(ids[0],0,0,0,0,'Đang tải…','none',SAGE,'#fff6df',false,()=>{},false,undefined,16);return;
     }
-    this.notification={layout:drawNotificationFrame(this,this.interfaceLayer,ids.length===2?'two':'one',100,440),ids,start:281,end:535,title:true};
+    if(this.dialog==='new-session'){
+      const scale=Math.max(1,Math.min(2,parseFloat(getComputedStyle(document.documentElement).fontSize)/16));
+      const layout=drawCompactNotification(this,this.interfaceLayer,'Chiến dịch mới?','Thay tiến độ hiện tại bằng Ngày 1.\nCác ngày cũ không thể mở lại.',14,scale,'two');
+      this.notification={layout,ids,start:layout.body.y,end:layout.body.y+layout.body.height,title:false};
+    }else this.notification={layout:drawNotificationFrame(this,this.interfaceLayer,ids.length===2?'two':'one',100,440),ids,start:281,end:535,title:true};
     if(['save-error','recovery'].includes(this.dialog)){
       const save=this.actions.save!();
       this.text(this.interfaceLayer,180,213,this.dialog==='recovery'?'Khôi phục cùng mốc':'Chưa mở được tiến độ',23);
@@ -257,8 +261,6 @@ export class MainMenuScene extends Phaser.Scene {
       else if(save.canReload)this.button('menu-load-latest',48,418,264,48,'Tải bản mới nhất','none',0xf5c6a5,'#985025',true,()=>this.actions.retryRead?.(),false,undefined,18);
       return;
     }
-    this.text(this.interfaceLayer,180,251,'Chiến dịch mới?',24);
-    this.dialogText('Thay tiến độ hiện tại bằng Ngày 1.\nCác ngày cũ không thể mở lại.',160);
     this.button('menu-new-confirm',48,321,264,48,'Bắt đầu mới','none',SAGE,'#fff6df',true,()=>{this.dialog='none';this.actions.start();});
     this.button('menu-new-cancel',84,383,192,48,'Hủy','none',0xf5c6a5,'#985025',true,()=>{this.dialog='none';this.focusId='menu-start';this.draw();});
   }
