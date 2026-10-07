@@ -1,0 +1,439 @@
+diff --git a/_bmad-output/implementation-artifacts/ui-baseline-2026-10-02.md b/_bmad-output/implementation-artifacts/ui-baseline-2026-10-02.md
+index 70b528e..262e1a7 100644
+--- a/_bmad-output/implementation-artifacts/ui-baseline-2026-10-02.md
++++ b/_bmad-output/implementation-artifacts/ui-baseline-2026-10-02.md
+@@ -402,3 +402,13 @@ Sau commit thành công, gỡ input/đóng bàn phím và hiện thông báo th
+ ![Popup khi visualViewport thu nhỏ mô phỏng bàn phím](ui-baseline/test-code-mobile-keyboard.png)
+ 
+ ![Thông báo thưởng thực nhận](ui-baseline/test-code-received-2026-10-06.png)
++
++### Cài đặt theo ảnh tiệm pizza ấm cúng — yêu cầu 2026-10-06
++
++Người dùng duyệt thay riêng bảng Cài đặt chung Menu/Pause theo `Cài đặt tiệm pizza ấm cúng.png`: khung gỗ nâu/vàng, giấy kem, huy hiệu pizza, title và các icon nguồn ảnh; controls đen viền vàng, phần chọn của toggle màu vàng. Khung cache các lát art/giấy trống và clip silhouette, không dùng toàn ảnh có chữ/trạng thái mẫu. Geometry portrait360×640: bounds12/34/336/578, các vùng chạm48CSS trở lên, không chồng nhau.
++
++Thứ tự Music → Chọn nhạc nền → Hiệu ứng → Code → Chuyển động → Quay lại. Hai mục nhạc disabled, ghi rõ “Chưa có nhạc”; Hiệu ứng chỉ bật/tắt PlayAudio thật. Theo steering mới, bỏ nút−/+, bỏ phần trăm âm lượng, dùng âm lượng điện thoại. Chuyển động Bật là reducedMotion=false, Tắt là true. Code mở editor/nhận thưởng hiện có, VIETVUIVE vẫn100.000xu; hủy/đóng thưởng trở lại bảng này. Keyboard, pause ownership, nền tối nhẹ và mọi giao diện ngoài Cài đặt giữ nguyên. Mốc này thay phần geometry/art Cài đặt cũ, không thay popup mã/thưởng. Xem [spec](spec-reference-settings-panel.md).
++
++![Cài đặt Menu theo references](ui-baseline/reference-settings-menu-2026-10-06.png)
++
++![Cài đặt Pause theo references](ui-baseline/reference-settings-pause-2026-10-06.png)
+diff --git a/src/presentation/SettingsPanel.ts b/src/presentation/SettingsPanel.ts
+index d2e1821..2ae28a7 100644
+--- a/src/presentation/SettingsPanel.ts
++++ b/src/presentation/SettingsPanel.ts
+@@ -1,37 +1,58 @@
+ import type Phaser from 'phaser';
+ import type {PlayAudio} from './PlayAudio';
+ import type {MenuPreferences} from './MenuPreferences';
+-import {drawNotificationFrame,drawNotificationButton,type NotificationRect} from './NotificationFrame';
++import type {NotificationRect} from './NotificationFrame';
++import {drawSettingsArt,drawSettingsIcon} from './ReferenceSettingsArt';
+ import {UI_THEME} from './theme';
+ 
+-export type SettingsAction='music'|'effects-less'|'mute'|'effects-more'|'motion'|'code'|'back';
++export type SettingsAction='music'|'music-choice'|'mute'|'motion'|'code'|'back';
+ type SettingsInput={audio:PlayAudio;preferences?:MenuPreferences;reducedMotion:boolean;changed:()=>void;back:()=>void;code:()=>void;register:(action:SettingsAction,rect:NotificationRect,enabled:boolean,callback:()=>void)=>void};
+ 
+-/** Both scenes draw the same absolute geometry; adapters only register input and semantic IDs. */
++/** Both scenes share artwork, absolute geometry and real preference state. */
+ export function drawSettingsPanel(scene:Phaser.Scene,layer:Phaser.GameObjects.Container,input:SettingsInput):void {
+-  const layout=drawNotificationFrame(scene,layer,'one',75,514),y=layout.body.y;
+-  const text=(at:number,value:string,size=14,color=UI_THEME.text.ink)=>{
+-    layer.add(scene.add.text(180,at,value,{fontFamily:UI_THEME.typography.fontFamily,fontSize:`${size}px`,fontStyle:'bold',color,align:'center',wordWrap:{width:280},padding:{top:2,bottom:2}}).setOrigin(.5,0));
+-  };
++  drawSettingsArt(scene,layer);
+   const controls:Record<SettingsAction,NotificationRect>={
+-    music:{x:50,y:y+32,width:260,height:48},
+-    'effects-less':{x:50,y:y+125,width:76,height:48},mute:{x:137,y:y+125,width:86,height:48},'effects-more':{x:234,y:y+125,width:76,height:48},
+-    motion:{x:50,y:y+190,width:260,height:48},code:{x:50,y:y+254,width:260,height:48},back:layout.footer[0],
++    music:{x:187,y:174,width:130,height:48},'music-choice':{x:92,y:246,width:225,height:48},
++    mute:{x:187,y:326,width:130,height:48},
++    code:{x:92,y:404,width:225,height:48},motion:{x:187,y:467,width:130,height:48},back:{x:76,y:542,width:208,height:48},
+   };
+-  const button=(action:SettingsAction,title:string,enabled:boolean,callback:()=>void)=>{
+-    const rect=controls[action];if(action!=='back')drawNotificationButton(scene,layer,rect.x,rect.y,rect.width,rect.height);
+-    if(!enabled){const shade=scene.add.graphics();shade.fillStyle(0x000000,.4).fillRoundedRect(rect.x,rect.y,rect.width,rect.height,rect.height/2);layer.add(shade);}
+-    layer.add(scene.add.text(rect.x+rect.width/2,rect.y+rect.height/2,title,{fontFamily:UI_THEME.typography.fontFamily,fontSize:'16px',fontStyle:'bold',color:enabled?'#fff0d5':'#a9a29a',align:'center',wordWrap:{width:rect.width-12},padding:{top:2,bottom:2}}).setOrigin(.5));
+-    input.register(action,rect,enabled,()=>{callback();input.changed();});
++  const text=(x:number,y:number,value:string,size=17,color='#472310',originX=0,width?:number)=>layer.add(scene.add.text(x,y,value,{fontFamily:UI_THEME.typography.fontFamily,fontSize:`${size}px`,fontStyle:'bold',color,align:originX===.5?'center':'left',wordWrap:width?{width}:undefined,padding:{top:2,bottom:2}}).setOrigin(originX,0));
++  const button=(action:SettingsAction,title:string,enabled:boolean,callback:()=>void,size=16)=>{
++    const r=controls[action],g=scene.add.graphics();
++    g.fillStyle(0x6a351a).fillRoundedRect(r.x-2,r.y+2,r.width+4,r.height+2,r.height/2);
++    g.fillStyle(0xf5bf65).fillRoundedRect(r.x,r.y,r.width,r.height,r.height/2);
++    g.fillStyle(0xffe6a8).fillRoundedRect(r.x+2,r.y+2,r.width-4,r.height-4,(r.height-4)/2);
++    g.fillStyle(0x302c29).fillRoundedRect(r.x+5,r.y+5,r.width-10,r.height-10,(r.height-10)/2);
++    g.lineStyle(1,0x74695a).strokeRoundedRect(r.x+7,r.y+7,r.width-14,r.height-14,(r.height-14)/2);
++    layer.add(g);text(r.x+r.width/2,r.y+(r.height-size-5)/2,title,size,enabled?'#fff0d5':'#c7c0b2',.5);
++    input.register(action,r,enabled,()=>{callback();input.changed();});
+   };
+-  text(layout.titleY+10,'Cài đặt',22);text(y+4,'Nhạc: chưa có trong phiên bản này',13);
+-  button('music','Âm lượng nhạc — chưa có',false,()=>{});
+-  text(y+96,`Hiệu ứng: ${Math.round(input.audio.effectsVolume*100)}%${input.audio.muted?' · đang tắt':''}`);
+-  button('effects-less','−',true,()=>input.audio.setEffectsVolume(input.audio.effectsVolume-.1));
+-  button('mute',input.audio.muted?'Bật âm':'Tắt âm',true,()=>input.audio.toggleMute());
+-  button('effects-more','+',true,()=>input.audio.setEffectsVolume(input.audio.effectsVolume+.1));
+-  button('motion',`Giảm chuyển động: ${input.reducedMotion?'Bật':'Tắt'}`,!!input.preferences,()=>input.preferences?.setReducedMotion(!input.reducedMotion));
+-  button('back','Quay lại',true,input.back);
+-  button('code','Nhập mã',true,input.code);
+-  scene.game.canvas.dataset.settingsPanel=JSON.stringify({layout,controls,effectsVolume:input.audio.effectsVolume,muted:input.audio.muted,reducedMotion:input.reducedMotion,musicAvailable:false});
++  text(180,114,'Cài đặt',29,'#472310',.5);
++  drawSettingsIcon(scene,layer,'music',38,173);text(92,187,'Music:',19);
++  button('music','Chưa có nhạc',false,()=>{},13);
++  drawSettingsIcon(scene,layer,'record',38,241);text(92,220,'Chọn nhạc nền',17);
++  button('music-choice','Chưa có nhạc',false,()=>{},16);
++  drawSettingsIcon(scene,layer,'music',38,327);text(92,340,'Hiệu ứng:',17);
++  button('mute','',true,()=>input.audio.toggleMute());
++  const effects=controls.mute,enabled=!input.audio.muted,eg=scene.add.graphics(),selected=effects.x+(enabled?effects.width/2:0)+5;
++  eg.fillStyle(0xffcc4e).fillRoundedRect(selected,effects.y+5,effects.width/2-10,effects.height-10,18);
++  eg.lineStyle(2,0xffeaa6).strokeRoundedRect(selected+2,effects.y+7,effects.width/2-14,effects.height-14,16);layer.add(eg);
++  text(effects.x+effects.width/4,effects.y+12,'Tắt',16,enabled?'#bdb7ad':'#472310',.5);text(effects.x+effects.width*3/4,effects.y+12,'Bật',16,enabled?'#472310':'#bdb7ad',.5);
++  drawSettingsIcon(scene,layer,'code',38,400);text(92,378,'Code',19);
++  button('code','Nhập mã code',true,input.code,16);
++  // A canvas gift keeps the icon consistent across iPhone/Android emoji fonts.
++  const gift=scene.add.graphics();gift.fillStyle(0xfff0d5).fillRoundedRect(284,425,21,17,2).fillRoundedRect(282,420,25,6,2);
++  gift.lineStyle(2,0x724323).strokeRoundedRect(284,425,21,17,2).strokeRoundedRect(282,420,25,6,2);
++  gift.fillStyle(0xc84429).fillRect(292,421,5,21);gift.lineStyle(3,0xffcc4e).strokeEllipse(290,417,9,6).strokeEllipse(299,417,9,6);layer.add(gift);
++  drawSettingsIcon(scene,layer,'motion',38,467);text(92,482,'Chuyển động:',13);
++  button('motion','',!!input.preferences,()=>input.preferences?.setReducedMotion(!input.reducedMotion));
++  const r=controls.motion,on=!input.reducedMotion,g=scene.add.graphics();
++  const activeX=r.x+(on?r.width/2:0)+5;
++  g.fillStyle(input.preferences?0xffcc4e:0x777166).fillRoundedRect(activeX,r.y+5,r.width/2-10,r.height-10,18);
++  g.lineStyle(2,input.preferences?0xffeaa6:0xa59e90).strokeRoundedRect(activeX+2,r.y+7,r.width/2-14,r.height-14,16);layer.add(g);
++  text(r.x+r.width/4,r.y+12,'Tắt',16,on?'#bdb7ad':'#472310',.5);text(r.x+r.width*3/4,r.y+12,'Bật',16,on?'#472310':'#bdb7ad',.5);
++  const ornament=scene.add.graphics();ornament.lineStyle(1,0xb78347).lineBetween(84,527,159,527).lineBetween(201,527,276,527);ornament.fillStyle(0xb78347).fillCircle(180,527,3);layer.add(ornament);
++  button('back','Quay lại',true,input.back,21);
++  const layout={bounds:{x:12,y:34,width:336,height:578},titleY:114};
++  scene.game.canvas.dataset.settingsPanel=JSON.stringify({layout,controls,effectsVolume:input.audio.effectsVolume,muted:input.audio.muted,reducedMotion:input.reducedMotion,motionEnabled:!input.reducedMotion,musicAvailable:false});
+ }
+diff --git a/src/scenes/CozyScene.ts b/src/scenes/CozyScene.ts
+index 61d9267..f8be815 100644
+--- a/src/scenes/CozyScene.ts
++++ b/src/scenes/CozyScene.ts
+@@ -2,6 +2,7 @@ import {TestCodePanel} from '../presentation/TestCodePanel';
+ import type {HubDrag} from '../presentation/HubListWindow';
+ import {drawModalBackdrop} from '../presentation/ModalBackdrop';
+ import {drawSettingsPanel} from '../presentation/SettingsPanel';
++import {preloadSettingsArt} from '../presentation/ReferenceSettingsArt';
+ import {RECIPE_CATALOG,recipeDefinition} from '../config/recipeCatalog';
+ import {DELIVERY_RULES} from '../config/deliveryEvents';
+ import {shopItem} from '../config/shopCatalog';
+@@ -144,7 +145,7 @@ export class CozyScene extends Phaser.Scene {
+     for(const asset of SHOP_ART)if(!this.textures.exists(asset.key))this.load.image(asset.key,`${import.meta.env.BASE_URL}${asset.url}`);
+     preloadSummaryArt(this);
+     preloadReferencePause(this);
+-    preloadNotificationFrames(this);
++    preloadNotificationFrames(this);preloadSettingsArt(this);
+     preloadPizzaIcons(this);
+     preloadCustomerPortraits(this);
+     for(const asset of [...REFERENCE_KITCHEN_MANIFEST,PIZZA_BOX_ART])if(!this.textures.exists(asset.key))this.load.image(asset.key,`${import.meta.env.BASE_URL}${asset.url}`);
+@@ -154,7 +155,9 @@ export class CozyScene extends Phaser.Scene {
+     registerCustomerPortraitFrames(this);
+     this.dirty=true;this.signature='';this.inspectedOrderId=null;this.inspectedRecipe=null;this.inspectionMode='';this.priceDraft=null;this.statementOpen=false;this.queueUpgradeNotice=false;this.layer=this.add.container();this.staticGraphics=new StaticGraphics(this);this.motion=window.matchMedia('(prefers-reduced-motion: reduce)');
+     this.motion.addEventListener('change',this.motionChange);
+-    this.game.canvas.setAttribute('tabindex','0');this.input.keyboard?.on('keydown',this.settingsKeyDown);
++    // Canvas modal navigation must prevent native Tab before the browser moves
++    // focus; Phaser's queued keyboard events run after the default action on iOS.
++    this.game.canvas.setAttribute('tabindex','0');document.addEventListener('keydown',this.settingsKeyDown);
+     this.scale.on('resize',this.motionChange);
+     this.lifecycle=this.sharedLifecycle??new PlayLifecycle(this.runtime);
+     this.browserLifecycle=new BrowserPlayLifecycle(this.lifecycle,()=>{this.audio.silence();this.dirty=true;});
+@@ -171,7 +174,7 @@ export class CozyScene extends Phaser.Scene {
+     this.events.once('destroy',()=>{this.closeDeliveryApp();this.closeHubPanels();});
+     this.events.once('shutdown',()=>this.closeMarketQuantity());
+     this.events.once('destroy',()=>this.closeMarketQuantity());
+-    const cleanup=()=>{this.closeTestCode();this.events.off('shutdown',cleanup);this.events.off('destroy',cleanup);this.queueUpgradeLease?.release();this.queueUpgradeLease=undefined;this.queueUpgradeNotice=false;this.priceLease?.release();this.priceLease=undefined;this.statementLease?.release();this.statementLease=undefined;this.motion?.removeEventListener('change',this.motionChange);this.preferenceUnsubscribe?.();this.scale.off('resize',this.motionChange);this.browserLifecycle.destroy(!this.sharedLifecycle);for(const lease of this.scenePauses.values())lease.release();this.scenePauses.clear();this.audio.silence();this.input.keyboard?.off('keydown',this.settingsKeyDown);this.clearFeedback();this.tweens.killAll();for(const zone of this.hitZones.values())zone.destroy();this.hitZones.clear();this.staticGraphics.destroy();};
++    const cleanup=()=>{this.closeTestCode();this.events.off('shutdown',cleanup);this.events.off('destroy',cleanup);this.queueUpgradeLease?.release();this.queueUpgradeLease=undefined;this.queueUpgradeNotice=false;this.priceLease?.release();this.priceLease=undefined;this.statementLease?.release();this.statementLease=undefined;this.motion?.removeEventListener('change',this.motionChange);this.preferenceUnsubscribe?.();this.scale.off('resize',this.motionChange);this.browserLifecycle.destroy(!this.sharedLifecycle);for(const lease of this.scenePauses.values())lease.release();this.scenePauses.clear();this.audio.silence();document.removeEventListener('keydown',this.settingsKeyDown);this.clearFeedback();this.tweens.killAll();for(const zone of this.hitZones.values())zone.destroy();this.hitZones.clear();this.staticGraphics.destroy();};
+     this.events.once('shutdown',cleanup);this.events.once('destroy',cleanup);this.draw();
+   }
+   private motionChange=():void=>{this.dirty=true;};
+@@ -1085,7 +1088,7 @@ export class CozyScene extends Phaser.Scene {
+   }
+   private pauseSettingsPanel():void{
+     this.veil();this.notification=undefined;
+-    const ids={music:'settings-music','effects-less':'settings-effects-less',mute:'mute','effects-more':'settings-effects-more',motion:'settings-motion',code:'settings-code',back:'pause-settings-back'};
++    const ids={music:'settings-music','music-choice':'settings-music-choice',mute:'mute',motion:'settings-motion',code:'settings-code',back:'pause-settings-back'};
+     drawSettingsPanel(this,this.layer,{audio:this.audio,preferences:this.preferences,reducedMotion:this.reducedMotion,changed:()=>{this.dirty=true;},code:()=>this.openTestCode(),back:()=>{this.pauseSettings=false;this.settingsFocusId='';},register:(action,rect,enabled,callback)=>this.hit(ids[action],rect.x,rect.y,rect.width,rect.height,enabled,callback)});
+     const focus=this.controls.find(control=>control.id===this.settingsFocusId&&control.enabled);
+     if(focus){const ring=this.add.graphics();ring.lineStyle(3,0x985025).strokeRoundedRect(focus.x-3,focus.y-3,focus.width+6,focus.height+6,27);this.layer.add(ring);}
+diff --git a/src/scenes/MainMenuScene.ts b/src/scenes/MainMenuScene.ts
+index ab02f6b..27d22de 100644
+--- a/src/scenes/MainMenuScene.ts
++++ b/src/scenes/MainMenuScene.ts
+@@ -2,6 +2,7 @@ import {TestCodePanel,type TestCodeActions} from '../presentation/TestCodePanel'
+ import {PlayAudio} from '../presentation/PlayAudio';
+ import {drawModalBackdrop} from '../presentation/ModalBackdrop';
+ import {drawSettingsPanel} from '../presentation/SettingsPanel';
++import {preloadSettingsArt} from '../presentation/ReferenceSettingsArt';
+ import Phaser from 'phaser';
+ import { MenuPreferences } from '../presentation/MenuPreferences';
+ import { UI_THEME } from '../presentation/theme';
+@@ -39,7 +40,7 @@ export class MainMenuScene extends Phaser.Scene {
+   private audioCleanupRegistered=false;
+ 
+   constructor(private readonly preferences: MenuPreferences, private readonly actions: MenuActions,private readonly audio=new PlayAudio()) { super('MainMenuScene'); }
+-  preload():void{preloadNotificationFrames(this);}
++  preload():void{preloadNotificationFrames(this);preloadSettingsArt(this);}
+ 
+   create(): void {
+     if(!this.audioCleanupRegistered){this.audioCleanupRegistered=true;this.game.events.once(Phaser.Core.Events.DESTROY,()=>this.audio.destroy());}
+@@ -53,7 +54,7 @@ export class MainMenuScene extends Phaser.Scene {
+     this.unsubscribe = this.preferences.subscribe(this.preferenceChanged);
+     document.addEventListener('visibilitychange', this.visibilityChanged);
+     this.scale.on('resize', this.resized);
+-    this.input.keyboard?.on('keydown', this.keyDown);
++    document.addEventListener('keydown', this.keyDown);
+     const canvas = this.game.canvas;
+     canvas.setAttribute('tabindex', '0');
+     canvas.dataset.screen = 'menu';
+@@ -82,7 +83,7 @@ export class MainMenuScene extends Phaser.Scene {
+     this.unsubscribeSave?.();this.unsubscribeSave=undefined;
+     document.removeEventListener('visibilitychange', this.visibilityChanged);
+     this.scale.off('resize', this.resized);
+-    this.input.keyboard?.off('keydown', this.keyDown);
++    document.removeEventListener('keydown', this.keyDown);
+     this.tweens.killAll(); this.animationsRunning = false; this.targets = [];
+     this.steam.destroy(); this.wind.destroy();
+     this.ambience.destroy();
+@@ -226,7 +227,7 @@ export class MainMenuScene extends Phaser.Scene {
+     if(this.testCodePanel){this.testCodePanel.draw(this,this.interfaceLayer,(id,rect,enabled,action)=>this.settingsTarget(id,rect,enabled,action));return;}
+     drawModalBackdrop(this,this.interfaceLayer);
+     if(this.dialog==='settings'){
+-      const ids={music:'menu-music','effects-less':'menu-effects-less',mute:'menu-mute','effects-more':'menu-effects-more',motion:'menu-motion',code:'menu-code',back:'menu-settings-close'};
++      const ids={music:'menu-music','music-choice':'menu-music-choice',mute:'menu-mute',motion:'menu-motion',code:'menu-code',back:'menu-settings-close'};
+       drawSettingsPanel(this,this.interfaceLayer,{audio:this.audio,preferences:this.preferences,reducedMotion:this.preferences.reducedMotion,changed:()=>this.draw(),code:()=>{this.testCodePanel=new TestCodePanel(this.game.canvas,this.actions.testCode,()=>this.draw(),()=>{this.testCodePanel?.destroy();this.testCodePanel=undefined;this.focusId='menu-code';this.draw();});},back:()=>{this.dialog='none';this.focusId='menu-settings';},register:(action,rect,enabled,callback)=>this.settingsTarget(ids[action],rect,enabled,callback)});return;
+     }
+     const save=this.actions.save?.();
+diff --git a/tests/shared-settings-ui.spec.ts b/tests/shared-settings-ui.spec.ts
+index b5298d0..cc41132 100644
+--- a/tests/shared-settings-ui.spec.ts
++++ b/tests/shared-settings-ui.spec.ts
+@@ -50,11 +50,19 @@ test('Menu and Pause share settings, geometry and live audio preferences without
+   const menuBounds=(await canvas.boundingBox())!;
+   await page.touchscreen.tap(menuBounds.x+(behindStart.x+2)*menuBounds.width/360,menuBounds.y+(behindStart.y+behindStart.height-2)*menuBounds.height/640);
+   await expect(canvas).toHaveAttribute('data-menu-dialog','settings');
+-  await tap(page,'menu-effects-less',true);await tap(page,'menu-mute',true);await tap(page,'menu-motion',true);
++  await canvas.focus();await page.keyboard.press('Tab');await page.keyboard.press('Enter');
++  await expect.poll(async()=>JSON.parse((await canvas.getAttribute('data-settings-panel'))||'{}').muted).toBe(true);
++  await tap(page,'menu-motion',true);
+   await expect(canvas).toHaveAttribute('data-menu-reduced-motion','true');
+   const menuSettings=await canvas.getAttribute('data-settings-panel'),menuFrame=await canvas.getAttribute('data-notification-frame');
+   expect(menuSettings).toBeTruthy();
+-  await canvas.screenshot({path:info.outputPath('menu-settings.png')});
++  const rendered=JSON.parse(menuSettings!);expect(rendered.musicAvailable).toBe(false);expect(rendered.motionEnabled).toBe(false);
++  const menuTargets=JSON.parse(await canvas.getAttribute('data-menu-targets')??'[]');
++  for(const id of ['menu-music','menu-music-choice'])expect(menuTargets.find((c:any)=>c.id===id).disabled).toBe(true);
++  const active=menuTargets.filter((c:any)=>!c.disabled);
++  active.forEach((c:any)=>{expect(c.width*menuBounds.width/360).toBeGreaterThanOrEqual(48);expect(c.height*menuBounds.height/640).toBeGreaterThanOrEqual(48);});
++  for(let i=0;i<active.length;i++)for(let j=i+1;j<active.length;j++){const a=active[i],z=active[j];expect(a.x+a.width<=z.x||z.x+z.width<=a.x||a.y+a.height<=z.y||z.y+z.height<=a.y).toBe(true);}
++  if(info.project.name==='chromium-360x640')await canvas.screenshot({path:'_bmad-output/implementation-artifacts/ui-baseline/reference-settings-menu-2026-10-06.png'});
+   const beforeTargets=JSON.parse(await canvas.getAttribute('data-menu-targets')??'[]');
+   const b=(await canvas.boundingBox())!;await page.touchscreen.tap(b.x+180*b.width/360,b.y+615*b.height/640);
+   await expect(canvas).toHaveAttribute('data-menu-dialog','settings');
+@@ -62,19 +70,20 @@ test('Menu and Pause share settings, geometry and live audio preferences without
+   await expect(canvas).toHaveAttribute('data-paused',/user/);await expect(canvas).toHaveAttribute('data-settings-panel',menuSettings!);
+   expect(await canvas.getAttribute('data-notification-frame')).toBe(menuFrame);
+   const pauseTargets=JSON.parse(await canvas.getAttribute('data-controls')??'[]');
+-  for(const suffix of ['effects-less','mute','effects-more']){
+-    const a=beforeTargets.find((c:any)=>c.id==='menu-'+suffix),z=pauseTargets.find((c:any)=>c.id===(suffix==='mute'?'mute':'settings-'+suffix));
++  for(const suffix of ['mute','motion']){
++    const a=beforeTargets.find((c:any)=>c.id==='menu-'+suffix),z=pauseTargets.find((c:any)=>c.id===(suffix==='mute'?'mute':'settings-motion'));
+     expect({x:z.x,y:z.y,width:z.width,height:z.height}).toEqual({x:a.x,y:a.y,width:a.width,height:a.height});
+     expect(z.width*b.width/360).toBeGreaterThanOrEqual(48);expect(z.height*b.height/640).toBeGreaterThanOrEqual(48);
+   }
+   await expect(canvas).toHaveAttribute('data-ingredients','dough');
+   const clock=JSON.parse(await canvas.getAttribute('data-shift-clock')??'null');
+   await page.waitForTimeout(300);expect(JSON.parse(await canvas.getAttribute('data-shift-clock')??'null')).toEqual(clock);
+-  await canvas.screenshot({path:info.outputPath('pause-settings.png')});
+-  const oldVolume=JSON.parse(await canvas.getAttribute('data-audio-settings')??'{}').effectsVolume;
++  if(info.project.name==='chromium-360x640')await canvas.screenshot({path:'_bmad-output/implementation-artifacts/ui-baseline/reference-settings-pause-2026-10-06.png'});
++  const oldMuted=JSON.parse((await canvas.getAttribute('data-settings-panel'))||'{}').muted;
+   await canvas.focus();await page.keyboard.press('Tab');await page.keyboard.press('Enter');
+-  await expect.poll(async()=>JSON.parse(await canvas.getAttribute('data-audio-settings')??'{}').effectsVolume).toBeCloseTo(oldVolume-.1);
+-  await tap(page,'pause-settings-back');await expect(canvas).toHaveAttribute('data-paused',/user/);
++  await expect.poll(async()=>JSON.parse((await canvas.getAttribute('data-settings-panel'))||'{}').muted).toBe(!oldMuted);
++  await page.keyboard.press('Escape');await expect(canvas).toHaveAttribute('data-paused',/user/);
++  await expect(canvas).toHaveAttribute('data-settings-panel','');
+   await tap(page,'resume');await expect(canvas).toHaveAttribute('data-paused','');
+ });
+ 
+diff --git a/tests/test-code.spec.ts b/tests/test-code.spec.ts
+index 3bc4d5b..93fa523 100644
+--- a/tests/test-code.spec.ts
++++ b/tests/test-code.spec.ts
+@@ -20,19 +20,19 @@ for(const source of ['Menu','Pause'])test(`${source} mobile visualViewport moves
+   await input(page).fill('keep-me');
+   const canvas=page.locator('canvas'),b=(await canvas.boundingBox())!,originalTop=(await input(page).boundingBox())!.y;
+   const receive=async()=>JSON.parse(await canvas.getAttribute(menu?'data-menu-targets':'data-controls')??'[]').find((c:any)=>c.id==='test-code-receive');
+-  const original=await receive();if(menu)await page.screenshot({path:'_bmad-output/implementation-artifacts/ui-baseline/test-code-mobile-normal.png'});
++  const original=await receive();if(menu)await page.screenshot({path:test.info().outputPath('test-code-mobile-normal.png')});
+   await page.evaluate(()=>{const b=document.querySelector('canvas')!.getBoundingClientRect();(window as any).codeViewport(360*b.height/640,0);});
+   await expect.poll(async()=>Number(await canvas.getAttribute('data-test-code-offset'))).toBeLessThan(0);
+   const offset=Number(await canvas.getAttribute('data-test-code-offset'));
+   expect((await receive()).y-original.y).toBeCloseTo(offset,3);expect((await input(page).boundingBox())!.y-originalTop).toBeCloseTo(offset*b.height/640,1);
+-  if(menu)await page.screenshot({path:'_bmad-output/implementation-artifacts/ui-baseline/test-code-mobile-keyboard.png'});
++  if(menu)await page.screenshot({path:test.info().outputPath('test-code-mobile-keyboard.png')});
+   await page.evaluate(()=>(window as any).codeViewport(360*document.querySelector('canvas')!.getBoundingClientRect().height/640,30,'scroll'));
+   await expect.poll(async()=>Number(await canvas.getAttribute('data-test-code-offset'))).toBeCloseTo(offset+30*640/b.height,1);
+   await input(page).evaluate((e:HTMLInputElement)=>e.blur());await expect(canvas).toHaveAttribute('data-test-code-offset','0');await expect(input(page)).toHaveValue('keep-me');
+   await input(page).focus();await page.evaluate(()=>(window as any).codeViewport(window.innerHeight,0));await expect(canvas).toHaveAttribute('data-test-code-offset','0');
+   await page.evaluate(()=>(window as any).codeViewport(360*document.querySelector('canvas')!.getBoundingClientRect().height/640,0));await expect.poll(async()=>Number(await canvas.getAttribute('data-test-code-offset'))).toBeLessThan(0);
+-  await tap(page,'test-code-cancel',menu);await expect(input(page)).toHaveCount(0);
+-  await page.evaluate(()=>(window as any).codeViewport(300,0));await expect(canvas).not.toHaveAttribute('data-test-code-offset',/./);await tap(page,menu?'menu-mute':'settings-effects-less',menu);
++  await tap(page,'test-code-cancel',menu);await expect(input(page)).toHaveCount(0);await expect(canvas).toHaveAttribute('data-settings-panel',/motionEnabled/);
++  await page.evaluate(()=>(window as any).codeViewport(300,0));await expect(canvas).not.toHaveAttribute('data-test-code-offset',/./);await tap(page,menu?'menu-mute':'mute',menu);
+ });
+ 
+ test('Viewport API fallback and Escape clean up the native editor',async({page})=>{
+@@ -48,15 +48,15 @@ test('Pause preparation grants exact funds, preserves user pause and rejects rep
+   await prep(page);const canvas=page.locator('canvas');await expect(canvas).toHaveAttribute('data-cash','300');await tap(page,'pause');await tap(page,'pause-settings');await tap(page,'settings-code');
+   await input(page).fill('wrong');await tap(page,'test-code-receive');await expect(canvas).toHaveAttribute('data-test-code-feedback','Mã không hợp lệ.');await expect(canvas).toHaveAttribute('data-cash','300');
+   await input(page).fill(' vietvuive ');await tap(page,'test-code-receive');await expect(canvas).toHaveAttribute('data-test-code-feedback',/Đã nhận 100.000/);await expect(canvas).toHaveAttribute('data-cash','100300');
+-  await page.screenshot({path:'_bmad-output/implementation-artifacts/ui-baseline/test-code-received-2026-10-06.png'});
+-  await expect(input(page)).toHaveCount(0);await expect(canvas).toHaveAttribute('data-test-code-reward',/100000/);await tap(page,'test-code-reward-close');await expect(canvas).toHaveAttribute('data-paused',/user/);await tap(page,'settings-effects-less');await tap(page,'settings-motion');
+-  await page.screenshot({path:'_bmad-output/implementation-artifacts/ui-baseline/test-code-settings-2026-10-06.png'});
++  await page.screenshot({path:test.info().outputPath('test-code-received.png')});
++  await expect(input(page)).toHaveCount(0);await expect(canvas).toHaveAttribute('data-test-code-reward',/100000/);await tap(page,'test-code-reward-close');await expect(canvas).toHaveAttribute('data-paused',/user/);await tap(page,'mute');await tap(page,'settings-motion');
++  await page.screenshot({path:test.info().outputPath('test-code-settings.png')});
+   await tap(page,'pause-settings-back');await tap(page,'resume');await expect(canvas).toHaveAttribute('data-paused','');
+   await page.reload();await expect(canvas).toHaveAttribute('data-cash','100300');await tap(page,'pause');await tap(page,'pause-settings');await tap(page,'settings-code');await input(page).fill('VIETVUIVE');await tap(page,'test-code-receive');await expect(canvas).toHaveAttribute('data-test-code-feedback',/đã được nhận/);
+ });
+ test('Menu uses the live preparation session and credits exactly once',async({page})=>{
+   await prep(page);await tap(page,'pause');await tap(page,'main-menu');await tap(page,'menu-settings',true);await tap(page,'menu-code',true);await input(page).fill('VIETVUIVE');await tap(page,'test-code-receive',true);await expect(page.locator('canvas')).toHaveAttribute('data-test-code-feedback',/Đã nhận 100.000/);
+-  await expect(input(page)).toHaveCount(0);await tap(page,'test-code-reward-ok',true);await tap(page,'menu-settings-close',true);await tap(page,'menu-continue',true);await expect(page.locator('canvas')).toHaveAttribute('data-cash','100300');await expect(input(page)).toHaveCount(0);
++  await expect(input(page)).toHaveCount(0);await tap(page,'test-code-reward-ok',true);await expect(page.locator('canvas')).toHaveAttribute('data-settings-panel',/motionEnabled/);await tap(page,'menu-settings-close',true);await tap(page,'menu-continue',true);await expect(page.locator('canvas')).toHaveAttribute('data-cash','100300');await expect(input(page)).toHaveCount(0);
+ });
+ test('Pause and Menu during a live shift never claim or save test funds',async({page})=>{
+   await prep(page);const canvas=page.locator('canvas');await tap(page,'summary-open-first-day');await expect(canvas).toHaveAttribute('data-screen','game');
+--- NEW FILE: src/presentation/ReferenceSettingsArt.ts ---
+import type Phaser from 'phaser';
+
+export const SETTINGS_ART={key:'reference-settings-source',url:'assets/references/Cài đặt tiệm pizza ấm cúng.png'};
+export function preloadSettingsArt(scene:Phaser.Scene):void {
+  if(!scene.textures.exists(SETTINGS_ART.key))scene.load.image(SETTINGS_ART.key,`${import.meta.env.BASE_URL}${SETTINGS_ART.url}`);
+}
+
+/** Cache the ornament, blank paper and edge slices. No sample controls survive. */
+export function drawSettingsArt(scene:Phaser.Scene,layer:Phaser.GameObjects.Container):void {
+  const key='reference-settings-frame';
+  if(!scene.textures.exists(key)){
+    const art=scene.textures.createCanvas(key,360,640)!,ctx=art.context;
+    const source=scene.textures.get(SETTINGS_ART.key).getSourceImage() as HTMLImageElement;
+    const s=336/868,x=(v:number)=>12+(v-38)*s,y=(v:number)=>34+(v-132)*s;
+    // Rasterize the source silhouette: Phaser 4 WebGL container masks are not
+    // available, and the photograph outside the wooden border is not panel art.
+    ctx.beginPath();ctx.moveTo(x(38),y(365));
+    for(const [px,py] of [[45,296],[75,262],[113,239],[273,232],[266,215],[312,212],[370,174],[384,189],[408,145],[457,131],[508,135],[557,171],[575,192],[627,211],[676,213],[666,231],[814,236],[868,268],[904,325]] as const)ctx.lineTo(x(px),y(py));
+    ctx.lineTo(348,579);ctx.quadraticCurveTo(348,609,312,612);ctx.lineTo(48,612);ctx.quadraticCurveTo(12,609,12,579);ctx.closePath();ctx.clip();
+    ctx.drawImage(source,300,439,200,45,12,34,336,578);
+    ctx.drawImage(source,38,132,868,318,12,34,336,318*s);
+    // Remove the baked title while retaining its two flourishes.
+    ctx.drawImage(source,300,439,200,45,x(310),y(327),310*s,112*s);
+    const bodyTop=y(450),bottomTop=552;
+    ctx.drawImage(source,38,450,45,856,12,bodyTop,45*s,bottomTop-bodyTop);
+    ctx.drawImage(source,860,450,46,856,x(860),bodyTop,46*s,bottomTop-bodyTop);
+    ctx.drawImage(source,38,1305,123,162,12,bottomTop,123*s,60);
+    ctx.drawImage(source,783,1305,123,162,x(783),bottomTop,123*s,60);
+    ctx.drawImage(source,161,1410,622,57,x(161),590,622*s,22);
+    art.refresh();
+  }
+  layer.add(scene.add.image(0,0,key).setOrigin(0));
+}
+
+export type SettingsIcon='music'|'record'|'code'|'motion';
+const iconSlices:Record<SettingsIcon,readonly [number,number,number,number]>={music:[116,488,122,113],record:[116,650,121,125],code:[108,866,134,129],motion:[106,1080,129,122]};
+export function drawSettingsIcon(scene:Phaser.Scene,layer:Phaser.GameObjects.Container,icon:SettingsIcon,left:number,top:number,size=44):void {
+  const texture=scene.textures.get(SETTINGS_ART.key),[x,y,w,h]=iconSlices[icon];
+  if(!texture.has(icon))texture.add(icon,0,x,y,w,h);
+  const scale=size/Math.max(w,h);
+  layer.add(scene.add.image(left+size/2,top+size/2,SETTINGS_ART.key,icon).setDisplaySize(w*scale,h*scale));
+}
+
+--- NEW FILE: _bmad-output/implementation-artifacts/spec-reference-settings-panel.md ---
+---
+title: 'Cài đặt theo ảnh tiệm pizza ấm cúng'
+type: feature
+created: '2026-10-06'
+status: in-review
+baseline_commit: 'fa602b3'
+context:
+  - '_bmad-output/project-context.md'
+  - '_bmad-output/implementation-artifacts/ui-baseline-2026-10-02.md'
+---
+
+<frozen-after-approval reason="human-owned intent — do not modify unless human renegotiates">
+
+## Intent
+
+**Problem:** Cài đặt vẫn dùng bảng cũ, chưa theo ảnh `public/assets/references/Cài đặt tiệm pizza ấm cúng.png` mà người dùng yêu cầu làm tiếp.
+
+**Approach:** Thay riêng panel Cài đặt dùng chung Menu/Pause: giấy kem, khung gỗ nâu/vàng, huy hiệu pizza trên đầu, icon âm nhạc/đĩa/vé mã/chuyển động, controls nền đen và trạng thái vàng, nút Quay lại. Nối ô Code vào popup nhập mã và thưởng hiện có.
+
+## Boundaries & Constraints
+
+**Always:** Giao diện portrait 360×640, đọc rõ và vùng chạm tối thiểu 48 CSS px; Menu/Pause cùng geometry/state. Chuyển động Bật tương ứng giảm chuyển động false, Tắt tương ứng true. Music/chọn nhạc chưa có nội dung âm nhạc thật nên disabled, ghi “Chưa có nhạc”, không vẽ trạng thái đang phát giả. Giữ bật/tắt hiệu ứng âm thanh thật qua mục Hiệu ứng. Theo chỉ dẫn tiếp theo của người dùng, bỏ nút −/+, phần trăm và điều chỉnh âm lượng trong Cài đặt; dùng âm lượng điện thoại. Code dùng nhãn “Nhập mã code” và icon quà, chạm mở editor hiện hành. Giữ pause ownership khi mở Cài đặt, nhập mã, nhận thưởng, Quay lại và Escape. Gỡ dữ liệu render/listener riêng khi scene đóng theo vòng đời sẵn có.
+
+**Ask First:** Thêm nhạc thật/chọn bài, thay số xu hoặc luật nhận mã, thay phần Menu/Pause/bếp/hub ngoài bảng Cài đặt.
+
+**Never:** Dùng ảnh có chữ Bật/số mẫu để giả trạng thái; đổi domain/save/claim; bỏ chức năng bật/tắt âm thanh đang có; làm mất pause khác; thiết kế lại màn nền hay popup mã/thưởng vừa hoàn thành.
+
+## I/O & Edge-Case Matrix
+
+| Scenario | Input / State | Expected Output / Behavior | Error Handling |
+|---|---|---|---|
+| Mở Settings | Menu hoặc Pause | Cùng bảng theo ảnh, state thật | Nền tối nhẹ hiện hành |
+| Music/chọn bài | Chưa có asset nhạc | Disabled, ghi rõ chưa có | Không bật UI giả |
+| Hiệu ứng | Bật/tắt | Cập nhật mute PlayAudio ngay | Độ lớn do điện thoại điều khiển |
+| Chuyển động | Toggle | Đổi preference thật, hiện đúng Bật/Tắt | Không đổi luật simulation |
+| Code | Chạm ô hoặc icon quà | Mở popup mã dùng chung | VIETVUIVE vẫn 100.000 xu |
+| Quay lại | Nhập/hủy mã hoặc đóng thưởng | Trở về bảng Cài đặt mới | Không nhận thêm tiền |
+| Đóng Settings | Quay lại hoặc Escape | Về đúng Menu/Pause nguồn | Không tự resume gameplay |
+| Không có preferences | Direct fixture | Motion disabled, giữ UI | Không crash |
+
+</frozen-after-approval>
+
+## Code Map
+
+- `src/presentation/SettingsPanel.ts`: renderer/action hiện hành dùng chung.
+- `src/presentation/ReferenceSettingsArt.ts`: preload ảnh nguồn, cache khung giấy/viền/header/icon, clip silhouette bằng Canvas2D.
+- `src/scenes/MainMenuScene.ts`, `src/scenes/CozyScene.ts`: adapter ID/hit/focus/keyboard; chỉ sửa nếu renderer cần action mới.
+- `src/presentation/PlayAudio.ts`, `src/presentation/MenuPreferences.ts`: state thật hiện có, không thay logic.
+- `tests/shared-settings-ui.spec.ts`, `tests/test-code.spec.ts`: Settings parity/audio/pause và nhập mã/nhận thưởng.
+
+## Tasks & Acceptance
+
+- [x] `src/presentation/SettingsPanel.ts` và module art riêng nếu cần: ghép header/viền/giấy/footer/icon từ ảnh, tách các chữ/trạng thái mẫu khỏi dữ liệu thật.
+- [x] `src/presentation/SettingsPanel.ts`: bố trí Music/chọn nhạc disabled, hiệu ứng bật/tắt, Code, Chuyển động, Quay lại; kiểu nút đen/vàng theo ảnh.
+- [x] `src/scenes/MainMenuScene.ts`, `src/scenes/CozyScene.ts`: preload và nối action/hit/focus chung; giữ ownership và input blocking.
+- [x] `tests/shared-settings-ui.spec.ts`: parity, state thật, audio/motion/keyboard và bounds; ảnh Cài đặt Menu/Pause.
+- [x] `tests/test-code.spec.ts`: kiểm tra bảng mới mở mã, hủy/nhận thưởng/đóng rồi trở về đúng Settings; không đổi tiền/lưu.
+- [x] `_bmad-output/implementation-artifacts/ui-baseline-2026-10-02.md`: cập nhật riêng mốc Cài đặt với ảnh kiểm chứng.
+
+**Acceptance Criteria:**
+- Given Menu/Pause có cùng preferences, when mở Settings, then bố cục và trạng thái controls giống nhau.
+- Given hiệu ứng âm thanh đang bật, when tắt âm, then PlayAudio đổi thật mà ca vẫn pause.
+- Given giảm chuyển động false, when chọn Tắt, then preference thành true; reload/menu/bếp đọc cùng trạng thái.
+- Given Settings mới, when bấm Code và nhận VIETVUIVE, then popup hiện +100.000 và đóng quay về bảng mới.
+
+## Spec Change Log
+
+- 2026-10-06: Người dùng yêu cầu bỏ nút hiệu ứng −/+ vì dùng âm lượng điện thoại. Đồng bộ intent và acceptance: giữ bật/tắt hiệu ứng, bỏ phần trăm và điều khiển âm lượng UI; không đổi API/logic audio khác.
+
+## Design Notes
+
+Ảnh là nguồn phong cách và art. Chỉ dùng các lát khung/icon/giấy/nút phù hợp; chữ và trạng thái hoạt động vẽ từ dữ liệu. Không đặt toàn PNG như ảnh nền tương tác vì chứa nhạc đang Bật và nội dung chưa có. Hiệu ứng giữ một toggle bật/tắt gọn, không còn nút âm lượng; các control còn lại theo thứ tự ảnh. Ưu tiên cache art tĩnh, không cắt/read pixel mỗi redraw.
+
+## Verification
+
+- Build TypeScript/Vite; unit âm thanh/preferences hiện có.
+- E2E tập trung Settings/mã: Chromium360×640 và WebKit390×844, không full matrix.
+- Kiểm tra ảnh Menu/Pause: đủ khung portrait, không chữ mẫu lộ dưới chữ động, đúng font/tỷ lệ icon, nút có khoảng cách và không đè vùng chạm.
+
+## Implementation & Results
+
+- Shared renderer dùng art cache `ReferenceSettingsArt.ts`, cắt header/viền/giấy/icon và clip Canvas2D để không lộ ảnh quán bên ngoài. Chữ/trạng thái động, không có nhạc Bật hoặc nội dung Code mẫu.
+- Music/chọn bài unavailable rõ ràng; Hiệu ứng chỉ toggle mute thật, không phần trăm hoặc nút−/+. Chuyển động Bật/Tắt là nghịch đảo reducedMotion. Code/gift mở editor hiện có, nhận100.000xu và đóng trở lại Settings.
+- Điều hướng bàn phím Menu/Pause dùng DOMkeydown đồng bộ, chỉ khi canvas focus và modal mã không mở; scene shutdown gỡ listener. Sửa lỗi WebKit Tab/Enter bị xử lý trễ ở Phaser queue; test keyboard Menu và Pause đã qua cả hai browser.
+- Build TypeScript/Vite đạt; 6 unit PlayAudio/MenuPreferences đạt.
+- 6 E2E tập trung đạt qua các lượt kiểm tra cuối: parity/state/audio/motion/keyboard/48CSS/bounds trên Chromium360×640 và WebKit390×844 (2); claim Pause→đóng/reload/repeat và claim Menu→OK/Continue trên hai browser (4). Guard giữa ca giữ tiền/lưu đã qua Chromium trước steering UI; domain/save/claim không sửa.
+- Một lượt WebKit parity thất bại ở Tab/Enter; sau chuyển listener DOM đồng bộ, rerun parity2browser đều đạt. Không chạy full matrix. Chưa kiểm chứng iPhone thật.
+- Ảnh Cài đặt Menu/Pause đã xem và root xác nhận riêng phần visual: [Menu](ui-baseline/reference-settings-menu-2026-10-06.png), [Pause](ui-baseline/reference-settings-pause-2026-10-06.png). Không ghi đè ảnh popup mã/thưởng trước đó; ảnh codeflow E2E dùng test output riêng.
+- Config Playwright tạm đã gỡ. Chưa commit/push; bàn giao review.

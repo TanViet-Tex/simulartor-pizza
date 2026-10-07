@@ -1,0 +1,559 @@
+diff --git a/_bmad-output/implementation-artifacts/ui-baseline-2026-10-02.md b/_bmad-output/implementation-artifacts/ui-baseline-2026-10-02.md
+index 81982bd..bf61488 100644
+--- a/_bmad-output/implementation-artifacts/ui-baseline-2026-10-02.md
++++ b/_bmad-output/implementation-artifacts/ui-baseline-2026-10-02.md
+@@ -386,3 +386,7 @@ Chỉ thêm thông báo compact một nút với mất200/số dư thật và d
+ ### VIP — 2026-10-05
+ 
+ Giữ sáu ô và toàn bộ art/bố cục; tên/avatar khách giữ identity, thêm nhãn VIP và điều kiện thưởng trong khung đơn hiện có. Thưởng VIP ghi riêng trong thông báo kết quả và finance cuộn, không thay toàn màn. Xem [spec9.3](spec-9-3-repeatable-vip-customers.md), [đơn VIP](ui-baseline/vip-order-2026-10-05.png), [thưởng](ui-baseline/vip-reward-2026-10-05.png), [thu chi](ui-baseline/vip-finance-2026-10-05.png).
++
++### Nhập mã trong Cài đặt — yêu cầu 2026-10-06
++
++Người dùng duyệt thêm Nhập mã cho Cài đặt chung Menu/Pause. Giữ vị trí các điều khiển âm thanh/giảm chuyển động; thêm nút dưới Giảm chuyển động, nới bảng từ490 lên514px và dịch riêng Quay lại xuống24px để giữ khoảng cách. Hộp nhập dùng khung2nút/× hiện có, ô văn bản native, Quay lại/Nhận xu và feedback thật. Menu/bếp/hub giữ bố cục. `VIETVUIVE` chỉ nhận100.000xu một lần mỗi lượt đã lưu khi chuẩn bị; không ghi giữa ca. Khoản hỗ trợ ghi riêng trong dòng tiền báo cáo, không tăng doanh thu/lợi nhuận/XP/uy tín. Xem [spec](spec-vietvuive-test-code.md), [Cài đặt](ui-baseline/test-code-settings-2026-10-06.png), [nhận mã](ui-baseline/test-code-received-2026-10-06.png).
+diff --git a/src/domain/CozyCheckpoint.ts b/src/domain/CozyCheckpoint.ts
+index 39c0cda..3050db9 100644
+--- a/src/domain/CozyCheckpoint.ts
++++ b/src/domain/CozyCheckpoint.ts
+@@ -1,3 +1,4 @@
++import {TEST_CODE_COINS,validTestCodeReceipt,type TestCodeReceipt} from './TestCode';
+ import {chooseCampaignEvent,validCampaignEventSeed,type CampaignLossEvent} from './CampaignEvents';
+ import {VIP_RULES} from '../config/vipCustomers';
+ import {vipQualifies,type VipReceipt} from './VipCustomers';
+@@ -35,7 +36,7 @@ export function expandCozyReport(report:CozyDaySummary,master:ProgressionSnapsho
+ export const COZY_SCHEMA_VERSION=2;
+ export const COZY_CONTENT_VERSION='cozy-open-campaign-2026-10-04'
+ export const COZY_LEGACY_CONTENT_VERSION='cozy-three-days-2026-10-03';
+-export type CozyCheckpoint={campaignEventSeed?:number;campaignEndDay?:number;staff?:StaffCheckpoint;shop?:ShopCheckpoint;deliveryAppEnabled?:boolean;ownedRecipes:StockRecipe[];recipePurchases:{spent:number;pendingSpent:number;purchased:StockRecipe[];granted?:StockRecipe[]};upgrades:{receipts?:UpgradeReceipt[];ovenLevel:number;queueLevel:number;spent:number;pendingSpent:number};customerMemory:{accepted:number[];declined:number[]};contentId:typeof COZY_CONTENT_VERSION;day:number;terminal:boolean;stock:CozyStockSnapshot;progression:ProgressionSnapshot;help:CozyHelpCheckpoint;menu:StockRecipe[];prices:Record<StockRecipe,number>;recipe:StockRecipe;reports:CozyDaySummary[];cumulativeProfit:number;reputation:number;relationship:number;relationshipDays:number[];regularDay1Stars:number|null;regularLatestStars:number|null;referral:ReturnType<typeof referralEligibility>|null};
++export type CozyCheckpoint={testCodeReceipt?:TestCodeReceipt;campaignEventSeed?:number;campaignEndDay?:number;staff?:StaffCheckpoint;shop?:ShopCheckpoint;deliveryAppEnabled?:boolean;ownedRecipes:StockRecipe[];recipePurchases:{spent:number;pendingSpent:number;purchased:StockRecipe[];granted?:StockRecipe[]};upgrades:{receipts?:UpgradeReceipt[];ovenLevel:number;queueLevel:number;spent:number;pendingSpent:number};customerMemory:{accepted:number[];declined:number[]};contentId:typeof COZY_CONTENT_VERSION;day:number;terminal:boolean;stock:CozyStockSnapshot;progression:ProgressionSnapshot;help:CozyHelpCheckpoint;menu:StockRecipe[];prices:Record<StockRecipe,number>;recipe:StockRecipe;reports:CozyDaySummary[];cumulativeProfit:number;reputation:number;relationship:number;relationshipDays:number[];regularDay1Stars:number|null;regularLatestStars:number|null;referral:ReturnType<typeof referralEligibility>|null};
+ const integer=(n:unknown,min=0,max=1000000):n is number=>Number.isSafeInteger(n)&&Number(n)>=min&&Number(n)<=max;
+ const stars=(n:unknown)=>n===null||integer(n,1,5);
+ const text=(v:unknown,max=512):v is string=>typeof v==='string'&&v.length<=max;
+@@ -71,7 +72,7 @@ function summaryValid(s:CozyDaySummary,master:ProgressionSnapshot,previousLoss:n
+     if(!Array.isArray(rows)||rows.length>STOCK_INGREDIENTS.length||rows.some(row=>!row||!STOCK_INGREDIENTS.includes(row.ingredient)||!integer(row.cost))||new Set(rows.map(row=>row.ingredient)).size!==rows.length||rows.reduce((sum,row)=>sum+row.cost,0)!==s.cost)return false;
+   }
+   const a=s.accounts;
+-  if(!a||!integer(a.startingCash,-20-previousLoss)||!integer(a.openingInventoryValue)||!integer(a.cumulativeProfit,-1000000)||a.sales!==s.revenue||a.rewards!==s.rewards||a.purchases!==s.purchases||a.consumed!==s.cost||a.expired!==s.expired||a.rent!==20||a.profit!==s.profit||a.endingCash!==s.cash||s.profit!==s.revenue-s.cost-s.expired-20-fees-eventLoss-a.wages||s.cash!==a.startingCash+s.revenue+s.rewards-s.purchases-20-fees-eventLoss-(a.wagesPaid??a.wages)-(a.capitalPurchases??0)||!integer(a.capitalPurchases??0)||!integer(a.wages)||!integer(a.wagesPaid??a.wages)||a.repairs!==0||a.other!==fees+eventLoss||(a.eventLoss??0)!==eventLoss||(a.deliveryFees??0)!==fees||!integer(a.giftCost)||a.giftCost>s.cost)return false;
++  if(!a||!integer(a.startingCash,-20-previousLoss)||!integer(a.openingInventoryValue)||!integer(a.cumulativeProfit,-1000000)||a.sales!==s.revenue||a.rewards!==s.rewards||a.purchases!==s.purchases||a.consumed!==s.cost||a.expired!==s.expired||a.rent!==20||a.profit!==s.profit||a.endingCash!==s.cash||s.profit!==s.revenue-s.cost-s.expired-20-fees-eventLoss-a.wages||s.cash!==a.startingCash+(a.supportFunds??0)+s.revenue+s.rewards-s.purchases-20-fees-eventLoss-(a.wagesPaid??a.wages)-(a.capitalPurchases??0)||!integer(a.supportFunds??0,0,TEST_CODE_COINS)||!integer(a.capitalPurchases??0)||!integer(a.wages)||!integer(a.wagesPaid??a.wages)||a.repairs!==0||a.other!==fees+eventLoss||(a.eventLoss??0)!==eventLoss||(a.deliveryFees??0)!==fees||!integer(a.giftCost)||a.giftCost>s.cost)return false;
+   if(!a.inventory||!Array.isArray(a.inventory.lots)||a.inventory.lots.length>300)return false;
+   const lots=validateStockSnapshot({cash:0,nextLot:1000000000,activeDay:s.day+1,lots:a.inventory.lots,books:[],settlements:[]});
+   if(!lots||a.inventory.units!==lots.lots.reduce((n,l)=>n+l.quantity,0)||a.inventory.value!==lots.lots.reduce((n,l)=>n+l.quantity*l.unitCost,0))return false;
+@@ -88,6 +89,7 @@ function summaryValid(s:CozyDaySummary,master:ProgressionSnapshot,previousLoss:n
+ function validatedCheckpoint(value:unknown):CozyCheckpoint|null {
+   if(!value||typeof value!=='object')return null;
+   const s=structuredClone(value) as CozyCheckpoint;
++  if(s.testCodeReceipt!==undefined&&!validTestCodeReceipt(s.testCodeReceipt,s.day))return null;
+   const legacy=(s.contentId as string)===COZY_LEGACY_CONTENT_VERSION;
+   if(s.campaignEventSeed!==undefined&&!validCampaignEventSeed(s.campaignEventSeed))return null;
+   const campaignEndDay=s.campaignEndDay??Math.max(CAMPAIGN_LAST_DAY,s.day);
+@@ -128,10 +130,11 @@ function validatedCheckpoint(value:unknown):CozyCheckpoint|null {
+   const claimPosition=new Map(master.claims.map((id,index)=>[id,index]));
+   for(const report of s.reports){
+     const roles=staff.acquired.filter(a=>a.hiredDay<=report.day).map(a=>a.role),wages=roles.length*STAFF_RULES.dailyWage;
+-    const due=arrears+wages,a=report.accounts,available=a.startingCash+report.revenue+report.rewards-report.purchases-20-(report.deliveryFees??0)-(report.campaignEvent?.loss??0)-(a.capitalPurchases??0),paid=available>=due?due:0;
++    const due=arrears+wages,a=report.accounts,available=a.startingCash+(a.supportFunds??0)+report.revenue+report.rewards-report.purchases-20-(report.deliveryFees??0)-(report.campaignEvent?.loss??0)-(a.capitalPurchases??0),paid=available>=due?due:0;
+     const payroll=report.payroll;
+     if((a.capitalPurchases??0)<staff.acquired.filter(a=>a.hiredDay===report.day).length*STAFF_RULES.hirePrice)return null;
+     if(a.wages!==wages||(a.wagesPaid??a.wages)!==paid||roles.length&&!payroll||payroll&&(!Array.isArray(payroll.roles)||JSON.stringify([...payroll.roles].sort())!==JSON.stringify([...roles].sort())||payroll.openingArrears!==arrears||payroll.wagesPaid!==paid||payroll.endingArrears!==due-paid))return null;
++    if((a.supportFunds??0)!==(s.testCodeReceipt?.day===report.day?TEST_CODE_COINS:0))return null;
+     arrears=due-paid;
+     profit+=report.profit;
+     outcomes+=report.delivered;const missionNew=report.progression.mission==='completed'&&cheeseSales<8;
+@@ -157,7 +160,7 @@ function validatedCheckpoint(value:unknown):CozyCheckpoint|null {
+   if(last&&JSON.stringify(stock.lots.filter(l=>l.day<=closed))!==JSON.stringify(last.accounts.inventory.lots))return null;
+   if(!last&&(master.xp||master.outcomes.length||s.regularDay1Stars!==null||s.regularLatestStars!==null||s.relationshipDays.length))return null;
+   if(s.day!==(s.terminal?closed:closed+1)||s.terminal!==!!last?.ending||master.goals.length!==closed||stock.settlements.length!==closed||stock.settlements.some(b=>b.day>closed)||stock.books.some(b=>b.day>(s.terminal?closed:s.day))||stock.lots.some(l=>l.day>(s.terminal?closed:s.day)||!s.terminal&&l.expiry<s.day)||stock.activeDay!==(legacy?Math.min(3,closed+1):closed+1))return null;
+-  if(s.cumulativeProfit!==s.reports.reduce((n,r)=>n+r.profit,0)||stock.cash!==(last?.cash??300)-upgrades.pendingSpent-recipePurchases.pendingSpent-shop.pendingSpent-staff.pendingSpent-prepPurchases||s.reputation!==(last?.reputation??50)||s.relationship!==(last?.relationship??0)||last&&JSON.stringify(master)!==JSON.stringify(reportProgression(last,master)))return null;
++  if(s.cumulativeProfit!==s.reports.reduce((n,r)=>n+r.profit,0)||stock.cash!==(last?.cash??300)+(s.testCodeReceipt?.day===s.day&&!s.terminal?TEST_CODE_COINS:0)-upgrades.pendingSpent-recipePurchases.pendingSpent-shop.pendingSpent-staff.pendingSpent-prepPurchases||s.reputation!==(last?.reputation??50)||s.relationship!==(last?.relationship??0)||last&&JSON.stringify(master)!==JSON.stringify(reportProgression(last,master)))return null;
+   for(const report of s.reports){const book=stock.books.find(b=>b.day===report.day)??{purchases:0,consumed:0,eventLoss:0},settled=stock.settlements.find(b=>b.day===report.day);if((book.eventLoss??0)!==(report.campaignEvent?.loss??0)||book.purchases!==report.purchases||book.consumed!==report.cost||!settled||settled.expired!==report.expired||settled.rent!==report.rent)return null;}
+   if(!s.menu.some(id=>ownership.includes(id))||!ownership.includes(s.recipe)||s.menu.some(id=>!ownership.includes(id)&&!legacy))return null;
+   if(s.referral!==null&&(!s.referral||typeof s.referral.eligible!=='boolean'||JSON.stringify(s.referral)!==JSON.stringify(referralEligibility(s.reports.find(r=>r.day===2)?.reputation??s.reputation))))return null;
+@@ -173,11 +176,11 @@ function validatedCheckpoint(value:unknown):CozyCheckpoint|null {
+   }
+   const reports=s.reports.map(r=>{
+     const a=r.accounts;
+-    const accounts={...closeAccounts({... (r.campaignEvent?{eventLoss:r.campaignEvent.loss}:{}),startingCash:a.startingCash,openingInventoryValue:a.openingInventoryValue,sales:a.sales,purchases:a.purchases,consumed:a.consumed,expired:a.expired,rent:a.rent,inventory:a.inventory,previousProfit:a.cumulativeProfit-a.profit,rewards:a.rewards,giftCost:a.giftCost,capitalPurchases:a.capitalPurchases??0,wages:a.wages,wagesPaid:a.wagesPaid??a.wages,...(r.deliveryFees!==undefined?{deliveryFees:r.deliveryFees}:{})}),zeroReasons:structuredClone(a.zeroReasons)};
++    const accounts={...closeAccounts({... (r.campaignEvent?{eventLoss:r.campaignEvent.loss}:{}),...(a.supportFunds!==undefined?{supportFunds:a.supportFunds}:{}),startingCash:a.startingCash,openingInventoryValue:a.openingInventoryValue,sales:a.sales,purchases:a.purchases,consumed:a.consumed,expired:a.expired,rent:a.rent,inventory:a.inventory,previousProfit:a.cumulativeProfit-a.profit,rewards:a.rewards,giftCost:a.giftCost,capitalPurchases:a.capitalPurchases??0,wages:a.wages,wagesPaid:a.wagesPaid??a.wages,...(r.deliveryFees!==undefined?{deliveryFees:r.deliveryFees}:{})}),zeroReasons:structuredClone(a.zeroReasons)};
+     return {...(r.campaignEvent?{campaignEvent:{...r.campaignEvent}}:{}),...(r.payroll?{payroll:structuredClone(r.payroll)}:{}),...(r.pizzasSold!==undefined?{pizzasSold:r.pizzasSold}:{}),...(r.deliveryFees!==undefined?{deliveryFees:r.deliveryFees}:{}),...(r.event!==undefined?{event:r.event}:{}),...(r.appEnabled!==undefined?{appEnabled:r.appEnabled}:{}),...(r.progressionArchive?{progressionArchive:{...r.progressionArchive}}:{}),...(r.ownedRecipes?{ownedRecipes:[...r.ownedRecipes]}:{}),...(r.salesByRecipe!==undefined?{salesByRecipe:r.salesByRecipe.map(row=>({...row}))}:{}),...(r.costByIngredient!==undefined?{costByIngredient:r.costByIngredient.map(row=>({...row}))}:{}),progression:structuredClone(r.progression),goal:progress.goal(r.day),rewards:r.rewards,accounts,day:r.day,revenue:r.revenue,purchases:r.purchases,cost:r.cost,expired:r.expired,rent:r.rent,profit:r.profit,delivered:r.delivered,abandoned:r.abandoned,rating:r.rating,cash:r.cash,reviews:r.reviews.map(review=>({... (review.vip?{vip:{...review.vip}}:{}),... (review.source!==undefined?{source:review.source}:{}),...(review.quantity!==undefined?{quantity:review.quantity}:{}),...(review.deliveryFee!==undefined?{deliveryFee:review.deliveryFee}:{}),... (review.avatarIndex!==undefined?{avatarIndex:review.avatarIndex}:{}),name:review.name,stars:review.stars,reasons:[...review.reasons],outcome:review.outcome,reputationDelta:review.reputationDelta,relationshipDelta:review.relationshipDelta})),ending:r.ending,reputation:r.reputation,relationship:r.relationship,referral:r.referral?{...r.referral}:null,...(r.viability?{viability:{...r.viability}}:{})};
+   });
+   if(s.reports.reduce((sum,r)=>sum+(r.accounts.capitalPurchases??0),0)+upgrades.pendingSpent+recipePurchases.pendingSpent+shop.pendingSpent+staff.pendingSpent!==upgrades.spent+recipePurchases.spent+shop.spent+staff.spent)return null;
+   if(legacy){stock.activeDay=closed+1;const last=reports[reports.length-1];if(last?.ending==='complete'){const inventory=CozyStock.restore(stock)!;const viability=cozyViability(stock.cash,4,ownership,id=>inventory.available(id,4));last.ending=viability.viable?null:'insolvent';last.viability=viability;s.terminal=!viability.viable;s.day=s.terminal?3:4;}}
+-  return structuredClone({... (s.campaignEventSeed!==undefined?{campaignEventSeed:s.campaignEventSeed}:{}),campaignEndDay,staff,shop,deliveryAppEnabled:s.deliveryAppEnabled??false,ownedRecipes:ownership,recipePurchases,upgrades:{...upgrades},customerMemory:{accepted:[...memory.accepted],declined:[...memory.declined]},contentId:COZY_CONTENT_VERSION,day:s.day,terminal:s.terminal,stock,progression:master,help,menu:s.menu.filter(id=>ownership.includes(id)),prices:{...s.prices},recipe:s.recipe,reports:reports.map(compactCozyReport),cumulativeProfit:s.cumulativeProfit,reputation:s.reputation,relationship:s.relationship,relationshipDays:[...s.relationshipDays],regularDay1Stars:s.regularDay1Stars,regularLatestStars:s.regularLatestStars,referral:s.referral?{...s.referral}:null});
++  return structuredClone({...(s.testCodeReceipt?{testCodeReceipt:{...s.testCodeReceipt}}:{}),... (s.campaignEventSeed!==undefined?{campaignEventSeed:s.campaignEventSeed}:{}),campaignEndDay,staff,shop,deliveryAppEnabled:s.deliveryAppEnabled??false,ownedRecipes:ownership,recipePurchases,upgrades:{...upgrades},customerMemory:{accepted:[...memory.accepted],declined:[...memory.declined]},contentId:COZY_CONTENT_VERSION,day:s.day,terminal:s.terminal,stock,progression:master,help,menu:s.menu.filter(id=>ownership.includes(id)),prices:{...s.prices},recipe:s.recipe,reports:reports.map(compactCozyReport),cumulativeProfit:s.cumulativeProfit,reputation:s.reputation,relationship:s.relationship,relationshipDays:[...s.relationshipDays],regularDay1Stars:s.regularDay1Stars,regularLatestStars:s.regularLatestStars,referral:s.referral?{...s.referral}:null});
+ }
+ export function validateCozyCheckpoint(value:unknown):CozyCheckpoint|null {try{return validatedCheckpoint(value);}catch{return null;}}
+diff --git a/src/domain/DayAccounts.ts b/src/domain/DayAccounts.ts
+index 79c1a0e..d840130 100644
+--- a/src/domain/DayAccounts.ts
++++ b/src/domain/DayAccounts.ts
+@@ -3,7 +3,7 @@ import type {CozyInventory} from './CozyStock';
+ export interface DayAccountsInput {
+   startingCash:number;openingInventoryValue:number;sales:number;purchases:number;
+   consumed:number;expired:number;rent:number;inventory:CozyInventory;previousProfit:number;
+-  rewards?:number;giftCost?:number;capitalPurchases?:number;deliveryFees?:number;wages?:number;wagesPaid?:number;eventLoss?:number;
++  supportFunds?:number;rewards?:number;giftCost?:number;capitalPurchases?:number;deliveryFees?:number;wages?:number;wagesPaid?:number;eventLoss?:number;
+ }
+ 
+ /** Purchases move cash into stock; consumption and spoilage expense that stock once. */
+@@ -14,7 +14,7 @@ export function closeAccounts(input:DayAccountsInput){
+   const {previousProfit,...values}=input;
+   return {...values,inventory:structuredClone(input.inventory),rewards,giftCost:input.giftCost??0,wages,wagesPaid,repairs,other,
+     capitalPurchases:input.capitalPurchases??0,
+-    endingCash:input.startingCash+input.sales+rewards-input.purchases-input.rent-wagesPaid-repairs-other-(input.capitalPurchases??0),
++    endingCash:input.startingCash+(input.supportFunds??0)+input.sales+rewards-input.purchases-input.rent-wagesPaid-repairs-other-(input.capitalPurchases??0),
+     profit,cumulativeProfit:previousProfit+profit,
+     zeroReasons:{wages:wages?'Lương phát sinh trong ngày; tiền thực trả và nợ lương ghi riêng.':'Không có nhân viên trong ca.',repairs:'Chưa có thiết bị hỏng.',rewards:rewards?'Thưởng VIP/mục tiêu/nhiệm vụ/lời cảm ơn đã nhận, tách khỏi bán pizza.':'Chưa có VIP, mục tiêu, nhiệm vụ hoặc lời cảm ơn đủ điều kiện nhận thưởng trong ca.',other:other?'Phí shipper và tổn thất sự kiện phát sinh, tách khỏi doanh thu bán pizza.':'Không có chi phí khác trong ca này.'}};
+ }
+diff --git a/src/main.ts b/src/main.ts
+index d19aed7..a79b411 100644
+--- a/src/main.ts
++++ b/src/main.ts
+@@ -64,6 +64,7 @@ function mainMenu(): Phaser.Scene {
+     hasSession:() => session.hasSession,
+     start:() => {void session.start(mode!=='shop').then(enterPlay);},
+     continue:() => enterPlay(session.continue()),
++    testCode:{message:value=>session.testCodeMessage(value),claim:value=>session.claimTestCode(value),claimed:()=>!!session.runtime?.testCodeClaimed,save:()=>session.view,retry:()=>{void session.retry();}},
+     save:()=>session.view,
+     subscribe:listener=>session.subscribe(listener),
+     initialize:()=>{if(initialized)return;initialized=true;void session.load().then(runtime=>{if(mode==='shop'){if(runtime)enterPlay(runtime);else if(session.view.state==='ready')void session.start(false).then(enterPlay);}});},
+diff --git a/src/presentation/ReferenceSummary.ts b/src/presentation/ReferenceSummary.ts
+index 93645ce..fcc02cf 100644
+--- a/src/presentation/ReferenceSummary.ts
++++ b/src/presentation/ReferenceSummary.ts
+@@ -171,7 +171,7 @@ export class ReferenceSummary {
+       [`Giá vốn nguyên liệu · ${a.consumed} xu`,report.costByIngredient===undefined?['Bản lưu cũ chưa có chi tiết nguyên liệu.']:report.costByIngredient.length?report.costByIngredient.map(r=>`${ingredientName(r.ingredient)}   ${r.cost} xu`):['Chưa dùng nguyên liệu.']],
+       ['Chi phí khác',[`Thuê quán: ${a.rent} xu`,`Lương: ${a.wages} xu`,`Sửa chữa: ${a.repairs} xu`,`Phí giao hàng: ${report.deliveryFees??0} xu`,...(a.eventLoss?[`Sự kiện A: ${a.eventLoss} xu`]:[]),`Khác: ${a.other-(report.deliveryFees??0)-(a.eventLoss??0)} xu`,`Hàng hết hạn: ${a.expired} xu`,'Bánh cháy/bỏ đã nằm trong giá vốn, không trừ lần hai.']],
+       ['Đối chiếu lợi nhuận',[`${a.sales} − ${a.consumed} − ${a.expired} − ${a.rent+a.wages+a.repairs+a.other} = ${a.profit} xu`,`Giá vốn món tặng: ${a.giftCost} xu, đã tính trong giá vốn.`]],
+-      ['Dòng tiền riêng',[`Số dư đầu ngày: ${a.startingCash} xu`,`Tiền bán hàng: +${a.sales} xu`,`Thưởng: +${a.rewards} xu`,`Nhập kho: −${a.purchases} xu`,`Nâng cấp / thuê người: −${a.capitalPurchases??0} xu`,`Lương thực trả: ${a.wagesPaid??a.wages} xu`,`Lương chưa trả: ${report.payroll?.endingArrears??0} xu`,`Chi phí đã trả: −${a.rent+(a.wagesPaid??a.wages)+a.repairs+a.other} xu`,`Số dư cuối ngày: ${a.endingCash} xu`]],
++      ['Dòng tiền riêng',[`Số dư đầu ngày: ${a.startingCash} xu`,`Tiền bán hàng: +${a.sales} xu`,`Thưởng: +${a.rewards} xu`,...(a.supportFunds?[`Hỗ trợ test: +${a.supportFunds} xu`]:[]),`Nhập kho: −${a.purchases} xu`,`Nâng cấp / thuê người: −${a.capitalPurchases??0} xu`,`Lương thực trả: ${a.wagesPaid??a.wages} xu`,`Lương chưa trả: ${report.payroll?.endingArrears??0} xu`,`Chi phí đã trả: −${a.rent+(a.wagesPaid??a.wages)+a.repairs+a.other} xu`,`Số dư cuối ngày: ${a.endingCash} xu`]],
+       ['Đối chiếu tồn kho',[`Đầu ${a.openingInventoryValue} + nhập ${a.purchases} = dùng ${a.consumed} + hết hạn ${a.expired} + cuối ${a.inventory.value} xu`,'Nhập kho không trừ thêm vào lợi nhuận. Báo cáo này giữ nguyên khi mua cho ngày sau.']],
+     ];
+     const elements:{object:Phaser.GameObjects.GameObject;y:number}[]=[];let y=viewport.y;
+diff --git a/src/presentation/SettingsPanel.ts b/src/presentation/SettingsPanel.ts
+index cadc975..d2e1821 100644
+--- a/src/presentation/SettingsPanel.ts
++++ b/src/presentation/SettingsPanel.ts
+@@ -4,19 +4,19 @@ import type {MenuPreferences} from './MenuPreferences';
+ import {drawNotificationFrame,drawNotificationButton,type NotificationRect} from './NotificationFrame';
+ import {UI_THEME} from './theme';
+ 
+-export type SettingsAction='music'|'effects-less'|'mute'|'effects-more'|'motion'|'back';
+-type SettingsInput={audio:PlayAudio;preferences?:MenuPreferences;reducedMotion:boolean;changed:()=>void;back:()=>void;register:(action:SettingsAction,rect:NotificationRect,enabled:boolean,callback:()=>void)=>void};
++export type SettingsAction='music'|'effects-less'|'mute'|'effects-more'|'motion'|'code'|'back';
++type SettingsInput={audio:PlayAudio;preferences?:MenuPreferences;reducedMotion:boolean;changed:()=>void;back:()=>void;code:()=>void;register:(action:SettingsAction,rect:NotificationRect,enabled:boolean,callback:()=>void)=>void};
+ 
+ /** Both scenes draw the same absolute geometry; adapters only register input and semantic IDs. */
+ export function drawSettingsPanel(scene:Phaser.Scene,layer:Phaser.GameObjects.Container,input:SettingsInput):void {
+-  const layout=drawNotificationFrame(scene,layer,'one',75,490),y=layout.body.y;
++  const layout=drawNotificationFrame(scene,layer,'one',75,514),y=layout.body.y;
+   const text=(at:number,value:string,size=14,color=UI_THEME.text.ink)=>{
+     layer.add(scene.add.text(180,at,value,{fontFamily:UI_THEME.typography.fontFamily,fontSize:`${size}px`,fontStyle:'bold',color,align:'center',wordWrap:{width:280},padding:{top:2,bottom:2}}).setOrigin(.5,0));
+   };
+   const controls:Record<SettingsAction,NotificationRect>={
+     music:{x:50,y:y+32,width:260,height:48},
+     'effects-less':{x:50,y:y+125,width:76,height:48},mute:{x:137,y:y+125,width:86,height:48},'effects-more':{x:234,y:y+125,width:76,height:48},
+-    motion:{x:50,y:y+190,width:260,height:48},back:layout.footer[0],
++    motion:{x:50,y:y+190,width:260,height:48},code:{x:50,y:y+254,width:260,height:48},back:layout.footer[0],
+   };
+   const button=(action:SettingsAction,title:string,enabled:boolean,callback:()=>void)=>{
+     const rect=controls[action];if(action!=='back')drawNotificationButton(scene,layer,rect.x,rect.y,rect.width,rect.height);
+@@ -32,5 +32,6 @@ export function drawSettingsPanel(scene:Phaser.Scene,layer:Phaser.GameObjects.Co
+   button('effects-more','+',true,()=>input.audio.setEffectsVolume(input.audio.effectsVolume+.1));
+   button('motion',`Giảm chuyển động: ${input.reducedMotion?'Bật':'Tắt'}`,!!input.preferences,()=>input.preferences?.setReducedMotion(!input.reducedMotion));
+   button('back','Quay lại',true,input.back);
++  button('code','Nhập mã',true,input.code);
+   scene.game.canvas.dataset.settingsPanel=JSON.stringify({layout,controls,effectsVolume:input.audio.effectsVolume,muted:input.audio.muted,reducedMotion:input.reducedMotion,musicAvailable:false});
+ }
+diff --git a/src/runtime/CozyCampaignSession.test.ts b/src/runtime/CozyCampaignSession.test.ts
+index 189f002..ae96d0f 100644
+--- a/src/runtime/CozyCampaignSession.test.ts
++++ b/src/runtime/CozyCampaignSession.test.ts
+@@ -13,6 +13,33 @@ const settle=()=>new Promise<void>(resolve=>setTimeout(resolve,0));
+ async function setup(funded=false){let id=0;const port=new MemoryPort(),session=new CozyCampaignSession(port,()=>`id-${++id}`);await session.load();const r=(await session.start(false))!;if(funded){port.value!.payload=fundedShopCheckpoint();port.value!.checksum=checkpointChecksum(port.value!.payload);const loaded=(await session.load())!;return {port,session,r:loaded};}return {port,session,r};}
+ function open(r:CozyRuntime){for(const id of ['dough','sauce','cheese'] as const)r.buy(id,1);expect(r.openShop()).toBe(true);}
+ describe('Cozy prepare/commit/confirm session',()=>{
++  it('grants test funds only after commit, once per campaign, with retry and owned pauses intact',async()=>{
++    const {session,port,r}=await setup();const menu=r.acquirePause('menu'),user=r.acquirePause('user'),editor=r.acquirePause('order');port.fail=true;
++    expect(session.claimTestCode(' vietvuive ')).toBe(true);expect(r.state.cash).toBe(300);expect(session.claimTestCode('VIETVUIVE')).toBe(false);
++    await settle();expect(session.view.state).toBe('error');expect(r.state.cash).toBe(300);expect(port.value!.payload.stock.cash).toBe(300);
++    const pending=port.calls[port.calls.length-1];port.fail=false;await session.retry();expect(port.calls[port.calls.length-1]).toEqual(pending);expect(r.state.cash).toBe(100300);expect(r.pauses).toEqual(expect.arrayContaining(['menu','user','order']));
++    expect(session.claimTestCode('VIETVUIVE')).toBe(false);menu.release();user.release();editor.release();
++    const restored=(await session.load())!;expect(restored.state.cash).toBe(100300);expect(restored.testCodeClaimed).toBe(true);expect(session.claimTestCode('VIETVUIVE')).toBe(false);
++    expect(restored.progression.xp).toBe(0);expect(restored.state.reputation).toBe(50);
++    expect((await session.start(false))!.state.cash).toBe(300);expect(session.claimTestCode('VIETVUIVE')).toBe(true);await settle();expect(session.runtime!.state.cash).toBe(100300);
++  });
++  it('rejects empty, wrong, no campaign, midshift and conflict without changing cash',async()=>{
++    const empty=new CozyCampaignSession(new MemoryPort());await empty.load();expect(empty.claimTestCode('VIETVUIVE')).toBe(false);empty.destroy();
++    const {session,port,r}=await setup();expect(session.claimTestCode('')).toBe(false);expect(session.claimTestCode('other')).toBe(false);open(r);const before=r.state.cash;session.returnToMenu();
++    expect(session.claimTestCode('VIETVUIVE')).toBe(false);expect(r.state.cash).toBe(before);expect(port.calls).toHaveLength(1);session.destroy();
++    const next=await setup();next.port.conflict=true;expect(next.session.claimTestCode('VIETVUIVE')).toBe(true);await settle();expect(next.r.state.cash).toBe(300);expect(next.session.view.canRetry).toBe(false);expect(next.session.claimTestCode('VIETVUIVE')).toBe(false);next.session.destroy();
++  });
++  it('reconciles preparation support after day close without inflating commercial income or profit',async()=>{
++    const {session,r}=await setup();expect(session.claimTestCode('VIETVUIVE')).toBe(true);await settle();r.openShop();expect(session.closeDay()).toBe(true);await settle();
++    const report=r.daySummary!;expect(report.accounts.supportFunds).toBe(100000);expect(report.revenue).toBe(0);expect(report.rewards).toBe(0);expect(report.profit).toBe(-20);expect(report.cash).toBe(100280);
++    const restored=(await session.load())!;expect(restored.state.cash).toBe(100280);expect(restored.completedReports[0].accounts.supportFunds).toBe(100000);expect(session.claimTestCode('VIETVUIVE')).toBe(false);session.destroy();
++  });
++  it('accepts funds in next-day summary preparation without rewriting yesterday or double accounting on day two',async()=>{
++    const {session,r}=await setup();r.openShop();expect(session.closeDay()).toBe(true);await settle();const yesterday=r.daySummary;
++    expect(session.claimTestCode('VIETVUIVE')).toBe(true);await settle();expect(r.daySummary).toEqual(yesterday);expect(r.state.cash).toBe(100280);
++    expect(r.openNextDay()).toBe(true);expect(session.closeDay()).toBe(true);await settle();expect(r.daySummary!.accounts.supportFunds).toBe(100000);expect(r.daySummary!.accounts.startingCash).toBe(280);expect(r.daySummary!.cash).toBe(100260);
++    const restored=(await session.load())!;expect(restored.completedReports[0].accounts.supportFunds).toBeUndefined();expect(restored.completedReports[1].accounts.supportFunds).toBe(100000);session.destroy();
++  });
+   it('saves upgrade money and ownership together; blocked retries never charge twice',async()=>{
+     const {session,port,r}=await setup(true);const cash=r.state.cash;port.defer=true;
+     expect(session.upgradeShop('oven','oven')).toBe(true);expect(r.state.cash).toBe(cash);
+diff --git a/src/runtime/CozyCampaignSession.ts b/src/runtime/CozyCampaignSession.ts
+index f0a3e5e..b4ec387 100644
+--- a/src/runtime/CozyCampaignSession.ts
++++ b/src/runtime/CozyCampaignSession.ts
+@@ -1,3 +1,4 @@
++import {TEST_CODE,normalizeTestCode} from '../domain/TestCode';
+ import {campaignEventSeed} from '../domain/CampaignEvents';
+ import {CozyRuntime} from './CozyRuntime';
+ import {PlayLifecycle,type PauseLease} from './PlayLifecycle';
+@@ -81,9 +82,21 @@ export class CozyCampaignSession {
+   buyShopItem(id:import('../domain/ShopEffects').ShopItemId,commandId:string):boolean {return this.stageShop(r=>r.buyShopItem(id,commandId),commandId);}
+   placeShopItem(id:import('../domain/ShopEffects').ShopItemId,placed:boolean,commandId:string):boolean {return this.stageShop(r=>r.placeShopItem(id,placed,commandId),commandId);}
+   upgradeShop(kind:'oven'|'queue',commandId:string):boolean {return this.stageShop(r=>r.upgradeShop(kind,commandId),commandId);}
++  testCodeMessage(value:string):string {
++    if(normalizeTestCode(value)!==TEST_CODE)return 'Mã không hợp lệ.';
++    if(this.status!=='ready'||this.pending)return this.status==='saving'?'Đang lưu…':this.status==='temporary'?'Cần chiến dịch có lưu để nhận mã.':'Hãy xử lý lưu tiến độ trước khi nhận mã.';
++    if(!this.current)return 'Hãy Bắt đầu lượt chơi rồi nhập mã.';
++    if(this.current.testCodeClaimed)return 'Mã đã được nhận trong lượt chơi này.';
++    if(!this.current.canClaimTestCode)return 'Chỉ nhận trong chuẩn bị. Hãy chốt ngày rồi nhập mã.';
++    return '';
++  }
++  claimTestCode(value:string):boolean {
++    if(this.testCodeMessage(value))return false;
++    return this.stageShop(r=>r.claimTestCode(value),'test-code:VIETVUIVE',true);
++  }
+   hireStaff(role:import('../config/staffCatalog').StaffRole,commandId:string):boolean {return this.stageShop(r=>r.hireStaff(role,commandId),commandId);}
+-  private stageShop(action:(candidate:CozyRuntime)=>boolean,commandId:string):boolean {
+-    if(!this.allowed()||!this.current||!this.current.canSetPrices||this.current.shopCommandUsed(commandId))return false;
++  private stageShop(action:(candidate:CozyRuntime)=>boolean,commandId:string,testCode=false):boolean {
++    if(!this.allowed()||!this.current||!(testCode?this.current.canClaimTestCode:this.current.canSetPrices)||this.current.shopCommandUsed(commandId))return false;
+     if(this.status==='temporary'){const accepted=action(this.current);if(accepted)this.publish();return accepted;}
+     const candidate=CozyRuntime.restoreCheckpoint(this.current.exportCheckpoint())!;
+     if(!action(candidate))return false;
+diff --git a/src/runtime/CozyRuntime.ts b/src/runtime/CozyRuntime.ts
+index 14eb285..ca0fba2 100644
+--- a/src/runtime/CozyRuntime.ts
++++ b/src/runtime/CozyRuntime.ts
+@@ -6,6 +6,7 @@ import {CAMPAIGN_LAST_DAY} from '../config/campaignRules';
+ import {cozyCampaignResults,type CozyCampaignResults} from '../domain/CozyCampaignResults';
+ import {shopItem} from '../config/shopCatalog';
+ import {STAFF_RULES,STAFF_ROLES,type StaffRole} from '../config/staffCatalog';
++import {TEST_CODE,TEST_CODE_COINS,normalizeTestCode,type TestCodeReceipt} from '../domain/TestCode';
+ import {emptyStaff,type StaffCheckpoint} from '../domain/StaffCheckpoint';
+ import {shopEffects,type ShopItemId,type ShopEffects} from '../domain/ShopEffects';
+ import {shopSchedule} from '../domain/ShopSchedule';
+@@ -86,6 +87,15 @@ export class CozyRuntime {
+     const cost=recipeDefinition(recipe).purchasePrice;if(!this.stock.debit(cost))return this.shopFeedback('Kh\u00f4ng \u0111\u1ee7 ti\u1ec1n mua c\u00f4ng th\u1ee9c.');
+     this.recipeCommands.add(commandId);this.recipeOwnership.add(recipe);this.enabledMenu.add(recipe);this.purchasedRecipes.push(recipe);this.recipeSpent+=cost;this.pendingRecipeSpent+=cost;this.message='\u0110\u00e3 m\u1edf c\u00f4ng th\u1ee9c '+recipeDefinition(recipe).name;this.revision++;return true;
+   }
++  private testCodeReceipt?:TestCodeReceipt;
++  get testCodeClaimed(){return !!this.testCodeReceipt;}
++  get canClaimTestCode(){return this.saveGuard()&&this.productionActive&&!this.tutorialActive&&!this.shiftOpen&&(this.phase==='preparation'||this.phase==='summary'&&!this.summary?.ending)&&![...this.reasons].some(reason=>!['user','menu','order'].includes(reason));}
++  claimTestCode(value:string):boolean {
++    if(normalizeTestCode(value)!==TEST_CODE||this.testCodeReceipt||!this.canClaimTestCode)return false;
++    this.testCodeReceipt={code:TEST_CODE,coins:TEST_CODE_COINS,day:this.preparationDay};
++    this.stock.receive(TEST_CODE_COINS);this.revision++;return true;
++  }
++  private supportForDay(day:number){return this.testCodeReceipt?.day===day?TEST_CODE_COINS:0;}
+   private shop:ShopCheckpoint={acquired:[],spent:0,pendingSpent:0};
+   private shopCommands=new Set<string>();
+   private upgradeReceipts:UpgradeReceipt[]=[];
+@@ -120,7 +130,7 @@ export class CozyRuntime {
+   /** Session confirmation changes only checkpoint-owned investment state; leases and scene identity survive. */
+   confirmShopCheckpoint(value:CozyCheckpoint,commandId:string):boolean {
+     const s=validateCozyCheckpoint(value);if(!s||this.shiftOpen||s.day!==(this.phase==='summary'?this.currentDay+1:this.currentDay))return false;
+-    this.stock=CozyStock.restore(s.stock)!;this.staff=structuredClone(s.staff!);this.shop=structuredClone(s.shop!);this.ovenUpgrade=s.upgrades.ovenLevel as 0|1|2;this.queueUpgrade=s.upgrades.queueLevel;this.upgradeSpent=s.upgrades.spent;this.pendingUpgradeSpent=s.upgrades.pendingSpent;this.upgradeReceipts=structuredClone(s.upgrades.receipts??[]);this.shopCommands.add(commandId);this.staffCommands.add(commandId);this.upgradeCommands.add(commandId);this.order=new CozyOrder(false,this.recipe,true,this.ovenUpgrade);this.revision++;return true;
++    this.testCodeReceipt=s.testCodeReceipt?{...s.testCodeReceipt}:undefined;this.stock=CozyStock.restore(s.stock)!;this.staff=structuredClone(s.staff!);this.shop=structuredClone(s.shop!);this.ovenUpgrade=s.upgrades.ovenLevel as 0|1|2;this.queueUpgrade=s.upgrades.queueLevel;this.upgradeSpent=s.upgrades.spent;this.pendingUpgradeSpent=s.upgrades.pendingSpent;this.upgradeReceipts=structuredClone(s.upgrades.receipts??[]);this.shopCommands.add(commandId);this.staffCommands.add(commandId);this.upgradeCommands.add(commandId);this.order=new CozyOrder(false,this.recipe,true,this.ovenUpgrade);this.revision++;return true;
+   }
+   private ovenUpgrade:0|1|2=0;
+   private queueUpgrade=0;
+@@ -155,12 +165,13 @@ export class CozyRuntime {
+     if(!this.production||this.shiftOpen||this.tutorialActive||!['preparation','summary'].includes(this.phase))throw new Error('Not a day boundary');
+     const terminal=!!this.summary?.ending,day=this.summary?(terminal?this.currentDay:this.currentDay+1):this.currentDay;
+     const recipe=this.recipeOwnership.has(this.recipe)?this.recipe:this.menuFor(day)[0];
+-    const data:CozyCheckpoint={campaignEventSeed:this.eventSeed,campaignEndDay:this.campaignLastDay,staff:structuredClone(this.staff),shop:structuredClone(this.shop),deliveryAppEnabled:this.appEnabled,ownedRecipes:this.ownedRecipes,recipePurchases:this.recipePurchases,upgrades:this.upgrades,customerMemory:this.customerMemory,contentId:COZY_CONTENT_VERSION,day,terminal,stock:this.stock.exportCheckpoint(),progression:this.progress.snapshot,help:{decision:this.help.decision,outcome:this.help.outcome==='pending'?null:this.help.outcome,claims:[...this.help.claims]},menu:[...this.enabledMenu],prices:{...this.pricing},recipe,reports:structuredClone(this.reports),cumulativeProfit:this.cumulativeProfit,reputation:this.reputation,relationship:this.relationship,relationshipDays:[...this.relationshipDays],regularDay1Stars:this.regularDay1Stars,regularLatestStars:this.regularLatestStars,referral:this.referral?{...this.referral}:null};
++    const data:CozyCheckpoint={...(this.testCodeReceipt?{testCodeReceipt:{...this.testCodeReceipt}}:{}),campaignEventSeed:this.eventSeed,campaignEndDay:this.campaignLastDay,staff:structuredClone(this.staff),shop:structuredClone(this.shop),deliveryAppEnabled:this.appEnabled,ownedRecipes:this.ownedRecipes,recipePurchases:this.recipePurchases,upgrades:this.upgrades,customerMemory:this.customerMemory,contentId:COZY_CONTENT_VERSION,day,terminal,stock:this.stock.exportCheckpoint(),progression:this.progress.snapshot,help:{decision:this.help.decision,outcome:this.help.outcome==='pending'?null:this.help.outcome,claims:[...this.help.claims]},menu:[...this.enabledMenu],prices:{...this.pricing},recipe,reports:structuredClone(this.reports),cumulativeProfit:this.cumulativeProfit,reputation:this.reputation,relationship:this.relationship,relationshipDays:[...this.relationshipDays],regularDay1Stars:this.regularDay1Stars,regularLatestStars:this.regularLatestStars,referral:this.referral?{...this.referral}:null};
+     const validated=validateCozyCheckpoint(data);if(!validated)throw new Error('Invalid day boundary');return validated;
+   }
+   static restoreCheckpoint(value:unknown,tutorial=false,dependencies:CozyScheduleDependencies={}):CozyRuntime|null {
+     const s=validateCozyCheckpoint(value);if(!s)return null;
+     const r=new CozyRuntime(tutorial&&s.day===1&&!s.reports.length,true,dependencies);
++    r.testCodeReceipt=s.testCodeReceipt?{...s.testCodeReceipt}:undefined;
+     r.eventSeed=s.campaignEventSeed??dependencies.eventSeed??LEGACY_EVENT_SEED;r.campaignLastDay=s.campaignEndDay!;r.staff=structuredClone(s.staff!);r.shop=structuredClone(s.shop!);r.upgradeReceipts=structuredClone(s.upgrades.receipts??[]);r.appEnabled=s.deliveryAppEnabled??false;r.recipeOwnership=new Set(s.ownedRecipes);r.purchasedRecipes=[...s.recipePurchases.purchased];r.grantedRecipes=[...(s.recipePurchases.granted??[])];r.recipeSpent=s.recipePurchases.spent;r.pendingRecipeSpent=s.recipePurchases.pendingSpent;
+     r.ovenUpgrade=s.upgrades.ovenLevel as 0|1|2;r.queueUpgrade=s.upgrades.queueLevel;r.upgradeSpent=s.upgrades.spent;r.pendingUpgradeSpent=s.upgrades.pendingSpent;r.customerDecisions=structuredClone(s.customerMemory);r.stock=CozyStock.restore(s.stock)!;r.progress=CozyProgression.restore(s.progression)!;r.currentDay=s.day;r.enabledMenu=new Set(s.menu);r.pricing={...s.prices};r.recipe=s.recipe;r.order=new CozyOrder(false,s.recipe,true,r.ovenUpgrade);r.reports=structuredClone(s.reports);r.closedDays=new Set(s.reports.map(x=>x.day));r.cumulativeProfit=s.cumulativeProfit;r.reputation=s.reputation;r.relationship=s.relationship;r.relationshipDays=new Set(s.relationshipDays);r.regularDay1Stars=s.regularDay1Stars;r.regularLatestStars=s.regularLatestStars;r.referral=s.referral?{...s.referral}:null;
+     r.serial=s.progression.outcomes.reduce((n,id)=>Math.max(n,Number(id.replace('cozy-',''))||0),0)+s.reports.reduce((n,x)=>n+x.abandoned,0)+(s.help.decision==='accepted'?1:0);
+@@ -364,7 +375,7 @@ export class CozyRuntime {
+     if(wagesPaid)this.stock.debit(wagesPaid);this.staff.arrears=due-wagesPaid;
+     this.payrollWarning=this.staff.arrears?`Không đủ tiền trả lương. Còn thiếu ${Math.max(0,due-this.stock.cash)} xu; lương chưa trả ${this.staff.arrears} xu.`:'';
+     const payroll={roles:[...this.shiftRoles],openingArrears,wagesPaid,endingArrears:this.staff.arrears};
+-    const accounts=closeAccounts({... (this.appliedCampaignEvent?{eventLoss:this.appliedCampaignEvent.loss}:{}),wages,wagesPaid,startingCash:this.startingCash,openingInventoryValue:this.openingInventoryValue,sales:this.revenue,rewards:this.rewardCash,purchases:ledger.purchases,consumed:ledger.consumed,giftCost:this.dailyGiftCost,capitalPurchases:this.capitalPurchases,deliveryFees:this.deliveryFees,...settled,inventory:this.stock.inventorySnapshot(),previousProfit:this.cumulativeProfit});
++    const accounts=closeAccounts({...(this.supportForDay(this.currentDay)?{supportFunds:this.supportForDay(this.currentDay)}:{}),... (this.appliedCampaignEvent?{eventLoss:this.appliedCampaignEvent.loss}:{}),wages,wagesPaid,startingCash:this.startingCash,openingInventoryValue:this.openingInventoryValue,sales:this.revenue,rewards:this.rewardCash,purchases:ledger.purchases,consumed:ledger.consumed,giftCost:this.dailyGiftCost,capitalPurchases:this.capitalPurchases,deliveryFees:this.deliveryFees,...settled,inventory:this.stock.inventorySnapshot(),previousProfit:this.cumulativeProfit});
+     this.cumulativeProfit=accounts.cumulativeProfit;
+     const viability=cozyViability(this.stock.cash,this.currentDay+1,STOCK_RECIPES.filter(recipe=>this.recipeOwnership.has(recipe)),id=>this.stock.available(id,this.currentDay+1),id=>this.stock.purchasePrice(id,this.currentDay+1));
+     if(this.currentDay===2&&!this.referral)this.referral=referralEligibility(this.reputation);
+@@ -684,7 +695,7 @@ export class CozyRuntime {
+       if (intent.type === 'reset') {
+         if(this.closedDays.size)return false;
+         this.appliedCampaignEvent=null;this.campaignEventAcknowledged=false;this.eventSeed=this.scheduleDependencies.eventSeed??LEGACY_EVENT_SEED;this.appEnabled=false;this.appCommands.clear();this.bookingCommands.clear();this.shiftEvent=null;this.shiftApp=false;this.shiftStaff=false;this.deliveryFees=0;this.pizzasSold=0;this.deliveryTime=0;this.courier=null;this.recipeOwnership=new Set(['cheese','mushroom']);this.recipeSpent=0;this.pendingRecipeSpent=0;this.purchasedRecipes=[];this.grantedRecipes=[];this.recipeCommands.clear();this.campaignLastDay=CAMPAIGN_LAST_DAY;this.staff=emptyStaff();this.shiftRoles=[];this.staffJobs.clear();this.staffCommands.clear();this.payrollWarning='';this.shop={acquired:[],spent:0,pendingSpent:0};this.shopCommands.clear();this.upgradeReceipts=[];this.frozenShopEffects=shopEffects([]);this.ovenUpgrade=0;this.queueUpgrade=0;this.upgradeSpent=0;this.pendingUpgradeSpent=0;this.capitalPurchases=0;this.upgradeCommands.clear();this.customerDecisions={accepted:[],declined:[]};this.expressPending.clear();
+-        this.stock = new CozyStock();this.progress=new CozyProgression();this.rewardCash=0;this.dailyGiftCost=0;this.help={decision:'unseen',outcome:null,ticketId:null,offer:null,giftCost:0,claims:[],thanksPending:false};this.enabledMenu=new Set(['cheese','mushroom']);this.startingCash=300;this.openingInventoryValue=0;this.cumulativeProfit=0; this.purchaseCommands.clear();this.purchaseSerial=0;this.order = new CozyOrder(); this.recipe = 'cheese'; this.phase = 'preparation';
++        this.testCodeReceipt=undefined;this.stock = new CozyStock();this.progress=new CozyProgression();this.rewardCash=0;this.dailyGiftCost=0;this.help={decision:'unseen',outcome:null,ticketId:null,offer:null,giftCost:0,claims:[],thanksPending:false};this.enabledMenu=new Set(['cheese','mushroom']);this.startingCash=300;this.openingInventoryValue=0;this.cumulativeProfit=0; this.purchaseCommands.clear();this.purchaseSerial=0;this.order = new CozyOrder(); this.recipe = 'cheese'; this.phase = 'preparation';
+         this.active.clear(); this.processedArrivals.clear(); this.ovenId = null; this.discardId = null; this.ticket = ''; this.elapsed = 0; this.serial = 0; this.arrival = 0; this.schedule=null;this.regularDay1Stars=null;this.regularLatestStars=null; this.shiftOpen = false; this.history = [];
+         this.completed = null;this.summary=null;this.reports=[];this.currentDay=1;this.revenue=0;this.deliveredCount=0;this.abandonedCount=0;this.reviews=[];
+         this.salesByRecipe.clear();
+diff --git a/src/scenes/CozyScene.ts b/src/scenes/CozyScene.ts
+index 170eda9..61d9267 100644
+--- a/src/scenes/CozyScene.ts
++++ b/src/scenes/CozyScene.ts
+@@ -1,3 +1,4 @@
++import {TestCodePanel} from '../presentation/TestCodePanel';
+ import type {HubDrag} from '../presentation/HubListWindow';
+ import {drawModalBackdrop} from '../presentation/ModalBackdrop';
+ import {drawSettingsPanel} from '../presentation/SettingsPanel';
+@@ -65,6 +66,8 @@ export class CozyScene extends Phaser.Scene {
+   private endedDayNotice:number|null=null;
+   private endedDayLease?:PauseLease;
+   private campaignEventLease?:PauseLease;
++  private testCodePanel?:TestCodePanel;
++  private testCodeLease?:PauseLease;
+   private pauseSettings=false;
+   private veilDrawn=false;
+   private settingsFocusId='';
+@@ -168,7 +171,7 @@ export class CozyScene extends Phaser.Scene {
+     this.events.once('destroy',()=>{this.closeDeliveryApp();this.closeHubPanels();});
+     this.events.once('shutdown',()=>this.closeMarketQuantity());
+     this.events.once('destroy',()=>this.closeMarketQuantity());
+-    const cleanup=()=>{this.events.off('shutdown',cleanup);this.events.off('destroy',cleanup);this.queueUpgradeLease?.release();this.queueUpgradeLease=undefined;this.queueUpgradeNotice=false;this.priceLease?.release();this.priceLease=undefined;this.statementLease?.release();this.statementLease=undefined;this.motion?.removeEventListener('change',this.motionChange);this.preferenceUnsubscribe?.();this.scale.off('resize',this.motionChange);this.browserLifecycle.destroy(!this.sharedLifecycle);for(const lease of this.scenePauses.values())lease.release();this.scenePauses.clear();this.audio.silence();this.input.keyboard?.off('keydown',this.settingsKeyDown);this.clearFeedback();this.tweens.killAll();for(const zone of this.hitZones.values())zone.destroy();this.hitZones.clear();this.staticGraphics.destroy();};
++    const cleanup=()=>{this.closeTestCode();this.events.off('shutdown',cleanup);this.events.off('destroy',cleanup);this.queueUpgradeLease?.release();this.queueUpgradeLease=undefined;this.queueUpgradeNotice=false;this.priceLease?.release();this.priceLease=undefined;this.statementLease?.release();this.statementLease=undefined;this.motion?.removeEventListener('change',this.motionChange);this.preferenceUnsubscribe?.();this.scale.off('resize',this.motionChange);this.browserLifecycle.destroy(!this.sharedLifecycle);for(const lease of this.scenePauses.values())lease.release();this.scenePauses.clear();this.audio.silence();this.input.keyboard?.off('keydown',this.settingsKeyDown);this.clearFeedback();this.tweens.killAll();for(const zone of this.hitZones.values())zone.destroy();this.hitZones.clear();this.staticGraphics.destroy();};
+     this.events.once('shutdown',cleanup);this.events.once('destroy',cleanup);this.draw();
+   }
+   private motionChange=():void=>{this.dirty=true;};
+@@ -261,7 +264,7 @@ export class CozyScene extends Phaser.Scene {
+     const rawY=y,rawH=h;
+     if(list){y=Math.max(top,y);h=Math.max(0,Math.min(bottom,rawY+rawH)-y);enabled=enabled&&h>0;}
+     this.tapRects.set(id,{x,y,w,h});
+-    if(this.campaignSession&&['loading','saving','error','recovery'].includes(this.campaignSession.view.state))enabled=enabled&&(['pause','mute'].includes(id)||id.startsWith('summary-tab-')||id.startsWith('summary-figure-')||id==='summary-statement-close'||id.startsWith('save-'));
++    if(this.campaignSession&&['loading','saving','error','recovery'].includes(this.campaignSession.view.state))enabled=enabled&&(['pause','mute'].includes(id)||id.startsWith('test-code-')||id.startsWith('summary-tab-')||id.startsWith('summary-figure-')||id==='summary-statement-close'||id.startsWith('save-'));
+     if(this.runtime.productionActive&&!this.runtime.tutorialActive&&this.runtime.shopPhase!=='making'&&this.runtime.shopPhase!=='delivered'&&!this.runtime.pauses.length){
+       enabled=enabled&&(['pause','mute'].includes(id)||id.startsWith('market-')||id.startsWith('summary-')||id.startsWith('stock-')||id.startsWith('shop-'));
+     }
+@@ -432,7 +435,7 @@ export class CozyScene extends Phaser.Scene {
+     else if(this.runtime.helpPending||this.runtime.thanksPending)this.helpDialog();
+     else if(s.stage==='delivered'&&(!this.runtime.productionActive||this.runtime.shopPhase==='delivered'))this.success();
+     if(this.expressIngredient)this.expressDialog();
+-    if(this.campaignSession&&(['saving','error','loading','recovery'].includes(this.campaignSession.view.state)&&!this.saveDismissed||this.reloadConfirmation))this.saveDialog();
++    if(!this.testCodePanel&&this.campaignSession&&(['saving','error','loading','recovery'].includes(this.campaignSession.view.state)&&!this.saveDismissed||this.reloadConfirmation))this.saveDialog();
+     else if(this.newCampaignConfirmation)this.newCampaignDialog();
+     else if(this.finalOpen)this.finalDialog();
+     if(this.campaignSession?.view.state==='temporary'&&!this.notification&&!this.newCampaignConfirmation&&!this.finalOpen)this.label(180, this.runtime.shopPhase==='summary'||this.runtime.postTutorialPreparation?572:611,'Chơi tạm không lưu · tải lại sẽ mất phiên',9,cream,330);
+@@ -1015,6 +1018,7 @@ export class CozyScene extends Phaser.Scene {
+     this.label(26,148,title,12,ink,307,'left');this.label(26,165,detail,9,ink,307,'left');
+   }
+   private overlay():void{
++    if(this.testCodePanel){this.resetModalControls();this.testCodePanel.draw(this,this.layer,(id,rect,enabled,action)=>this.hit(id,rect.x,rect.y,rect.width,rect.height,enabled,action));return;}
+     const pauses=this.runtime.pauses;
+     const reasons=`Đang dừng: ${pauses.map(p=>({tutorial:'hướng dẫn',user:'nghỉ tay',visibility:'ẩn màn hình',orientation:'xoay ngang',order:'đọc đơn',gap:'gián đoạn',success:'hoàn thành',discard:'xác nhận bỏ bánh',delivery:'xác nhận giao món',menu:'menu chính',bargain:'mặc cả',help:'lựa chọn giúp đỡ/lời cảm ơn',save:'lưu tiến độ'}[p])).join(', ')}`;
+     if(this.endDayConfirmation&&this.scenePauses.has('user')){
+@@ -1072,15 +1076,22 @@ export class CozyScene extends Phaser.Scene {
+     hit('main-menu',layout.buttons.menu,!!this.returnToMenu,()=>{this.pauseSettings=false;this.returnToMenu?.();});
+     this.game.canvas.dataset.pausePanel=JSON.stringify(layout);
+   }
++  private closeTestCode():void {this.testCodePanel?.destroy();this.testCodePanel=undefined;this.testCodeLease?.release();this.testCodeLease=undefined;this.dirty=true;}
++  private openTestCode():void {
++    if(this.testCodePanel)return;
++    this.testCodeLease=this.runtime.acquirePause('order');
++    const session=this.campaignSession;
++    this.testCodePanel=new TestCodePanel(this.game.canvas,session?{message:value=>session.testCodeMessage(value),claim:value=>session.claimTestCode(value),claimed:()=>!!session.runtime?.testCodeClaimed,save:()=>session.view,retry:()=>{void session.retry();}}:undefined,()=>{this.dirty=true;},()=>this.closeTestCode());this.dirty=true;
++  }
+   private pauseSettingsPanel():void{
+     this.veil();this.notification=undefined;
+-    const ids={music:'settings-music','effects-less':'settings-effects-less',mute:'mute','effects-more':'settings-effects-more',motion:'settings-motion',back:'pause-settings-back'};
+-    drawSettingsPanel(this,this.layer,{audio:this.audio,preferences:this.preferences,reducedMotion:this.reducedMotion,changed:()=>{this.dirty=true;},back:()=>{this.pauseSettings=false;this.settingsFocusId='';},register:(action,rect,enabled,callback)=>this.hit(ids[action],rect.x,rect.y,rect.width,rect.height,enabled,callback)});
++    const ids={music:'settings-music','effects-less':'settings-effects-less',mute:'mute','effects-more':'settings-effects-more',motion:'settings-motion',code:'settings-code',back:'pause-settings-back'};
++    drawSettingsPanel(this,this.layer,{audio:this.audio,preferences:this.preferences,reducedMotion:this.reducedMotion,changed:()=>{this.dirty=true;},code:()=>this.openTestCode(),back:()=>{this.pauseSettings=false;this.settingsFocusId='';},register:(action,rect,enabled,callback)=>this.hit(ids[action],rect.x,rect.y,rect.width,rect.height,enabled,callback)});
+     const focus=this.controls.find(control=>control.id===this.settingsFocusId&&control.enabled);
+     if(focus){const ring=this.add.graphics();ring.lineStyle(3,0x985025).strokeRoundedRect(focus.x-3,focus.y-3,focus.width+6,focus.height+6,27);this.layer.add(ring);}
+   }
+   private settingsKeyDown=(event:KeyboardEvent):void=>{
+-    if(!this.pauseSettings||document.activeElement!==this.game.canvas)return;
++    if(this.testCodePanel||!this.pauseSettings||document.activeElement!==this.game.canvas)return;
+     if(event.key==='Escape'){event.preventDefault();this.pauseSettings=false;this.settingsFocusId='';this.dirty=true;return;}
+     const enabled=this.visibleActions.filter(action=>this.controls.some(control=>control.id===action.id&&control.enabled));
+     if(!enabled.length)return;
+diff --git a/src/scenes/MainMenuScene.ts b/src/scenes/MainMenuScene.ts
+index c04dd08..ab02f6b 100644
+--- a/src/scenes/MainMenuScene.ts
++++ b/src/scenes/MainMenuScene.ts
+@@ -1,3 +1,4 @@
++import {TestCodePanel,type TestCodeActions} from '../presentation/TestCodePanel';
+ import {PlayAudio} from '../presentation/PlayAudio';
+ import {drawModalBackdrop} from '../presentation/ModalBackdrop';
+ import {drawSettingsPanel} from '../presentation/SettingsPanel';
+@@ -12,7 +13,7 @@ import {drawCompactNotification,drawNotificationFrame,drawNotificationClose,draw
+ import {modalText} from '../presentation/ModalText';
+ 
+ export const MAIN_MENU_BACKGROUND = { key: 'main-menu-background', url: 'assets/main-menu-background.png', type: 'image' as const };
+-type MenuActions = {hasSession:()=>boolean;start:()=>void;continue:()=>void;initialize?:()=>void;save?:()=>CozySaveView;subscribe?:(listener:()=>void)=>()=>void;retryRead?:()=>void;retrySave?:()=>void;recover?:()=>void;temporary?:()=>void};
++type MenuActions = {testCode?:TestCodeActions;hasSession:()=>boolean;start:()=>void;continue:()=>void;initialize?:()=>void;save?:()=>CozySaveView;subscribe?:(listener:()=>void)=>()=>void;retryRead?:()=>void;retrySave?:()=>void;recover?:()=>void;temporary?:()=>void};
+ type MenuTarget = { id: string; x: number; y: number; width: number; height: number; disabled: boolean; visible:Phaser.Geom.Rectangle; action: () => void };
+ type Dialog = 'none' | 'settings' | 'new-session'|'loading'|'save-error'|'recovery';
+ const PAPER = 0xfff0d5, BROWN = 0x985025, SAGE = 0x738d50;
+@@ -26,6 +27,7 @@ export class MainMenuScene extends Phaser.Scene {
+   private wind!: MenuWind;
+   private targets: MenuTarget[] = [];
+   private dialog: Dialog = 'none';
++  private testCodePanel?:TestCodePanel;
+   private focusId = '';
+   private elapsed = 0;
+   private unsubscribe?: () => void;
+@@ -73,6 +75,7 @@ export class MainMenuScene extends Phaser.Scene {
+   }
+ 
+   private cleanup = (): void => {
++    this.testCodePanel?.destroy();this.testCodePanel=undefined;
+     this.events.off('shutdown', this.cleanup);
+     this.events.off('destroy', this.cleanup);
+     this.unsubscribe?.(); this.unsubscribe = undefined;
+@@ -218,12 +221,13 @@ export class MainMenuScene extends Phaser.Scene {
+ 
+   private drawDialog(): void {
+     for(const object of this.interfaceLayer.list)if(object instanceof Phaser.GameObjects.Zone)object.disableInteractive();
+-    drawModalBackdrop(this,this.interfaceLayer);
+     // Remove all old targets before registering dialog controls, including disabled menu targets.
+     this.targets=[];
++    if(this.testCodePanel){this.testCodePanel.draw(this,this.interfaceLayer,(id,rect,enabled,action)=>this.settingsTarget(id,rect,enabled,action));return;}
++    drawModalBackdrop(this,this.interfaceLayer);
+     if(this.dialog==='settings'){
+-      const ids={music:'menu-music','effects-less':'menu-effects-less',mute:'menu-mute','effects-more':'menu-effects-more',motion:'menu-motion',back:'menu-settings-close'};
+-      drawSettingsPanel(this,this.interfaceLayer,{audio:this.audio,preferences:this.preferences,reducedMotion:this.preferences.reducedMotion,changed:()=>this.draw(),back:()=>{this.dialog='none';this.focusId='menu-settings';},register:(action,rect,enabled,callback)=>this.settingsTarget(ids[action],rect,enabled,callback)});return;
++      const ids={music:'menu-music','effects-less':'menu-effects-less',mute:'menu-mute','effects-more':'menu-effects-more',motion:'menu-motion',code:'menu-code',back:'menu-settings-close'};
++      drawSettingsPanel(this,this.interfaceLayer,{audio:this.audio,preferences:this.preferences,reducedMotion:this.preferences.reducedMotion,changed:()=>this.draw(),code:()=>{this.testCodePanel=new TestCodePanel(this.game.canvas,this.actions.testCode,()=>this.draw(),()=>{this.testCodePanel?.destroy();this.testCodePanel=undefined;this.focusId='menu-code';this.draw();});},back:()=>{this.dialog='none';this.focusId='menu-settings';},register:(action,rect,enabled,callback)=>this.settingsTarget(ids[action],rect,enabled,callback)});return;
+     }
+     const save=this.actions.save?.();
+     const ids=this.dialog==='new-session'?['menu-new-confirm','menu-new-cancel']:this.dialog==='recovery'?['menu-recover-confirm','menu-retry-read']:[save?.canRetry?'menu-save-retry':'menu-retry-read'];
+@@ -273,6 +277,7 @@ export class MainMenuScene extends Phaser.Scene {
+ 
+   private keyDown = (event: KeyboardEvent): void => {
+     if(document.activeElement!==this.game.canvas)return;
++    if(this.testCodePanel)return;
+     if (event.key === 'Escape' && this.dialog !== 'none') { event.preventDefault(); this.dialog = 'none'; this.focusId = ''; this.draw(); return; }
+     const enabled = this.targets.filter(target => !target.disabled);
+     if (!enabled.length) return;
+
+diff --git a/src/domain/TestCode.ts b/src/domain/TestCode.ts
+new file
+export const TEST_CODE='VIETVUIVE';
+export const TEST_CODE_COINS=100000;
+export type TestCodeReceipt={code:typeof TEST_CODE;coins:typeof TEST_CODE_COINS;day:number};
+export const normalizeTestCode=(value:string)=>value.trim().toUpperCase();
+export function validTestCodeReceipt(value:unknown,maxDay:number):value is TestCodeReceipt {
+  const r=value as TestCodeReceipt;
+  return !!r&&r.code===TEST_CODE&&r.coins===TEST_CODE_COINS&&Number.isSafeInteger(r.day)&&r.day>=1&&r.day<=maxDay;
+}
+
+diff --git a/src/domain/TestCode.test.ts b/src/domain/TestCode.test.ts
+new file
+import {describe,it,expect} from 'vitest';
+import {normalizeTestCode,TEST_CODE,validTestCodeReceipt} from './TestCode';
+import {CozyRuntime} from '../runtime/CozyRuntime';
+import {validateCozyCheckpoint} from './CozyCheckpoint';
+import {checkpointChecksum,validateSaveEnvelope} from '../infrastructure/CozySaveRepository';
+describe('TestCode checkpoint compatibility',()=>{
+  it('normalizes only outer whitespace and case',()=>{expect(normalizeTestCode(' vietvuive ')).toBe(TEST_CODE);expect(normalizeTestCode('VIET VUIVE')).not.toBe(TEST_CODE);});
+  it('bounds the receipt and rejects forged balances/report metadata',()=>{
+    const r=new CozyRuntime(false,true);expect(r.claimTestCode(TEST_CODE)).toBe(true);const s=r.exportCheckpoint();expect(validTestCodeReceipt(s.testCodeReceipt,1)).toBe(true);
+    for(const receipt of [{code:'x',coins:100000,day:1},{code:TEST_CODE,coins:1,day:1},{code:TEST_CODE,coins:100000,day:2},null])expect(validateCozyCheckpoint({...s,testCodeReceipt:receipt})).toBeNull();
+    expect(validateCozyCheckpoint({...s,stock:{...s.stock,cash:300}})).toBeNull();expect(validateCozyCheckpoint({...s,testCodeReceipt:undefined})).toBeNull();
+  });
+  it('accepts original checksums without optional metadata and rejects tampering before normalization',()=>{
+    const payload=new CozyRuntime(false,true).exportCheckpoint(),envelope={schemaVersion:2,contentVersion:payload.contentId,campaignId:'campaign',commitId:'commit',revision:1,payload,checksum:checkpointChecksum(payload)};
+    expect(validateSaveEnvelope(envelope)).toMatchObject({campaignId:'campaign'});expect(Object.prototype.hasOwnProperty.call(payload,'testCodeReceipt')).toBe(false);
+    expect(validateSaveEnvelope({...envelope,payload:{...payload,testCodeReceipt:{code:TEST_CODE,coins:100000,day:1}}})).toMatchObject({ok:false});
+  });
+});
+
+diff --git a/src/presentation/TestCodePanel.ts b/src/presentation/TestCodePanel.ts
+new file
+import type Phaser from 'phaser';
+import {drawModalBackdrop} from './ModalBackdrop';
+import {drawNotificationFrame,drawNotificationButton,drawNotificationClose,type NotificationRect} from './NotificationFrame';
+import {UI_THEME} from './theme';
+
+export type TestCodeActions={message:(value:string)=>string;claim:(value:string)=>boolean;claimed:()=>boolean;save:()=>{state:string;message:string;canRetry:boolean};retry:()=>void};
+/** Native text input lives above the canvas; each scene owns and destroys this editor. */
+export class TestCodePanel {
+  readonly element=document.createElement('input');
+  private feedback='Nhập mã để nhận xu thử chức năng.';
+  private submitted=false;
+  private received=false;
+  constructor(private canvas:HTMLCanvasElement,private actions:TestCodeActions|undefined,private changed:()=>void,private close:()=>void){
+    const input=this.element;input.type='text';input.autocomplete='off';input.maxLength=64;
+    input.setAttribute('aria-label','Mã nhận xu');input.dataset.testCodeInput='true';
+    Object.assign(input.style,{position:'fixed',zIndex:'1000',boxSizing:'border-box',border:'2px solid #bd9458',borderRadius:'10px',background:'#fff0d5',color:'#362018',textAlign:'center',fontFamily:UI_THEME.typography.fontFamily,fontSize:'20px'});
+    input.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();this.accept();}else if(e.key==='Escape'){e.preventDefault();this.close();}});
+    document.body.append(input);this.position();input.focus();
+  }
+  accept():void {
+    if(!this.actions){this.feedback='Cần chiến dịch có lưu để nhận mã.';this.changed();return;}
+    if(this.actions.save().state==='saving')return;
+    if(this.submitted&&this.actions.save().canRetry){this.actions.retry();this.changed();return;}
+    const message=this.actions.message(this.element.value);
+    if(message){this.feedback=message;this.changed();return;}
+    this.submitted=this.actions.claim(this.element.value);this.changed();
+  }
+  position():void {
+    const b=this.canvas.getBoundingClientRect();Object.assign(this.element.style,{left:`${b.left+55*b.width/360}px`,top:`${b.top+315*b.height/640}px`,width:`${250*b.width/360}px`,height:`${Math.max(48,48*b.height/640)}px`});
+  }
+  draw(scene:Phaser.Scene,layer:Phaser.GameObjects.Container,register:(id:string,r:NotificationRect,enabled:boolean,action:()=>void)=>void):void {
+    this.position();const save=this.actions?.save(),busy=save?.state==='saving';
+    if(this.submitted&&save?.state==='ready'&&this.actions?.claimed()){this.received=true;this.feedback='Đã nhận 100.000 xu. Mã dùng một lần mỗi lượt chơi.';}
+    const feedback=busy?'Đang lưu… Giữ trang này mở.':this.submitted&&save?.state==='error'?save.message:this.feedback;
+    this.element.disabled=busy||this.received;
+    drawModalBackdrop(scene,layer);const layout=drawNotificationFrame(scene,layer,'two',170,330);
+    const close=drawNotificationClose(scene,layer,layout);if(close)register('test-code-close',close,true,this.close);
+    const text=(y:number,value:string,size:number)=>layer.add(scene.add.text(180,y,value,{fontFamily:UI_THEME.typography.fontFamily,fontSize:`${size}px`,fontStyle:'bold',color:'#362018',align:'center',wordWrap:{width:276}}).setOrigin(.5,0));
+    text(layout.titleY+10,'Nhập mã',22);text(285,'Mã nhận xu thử chức năng',15);text(378,feedback,14);
+    ['test-code-cancel','test-code-receive'].forEach((id,index)=>{const r=layout.footer[index];drawNotificationButton(scene,layer,r.x,r.y,r.width,r.height);layer.add(scene.add.text(r.x+r.width/2,r.y+r.height/2,index?save?.canRetry&&this.submitted?'Thử lại':'Nhận xu':'Quay lại',{fontFamily:UI_THEME.typography.fontFamily,fontSize:'16px',fontStyle:'bold',color:'#fff0d5'}).setOrigin(.5));register(id,r,index?!busy&&!this.received:true,index?()=>this.accept():this.close);});
+    scene.game.canvas.dataset.testCodeFeedback=feedback;
+  }
+  destroy():void{this.element.remove();delete this.canvas.dataset.testCodeFeedback;}
+}
+
+diff --git a/tests/test-code.spec.ts b/tests/test-code.spec.ts
+new file
+import {test,expect,type Page} from '@playwright/test';
+async function tap(page:Page,id:string,menu=false){
+  const canvas=page.locator('canvas'),attr=menu?'data-menu-targets':'data-controls';
+  await expect.poll(async()=>JSON.parse(await canvas.getAttribute(attr)??'[]').some((c:any)=>c.id===id&&(menu?!c.disabled:c.enabled))).toBe(true);
+  const c=JSON.parse(await canvas.getAttribute(attr)??'[]').find((c:any)=>c.id===id),b=(await canvas.boundingBox())!;
+  await page.touchscreen.tap(b.x+(c.x+c.width/2)*b.width/360,b.y+(c.y+c.height/2)*b.height/640);
+}
+async function prep(page:Page){await page.goto('/?mode=shop');await expect(page.locator('canvas')).toHaveAttribute('data-screen','preparation-hub',{timeout:20000});}
+const input=(page:Page)=>page.getByRole('textbox',{name:'Mã nhận xu'});
+test('Menu without a campaign gives guidance, closes native input and preserves controls',async({page})=>{
+  await page.goto('/');await expect(page.locator('canvas')).toHaveAttribute('data-screen','menu');await tap(page,'menu-settings',true);await tap(page,'menu-code',true);
+  await input(page).fill('VIETVUIVE');await tap(page,'test-code-receive',true);await expect(page.locator('canvas')).toHaveAttribute('data-test-code-feedback',/Bắt đầu/);
+  await tap(page,'test-code-cancel',true);await expect(input(page)).toHaveCount(0);await tap(page,'menu-mute',true);await tap(page,'menu-motion',true);await tap(page,'menu-settings-close',true);
+});
+test('Pause preparation grants exact funds, preserves user pause and rejects repeat after reload',async({page})=>{
+  await prep(page);const canvas=page.locator('canvas');await expect(canvas).toHaveAttribute('data-cash','300');await tap(page,'pause');await tap(page,'pause-settings');await tap(page,'settings-code');
+  await input(page).fill('wrong');await tap(page,'test-code-receive');await expect(canvas).toHaveAttribute('data-test-code-feedback','Mã không hợp lệ.');await expect(canvas).toHaveAttribute('data-cash','300');
+  await input(page).fill(' vietvuive ');await tap(page,'test-code-receive');await expect(canvas).toHaveAttribute('data-test-code-feedback',/Đã nhận 100.000/);await expect(canvas).toHaveAttribute('data-cash','100300');
+  await page.screenshot({path:'_bmad-output/implementation-artifacts/ui-baseline/test-code-received-2026-10-06.png'});
+  await tap(page,'test-code-cancel');await expect(input(page)).toHaveCount(0);await expect(canvas).toHaveAttribute('data-paused',/user/);await tap(page,'settings-effects-less');await tap(page,'settings-motion');
+  await page.screenshot({path:'_bmad-output/implementation-artifacts/ui-baseline/test-code-settings-2026-10-06.png'});
+  await tap(page,'pause-settings-back');await tap(page,'resume');await expect(canvas).toHaveAttribute('data-paused','');
+  await page.reload();await expect(canvas).toHaveAttribute('data-cash','100300');await tap(page,'pause');await tap(page,'pause-settings');await tap(page,'settings-code');await input(page).fill('VIETVUIVE');await tap(page,'test-code-receive');await expect(canvas).toHaveAttribute('data-test-code-feedback',/đã được nhận/);
+});
+test('Menu uses the live preparation session and credits exactly once',async({page})=>{
+  await prep(page);await tap(page,'pause');await tap(page,'main-menu');await tap(page,'menu-settings',true);await tap(page,'menu-code',true);await input(page).fill('VIETVUIVE');await tap(page,'test-code-receive',true);await expect(page.locator('canvas')).toHaveAttribute('data-test-code-feedback',/Đã nhận 100.000/);
+  await tap(page,'test-code-cancel',true);await tap(page,'menu-settings-close',true);await tap(page,'menu-continue',true);await expect(page.locator('canvas')).toHaveAttribute('data-cash','100300');await expect(input(page)).toHaveCount(0);
+});
+test('Pause and Menu during a live shift never claim or save test funds',async({page})=>{
+  await prep(page);const canvas=page.locator('canvas');await tap(page,'summary-open-first-day');await expect(canvas).toHaveAttribute('data-screen','game');
+  await tap(page,'pause');await tap(page,'pause-settings');await tap(page,'settings-code');await input(page).fill('VIETVUIVE');await tap(page,'test-code-receive');await expect(canvas).toHaveAttribute('data-test-code-feedback',/chốt ngày/);await expect(canvas).toHaveAttribute('data-cash','300');
+  await tap(page,'test-code-cancel');await tap(page,'pause-settings-back');await tap(page,'main-menu');await tap(page,'menu-settings',true);await tap(page,'menu-code',true);await input(page).fill('VIETVUIVE');await tap(page,'test-code-receive',true);await expect(canvas).toHaveAttribute('data-test-code-feedback',/chốt ngày/);
+});

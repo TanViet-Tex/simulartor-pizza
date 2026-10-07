@@ -1,0 +1,399 @@
+diff --git a/src/presentation/ReferenceMarket.ts b/src/presentation/ReferenceMarket.ts
+index 279fb47..89b1f85 100644
+--- a/src/presentation/ReferenceMarket.ts
++++ b/src/presentation/ReferenceMarket.ts
+@@ -1,4 +1,5 @@
+ import Phaser from 'phaser';
++import {hubListWindow,type HubDrag} from './HubListWindow';
+ import {STOCK_INGREDIENTS,ingredientName,type StockIngredient} from '../domain/CozyStock';
+ import {HUB_THEME} from './HubTheme';
+ import {HUB_HEADER_ART} from './HubHeader';
+@@ -6,14 +7,14 @@ import {HUB_ART,HubCanvasUI} from './HubCanvasUI';
+ import {MARKET_INGREDIENT_ART,drawMarketIngredient} from './MarketIngredientArt';
+ 
+ export type MarketFilter='all'|'sauce'|'topping'|'base';
+-export type MarketDrag={active:boolean;startY:number;offset:number};
++export type MarketDrag=HubDrag;
+ type Hit=(id:string,x:number,y:number,w:number,h:number,enabled:boolean,action:()=>void)=>void;
+ export const MARKET_ART=HUB_ART;
+ export function preloadMarketArt(scene:Phaser.Scene):void{for(const art of [MARKET_ART,MARKET_INGREDIENT_ART,HUB_HEADER_ART])if(!scene.textures.exists(art.key))scene.load.image(art.key,`${import.meta.env.BASE_URL}${art.url}`);}
+ let serial=0;
+ /** A bounded canvas window keeps native borders and row artwork clipped in WebGL. */
+ export class ReferenceMarket{
+-  constructor(private scene:Phaser.Scene,private layer:Phaser.GameObjects.Container,private hit:Hit){}
++  constructor(private scene:Phaser.Scene,private layer:Phaser.GameObjects.Container,private hit:Hit,private sync:(render:()=>void)=>void){}
+   draw(input:{unitPrice:(id:StockIngredient)=>number;supplier:{familiar:boolean;purchased:number;threshold:number};day:number;cash:number;canBuy:boolean;readOnlyReason:string;canScroll:()=>boolean;filter:MarketFilter;offset:number;drag:MarketDrag;quantities:Partial<Record<StockIngredient,number>>;available:(id:StockIngredient)=>number;quantity:(id:StockIngredient,delta:number)=>void;buy:(id:StockIngredient)=>void;editQuantity:(id:StockIngredient)=>void;scroll:(offset:number)=>void;setFilter:(filter:MarketFilter)=>void;tab:(id:'summary'|'market'|'stock'|'shop'|'missions')=>void;pause:()=>void;price:()=>void;footer:{id:string;title:string;enabled:boolean;action:()=>void}}):void{
+     const key=`market-window-${serial++}`,texture=this.scene.textures.createCanvas(key,360,640)!,ctx=texture.context;
+     const ui=new HubCanvasUI(this.scene,ctx,this.hit),colors=HUB_THEME.colors;
+@@ -28,25 +29,27 @@ export class ReferenceMarket{
+     const ids=[...STOCK_INGREDIENTS].sort((a,b)=>{const order:StockIngredient[]=['dough','cheese','sauce','mushroom','sausage','chicken'];return (order.includes(a)?order.indexOf(a):6+STOCK_INGREDIENTS.indexOf(a))-(order.includes(b)?order.indexOf(b):6+STOCK_INGREDIENTS.indexOf(b));}).filter(id=>input.filter==='all'||input.filter==='sauce'&&id.startsWith('sauce')||input.filter==='base'&&['dough','cheese'].includes(id)||input.filter==='topping'&&!id.startsWith('sauce')&&!['dough','cheese'].includes(id));
+     const max=Math.max(0,ids.length*rowHeight-viewport.height),offset=Phaser.Math.Clamp(input.offset,0,max);
+     const rows=ids.map((id,i)=>{const quantity=input.quantities[id]??1,unitPrice=input.unitPrice(id),total=quantity*unitPrice,y=viewport.y+i*rowHeight-offset;return {id,name:ingredientName(id),quantity,unitPrice,total,available:input.available(id),remainingCash:input.cash-total,y,visible:y>=viewport.y&&y+rowHeight<=viewport.y+viewport.height};});
+-    ctx.save();ctx.beginPath();ctx.rect(viewport.x,viewport.y,viewport.width,viewport.height);ctx.clip();
+-    for(const row of rows){const {id,y}=row;if(y+rowHeight<viewport.y||y>viewport.y+viewport.height)continue;
+-      panel(17,y,321,50,colors.paper);drawMarketIngredient(this.scene,ctx,id,23,y+6,42,38);
+-      text(73,y+6,row.name,HUB_THEME.typography.body,colors.ink,false,120);text(73,y+24,`${row.unitPrice} xu · Kho: ${row.available}`,HUB_THEME.typography.meta,colors.muted,false,120);text(73,y+37,`${row.total} xu · ${row.remainingCash>=0?'Còn '+row.remainingCash:'Thiếu '+(-row.remainingCash)}`,HUB_THEME.typography.meta,row.remainingCash<0?colors.danger:colors.muted,false,120);
+-      panel(196,y+10,80,30,colors.quantity,colors.quantity,6);text(209,y+16,'−',18,colors.stepperInk,true);panel(222,y+11,27,28,colors.field,colors.field,3);text(235,y+17,String(row.quantity),14,colors.ink,true);text(262,y+16,'+',18,colors.stepperInk,true);
+-      ui.button(282,y+8,49,34,'Mua',input.canBuy,HUB_THEME.typography.action);
+-      if(row.visible){this.hit(`market-quantity-${id}`,222,y+11,27,28,input.canBuy,()=>input.editQuantity(id));this.hit(`market-minus-${id}`,196,y+10,26,30,input.canBuy&&row.quantity>1,()=>input.quantity(id,-1));this.hit(`market-plus-${id}`,249,y+10,27,30,input.canBuy&&row.quantity<100,()=>input.quantity(id,1));this.hit(`market-buy-${id}`,282,y+8,49,34,input.canBuy,()=>input.buy(id));}
+-    }ctx.restore();
+-    if(max){panel(342,219,3,318,colors.track,colors.track,1);panel(342,219+offset/max*(318-65),3,65,colors.thumb,colors.thumb,1);}
++    const listKey=key+'-list';
++    if(max)panel(342,viewport.y,3,viewport.height,colors.track,colors.track,1);
+     text(23,546,input.canBuy?'Mua nhập Kho ngay · Hỏa tốc chỉ dùng trong ca':input.readOnlyReason,10,colors.muted,false,316);text(23,561,input.supplier.familiar?'Nhà cung cấp quen · Giảm 10% mua thường':`Nhà cung cấp: ${input.supplier.purchased}/${input.supplier.threshold} xu · Áp dụng ngày sau`,10,colors.muted,false,316);
+     ui.footer(input.footer);
+     this.scene.game.canvas.dataset.hubTheme='pizza-cartoon-v1';
+     texture.refresh();this.layer.add(this.scene.add.image(0,0,key).setOrigin(0));
+-    const zone=this.scene.add.zone(viewport.x,viewport.y,viewport.width,viewport.height).setOrigin(0).setInteractive();this.layer.add(zone);
+-    const wheel=(p:Phaser.Input.Pointer,_objects:unknown,_dx:number,dy:number)=>{if(input.canScroll()&&zone.input?.enabled&&p.x>=viewport.x&&p.x<=viewport.x+viewport.width&&p.y>=viewport.y&&p.y<=viewport.y+viewport.height)input.scroll(Phaser.Math.Clamp(offset+dy,0,max));};this.scene.input.on('wheel',wheel);
+-    zone.on('pointerdown',(p:Phaser.Input.Pointer)=>{if(!input.canScroll())return;input.drag.active=true;input.drag.startY=p.y;input.drag.offset=offset;});
+-    const move=(p:Phaser.Input.Pointer)=>{if(input.canScroll()&&zone.input?.enabled&&p.isDown&&input.drag.active)input.scroll(Phaser.Math.Clamp(input.drag.offset+input.drag.startY-p.y,0,max));};
+-    const up=()=>input.drag.active=false;this.scene.input.on('pointermove',move);this.scene.input.on('pointerup',up);this.scene.input.on('pointerupoutside',up);
+-    zone.once('destroy',()=>{this.scene.input.off('wheel',wheel);this.scene.input.off('pointermove',move);this.scene.input.off('pointerup',up);this.scene.input.off('pointerupoutside',up);this.scene.textures.remove(key);});
+-    this.scene.game.canvas.dataset.marketRows=JSON.stringify(rows);this.scene.game.canvas.dataset.marketScroll=JSON.stringify({...viewport,offset,max});this.scene.game.canvas.dataset.marketFilter=input.filter;
++    this.layer.getAt<Phaser.GameObjects.Image>(this.layer.length-1).once('destroy',()=>this.scene.textures.remove(key));
++    hubListWindow(this.scene,this.layer,{key:listKey,viewport,height:rows.length*rowHeight,offset,drag:input.drag,allowed:input.canScroll,
++      paint:(listUI,ctx)=>{const panel=listUI.panel.bind(listUI),text=listUI.text.bind(listUI),ui=listUI;
++    rows.forEach((row,i)=>{const {id}=row,y=i*rowHeight;
++      panel(17,y,321,50,colors.paper);drawMarketIngredient(this.scene,ctx,id,23,y+6,42,38);
++      text(73,y+6,row.name,HUB_THEME.typography.body,colors.ink,false,120);text(73,y+24,`${row.unitPrice} xu · Kho: ${row.available}`,HUB_THEME.typography.meta,colors.muted,false,120);text(73,y+37,`${row.total} xu · ${row.remainingCash>=0?'Còn '+row.remainingCash:'Thiếu '+(-row.remainingCash)}`,HUB_THEME.typography.meta,row.remainingCash<0?colors.danger:colors.muted,false,120);
++      panel(196,y+10,80,30,colors.quantity,colors.quantity,6);text(209,y+16,'−',18,colors.stepperInk,true);panel(222,y+11,27,28,colors.field,colors.field,3);text(235,y+17,String(row.quantity),14,colors.ink,true);text(262,y+16,'+',18,colors.stepperInk,true);
++      ui.button(282,y+8,49,34,'Mua',input.canBuy,HUB_THEME.typography.action);
++    });
++
++      },update:offset=>{
++        rows.forEach((row,i)=>{row.y=viewport.y+i*rowHeight-offset;row.visible=row.y>=viewport.y&&row.y+rowHeight<=viewport.y+viewport.height;});
++        input.scroll(offset);this.sync(()=>{for(const row of rows){const {id,y}=row;this.hit(`market-quantity-${id}`,222,y+11,27,28,input.canBuy,()=>input.editQuantity(id));this.hit(`market-minus-${id}`,196,y+10,26,30,input.canBuy&&row.quantity>1,()=>input.quantity(id,-1));this.hit(`market-plus-${id}`,249,y+10,27,30,input.canBuy&&row.quantity<100,()=>input.quantity(id,1));this.hit(`market-buy-${id}`,282,y+8,49,34,input.canBuy,()=>input.buy(id));}});
++        this.scene.game.canvas.dataset.marketRows=JSON.stringify(rows);this.scene.game.canvas.dataset.marketScroll=JSON.stringify({...viewport,offset,max});
++      }});
++    this.scene.game.canvas.dataset.hubTheme='pizza-cartoon-v1';this.scene.game.canvas.dataset.marketFilter=input.filter;
+   }
+ }
+diff --git a/src/presentation/ReferenceStock.ts b/src/presentation/ReferenceStock.ts
+index d1fca72..0bb012a 100644
+--- a/src/presentation/ReferenceStock.ts
++++ b/src/presentation/ReferenceStock.ts
+@@ -1,4 +1,5 @@
+ import Phaser from 'phaser';
++import {hubListWindow} from './HubListWindow';
+ import type {CozyLot,StockIngredient} from '../domain/CozyStock';
+ import {HubCanvasUI,type HubHit,type HubTab} from './HubCanvasUI';
+ import {HUB_THEME} from './HubTheme';
+@@ -11,7 +12,7 @@ let serial=0;
+ 
+ /** Read-only stock projection. The scene owns filters, criteria and all actions. */
+ export class ReferenceStock{
+-  constructor(private scene:Phaser.Scene,private layer:Phaser.GameObjects.Container,private hit:HubHit){}
++  constructor(private scene:Phaser.Scene,private layer:Phaser.GameObjects.Container,private hit:HubHit,private sync:(render:()=>void)=>void){}
+   draw(input:{day:number;cash:number;rows:readonly StockRow[];filter:StockFilter;low:number|null;expiryDays:number|null;offset:number;drag:MarketDrag;canScroll:()=>boolean;scroll:(n:number)=>void;setFilter:(f:StockFilter)=>void;detail:(id:StockIngredient)=>void;suggestions:()=>void;market:()=>void;tab:(tab:HubTab)=>void;pause:()=>void}):void{
+     const key=`stock-window-${serial++}`,texture=this.scene.textures.createCanvas(key,360,640)!,ctx=texture.context;
+     const ui=new HubCanvasUI(this.scene,ctx,this.hit),colors=HUB_THEME.colors;
+@@ -32,9 +33,17 @@ export class ReferenceStock{
+     const viewport={x:17,y:223,width:321,height:312},rowHeight=53;
+     const max=Math.max(0,filtered.length*rowHeight-viewport.height),offset=Phaser.Math.Clamp(input.offset,0,max);
+     const rows=filtered.map((row,i)=>{const y=viewport.y+i*rowHeight-offset;return {...row,y,visible:y>=viewport.y&&y+rowHeight<=viewport.y+viewport.height};});
+-    ctx.save();ctx.beginPath();ctx.rect(viewport.x,viewport.y,viewport.width,viewport.height);ctx.clip();
+-    for(const row of rows){
+-      const y=row.y;if(y+rowHeight<viewport.y||y>viewport.y+viewport.height)continue;
++    const listKey=key+'-list';
++    if(max)panel(342,viewport.y,3,viewport.height,colors.track,colors.track,1);
++    panel(17,541,321,24,colors.inset);ui.icon('market',24,546,18);text(49,548,'Gợi ý mua theo menu & số phần',12,colors.ink,false,269);text(324,545,'›',20,colors.muted,true);this.hit('stock-suggestions',17,539,321,31,true,input.suggestions);
++    text(180,567,'Ưu tiên lô gần hết hạn · Không dùng lô hết hạn',9,colors.muted,true,322);
++    ui.footer({id:'summary-stock-market',title:'Đi chợ mua thêm →',enabled:true,action:input.market});
++    texture.refresh();this.layer.add(this.scene.add.image(0,0,key).setOrigin(0));
++    this.layer.getAt<Phaser.GameObjects.Image>(this.layer.length-1).once('destroy',()=>this.scene.textures.remove(key));
++    hubListWindow(this.scene,this.layer,{key:listKey,viewport,height:rows.length*rowHeight,offset,drag:input.drag,allowed:input.canScroll,
++      paint:(listUI,ctx)=>{const panel=listUI.panel.bind(listUI),text=listUI.text.bind(listUI);
++    rows.forEach((row,i)=>{
++      const y=i*rowHeight;
+       panel(17,y,321,50,colors.paper);drawMarketIngredient(this.scene,ctx,row.id,23,y+6,42,38);
+       text(73,y+6,row.name,HUB_THEME.typography.body,colors.ink,false,132);
+       text(73,y+25,row.usable===0?'Hết hàng':`Còn ${row.usable} phần`,11,row.usable===0?colors.danger:colors.muted,false,132);
+@@ -42,22 +51,14 @@ export class ReferenceStock{
+       panel(209,y+8,106,34,row.usable===0||row.expiring?colors.inset:colors.highlight);
+       text(262,y+14,row.nearestExpiry===null?'Chưa có lô dùng được':`Gần nhất: ngày ${row.nearestExpiry}`,9,row.expiring?colors.danger:colors.ink,true,100);
+       text(262,y+28,`${row.validLots.length} lô · Xem chi tiết`,9,colors.muted,true,100);text(326,y+17,'›',23,colors.muted,true);
+-      if(row.visible)this.hit(`stock-item-${row.id}`,17,y,321,50,true,()=>{if(Math.abs(input.drag.startY-this.scene.input.activePointer.y)<8)input.detail(row.id);});
+-    }
+-    if(!rows.length){text(177,328,'Không có nguyên liệu phù hợp',14,colors.ink,true);text(177,352,'Chọn bộ lọc khác để xem Kho.',11,colors.muted,true);}
+-    ctx.restore();
+-    if(max){panel(342,223,3,312,colors.track,colors.track,1);panel(342,223+offset/max*(312-65),3,65,colors.thumb,colors.thumb,1);}
+-    panel(17,541,321,24,colors.inset);ui.icon('market',24,546,18);text(49,548,'Gợi ý mua theo menu & số phần',12,colors.ink,false,269);text(324,545,'›',20,colors.muted,true);this.hit('stock-suggestions',17,539,321,31,true,input.suggestions);
+-    text(180,567,'Ưu tiên lô gần hết hạn · Không dùng lô hết hạn',9,colors.muted,true,322);
+-    ui.footer({id:'summary-stock-market',title:'Đi chợ mua thêm →',enabled:true,action:input.market});
+-    texture.refresh();this.layer.add(this.scene.add.image(0,0,key).setOrigin(0));
+-    const zone=this.scene.add.zone(viewport.x,viewport.y,viewport.width,viewport.height).setOrigin(0).setInteractive();this.layer.add(zone);
+-    const wheel=(pointer:Phaser.Input.Pointer,_objects:unknown,_dx:number,dy:number)=>{if(input.canScroll()&&zone.input?.enabled&&pointer.x>=viewport.x&&pointer.x<=viewport.x+viewport.width&&pointer.y>=viewport.y&&pointer.y<=viewport.y+viewport.height)input.scroll(Phaser.Math.Clamp(offset+dy,0,max));};
+-    const move=(pointer:Phaser.Input.Pointer)=>{if(input.canScroll()&&zone.input?.enabled&&pointer.isDown&&input.drag.active)input.scroll(Phaser.Math.Clamp(input.drag.offset+input.drag.startY-pointer.y,0,max));};
+-    const up=()=>{input.drag.active=false;};
+-    const down=(pointer:Phaser.Input.Pointer)=>{if(!input.canScroll()||!zone.input?.enabled||pointer.x<viewport.x||pointer.x>viewport.x+viewport.width||pointer.y<viewport.y||pointer.y>viewport.y+viewport.height)return;input.drag.active=true;input.drag.startY=pointer.y;input.drag.offset=offset;};
+-    this.scene.input.on('pointerdown',down);this.scene.input.on('wheel',wheel);this.scene.input.on('pointermove',move);this.scene.input.on('pointerup',up);this.scene.input.on('pointerupoutside',up);
+-    zone.once('destroy',()=>{this.scene.input.off('pointerdown',down);this.scene.input.off('wheel',wheel);this.scene.input.off('pointermove',move);this.scene.input.off('pointerup',up);this.scene.input.off('pointerupoutside',up);this.scene.textures.remove(key);});
+-    this.scene.game.canvas.dataset.hubTheme='pizza-cartoon-v1';this.scene.game.canvas.dataset.stockRows=JSON.stringify(rows);this.scene.game.canvas.dataset.stockScroll=JSON.stringify({...viewport,offset,max});this.scene.game.canvas.dataset.stockFilter=input.filter;
++    });
++    if(!rows.length){text(177,105,'Không có nguyên liệu phù hợp',14,colors.ink,true);text(177,129,'Chọn bộ lọc khác để xem Kho.',11,colors.muted,true);}
++    
++      },update:offset=>{
++        rows.forEach((row,i)=>{row.y=viewport.y+i*rowHeight-offset;row.visible=row.y>=viewport.y&&row.y+rowHeight<=viewport.y+viewport.height;});
++        input.scroll(offset);this.sync(()=>{for(const row of rows)this.hit(`stock-item-${row.id}`,17,row.y,321,50,true,()=>input.detail(row.id));});
++        this.scene.game.canvas.dataset.stockRows=JSON.stringify(rows);this.scene.game.canvas.dataset.stockScroll=JSON.stringify({...viewport,offset,max});
++      }});
++    this.scene.game.canvas.dataset.hubTheme='pizza-cartoon-v1';this.scene.game.canvas.dataset.stockFilter=input.filter;
+   }
+ }
+diff --git a/src/scenes/CozyScene.ts b/src/scenes/CozyScene.ts
+index d0ac0e1..04f00e6 100644
+--- a/src/scenes/CozyScene.ts
++++ b/src/scenes/CozyScene.ts
+@@ -1,3 +1,4 @@
++import type {HubDrag} from '../presentation/HubListWindow';
+ import {drawModalBackdrop} from '../presentation/ModalBackdrop';
+ import {drawSettingsPanel} from '../presentation/SettingsPanel';
+ import {RECIPE_CATALOG,recipeDefinition} from '../config/recipeCatalog';
+@@ -78,7 +79,7 @@ export class CozyScene extends Phaser.Scene {
+   private purchaseSerial=0;
+   private stockFilter:StockFilter='all';
+   private stockOffset=0;
+-  private stockDrag={active:false,startY:0,offset:0};
++  private stockDrag:HubDrag={active:false,startY:0,offset:0};
+   private stockLow:number|null=null;
+   private stockExpiry:number|null=null;
+   private shopMenuPage=0;
+@@ -98,7 +99,7 @@ export class CozyScene extends Phaser.Scene {
+   private stockPortions:Partial<Record<StockRecipe,number>>={};
+   private marketFilter:MarketFilter='all';
+   private marketOffset=0;
+-  private marketDrag={active:false,startY:0,offset:0};
++  private marketDrag:HubDrag={active:false,startY:0,offset:0};
+   private marketQuantities:Partial<Record<StockIngredient,number>>={};
+   private marketQuantityEditor?:{id:StockIngredient;input:MarketQuantityInput;lease:PauseLease};
+   private marketPurchase:{id:StockIngredient;quantity:number;total:number;commandId:string}|null=null;
+@@ -244,7 +245,17 @@ export class CozyScene extends Phaser.Scene {
+     modalText(this,this.layer,40,y,280,height,value,size,color,this.textScale);
+     if(this.textScale>1&&!this.notification)this.label(180,y+height+2,'Vuốt phần chữ để đọc tiếp',10,wood);
+   }
++  private hubTap?:{id:string;pointerId:number};
++  private listHit(id:string):boolean{return id.startsWith('stock-item-')||/^market-(quantity|minus|plus|buy)-/.test(id);}
++  private syncListHits(render:()=>void):void{
++    this.controls=this.controls.filter(c=>!this.listHit(c.id));this.visibleActions=this.visibleActions.filter(c=>!this.listHit(c.id));
++    for(const id of this.tapRects.keys())if(this.listHit(id))this.tapRects.delete(id);
++    render();this.game.canvas.dataset.controls=JSON.stringify(this.controls);
++  }
+   private hit(id:string,x:number,y:number,w:number,h:number,enabled:boolean,action:()=>void):void{
++    const list=this.listHit(id),top=id.startsWith('stock-item-')?223:219,bottom=id.startsWith('stock-item-')?535:537;
++    const rawY=y,rawH=h;
++    if(list){y=Math.max(top,y);h=Math.max(0,Math.min(bottom,rawY+rawH)-y);enabled=enabled&&h>0;}
+     this.tapRects.set(id,{x,y,w,h});
+     if(this.campaignSession&&['loading','saving','error','recovery'].includes(this.campaignSession.view.state))enabled=enabled&&(['pause','mute'].includes(id)||id.startsWith('summary-tab-')||id.startsWith('summary-figure-')||id==='summary-statement-close'||id.startsWith('save-'));
+     if(this.runtime.productionActive&&!this.runtime.tutorialActive&&this.runtime.shopPhase!=='making'&&this.runtime.shopPhase!=='delivered'&&!this.runtime.pauses.length){
+@@ -258,15 +269,26 @@ export class CozyScene extends Phaser.Scene {
+     const scale=Math.min((canvasBounds.width||360)/360,(canvasBounds.height||640)/640),min=Math.ceil(UI_THEME.minTouch/scale);
+     const width=Math.max(w,min),height=Math.max(h,min);
+     x=Math.max(0,Math.min(360-width,x-(width-w)/2));y=Math.max(0,Math.min(640-height,y-(height-h)/2));w=width;h=height;
++    if(list){const expandedBottom=Math.min(bottom,y+h);y=Math.max(top,y);h=Math.max(0,expandedBottom-y);}
+     this.controls.push({id,x,y,width:w,height:h,enabled});
+     // Keep input objects alive across clock redraws so a timed tap cannot fall
+     // between Phaser removing the previous region and registering its replacement.
+     let zone=this.hitZones.get(id);
+-    if(!zone){zone=this.add.zone(x,y,w,h).setOrigin(0).setDepth(10).setInteractive({useHandCursor:true});this.hitZones.set(id,zone);}
++    if(!zone){zone=this.add.zone(x,y,w,h).setOrigin(0).setDepth(10).setInteractive(new Phaser.Geom.Rectangle(0,0,w,h),Phaser.Geom.Rectangle.Contains);this.hitZones.set(id,zone);}
+     zone.setPosition(x,y).setSize(w,h);zone.input?.hitArea.setTo(0,0,w,h);
+     if(zone.input)zone.input.enabled=true;
++    if(list&&rawY+rawH<=top||list&&rawY>=bottom)zone.disableInteractive();
+     if(zone.listenerCount('pointerdown')||zone.listenerCount('pointerup'))return;
+-    zone.on(id.startsWith('stock-item-')?'pointerup':'pointerdown',(pointer:Phaser.Input.Pointer)=>{
++    if(list)zone.on('pointerdown',(pointer:Phaser.Input.Pointer)=>{
++      const target=[...this.tapRects].find(([key,c])=>this.listHit(key)&&pointer.x>=c.x&&pointer.x<=c.x+c.w&&pointer.y>=c.y&&pointer.y<=c.y+c.h)?.[0]??id;
++      this.hubTap={id:target,pointerId:pointer.id};
++    });
++    zone.on(list?'pointerup':'pointerdown',(pointer:Phaser.Input.Pointer)=>{
++      if(list){const drag=id.startsWith('stock-item-')?this.stockDrag:this.marketDrag;
++        if(!drag.controller?.canTap(pointer.id)||this.hubTap?.pointerId!==pointer.id)return;
++        const target=[...this.tapRects].find(([key,c])=>this.listHit(key)&&pointer.x>=c.x&&pointer.x<=c.x+c.w&&pointer.y>=c.y&&pointer.y<=c.y+c.h)?.[0]??id;
++        if(target!==this.hubTap.id)return;this.hubTap=undefined;
++      }
+       // On shorter portrait screens enlarged touch padding may overlap. The
+       // visible button beneath the finger always wins over a neighbour's padding.
+       const touched=[...this.tapRects].find(([key,c])=>this.controls.some(active=>active.id===key)&&pointer.x>=c.x&&pointer.x<=c.x+c.w&&pointer.y>=c.y&&pointer.y<=c.y+c.h);
+@@ -706,7 +728,7 @@ export class CozyScene extends Phaser.Scene {
+       const reports=this.runtime.completedReports,previous=summary?reports.find(r=>r.day===summary.day-1):undefined;
+       const tab=(id:'summary'|'market'|'stock'|'shop'|'missions')=>{this.summaryTab=id;this.stockDrag.active=false;this.marketDrag.active=false;this.dirty=true;};
+       if(this.summaryTab==='stock'){
+-        new ReferenceStock(this,this.layer,(...args)=>this.hit(...args)).draw({day:this.runtime.preparationDay,cash:this.runtime.state.cash,rows:stockRows(this.runtime.stockLots,this.runtime.preparationDay,id=>this.runtime.reserved(id)),filter:this.stockFilter,low:this.stockLow,expiryDays:this.stockExpiry,offset:this.stockOffset,drag:this.stockDrag,canScroll:()=>this.runtime.pauses.length===0,scroll:n=>{this.stockOffset=n;this.dirty=true;},setFilter:f=>this.setStockFilter(f),detail:id=>this.openStockLot(id),suggestions:()=>this.openStockPlanner(),market:()=>tab('market'),tab,pause:()=>this.hold('user')});return;
++        new ReferenceStock(this,this.layer,(...args)=>this.hit(...args),render=>this.syncListHits(render)).draw({day:this.runtime.preparationDay,cash:this.runtime.state.cash,rows:stockRows(this.runtime.stockLots,this.runtime.preparationDay,id=>this.runtime.reserved(id)),filter:this.stockFilter,low:this.stockLow,expiryDays:this.stockExpiry,offset:this.stockOffset,drag:this.stockDrag,canScroll:()=>this.runtime.pauses.length===0,scroll:n=>{this.stockOffset=n;},setFilter:f=>this.setStockFilter(f),detail:id=>this.openStockLot(id),suggestions:()=>this.openStockPlanner(),market:()=>tab('market'),tab,pause:()=>this.hold('user')});return;
+       }
+       if(this.summaryTab==='shop'){
+         new ReferenceShop(this,this.layer,(...args)=>this.hit(...args)).draw({staff:this.runtime.staffState,employee:role=>this.openStaffHire(role),shop:this.runtime.shopState,item:id=>this.openShopItem(id),app:()=>this.openDeliveryApp('settings'),deliveryApp:{...this.runtime.deliveryApp,eventName:this.runtime.deliveryApp.nextEvent.name},day:this.runtime.preparationDay,cash:this.runtime.state.cash,page:this.shopPage,canAct:this.runtime.canSetPrices,ovenLevel:this.runtime.ovenLevel,queueCapacity:this.runtime.queueCapacity,ovenPrice:this.runtime.upgradePrice('oven'),queuePrice:this.runtime.upgradePrice('queue'),menuPage:this.shopMenuPage,pageMenu:page=>{this.shopMenuPage=page;this.dirty=true;},buy:id=>this.openRecipePurchase(id),recipes:RECIPE_CATALOG.map(r=>r.id).map(id=>({id,name:recipeName(id),price:this.runtime.customerProgress.prices[id],cost:recipeIngredients(id).reduce((n,item)=>n+this.runtime.price(item),0),enabled:this.runtime.menuRecipes.includes(id),owned:this.runtime.ownedRecipes.includes(id),purchasePrice:recipeDefinition(id).purchasePrice})),open:page=>{this.shopPage=page;this.dirty=true;},price:id=>this.choosePrice(id),upgrade:kind=>this.openHubUpgrade(kind),tab,pause:()=>this.hold('user'),footer});return;
+@@ -715,7 +737,7 @@ export class CozyScene extends Phaser.Scene {
+         new ReferenceMissions(this,this.layer,(...args)=>this.hit(...args)).draw({day:this.runtime.preparationDay,cash:this.runtime.state.cash,progress:this.runtime.progression,ending:!!summary?.ending,tab,pause:()=>this.hold('user'),footer});return;
+       }
+       if(this.summaryTab==='market'){
+-        new ReferenceMarket(this,this.layer,(...args)=>this.hit(...args)).draw({unitPrice:id=>this.runtime.price(id),supplier:this.runtime.supplier,day:this.runtime.preparationDay,cash:this.runtime.state.cash,canBuy,readOnlyReason:summary?.ending?'Chặng bán hàng đã kết thúc · Chợ chỉ để xem':'Mua đang bị khóa · Hãy xử lý lưu tiến độ',canScroll:()=>this.runtime.pauses.length===0,filter:this.marketFilter,offset:this.marketOffset,drag:this.marketDrag,quantities:this.marketQuantities,available:id=>this.runtime.available(id),quantity:(id,delta)=>{this.marketQuantities[id]=Phaser.Math.Clamp((this.marketQuantities[id]??1)+delta,1,100);this.dirty=true;},buy:id=>this.openMarketPurchase(id),editQuantity:id=>this.openMarketQuantity(id),scroll:offset=>{this.marketOffset=offset;this.dirty=true;},setFilter:filter=>{this.marketFilter=filter;this.marketOffset=0;this.dirty=true;},tab:id=>{this.summaryTab=id;this.dirty=true;},pause:()=>this.hold('user'),price:()=>this.choosePrice(this.runtime.selectedRecipe),footer});
++        new ReferenceMarket(this,this.layer,(...args)=>this.hit(...args),render=>this.syncListHits(render)).draw({unitPrice:id=>this.runtime.price(id),supplier:this.runtime.supplier,day:this.runtime.preparationDay,cash:this.runtime.state.cash,canBuy,readOnlyReason:summary?.ending?'Chặng bán hàng đã kết thúc · Chợ chỉ để xem':'Mua đang bị khóa · Hãy xử lý lưu tiến độ',canScroll:()=>this.runtime.pauses.length===0,filter:this.marketFilter,offset:this.marketOffset,drag:this.marketDrag,quantities:this.marketQuantities,available:id=>this.runtime.available(id),quantity:(id,delta)=>{this.marketQuantities[id]=Phaser.Math.Clamp((this.marketQuantities[id]??1)+delta,1,100);this.dirty=true;},buy:id=>this.openMarketPurchase(id),editQuantity:id=>this.openMarketQuantity(id),scroll:offset=>{this.marketOffset=offset;},setFilter:filter=>{this.marketFilter=filter;this.marketOffset=0;this.dirty=true;},tab:id=>{this.summaryTab=id;this.dirty=true;},pause:()=>this.hold('user'),price:()=>this.choosePrice(this.runtime.selectedRecipe),footer});
+         return;
+       }
+       this.referenceSummary().summary({report:summary,day:this.runtime.day,cash:this.runtime.state.cash,xp:summary?.progression.xp??this.runtime.progression.xp,previousXp:summary?(previous?.progression.xp??0):this.runtime.progression.xp,stockUnits:this.runtime.stockLots.reduce((n,lot)=>n+lot.quantity,0),ending:!!summary?.ending,paused:this.runtime.pauses.length>0,footer,tab:id=>{this.summaryTab=id;this.dirty=true;},pause:()=>this.hold('user'),finance:()=>this.openStatement(),reviews:()=>this.openReviews()});
+diff --git a/tests/reference-market.spec.ts b/tests/reference-market.spec.ts
+index fcdb49a..adc7d5a 100644
+--- a/tests/reference-market.spec.ts
++++ b/tests/reference-market.spec.ts
+@@ -28,7 +28,7 @@ async function fixture(page:Page,mode:'regular'|'poor'|'terminal'='regular'){
+     ${mode==='terminal'?"runtime.buy('shrimp',24);runtime.openShop();runtime.closeDay();":''}
+     let guarded=false;runtime.attachSaveGuard(()=>!guarded);
+     window.marketFixture={runtime,advance:seconds=>{for(let i=0;i<seconds*20;i++)runtime.advance(50);},guard:value=>{guarded=value;window.dispatchEvent(new Event('resize'));}};
+-    new Phaser.Game({type:Phaser.AUTO,parent:'fixture',width:360,height:640,scale:{mode:Phaser.Scale.FIT,autoCenter:Phaser.Scale.CENTER_BOTH},scene:[new CozyScene(runtime)]});
++    const game=new Phaser.Game({type:Phaser.AUTO,parent:'fixture',width:360,height:640,scale:{mode:Phaser.Scale.FIT,autoCenter:Phaser.Scale.CENTER_BOTH},scene:[new CozyScene(runtime)]});window.marketFixture.game=game;
+   `},bundle:true,platform:'browser',format:'iife',minify:true,define:{'import.meta.env.BASE_URL':'"/"'},write:false});
+   await page.route('**/assets/index-*.js',route=>route.abort());await page.goto('/');
+   await page.setContent('<style>html,body{margin:0;height:100%;overflow:hidden}#fixture{width:100%;height:100%}</style><div id="fixture"></div>');
+@@ -213,7 +213,7 @@ test('large quantity keeps every shortfall digit visible inside the market row',
+     const state=window as unknown as {marketMoneyPaints:{value:string;width:number;x:number;font:string}[]};state.marketMoneyPaints=[];
+     const original=CanvasRenderingContext2D.prototype.fillText;
+     CanvasRenderingContext2D.prototype.fillText=function(value,x,y,maxWidth){
+-      if(this.canvas.width===360&&this.canvas.height===640&&value.includes('1000'))state.marketMoneyPaints.push({value,width:this.measureText(value).width,x,font:this.font});
++      if(this.canvas.width===360&&value.includes('1000'))state.marketMoneyPaints.push({value,width:this.measureText(value).width,x,font:this.font});
+       if(maxWidth===undefined)original.call(this,value,x,y);else original.call(this,value,x,y,maxWidth);
+     };
+   });
+@@ -235,3 +235,50 @@ test('market ingredient sheet has actual transparent background and no brown til
+   expect(alpha.corner).toBe(0);expect(alpha.emptyCell).toBe(0);expect(alpha.bottle).toBeGreaterThan(200);
+   await page.locator('canvas').screenshot({path:info.outputPath('market-transparent-ingredients.png')});
+ });
++
++test('market and stock retain their list textures and input while dragging across frames',async({page},info)=>{
++  const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));await fixture(page);
++  const canvas=page.locator('canvas'),cash=await canvas.getAttribute('data-cash'),stock=await data(page,'stock');
++  for(const tab of ['market','stock']){
++    if(tab==='stock')await tap(page,'summary-tab-stock');
++    const baseline=await page.evaluate(tab=>{
++      const game=(window as unknown as {marketFixture:{game:{textures:{list:Record<string,unknown>};scene:{scenes:{input:{listenerCount:(event:string)=>number};hitZones:Map<string,unknown>}[]}}}}).marketFixture.game;
++      const key=Object.keys(game.textures.list).find(k=>k.startsWith(tab+'-window-')&&k.endsWith('-list'))!;
++      const scene=game.scene.scenes[0],saved={key,texture:game.textures.list[key],zones:[...scene.hitZones.values()],listeners:['wheel','pointerdown','pointermove','pointerup'].map(e=>scene.input.listenerCount(e))};
++      (window as unknown as {scrollBaseline:typeof saved}).scrollBaseline=saved;return {key,zones:saved.zones.length,listeners:saved.listeners};
++    },tab);
++    const b=(await canvas.boundingBox())!;
++    // Begin directly on a Mua button / stock row: moving must suppress its tap.
++    const x=tab==='market'?306:130;
++    await page.mouse.move(b.x+x*b.width/360,b.y+448*b.height/640);await page.mouse.down();
++    for(let i=1;i<=20;i++){await page.mouse.move(b.x+x*b.width/360,b.y+(448-i*8)*b.height/640);await page.evaluate(()=>new Promise<void>(resolve=>requestAnimationFrame(()=>resolve())));}
++    await page.mouse.up();
++    await expect.poll(async()=>(await data(page,tab+'-scroll')).offset).toBeGreaterThan(100);
++    expect(await data(page,'hub-detail')).toBeNull();expect(await data(page,'market-purchase')).toBeNull();
++    const retained=await page.evaluate(()=>{
++      const game=(window as unknown as {marketFixture:{game:{textures:{list:Record<string,unknown>};scene:{scenes:{input:{listenerCount:(event:string)=>number};hitZones:Map<string,unknown>}[]}}}}).marketFixture.game;
++      const saved=(window as unknown as {scrollBaseline:{key:string;texture:unknown;zones:unknown[];listeners:number[]}}).scrollBaseline,scene=game.scene.scenes[0];
++      return {key:saved.key,sameTexture:game.textures.list[saved.key]===saved.texture,sameZones:saved.zones.every(z=>[...scene.hitZones.values()].includes(z)),zones:scene.hitZones.size,listeners:['wheel','pointerdown','pointermove','pointerup'].map(e=>scene.input.listenerCount(e))};
++    });
++    expect(retained).toMatchObject({...baseline,sameTexture:true,sameZones:true});
++    const controls=await data(page,'controls') as Control[];
++    expect(new Set(controls.map(c=>c.id)).size).toBe(controls.length);
++    expect(controls.filter(c=>c.enabled&&(c.id.startsWith('stock-item-')||/^market-(buy|quantity|minus|plus)-/.test(c.id))).every(c=>c.y>=(tab==='market'?219:223)&&c.y+c.height<=(tab==='market'?537:535))).toBe(true);
++    await canvas.screenshot({path:info.outputPath(tab+'-retained-scroll.png')});
++    // Correct current row remains actionable after the scroll.
++    const target=controls.find(c=>c.enabled&&c.height>=48&&(tab==='market'?c.id.startsWith('market-buy-'):c.id.startsWith('stock-item-')))!;
++    await tap(page,target.id);
++    const offset=(await data(page,tab+'-scroll')).offset;
++    await page.mouse.move(b.x+130*b.width/360,b.y+350*b.height/640);await page.mouse.wheel(0,200);
++    expect((await data(page,tab+'-scroll')).offset).toBe(offset);
++    await tap(page,tab==='market'?'market-purchase-cancel':'hub-detail-close');
++    await expect(canvas).toHaveAttribute('data-cash',cash!);expect(await data(page,'stock')).toEqual(stock);
++    await tap(page,'summary-tab-shop');
++    const cleared=await page.evaluate(tab=>{
++      const game=(window as unknown as {marketFixture:{game:{textures:{list:Record<string,unknown>};scene:{scenes:{input:{listenerCount:(event:string)=>number}}[]}}}}).marketFixture.game;
++      return {keys:Object.keys(game.textures.list).filter(k=>k.startsWith(tab+'-window-')),wheel:game.scene.scenes[0].input.listenerCount('wheel')};
++    },tab);
++    expect(cleared).toEqual({keys:[],wheel:0});
++  }
++  expect(errors).toEqual([]);
++});
+
+diff --git a/src/presentation/HubListScroll.ts b/src/presentation/HubListScroll.ts
+new file
+/** Latest offset is independent of painting, so wheel bursts never lose deltas. */
+export class HubListScroll {
+  offset:number;
+  private pending=false;
+  private start?:{x:number;y:number;offset:number;pointerId:number};
+  moved=false;
+  constructor(initial:number,readonly max:number,private paint:(offset:number)=>void,private allowed:()=>boolean){this.offset=this.clamp(initial);}
+  private clamp(n:number):number{return Math.max(0,Math.min(this.max,n));}
+  wheel(delta:number):void{if(!this.allowed()){this.cancel();return;}this.set(this.offset+delta);}
+  down(x:number,y:number,pointerId:number):void{this.cancel();if(this.allowed())this.start={x,y,offset:this.offset,pointerId};}
+  move(x:number,y:number,pointerId:number):void{
+    if(!this.allowed()){this.cancel();return;}const start=this.start;if(!start||start.pointerId!==pointerId)return;
+    if(Math.hypot(x-start.x,y-start.y)>=8)this.moved=true;
+    if(this.moved)this.set(start.offset+start.y-y);
+  }
+  canTap(pointerId:number):boolean{return this.allowed()&&!!this.start&&this.start.pointerId===pointerId&&!this.moved;}
+  cancel():void{this.start=undefined;this.moved=false;}
+  private set(value:number):void{const n=this.clamp(value);if(n!==this.offset){this.offset=n;this.pending=true;}}
+  flush():void{if(!this.allowed()){this.pending=false;this.cancel();return;}if(this.pending){this.pending=false;this.paint(this.offset);}}
+  destroy():void{this.pending=false;this.cancel();}
+}
+
+diff --git a/src/presentation/HubListWindow.ts b/src/presentation/HubListWindow.ts
+new file
+import Phaser from 'phaser';
+import {HubListScroll} from './HubListScroll';
+import {HubCanvasUI,type HubRect} from './HubCanvasUI';
+import {HUB_THEME} from './HubTheme';
+
+export type HubDrag={active:boolean;startY:number;offset:number;controller?:HubListScroll};
+/** Raster once; crop UVs and translate the image instead of uploading per move. */
+export function hubListWindow(scene:Phaser.Scene,layer:Phaser.GameObjects.Container,input:{key:string;viewport:HubRect;height:number;offset:number;drag:HubDrag;allowed:()=>boolean;paint:(ui:HubCanvasUI,ctx:CanvasRenderingContext2D)=>void;update:(offset:number)=>void}):void{
+  const {viewport,key}=input,height=Math.max(viewport.height,input.height),texture=scene.textures.createCanvas(key,360,height)!;
+  input.paint(new HubCanvasUI(scene,texture.context,()=>{}),texture.context);texture.refresh();
+  const image=scene.add.image(0,viewport.y,key).setOrigin(0);layer.add(image);
+  const max=Math.max(0,input.height-viewport.height);
+  let thumb:Phaser.GameObjects.Image|undefined;
+  const thumbKey=key+'-thumb';
+  if(max){
+    const thumbTexture=scene.textures.createCanvas(thumbKey,360,65)!;
+    new HubCanvasUI(scene,thumbTexture.context,()=>{}).panel(342,0,3,65,HUB_THEME.colors.thumb,HUB_THEME.colors.thumb,1);thumbTexture.refresh();
+    thumb=scene.add.image(0,viewport.y,thumbKey).setOrigin(0);layer.add(thumb);
+    thumb.once('destroy',()=>scene.textures.remove(thumbKey));
+  }
+  const render=(offset:number)=>{image.setPosition(0,viewport.y-offset).setCrop(viewport.x,offset,viewport.width,viewport.height);thumb?.setY(viewport.y+offset/max*(viewport.height-65));input.update(offset);};
+  const controller=new HubListScroll(input.offset,max,render,input.allowed);input.drag.controller=controller;render(controller.offset);
+  const within=(p:Phaser.Input.Pointer)=>p.x>=viewport.x&&p.x<=viewport.x+viewport.width&&p.y>=viewport.y&&p.y<=viewport.y+viewport.height;
+  const down=(p:Phaser.Input.Pointer)=>{if(within(p))controller.down(p.x,p.y,p.id);else controller.cancel();};
+  const move=(p:Phaser.Input.Pointer)=>{if(p.isDown)controller.move(p.x,p.y,p.id);};
+  const up=()=>{controller.flush();controller.cancel();};
+  const wheel=(p:Phaser.Input.Pointer,_objects:unknown,_dx:number,dy:number)=>{if(within(p))controller.wheel(dy);};
+  const flush=()=>controller.flush();
+  scene.input.on('pointerdown',down);scene.input.on('pointermove',move);scene.input.on('pointerup',up);scene.input.on('pointerupoutside',up);scene.input.on('wheel',wheel);scene.events.on('preupdate',flush);
+  image.once('destroy',()=>{scene.input.off('pointerdown',down);scene.input.off('pointermove',move);scene.input.off('pointerup',up);scene.input.off('pointerupoutside',up);scene.input.off('wheel',wheel);scene.events.off('preupdate',flush);controller.destroy();if(input.drag.controller===controller)input.drag.controller=undefined;scene.textures.remove(key);});
+}
+
+diff --git a/src/presentation/HubListScroll.test.ts b/src/presentation/HubListScroll.test.ts
+new file
+import {describe,it,expect,vi} from 'vitest';
+import {HubListScroll} from './HubListScroll';
+
+describe('HubListScroll',()=>{
+  it('accumulates wheel deltas before one frame paint and clamps both ends',()=>{
+    const paint=vi.fn(),scroll=new HubListScroll(10,100,paint,()=>true);
+    scroll.wheel(20);scroll.wheel(30);expect(scroll.offset).toBe(60);expect(paint).not.toHaveBeenCalled();
+    scroll.flush();expect(paint).toHaveBeenCalledExactlyOnceWith(60);
+    scroll.wheel(1000);scroll.flush();expect(scroll.offset).toBe(100);
+    scroll.wheel(-1000);scroll.flush();expect(scroll.offset).toBe(0);
+  });
+  it('keeps taps below threshold and permanently rejects a drag even if it returns',()=>{
+    const scroll=new HubListScroll(30,100,()=>{},()=>true);
+    scroll.down(5,50,1);scroll.move(5,45,1);expect(scroll.canTap(1)).toBe(true);expect(scroll.offset).toBe(30);
+    scroll.move(5,30,2);expect(scroll.offset).toBe(30);
+    scroll.move(5,30,1);expect(scroll.offset).toBe(50);expect(scroll.canTap(1)).toBe(false);
+    scroll.move(5,50,1);expect(scroll.canTap(1)).toBe(false);
+    scroll.cancel();expect(scroll.canTap(1)).toBe(false);
+  });
+  it('blocks paused input, discards pending work and requires a fresh gesture',()=>{
+    let allowed=true;const paint=vi.fn(),scroll=new HubListScroll(0,100,paint,()=>allowed);
+    scroll.down(0,50,1);scroll.move(0,30,1);allowed=false;scroll.flush();expect(paint).not.toHaveBeenCalled();
+    scroll.wheel(40);allowed=true;scroll.move(0,10,1);expect(scroll.offset).toBe(20);expect(scroll.canTap(1)).toBe(false);
+    scroll.down(0,30,1);expect(scroll.canTap(1)).toBe(true);scroll.destroy();scroll.flush();expect(paint).not.toHaveBeenCalled();
+  });
+  it('short content never scrolls or schedules uploads',()=>{
+    const paint=vi.fn(),scroll=new HubListScroll(90,0,paint,()=>true);
+    scroll.wheel(30);scroll.down(0,90,1);scroll.move(0,0,1);scroll.flush();expect(scroll.offset).toBe(0);expect(paint).not.toHaveBeenCalled();expect(scroll.canTap(1)).toBe(false);
+  });
+});

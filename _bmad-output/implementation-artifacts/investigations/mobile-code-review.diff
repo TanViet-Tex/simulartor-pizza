@@ -1,0 +1,323 @@
+diff --git a/_bmad-output/implementation-artifacts/ui-baseline-2026-10-02.md b/_bmad-output/implementation-artifacts/ui-baseline-2026-10-02.md
+index bf61488..70b528e 100644
+--- a/_bmad-output/implementation-artifacts/ui-baseline-2026-10-02.md
++++ b/_bmad-output/implementation-artifacts/ui-baseline-2026-10-02.md
+@@ -390,3 +390,15 @@ Giữ sáu ô và toàn bộ art/bố cục; tên/avatar khách giữ identity,
+ ### Nhập mã trong Cài đặt — yêu cầu 2026-10-06
+ 
+ Người dùng duyệt thêm Nhập mã cho Cài đặt chung Menu/Pause. Giữ vị trí các điều khiển âm thanh/giảm chuyển động; thêm nút dưới Giảm chuyển động, nới bảng từ490 lên514px và dịch riêng Quay lại xuống24px để giữ khoảng cách. Hộp nhập dùng khung2nút/× hiện có, ô văn bản native, Quay lại/Nhận xu và feedback thật. Menu/bếp/hub giữ bố cục. `VIETVUIVE` chỉ nhận100.000xu một lần mỗi lượt đã lưu khi chuẩn bị; không ghi giữa ca. Khoản hỗ trợ ghi riêng trong dòng tiền báo cáo, không tăng doanh thu/lợi nhuận/XP/uy tín. Xem [spec](spec-vietvuive-test-code.md), [Cài đặt](ui-baseline/test-code-settings-2026-10-06.png), [nhận mã](ui-baseline/test-code-received-2026-10-06.png).
++
++### Popup nhập mã mobile và thông báo thưởng — yêu cầu 2026-10-06
++
++Người dùng duyệt sửa riêng popup nhập mã: khi vùng nhìn thấy thu nhỏ hoặc cuộn do bàn phím, toàn bộ khung, chữ, input native, nút và vùng chạm dùng cùng một offset. Backdrop giữ nguyên. Blur hoặc viewport trở lại đầy đủ đưa hộp về vị trí cũ, giữ nội dung nhập. Menu/Pause dùng chung implementation; viewport quá thấp để chứa toàn bộ khung giữ đầu khung nhìn thấy, không thu nhỏ chữ/nút.
++
++Sau commit thành công, gỡ input/đóng bàn phím và hiện thông báo thưởng giữa canvas theo `thông báo nhận tiền.png`: giấy kem, viền vàng/nâu, pizza ở đầu, đồng xu, tiêu đề “Nhập mã thành công!”, số tiền thật **+100.000 xu**, mô tả và hai nút Đóng/OK. Số +500 trong ảnh mẫu không được render. Hai nút chỉ đóng hộp/trở lại Cài đặt, không thưởng thêm; lease của Pause/Menu giữ nguyên. Giữ các controls Cài đặt khác và UI game. Xem [spec](spec-mobile-code-popup-and-reward.md).
++
++![Popup bình thường](ui-baseline/test-code-mobile-normal.png)
++
++![Popup khi visualViewport thu nhỏ mô phỏng bàn phím](ui-baseline/test-code-mobile-keyboard.png)
++
++![Thông báo thưởng thực nhận](ui-baseline/test-code-received-2026-10-06.png)
+diff --git a/src/presentation/NotificationFrame.ts b/src/presentation/NotificationFrame.ts
+index a0dd127..9a07ab0 100644
+--- a/src/presentation/NotificationFrame.ts
++++ b/src/presentation/NotificationFrame.ts
+@@ -8,6 +8,7 @@ export type NotificationLayout = {variant:NotificationVariant;bounds:Notificatio
+ export const NOTIFICATION_FRAMES = [
+   {key:'notification-frame-one',url:'assets/references/Khung thông báo tiệm pizza ấm cúng.png'},
+   {key:'notification-frame-two',url:'assets/references/Hộp thoại thông báo pizza ấm cúng.png'},
++  {key:'test-code-reward',url:'assets/references/thông báo nhận tiền.png'},
+ ] as const;
+ 
+ export function preloadNotificationFrames(scene:Phaser.Scene):void{
+diff --git a/src/presentation/TestCodePanel.ts b/src/presentation/TestCodePanel.ts
+index afa04dd..64357ea 100644
+--- a/src/presentation/TestCodePanel.ts
++++ b/src/presentation/TestCodePanel.ts
+@@ -2,6 +2,9 @@ import type Phaser from 'phaser';
+ import {drawModalBackdrop} from './ModalBackdrop';
+ import {drawNotificationFrame,drawNotificationButton,drawNotificationClose,type NotificationRect} from './NotificationFrame';
+ import {UI_THEME} from './theme';
++import {testCodeViewportOffset} from './TestCodeViewport';
++import {drawTestCodeReward} from './TestCodeReward';
++import {TEST_CODE_COINS} from '../domain/TestCode';
+ 
+ export type TestCodeActions={message:(value:string)=>string;claim:(value:string)=>boolean;claimed:()=>boolean;save:()=>{state:string;message:string;canRetry:boolean};retry:()=>void};
+ /** Native text input lives above the canvas; each scene owns and destroys this editor. */
+@@ -10,6 +13,17 @@ export class TestCodePanel {
+   private feedback='Nhập mã để nhận xu thử chức năng.';
+   private submitted=false;
+   private received=false;
++  private destroyed=false;
++  private redraw=0;
++  private viewport=window.visualViewport;
++  private viewportChanged=():void=>{
++    if(this.destroyed||this.redraw)return;
++    this.redraw=requestAnimationFrame(()=>{this.redraw=0;if(!this.destroyed)this.changed();});
++  };
++  private offset():number {
++    const b=this.canvas.getBoundingClientRect();
++    return testCodeViewportOffset({canvasTop:b.top,canvasHeight:b.height,visibleTop:this.viewport?.offsetTop??0,visibleHeight:this.viewport?.height??window.innerHeight,focused:document.activeElement===this.element&&!this.received});
++  }
+   private keyDown=(event:KeyboardEvent):void=>{
+     if(event.key==='Escape'){event.preventDefault();this.close();}
+     else if(event.key==='Enter'&&(document.activeElement===this.element||document.activeElement===this.canvas)){
+@@ -21,6 +35,8 @@ export class TestCodePanel {
+     input.setAttribute('aria-label','Mã nhận xu');input.dataset.testCodeInput='true';
+     Object.assign(input.style,{position:'fixed',zIndex:'1000',boxSizing:'border-box',border:'2px solid #bd9458',borderRadius:'10px',background:'#fff0d5',color:'#362018',textAlign:'center',fontFamily:UI_THEME.typography.fontFamily,fontSize:'20px'});
+     document.addEventListener('keydown',this.keyDown);
++    input.addEventListener('focus',this.viewportChanged);input.addEventListener('blur',this.viewportChanged);
++    this.viewport?.addEventListener('resize',this.viewportChanged);this.viewport?.addEventListener('scroll',this.viewportChanged);window.addEventListener('resize',this.viewportChanged);window.addEventListener('scroll',this.viewportChanged);
+     document.body.append(input);this.position();input.focus();
+   }
+   accept():void {
+@@ -31,20 +47,26 @@ export class TestCodePanel {
+     if(message){this.feedback=message;this.changed();return;}
+     this.submitted=this.actions.claim(this.element.value);this.changed();
+   }
+-  position():void {
+-    const b=this.canvas.getBoundingClientRect();Object.assign(this.element.style,{left:`${b.left+55*b.width/360}px`,top:`${b.top+315*b.height/640}px`,width:`${250*b.width/360}px`,height:`${Math.max(48,48*b.height/640)}px`});
++  position(offset=this.offset()):void {
++    const b=this.canvas.getBoundingClientRect();Object.assign(this.element.style,{left:`${b.left+55*b.width/360}px`,top:`${b.top+(315+offset)*b.height/640}px`,width:`${250*b.width/360}px`,height:`${Math.max(48,48*b.height/640)}px`});
+   }
+   draw(scene:Phaser.Scene,layer:Phaser.GameObjects.Container,register:(id:string,r:NotificationRect,enabled:boolean,action:()=>void)=>void):void {
+-    this.position();const save=this.actions?.save(),busy=save?.state==='saving';
+-    if(this.submitted&&save?.state==='ready'&&this.actions?.claimed()){this.received=true;this.feedback='Đã nhận 100.000 xu. Mã dùng một lần mỗi lượt chơi.';}
++    const save=this.actions?.save(),busy=save?.state==='saving';
++    if(this.submitted&&!this.received&&save?.state==='ready'&&this.actions?.claimed()){this.received=true;this.feedback='Đã nhận 100.000 xu. Mã dùng một lần mỗi lượt chơi.';this.element.blur();this.element.remove();this.canvas.focus();}
+     const feedback=busy?'Đang lưu… Giữ trang này mở.':this.submitted&&save?.state==='error'?save.message:this.feedback;
+     this.element.readOnly=busy||this.received;
+-    drawModalBackdrop(scene,layer);const layout=drawNotificationFrame(scene,layer,'two',170,330);
++    drawModalBackdrop(scene,layer);
++    scene.game.canvas.dataset.testCodeFeedback=feedback;
++    if(this.received){scene.game.canvas.dataset.testCodeOffset='0';drawTestCodeReward(scene,layer,TEST_CODE_COINS,register,this.close);return;}
++    const offset=this.offset();this.position(offset);const content=scene.add.container(0,offset);layer.add(content);
++    const originalRegister=register;register=(id,r,enabled,action)=>originalRegister(id,{...r,y:r.y+offset},enabled,action);
++    layer=content;const layout=drawNotificationFrame(scene,layer,'two',170,330);
++    scene.game.canvas.dataset.testCodeOffset=String(offset);
+     const close=drawNotificationClose(scene,layer,layout);if(close)register('test-code-close',close,true,this.close);
+     const text=(y:number,value:string,size:number)=>layer.add(scene.add.text(180,y,value,{fontFamily:UI_THEME.typography.fontFamily,fontSize:`${size}px`,fontStyle:'bold',color:'#362018',align:'center',wordWrap:{width:276}}).setOrigin(.5,0));
+     text(layout.titleY+10,'Nhập mã',22);text(285,'Mã nhận xu thử chức năng',15);text(378,feedback,14);
+     ['test-code-cancel','test-code-receive'].forEach((id,index)=>{const r=layout.footer[index];drawNotificationButton(scene,layer,r.x,r.y,r.width,r.height);layer.add(scene.add.text(r.x+r.width/2,r.y+r.height/2,index?save?.canRetry&&this.submitted?'Thử lại':'Nhận xu':'Quay lại',{fontFamily:UI_THEME.typography.fontFamily,fontSize:'16px',fontStyle:'bold',color:'#fff0d5'}).setOrigin(.5));register(id,r,index?!busy&&!this.received:true,index?()=>this.accept():this.close);});
+     scene.game.canvas.dataset.testCodeFeedback=feedback;
+   }
+-  destroy():void{document.removeEventListener('keydown',this.keyDown);this.element.remove();this.canvas.focus();delete this.canvas.dataset.testCodeFeedback;}
++  destroy():void{this.destroyed=true;cancelAnimationFrame(this.redraw);document.removeEventListener('keydown',this.keyDown);this.element.removeEventListener('focus',this.viewportChanged);this.element.removeEventListener('blur',this.viewportChanged);this.viewport?.removeEventListener('resize',this.viewportChanged);this.viewport?.removeEventListener('scroll',this.viewportChanged);window.removeEventListener('resize',this.viewportChanged);window.removeEventListener('scroll',this.viewportChanged);this.element.remove();this.canvas.focus();delete this.canvas.dataset.testCodeFeedback;delete this.canvas.dataset.testCodeOffset;delete this.canvas.dataset.testCodeReward;}
+ }
+diff --git a/tests/test-code.spec.ts b/tests/test-code.spec.ts
+index fb989a1..3bc4d5b 100644
+--- a/tests/test-code.spec.ts
++++ b/tests/test-code.spec.ts
+@@ -7,6 +7,38 @@ async function tap(page:Page,id:string,menu=false){
+ }
+ async function prep(page:Page){await page.goto('/?mode=shop');await expect(page.locator('canvas')).toHaveAttribute('data-screen','preparation-hub',{timeout:20000});}
+ const input=(page:Page)=>page.getByRole('textbox',{name:'Mã nhận xu'});
++
++for(const source of ['Menu','Pause'])test(`${source} mobile visualViewport moves frame, textbox and tap targets together and resets on blur`,async({page})=>{
++  await page.addInitScript(()=>{
++    const viewport=Object.assign(new EventTarget(),{height:window.innerHeight,offsetTop:0});
++    Object.defineProperty(window,'visualViewport',{configurable:true,value:viewport});
++    (window as any).codeViewport=(height:number,offsetTop:number,event='resize')=>{Object.assign(viewport,{height,offsetTop});viewport.dispatchEvent(new Event(event));};
++  });
++  const menu=source==='Menu';
++  if(menu){await page.goto('/');await tap(page,'menu-settings',true);await tap(page,'menu-code',true);}
++  else{await prep(page);await tap(page,'pause');await tap(page,'pause-settings');await tap(page,'settings-code');}
++  await input(page).fill('keep-me');
++  const canvas=page.locator('canvas'),b=(await canvas.boundingBox())!,originalTop=(await input(page).boundingBox())!.y;
++  const receive=async()=>JSON.parse(await canvas.getAttribute(menu?'data-menu-targets':'data-controls')??'[]').find((c:any)=>c.id==='test-code-receive');
++  const original=await receive();if(menu)await page.screenshot({path:'_bmad-output/implementation-artifacts/ui-baseline/test-code-mobile-normal.png'});
++  await page.evaluate(()=>{const b=document.querySelector('canvas')!.getBoundingClientRect();(window as any).codeViewport(360*b.height/640,0);});
++  await expect.poll(async()=>Number(await canvas.getAttribute('data-test-code-offset'))).toBeLessThan(0);
++  const offset=Number(await canvas.getAttribute('data-test-code-offset'));
++  expect((await receive()).y-original.y).toBeCloseTo(offset,3);expect((await input(page).boundingBox())!.y-originalTop).toBeCloseTo(offset*b.height/640,1);
++  if(menu)await page.screenshot({path:'_bmad-output/implementation-artifacts/ui-baseline/test-code-mobile-keyboard.png'});
++  await page.evaluate(()=>(window as any).codeViewport(360*document.querySelector('canvas')!.getBoundingClientRect().height/640,30,'scroll'));
++  await expect.poll(async()=>Number(await canvas.getAttribute('data-test-code-offset'))).toBeCloseTo(offset+30*640/b.height,1);
++  await input(page).evaluate((e:HTMLInputElement)=>e.blur());await expect(canvas).toHaveAttribute('data-test-code-offset','0');await expect(input(page)).toHaveValue('keep-me');
++  await input(page).focus();await page.evaluate(()=>(window as any).codeViewport(window.innerHeight,0));await expect(canvas).toHaveAttribute('data-test-code-offset','0');
++  await page.evaluate(()=>(window as any).codeViewport(360*document.querySelector('canvas')!.getBoundingClientRect().height/640,0));await expect.poll(async()=>Number(await canvas.getAttribute('data-test-code-offset'))).toBeLessThan(0);
++  await tap(page,'test-code-cancel',menu);await expect(input(page)).toHaveCount(0);
++  await page.evaluate(()=>(window as any).codeViewport(300,0));await expect(canvas).not.toHaveAttribute('data-test-code-offset',/./);await tap(page,menu?'menu-mute':'settings-effects-less',menu);
++});
++
++test('Viewport API fallback and Escape clean up the native editor',async({page})=>{
++  await page.addInitScript(()=>Object.defineProperty(window,'visualViewport',{configurable:true,value:undefined}));
++  await page.goto('/');await tap(page,'menu-settings',true);await tap(page,'menu-code',true);await expect(page.locator('canvas')).toHaveAttribute('data-test-code-offset','0');await input(page).press('Escape');await expect(input(page)).toHaveCount(0);await tap(page,'menu-motion',true);
++});
+ test('Menu without a campaign gives guidance, closes native input and preserves controls',async({page})=>{
+   await page.goto('/');await expect(page.locator('canvas')).toHaveAttribute('data-screen','menu');await tap(page,'menu-settings',true);await tap(page,'menu-code',true);
+   await input(page).fill('VIETVUIVE');await tap(page,'test-code-receive',true);await expect(page.locator('canvas')).toHaveAttribute('data-test-code-feedback',/Bắt đầu/);
+@@ -17,17 +49,21 @@ test('Pause preparation grants exact funds, preserves user pause and rejects rep
+   await input(page).fill('wrong');await tap(page,'test-code-receive');await expect(canvas).toHaveAttribute('data-test-code-feedback','Mã không hợp lệ.');await expect(canvas).toHaveAttribute('data-cash','300');
+   await input(page).fill(' vietvuive ');await tap(page,'test-code-receive');await expect(canvas).toHaveAttribute('data-test-code-feedback',/Đã nhận 100.000/);await expect(canvas).toHaveAttribute('data-cash','100300');
+   await page.screenshot({path:'_bmad-output/implementation-artifacts/ui-baseline/test-code-received-2026-10-06.png'});
+-  await input(page).focus();await input(page).press('Escape');await expect(input(page)).toHaveCount(0);await expect(canvas).toHaveAttribute('data-paused',/user/);await tap(page,'settings-effects-less');await tap(page,'settings-motion');
++  await expect(input(page)).toHaveCount(0);await expect(canvas).toHaveAttribute('data-test-code-reward',/100000/);await tap(page,'test-code-reward-close');await expect(canvas).toHaveAttribute('data-paused',/user/);await tap(page,'settings-effects-less');await tap(page,'settings-motion');
+   await page.screenshot({path:'_bmad-output/implementation-artifacts/ui-baseline/test-code-settings-2026-10-06.png'});
+   await tap(page,'pause-settings-back');await tap(page,'resume');await expect(canvas).toHaveAttribute('data-paused','');
+   await page.reload();await expect(canvas).toHaveAttribute('data-cash','100300');await tap(page,'pause');await tap(page,'pause-settings');await tap(page,'settings-code');await input(page).fill('VIETVUIVE');await tap(page,'test-code-receive');await expect(canvas).toHaveAttribute('data-test-code-feedback',/đã được nhận/);
+ });
+ test('Menu uses the live preparation session and credits exactly once',async({page})=>{
+   await prep(page);await tap(page,'pause');await tap(page,'main-menu');await tap(page,'menu-settings',true);await tap(page,'menu-code',true);await input(page).fill('VIETVUIVE');await tap(page,'test-code-receive',true);await expect(page.locator('canvas')).toHaveAttribute('data-test-code-feedback',/Đã nhận 100.000/);
+-  await tap(page,'test-code-cancel',true);await tap(page,'menu-settings-close',true);await tap(page,'menu-continue',true);await expect(page.locator('canvas')).toHaveAttribute('data-cash','100300');await expect(input(page)).toHaveCount(0);
++  await expect(input(page)).toHaveCount(0);await tap(page,'test-code-reward-ok',true);await tap(page,'menu-settings-close',true);await tap(page,'menu-continue',true);await expect(page.locator('canvas')).toHaveAttribute('data-cash','100300');await expect(input(page)).toHaveCount(0);
+ });
+ test('Pause and Menu during a live shift never claim or save test funds',async({page})=>{
+   await prep(page);const canvas=page.locator('canvas');await tap(page,'summary-open-first-day');await expect(canvas).toHaveAttribute('data-screen','game');
+-  await tap(page,'pause');await tap(page,'pause-settings');await tap(page,'settings-code');await input(page).fill('VIETVUIVE');await tap(page,'test-code-receive');await expect(canvas).toHaveAttribute('data-test-code-feedback',/chốt ngày/);await expect(canvas).toHaveAttribute('data-cash','300');
++  // Opening a real campaign may produce the existing seeded loss event. Acknowledge
++  // its modal before testing Settings and compare against the actual starting cash.
++  if(JSON.parse(await canvas.getAttribute('data-controls')??'[]').some((c:any)=>c.id==='campaign-event-understood'))await tap(page,'campaign-event-understood');
++  const startingCash=(await canvas.getAttribute('data-cash'))!;
++  await tap(page,'pause');await tap(page,'pause-settings');await tap(page,'settings-code');await input(page).fill('VIETVUIVE');await tap(page,'test-code-receive');await expect(canvas).toHaveAttribute('data-test-code-feedback',/chốt ngày/);await expect(canvas).toHaveAttribute('data-cash',startingCash);
+   await tap(page,'test-code-cancel');await tap(page,'pause-settings-back');await tap(page,'main-menu');await tap(page,'menu-settings',true);await tap(page,'menu-code',true);await input(page).fill('VIETVUIVE');await tap(page,'test-code-receive',true);await expect(canvas).toHaveAttribute('data-test-code-feedback',/chốt ngày/);
+ });
+--- NEW FILE: src/presentation/TestCodeReward.ts ---
+import type Phaser from 'phaser';
+import {UI_THEME} from './theme';
+import type {NotificationRect} from './NotificationFrame';
+
+/** Extract ornaments and blank borders; the sample's baked +500 is never drawn. */
+export function drawTestCodeReward(scene:Phaser.Scene,layer:Phaser.GameObjects.Container,coins:number,register:(id:string,r:NotificationRect,enabled:boolean,action:()=>void)=>void,close:()=>void):void {
+  const texture=scene.textures.get('test-code-reward'),x=14,top=135,width=332,height=370,scale=width/240;
+  const artKey='test-code-reward-clipped';
+  if(!scene.textures.exists(artKey)){
+    // Phaser 4 WebGL containers do not apply legacy GeometryMask. Rasterize the
+    // static source slices once with a Canvas2D silhouette clip for both renderers.
+    const art=scene.textures.createCanvas(artKey,360,640)!;const ctx=art.context,source=texture.getSourceImage() as HTMLImageElement;
+    ctx.beginPath();ctx.roundRect(x,top+20,width,height-20,26);ctx.ellipse(180,top+22,61,18,0,0,Math.PI*2);ctx.ellipse(180,top+20,25,25,0,0,Math.PI*2);ctx.clip();
+    ctx.fillStyle='#ffedbd';ctx.fillRect(x,top,width,height);
+    for(const [sx,sy,sw,sh,dx,dy,dw,dh] of [
+      [31,13,198,13,x+21*scale,top+13*scale,198*scale,13*scale],
+      [10,14,30,28,x,top+14*scale,30*scale,28*scale],
+      [220,14,30,28,x+210*scale,top+14*scale,30*scale,28*scale],
+      [86,0,88,31,180-44*scale,top,88*scale,31*scale],
+      [10,42,14,164,x,top+42*scale,14*scale,height-84*scale],
+      [236,42,14,164,x+226*scale,top+42*scale,14*scale,height-84*scale],
+      [10,206,22,42,x,top+height-42*scale,22*scale,42*scale],
+      [230,206,20,42,x+220*scale,top+height-42*scale,20*scale,42*scale],
+      [32,243,198,9,x+22*scale,top+height-5*scale,198*scale,5*scale],
+      [52,60,153,84,180-153*1.26/2,220,153*1.26,84*1.26],
+      [31,213,95,30,38,440,136,48], [133,213,95,30,184,440,136,48],
+    ] as const)ctx.drawImage(source,sx,sy,sw,sh,dx,dy,dw,dh);
+    art.refresh();
+  }
+  layer.add(scene.add.image(0,0,artKey).setOrigin(0));
+  const text=(y:number,value:string,size:number,color='#583319')=>layer.add(scene.add.text(180,y,value,{fontFamily:UI_THEME.typography.fontFamily,fontSize:`${size}px`,fontStyle:'bold',color,align:'center',wordWrap:{width:272}}).setOrigin(.5,0));
+  text(184,'Nhập mã thành công!',22);text(330,`+${coins.toLocaleString('vi-VN')} xu`,29,'#a85805');text(378,'Bạn đã nhận được xu thưởng từ mã quà tặng.',15);
+  for(const index of [0,1]){
+    const r={x:38+index*146,y:440,width:136,height:48};
+    register(index?'test-code-reward-ok':'test-code-reward-close',r,true,close);
+  }
+  scene.game.canvas.dataset.testCodeReward=JSON.stringify({coins,bounds:{x,y:top,width,height}});
+}
+
+--- NEW FILE: src/presentation/TestCodeViewport.ts ---
+export type CodeViewportGeometry={canvasTop:number;canvasHeight:number;visibleTop:number;visibleHeight:number;focused:boolean};
+/** One game-space translation for the entire editor and its native textbox. */
+export function testCodeViewportOffset(g:CodeViewportGeometry):number {
+  if(!g.focused||!Number.isFinite(g.canvasHeight)||g.canvasHeight<=0||!Number.isFinite(g.visibleHeight)||g.visibleHeight<=0)return 0;
+  const scale=g.canvasHeight/640,top=g.canvasTop+170*scale,height=330*scale;
+  const margin=Math.min(12,Math.max(0,(g.visibleHeight-height)/2));
+  const min=g.visibleTop+margin,max=g.visibleTop+g.visibleHeight-height-margin;
+  const fitted=Math.max(min,Math.min(top,max));
+  return (fitted-top)/scale;
+}
+
+--- NEW FILE: src/presentation/TestCodeViewport.test.ts ---
+import {describe,it,expect} from 'vitest';
+import {testCodeViewportOffset as offset} from './TestCodeViewport';
+const base={canvasTop:0,canvasHeight:640,visibleTop:0,visibleHeight:640,focused:true};
+describe('test-code viewport translation',()=>{
+  it('centers unchanged when keyboard is closed or input blurred',()=>{expect(offset(base)).toBe(0);expect(offset({...base,visibleHeight:360,focused:false})).toBe(0);});
+  it('moves the whole frame up to fit and follows viewport scroll without accumulation',()=>{expect(offset({...base,visibleHeight:360})).toBe(-152);expect(offset({...base,visibleHeight:360,visibleTop:40})).toBe(-112);expect(offset(base)).toBe(0);});
+  it('converts CSS to game coordinates and includes auto-pan canvas bounds',()=>{expect(offset({...base,canvasTop:20,canvasHeight:320,visibleHeight:250})).toBe(-64);expect(offset({...base,canvasTop:-40,visibleHeight:360})).toBe(-112);});
+  it('fits an exact-height viewport, anchors a smaller one and handles invalid sizes',()=>{expect(offset({...base,visibleHeight:330})).toBe(-170);expect(offset({...base,visibleHeight:240})).toBe(-170);expect(offset({...base,canvasHeight:0})).toBe(0);});
+});
+
+--- NEW FILE: _bmad-output/implementation-artifacts/spec-mobile-code-popup-and-reward.md ---
+---
+title: 'Popup nhập mã theo bàn phím mobile và thông báo thưởng'
+type: feature
+created: '2026-10-06'
+status: in-review
+baseline_commit: '124dbc0a5ba275dbba0ff39cca20fd0026e572c4'
+context:
+  - '_bmad-output/project-context.md'
+  - '_bmad-output/implementation-artifacts/ui-baseline-2026-10-02.md'
+---
+
+<frozen-after-approval reason="human-owned intent — do not modify unless human renegotiates">
+
+## Intent
+
+**Problem:** Bàn phím iPhone làm ô input DOM lệch khỏi popup canvas. Sau nhận mã thành công chưa có thông báo thưởng riêng theo ảnh người dùng cung cấp.
+
+**Approach:** Dùng vùng nhìn thấy thực tế của visualViewport để di chuyển toàn bộ popup nhập mã bằng một offset chung. Khi giao dịch nhận mã lưu thành công, thay nội dung nhập bằng popup thưởng theo `public/assets/references/thông báo nhận tiền.png`, với số xu thật.
+
+## Boundaries & Constraints
+
+**Always:** Khung, tiêu đề, mô tả, input, hai nút và vùng chạm cùng di chuyển. Theo dõi resize/scroll visualViewport và resize cửa sổ; có fallback khi không hỗ trợ. Blur hoặc đóng bàn phím trả về tâm cũ; xóa listener/input khi đóng hoặc đổi scene. Menu và Pause cùng dùng một implementation. Thành công chỉ sau commit; giữ pause lease đến khi đóng thông báo. Người dùng xác nhận giữ thưởng VIETVUIVE 100.000 xu và hiển thị `+100.000 xu`, không lấy 500 từ ảnh mẫu.
+
+**Ask First:** Đổi luật nhận mã, số thưởng, ranh giới lưu hoặc thiết kế phần ngoài popup nhập mã/thưởng.
+
+**Never:** Refactor gameplay/save; đổi âm thanh, vị trí các điều khiển Settings khác; cộng thưởng khi render popup hoặc bấm OK/Đóng; bật popup thành công khi lỗi lưu hoặc mã đã nhận.
+
+## I/O & Edge-Case Matrix
+
+| Scenario | Input / State | Expected Output / Behavior | Error Handling |
+|---|---|---|---|
+| Bàn phím mở | Focus input, viewport thấp hơn | Cả popup và DOM cùng offset, nút chạm khớp hình | Ưu tiên visualViewport |
+| Safari cuộn | viewport.offsetTop đổi | Đổi vị trí chung theo vùng nhìn thấy | Không cộng offset lặp |
+| Bàn phím đóng | viewport khôi phục hoặc input blur | Popup và input về vị trí giữa cũ | Không mất mã đang nhập |
+| Không có API | visualViewport không tồn tại | Dùng vùng cửa sổ, popup vẫn hoạt động | Không crash |
+| Thành công | Commit mã hợp lệ ready | Bỏ input, đóng bàn phím, hiện popup thưởng một lần | Số thật +100.000 xu |
+| Sai/lặp/lỗi lưu | Claim không thành công | Giữ feedback/retry hiện hành | Không popup thưởng |
+| Đóng/OK/Escape | Popup thưởng đang mở | Đóng popup, quay lại Settings | Không cộng tiền lần nữa |
+| Thoát scene | Popup đang mở | Dọn DOM/listener, trả lease riêng | Không bỏ pause khác |
+
+</frozen-after-approval>
+
+## Code Map
+
+- `src/presentation/TestCodePanel.ts`: input native, redraw và trạng thái nhận thành công dùng chung.
+- `src/presentation/NotificationFrame.ts`: khung/nút Phaser, asset preload dùng chung.
+- `src/scenes/MainMenuScene.ts`, `src/scenes/CozyScene.ts`: vùng chạm modal và ownership vòng đời.
+- `public/assets/references/thông báo nhận tiền.png`: mẫu khung, pizza và đồng xu; chữ/số trong ảnh chỉ tham khảo.
+- `public/assets/references/Cài đặt tiệm pizza ấm cúng.png`: tham khảo phong cách, không thay các controls ngoài yêu cầu.
+- `tests/test-code.spec.ts`: kiểm chứng Menu/Pause, tiền thật, reload và chặn giữa ca.
+
+## Tasks & Acceptance
+
+- [x] `src/presentation/TestCodePanel.ts`: quản lý offset chung canvas/DOM, cập nhật viewport, vùng chạm và cleanup.
+- [x] `src/presentation/NotificationFrame.ts` hoặc renderer mới trong presentation: tái sử dụng art thưởng, bỏ số/chữ mẫu để vẽ dữ liệu thật.
+- [x] `src/presentation/TestCodePanel.ts`: sau commit chuyển sang thông báo có pizza, đồng xu, tiêu đề “Nhập mã thành công!”, số thưởng, mô tả “Bạn đã nhận được xu thưởng từ mã quà tặng.” và Đóng/OK.
+- [x] `tests/test-code.spec.ts` và unit hình học tập trung: viewport thu nhỏ/cuộn/khôi phục, blur, đúng offset DOM/vùng chạm, fallback, hai nút đóng, không thưởng lặp.
+- [x] `_bmad-output/implementation-artifacts/ui-baseline-2026-10-02.md`: cập nhật đúng phần popup, lưu ảnh kiểm chứng.
+
+**Acceptance Criteria:**
+- Given popup ở Menu hoặc Pause, when bàn phím mở, then khung/input/nút giữ cùng vị trí tương đối.
+- Given mã đúng, when save thành công, then popup thưởng ở giữa, input được gỡ và tiền là 100300 từ số dư 300.
+- Given popup thưởng, when bấm Đóng hoặc OK, then trở về Settings, tiền không đổi và pause nguồn khác còn nguyên.
+
+## Spec Change Log
+
+## Design Notes
+
+Offset tính từ tọa độ CSS của canvas sang tọa độ game 360×640, áp dụng cả renderer và rect đăng ký input. Backdrop phủ toàn canvas, không dịch cùng khung. Khung thưởng dùng ảnh có sẵn nhưng chữ động và số thực nhận phải tách khỏi chữ mẫu. Nền tối nhẹ giữ alpha hiện hành; ảnh tham khảo đã có phong cách mờ ấm, không yêu cầu blur toàn renderer.
+
+## Verification
+
+- Build TypeScript/Vite.
+- Unit hình học viewport và các trường hợp fallback/khôi phục.
+- Playwright tập trung Chromium/WebKit portrait cho riêng popup; giả lập visualViewport resize/scroll để kiểm chứng hình học. Không chạy full matrix.
+- Kiểm tra ảnh popup thường, popup khi vùng nhìn thấy thu nhỏ và thưởng thành công. Bàn phím Safari thật cần kiểm tra trên iPhone để xác nhận hành vi hệ điều hành.
+
+## Implementation & Results — 2026-10-06
+
+- [Hình học viewport](../../src/presentation/TestCodeViewport.ts) tính offset theo canvas CSS và vùng nhìn thấy. [Panel dùng chung](../../src/presentation/TestCodePanel.ts) lấy một offset mỗi draw, áp dụng vào container Phaser, textbox DOM và mọi rect đăng ký vùng chạm. Listener resize/scroll/focus/blur gom mỗi animation frame và được dọn khi destroy.
+- [Renderer thưởng](../../src/presentation/TestCodeReward.ts) cache một CanvasTexture art tĩnh, cắt các lát nguồn bỏ chữ/số mẫu và clip silhouette khung/crest. Chữ, số tiền và hit targets là Phaser động; không đổi domain/save/claim. Không dùng GeometryMask trên container vì Phaser4 WebGL container renderer không áp dụng mask legacy.
+- Build TypeScript/Vite đạt (88 modules). 27 unit tập trung đạt: 4 hình học + 23 mã/checkpoint/session hiện hành.
+- Bộ tập trung 14 E2E ở Chromium360×640 và WebKit390×844: 13 đạt lần đầu; một test giữa ca gặp thông báo sự kiện A có sẵn. Test đã xử lý thông báo rồi so sánh tiền thực trước/sau từ chối mã. Rerun 6 test thưởng/giữa ca đạt cả hai browser. Sau khi hoàn thiện clipping art, rerun 4 test thưởng đạt để kiểm chứng render cuối và hai nút đóng.
+- Đã kiểm tra ảnh [hộp thường](ui-baseline/test-code-mobile-normal.png), [viewport thu nhỏ](ui-baseline/test-code-mobile-keyboard.png) và [thưởng thực nhận](ui-baseline/test-code-received-2026-10-06.png): không lệch input khỏi hộp, tiền +100.000 và chữ/nút đọc rõ. Viewport trong E2E là mô phỏng hình học, không phải bàn phím iOS thật.
+- Nếu viewport thấp hơn chiều cao toàn bộ popup, không thể chứa trọn khung chỉ bằng dịch chuyển; giữ đầu hộp nhìn thấy, không tự thu nhỏ phong cách/chữ/nút. Trường hợp chiều cao đúng bằng khung được bỏ margin để khung vừa vùng nhìn thấy.
