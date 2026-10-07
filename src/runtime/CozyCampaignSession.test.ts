@@ -64,7 +64,7 @@ describe('Cozy prepare/commit/confirm session',()=>{
     expect(session.view.state).toBe('error');expect(port.value!.payload.stock.cash).toBe(cash);
     expect(r.queueCapacity).toBe(4);expect(r.state.cash).toBe(cash);expect(r.openShop()).toBe(false);
     const request=port.calls[1];port.fail=false;await session.retry();expect(port.calls[2]).toEqual(request);
-    expect((await session.load())!.queueCapacity).toBe(6);expect(session.runtime!.state.cash).toBe(cash-6000);
+    expect((await session.load())!.queueCapacity).toBe(5);expect(session.runtime!.state.cash).toBe(cash-6000);
   });
   it('explicit empty-store reload removes stale runtime and prevents its further mutations',async()=>{
     const {session,port,r}=await setup();port.value=null;expect(await session.load()).toBeNull();expect(session.runtime).toBeNull();expect(session.hasSession).toBe(false);expect(r.buy('dough',1)).toBe(false);expect(await session.start(false)).not.toBeNull();

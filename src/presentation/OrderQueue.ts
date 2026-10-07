@@ -2,6 +2,7 @@ import {ingredientName,type StockRecipe} from '../domain/CozyStock';
 import type {FinishingSauce} from '../config/ingredientCatalog';
 import {recipeDefinition} from '../config/recipeCatalog';
 import { timerText } from './PlayHud';
+import {drinkDefinition,type DrinkId} from '../config/drinkCatalog';
 
 /** Source describes the order channel, independently of takeaway packaging. */
 export type OrderQueueInput = Readonly<{
@@ -24,6 +25,8 @@ export type OrderQueueInput = Readonly<{
   requestedSauces?:readonly FinishingSauce[];
   itemIndex?:number;
   totalPrice?:number;
+  drink?:DrinkId;
+  drinkAttached?:boolean;
 }>;
 
 export const ORDER_QUEUE_LIMIT=6;
@@ -69,7 +72,7 @@ export function createOrderQueue(orders:readonly OrderQueueInput[],inspectedId:s
   const detail:OrderQueueDetail={id:slot.id,number:slot.number,name:slot.name,source:slot.source,sourceLabel,
     recipe:slot.recipe,recipeLabel,quantity,takeaway,deadline:slot.deadline,
     lines:[`#${slot.number} · ${slot.name} · ${inspected?.kindLabel?inspected.kindLabel+' · ':''}${sourceLabel}`,`${itemLabel}${request} · ${service}${inspected?.help?' · Tặng miễn phí':total!==undefined?' · '+total+' xu':''}`,
-      quantity>1||slot.source==='app'&&inspected?.quantity!==undefined?`Hộp ${inspected?.packed??0}/${quantity}${slot.source==='app'?' · '+(inspected?.deliveryStatus??'Chưa book shipper'):''} · ${slot.deadline}`:slot.deadline==='Không giới hạn'?`Không giới hạn · ${packaging}`:`Còn ${slot.deadline} · ${inspected?.maxPricePercent?(takeaway?'Hộp':'Quầy')+' · Giá ≤'+inspected.maxPricePercent+'%':packaging}`],
+      inspected?.drink?`${drinkDefinition(inspected.drink).name} ×1 · ${inspected.drinkAttached?'Đã thêm':'Chưa thêm'} · ${slot.deadline}`:quantity>1||slot.source==='app'&&inspected?.quantity!==undefined?`Hộp ${inspected?.packed??0}/${quantity}${slot.source==='app'?' · '+(inspected?.deliveryStatus??'Chưa book shipper'):''} · ${slot.deadline}`:slot.deadline==='Không giới hạn'?`Không giới hạn · ${packaging}`:`Còn ${slot.deadline} · ${inspected?.maxPricePercent?(takeaway?'Hộp':'Quầy')+' · Giá ≤'+inspected.maxPricePercent+'%':packaging}`],
   };
   return {slots,detail,inspectedId:slot.id};
 }

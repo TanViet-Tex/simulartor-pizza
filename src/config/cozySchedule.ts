@@ -2,7 +2,7 @@ import type {RecipeId} from './recipeCatalog';
 import type {CustomerKind} from './ordinaryCustomers';
 
 export type ScheduleRecipe=RecipeId;
-export type ScheduleEligibility=Readonly<{regularDay1Stars:number|null;regularLatestStars:number|null;helpSucceeded:boolean;referral:boolean;helpOfferEligible?:boolean;queueCapacity?:4|6;customerSeed?:number|string}>;
+export type ScheduleEligibility=Readonly<{regularDay1Stars:number|null;regularLatestStars:number|null;helpSucceeded:boolean;referral:boolean;helpOfferEligible?:boolean;queueCapacity?:4|5|6;customerSeed?:number|string}>;
 export type ScheduleSlot=Readonly<{id:string;at:number;kind:CustomerKind;opportunity:'commercial'|'help'|'referral';commercialOrdinal:number|null;takeaway:boolean}>;
 export type CozySchedule=Readonly<{day:number;duration:number;grace:number;preparation?:number;slots:readonly ScheduleSlot[]}>;
 export type ScheduleFactory=(day:number,eligibility:ScheduleEligibility)=>CozySchedule;

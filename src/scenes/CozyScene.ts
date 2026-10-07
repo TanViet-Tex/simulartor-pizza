@@ -100,6 +100,9 @@ export class CozyScene extends Phaser.Scene {
   private plannerInput?:{recipe:StockRecipe;input:MarketQuantityInput};
   private recipePurchase?:{recipe:StockRecipe;commandId:string;lease:PauseLease};
   private shopItemDialog?:{id:ShopItemId;mode:'detail'|'place'|'store';commandId:string;lease:PauseLease};
+  private drinksDialog?:{lease:PauseLease};
+  private advertisingDialog?:{lease:PauseLease};
+  private fridgeDialog?:{commandId:string;lease:PauseLease};
   private staffHireDialog?:{role:StaffRole;commandId:string;lease:PauseLease};
   private warnedPayrollDays=new Set<number>();
   private appDialog?:{kind:'settings'|'book';ticketId?:string;lease:PauseLease;commandId:string};
@@ -431,7 +434,7 @@ export class CozyScene extends Phaser.Scene {
     }
     if(this.runtime.needsRemake)this.hit('remake',18,298,204,80,true,()=>this.runtime.remake());
     else this.hit('dough-board',18,298,204,80,this.runtime.canUseIngredient('dough'),()=>this.useIngredient('dough'));
-    this.ovens();this.sauceShelf();
+    this.ovens();this.drinkCells();this.sauceShelf();
     const counterReady=this.runtime.productionActive&&s.stage==='ready'&&this.runtime.selectedTicket?.takeaway===false;
     const source=this.runtime.deliverySource,target=this.runtime.selectedTicket;
     const earlyDelivery=this.runtime.productionActive&&source?.id===target?.id&&!counterReady&&['raw','ready','burnt'].includes(s.stage);
@@ -468,6 +471,9 @@ export class CozyScene extends Phaser.Scene {
       else if(this.stockCriteria)this.stockCriteriaDialog();
       else if(this.appDialog)this.deliveryAppDialog();
       else if(this.shopItemDialog)this.shopInvestmentDialog();
+      else if(this.advertisingDialog)this.drawAdvertisingDialog();
+      else if(this.drinksDialog)this.drawDrinksDialog();
+      else if(this.fridgeDialog)this.drawFridgeDialog();
       else if(this.staffHireDialog)this.staffDialog();
       else if(this.recipePurchase)this.recipePurchaseDialog();
       else if(this.hubUpgrade)this.hubUpgradeDialog();
@@ -480,11 +486,12 @@ export class CozyScene extends Phaser.Scene {
     else if(this.appDialog)this.deliveryAppDialog();
     else if(this.priceDraft&&!this.runtime.pauses.some(p=>p!=='order'))this.priceDialog();
     else if(this.queueUpgradeNotice)this.queueUpgradeDialog();
-    else if(this.runtime.pauses.some(p=>p!=='special-welcome'&&p!=='tutorial'&&p!=='discard'&&p!=='delivery'&&p!=='bargain'&&p!=='help'))this.overlay();
+    else if(this.runtime.pauses.some(p=>p!=='special-welcome'&&p!=='tutorial'&&p!=='discard'&&p!=='delivery'&&p!=='bargain'&&p!=='help'&&p!=='lottery'))this.overlay();
     else if(this.runtime.tutorialActive)this.tutorial();
     else if(this.runtime.discardPending)this.discardDialog();
     else if(this.runtime.deliveryPending)this.deliveryDialog();
     else if(this.runtime.bargainPending)this.bargainDialog();
+    else if(this.runtime.lotteryPending)this.lotteryDialog();
     else if(this.runtime.helpPending||this.runtime.thanksPending)this.helpDialog();
     else if(s.stage==='delivered'&&!this.runtime.productionActive)this.success();
     if(this.expressIngredient)this.expressDialog();
@@ -523,6 +530,7 @@ export class CozyScene extends Phaser.Scene {
     canvas.dataset.result=JSON.stringify(this.runtime.lastResult);
     canvas.dataset.cashFeedback=JSON.stringify(this.cashFeedback?.snapshot??[]);
     canvas.dataset.bargain=JSON.stringify(this.runtime.bargainPending);
+    canvas.dataset.advertising=JSON.stringify(this.runtime.advertisingState);canvas.dataset.lottery=JSON.stringify(this.runtime.lotteryPending);
     canvas.dataset.help=JSON.stringify(this.runtime.helpState);canvas.dataset.helpOffer=JSON.stringify(this.runtime.helpPending);
     canvas.dataset.customerProgress=JSON.stringify(this.runtime.customerProgress);
     canvas.dataset.hubDetail=JSON.stringify(this.hubDetail?{title:this.hubDetail.title,body:this.hubDetail.body}:null);canvas.dataset.hubUpgrade=JSON.stringify(this.hubUpgrade?{kind:this.hubUpgrade.kind,cost:this.hubUpgrade.cost}:null);
@@ -573,7 +581,7 @@ export class CozyScene extends Phaser.Scene {
   }
   private ovens():void{
     const s=this.runtime.productionActive?this.runtime.ovenState??this.runtime.state:this.runtime.state,occupied=this.runtime.productionActive?!!this.runtime.ovenState:!s.extracted&&(s.stage==='baking'||s.stage==='burnt');
-    for(let i=0;i<2;i++){
+    for(let i=0;i<1;i++){
       const {x,y,w,h}=KITCHEN.oven(i);
       const frame='oven-empty';
       this.referenceSprite(frame,x+w/2,y+h/2,w,h)?.setTint(i?0x99877b:0xffffff);
@@ -599,6 +607,16 @@ export class CozyScene extends Phaser.Scene {
         });
       }
     }
+  }
+  private drinkCells():void {
+    const ticket=this.runtime.selectedTicket;
+    this.runtime.drinkStock.forEach((drink,i)=>{
+      const x=238+i*37,y=376,w=35,h=63;const enabled=!!ticket&&ticket.drink===drink.id&&!ticket.drinkAttached&&drink.quantity>0;
+      this.graphics();this.art.g.fillStyle(0x39251b,1).fillRoundedRect(x,y,w,h,5).lineStyle(1,enabled?0xffd45e:0x9f7951).strokeRoundedRect(x,y,w,h,5);
+      this.art.g.fillStyle(drink.color,1).fillRoundedRect(x+11,y+9,14,25,3).fillRect(x+15,y+4,6,7);
+      this.label(x+w/2,y+38,['Suối','Coca','Cam'][i],9,cream);this.label(x+w/2,y+50,String(drink.quantity),9,cream);
+      this.hit('drink-'+drink.id,x,y,w,h,enabled,()=>{this.runtime.attachDrink(drink.id);this.dirty=true;});
+    });
   }
   private queueInputs():readonly OrderQueueInput[]{
     if(this.runtime.productionActive)return this.runtime.tickets.filter(t=>t.id!==this.runtime.specialWelcome?.ticketId).map(t=>({...t,finalPrice:t.totalPrice,deliveryStatus:t.riderState==='waiting'?`Tới sau ${Math.ceil(t.riderRemaining)}s`:t.riderState==='arrived'?'Shipper đã tới':t.riderState==='staff'?'Nhân viên giao':'Chưa book shipper'}));
@@ -637,7 +655,7 @@ export class CozyScene extends Phaser.Scene {
     }
   }
   private customers():void{
-    if(this.runtime.productionActive&&this.runtime.queueCapacity===4)for(let i=4;i<6;i++){
+    if(this.runtime.productionActive&&this.runtime.queueCapacity<6)for(let i=this.runtime.queueCapacity;i<6;i++){
       const {x,y,w,h,centerX,centerY}=KITCHEN.customer(i);
       this.icon('queue-lock',centerX,centerY,26);
       this.label(centerX,120,'Chưa mở',8,wood);
@@ -677,7 +695,8 @@ export class CozyScene extends Phaser.Scene {
     const delivery=this.runtime.deliveryStatus,status=delivery.phase==='travel'?'Đang giao':delivery.phase==='return'?'Nhân viên về':delivery.phase==='waiting'?'Shipper tới':delivery.phase==='arrived'?'Shipper đã tới':'';
     const courierText=status?`${status} · ${Math.ceil(delivery.remaining)}s`:'';
     const appTicket=this.runtime.selectedTicket,book=detail?.source==='app'&&appTicket?.riderState==='none';
-    const notice=this.runtime.productionActive&&['Khách từ chối giá','Khách chưa thể đặt món.','Đã đủ 3 đơn'].some(prefix=>message.startsWith(prefix))?message:'';
+    const absentPrep=this.runtime.staffState.absentRoles.includes('prep');
+    const notice=absentPrep?'Phụ bếp bận hôm nay · Không tính lương':this.runtime.productionActive&&['Khách từ chối giá','Khách chưa thể đặt món.','Đã đủ 3 đơn'].some(prefix=>message.startsWith(prefix))?message:'';
     if(detail){
       this.graphics();this.art.pizza(33,164,13,recipeIngredients(detail.recipe));
       const row=(y:number,value:string,size:number,color:string)=>{const text=this.label(53,y,value,size,color,0,'left');const width=book?180:y===144&&courierText?146:282;if(text.width>width)text.setScale(width/text.width,1);return text;};
@@ -729,7 +748,7 @@ export class CozyScene extends Phaser.Scene {
   }
   private closeExpress():void{this.expressIngredient=null;this.expressLease?.release();this.expressLease=undefined;this.dirty=true;}
   private openQueueUpgradeNotice():void{
-    if(this.queueUpgradeNotice||!this.runtime.productionActive||this.runtime.queueCapacity!==4)return;
+    if(this.queueUpgradeNotice||!this.runtime.productionActive||this.runtime.queueCapacity>=6)return;
     this.queueUpgradeNotice=true;this.queueUpgradeLease=this.runtime.acquirePause('order');this.dirty=true;
   }
   private closeQueueUpgradeNotice():void{
@@ -838,7 +857,7 @@ export class CozyScene extends Phaser.Scene {
         new ReferenceStock(this,this.layer,(...args)=>this.hit(...args),render=>this.syncListHits(render)).draw({day:this.runtime.preparationDay,cash:this.runtime.state.cash,rows:stockRows(this.runtime.stockLots,this.runtime.preparationDay,id=>this.runtime.reserved(id)),filter:this.stockFilter,low:this.stockLow,expiryDays:this.stockExpiry,offset:this.stockOffset,drag:this.stockDrag,canScroll:()=>this.runtime.pauses.length===0,scroll:n=>{this.stockOffset=n;},setFilter:f=>this.setStockFilter(f),detail:id=>this.openStockLot(id),suggestions:()=>this.openStockPlanner(),market:()=>tab('market'),tab,pause:()=>this.hold('user')});return;
       }
       if(this.summaryTab==='shop'){
-        new ReferenceShop(this,this.layer,(...args)=>this.hit(...args)).draw({staff:this.runtime.staffState,employee:role=>this.openStaffHire(role),shop:this.runtime.shopState,item:id=>this.openShopItem(id),app:()=>this.openDeliveryApp('settings'),deliveryApp:{...this.runtime.deliveryApp,eventName:this.runtime.deliveryApp.nextEvent.name},day:this.runtime.preparationDay,cash:this.runtime.state.cash,page:this.shopPage,canAct:this.runtime.canSetPrices,ovenLevel:this.runtime.ovenLevel,queueCapacity:this.runtime.queueCapacity,ovenPrice:this.runtime.upgradePrice('oven'),queuePrice:this.runtime.upgradePrice('queue'),menuPage:this.shopMenuPage,pageMenu:page=>{this.shopMenuPage=page;this.dirty=true;},buy:id=>this.openRecipePurchase(id),configure:(id,percent,enabled)=>{this.applyMenu(id,percent,enabled);},recipes:RECIPE_CATALOG.map(r=>r.id).map(id=>({id,name:recipeName(id),price:this.runtime.customerProgress.prices[id],percent:this.runtime.customerProgress.pricePercents[id],cost:recipeIngredients(id).reduce((n,item)=>n+this.runtime.price(item),0),enabled:this.runtime.menuRecipes.includes(id),owned:this.runtime.ownedRecipes.includes(id),purchasePrice:recipeDefinition(id).purchasePrice})),open:page=>{this.shopPage=page;this.dirty=true;},price:id=>this.choosePrice(id),upgrade:kind=>this.openHubUpgrade(kind),tab,pause:()=>this.hold('user'),footer});return;
+        new ReferenceShop(this,this.layer,(...args)=>this.hit(...args)).draw({advertising:this.runtime.advertisingState,advertise:()=>this.openAdvertisingDialog(),drinks:()=>this.openDrinksDialog(),fridge:this.runtime.fridgeState,buyFridge:()=>this.openFridgeDialog(),staff:this.runtime.staffState,employee:role=>this.openStaffHire(role),shop:this.runtime.shopState,item:id=>this.openShopItem(id),app:()=>this.openDeliveryApp('settings'),deliveryApp:{...this.runtime.deliveryApp,eventName:this.runtime.deliveryApp.nextEvent.name},day:this.runtime.preparationDay,cash:this.runtime.state.cash,page:this.shopPage,canAct:this.runtime.canSetPrices,ovenLevel:this.runtime.ovenLevel,queueCapacity:this.runtime.queueCapacity,queueLevel:this.runtime.queueLevel,queueVisitorBonus:this.runtime.queueVisitorBonus,nextQueueCapacity:this.runtime.nextQueueCapacity,ovenPrice:this.runtime.upgradePrice('oven'),queuePrice:this.runtime.upgradePrice('queue'),menuPage:this.shopMenuPage,pageMenu:page=>{this.shopMenuPage=page;this.dirty=true;},buy:id=>this.openRecipePurchase(id),configure:(id,percent,enabled)=>{this.applyMenu(id,percent,enabled);},recipes:RECIPE_CATALOG.map(r=>r.id).map(id=>({id,name:recipeName(id),price:this.runtime.customerProgress.prices[id],percent:this.runtime.customerProgress.pricePercents[id],cost:recipeIngredients(id).reduce((n,item)=>n+this.runtime.price(item),0),enabled:this.runtime.menuRecipes.includes(id),owned:this.runtime.ownedRecipes.includes(id),purchasePrice:recipeDefinition(id).purchasePrice})),open:page=>{this.shopPage=page;this.dirty=true;},price:id=>this.choosePrice(id),upgrade:kind=>this.openHubUpgrade(kind),tab,pause:()=>this.hold('user'),footer});return;
       }
       if(this.summaryTab==='missions'){
         new ReferenceMissions(this,this.layer,(...args)=>this.hit(...args)).draw({day:this.runtime.preparationDay,cash:this.runtime.state.cash,progress:this.runtime.progression,ending:!!summary?.ending,tab,pause:()=>this.hold('user'),footer});return;
@@ -853,6 +872,9 @@ export class CozyScene extends Phaser.Scene {
   }
   private resetModalControls(){this.controls=[];this.visibleActions=[];for(const zone of this.hitZones.values())zone.disableInteractive();}
   private closeHubPanels():void{
+    this.advertisingDialog?.lease.release();this.advertisingDialog=undefined;
+    this.drinksDialog?.lease.release();this.drinksDialog=undefined;
+    this.fridgeDialog?.lease.release();this.fridgeDialog=undefined;
     this.staffHireDialog?.lease.release();this.staffHireDialog=undefined;
     this.shopItemDialog?.lease.release();this.shopItemDialog=undefined;
     this.recipePurchase?.lease.release();this.recipePurchase=undefined;this.plannerInput?.input.destroy();this.plannerInput=undefined;
@@ -894,18 +916,62 @@ export class CozyScene extends Phaser.Scene {
   }
   private openHubUpgrade(kind:'oven'|'queue'):void{
     if(!this.runtime.canSetPrices)return;const cost=this.runtime.upgradePrice(kind);if(cost===null)return;
-    this.hubUpgrade={kind,cost,commandId:`upgrade:${this.purchaseScope}:${kind}:${kind==='oven'?this.runtime.ovenLevel:this.runtime.queueCapacity}`,lease:this.runtime.acquirePause('order')};this.dirty=true;
+    this.hubUpgrade={kind,cost,commandId:`upgrade:${this.purchaseScope}:${kind}:${kind==='oven'?this.runtime.ovenLevel:this.runtime.queueLevel}`,lease:this.runtime.acquirePause('order')};this.dirty=true;
   }
   private openStaffHire(role:StaffRole):void{
     if(!this.runtime.canSetPrices||this.staffHireDialog||!STAFF_CATALOG.some(entry=>entry.role===role))return;
     this.closeHubPanels();this.staffHireDialog={role,commandId:`staff:${this.purchaseScope}:${role}`,lease:this.runtime.acquirePause('order')};this.dirty=true;
+  }
+  private openDrinksDialog():void{
+    if(!this.runtime.canSetPrices)return;this.closeHubPanels();this.drinksDialog={lease:this.runtime.acquirePause('order')};this.dirty=true;
+  }
+  private openAdvertisingDialog():void{
+    if(!this.runtime.canSetPrices)return;this.closeHubPanels();this.advertisingDialog={lease:this.runtime.acquirePause('order')};this.dirty=true;
+  }
+  private drawAdvertisingDialog():void{
+    const ad=this.runtime.advertisingState;this.summaryModalVeil();this.notificationFrame(['advertising-close','advertising-buy'],250,420,390);
+    this.label(180,207,'Quảng bá quán',23,ink);
+    const f=ad.forecast;
+    this.label(180,275,f?`Ngày ${f.day}: ${f.groups} tốp · ${f.shopVisits} lượt khách quán\n${f.appOrders} đơn app · Tổng ${f.total} lượt\nĐã trả phí hôm nay.\nDự báo cập nhật theo menu và app hiện tại.`:`100 xu / ngày để xem lịch khách hôm đó.\nXem số tốp, lượt khách quán và đơn app.\nKhông tăng lượng khách; nước không liên quan.\n${ad.missing?'Còn thiếu '+ad.missing+' xu.':'Đủ tiền mua.'}`,15,ink,286);
+    this.button('advertising-close',40,430,132,48,'Quay lại',true,()=>this.closeHubPanels(),UI.dark);
+    this.button('advertising-buy',188,430,132,48,ad.bought?'Đã mua':'Mua',!ad.bought&&!ad.missing&&!this.runtime.pauses.some(p=>p!=='order'),()=>{
+      const command='advertising:'+this.purchaseScope+':'+this.runtime.preparationDay;this.closeHubPanels();if(this.campaignSession)this.campaignSession.buyAdvertising(command);else this.runtime.buyAdvertising(command);this.dirty=true;
+    });
+  }
+  private lotteryDialog():void{
+    const pending=this.runtime.lotteryPending!;this.notificationFrame(['lottery-decline'],245,495,445);
+    this.label(180,207,'Giúp người bán vé số',21,ink);
+    this.label(180,265,'Một người vô gia cư nhờ bạn mua vé số.\n30 xu / tờ · Cuối ngày mỗi tờ nhận 300 xu.\nCơ hội này chỉ một lần trong chiến dịch 30 ngày.\nBạn có thể từ chối.',14,ink,286);
+    pending.counts.forEach((count,i)=>{this.button('lottery-'+count,42,340+i*43,276,38,`${count} tờ · ${count*pending.ticketPrice} xu`,pending.cash>=count*pending.ticketPrice&&!this.runtime.pauses.some(p=>p!=='lottery'),()=>{this.runtime.resolveLottery(count);this.dirty=true;});});
+    this.button('lottery-decline',76,475,208,40,'Từ chối',!this.runtime.pauses.some(p=>p!=='lottery'),()=>{this.runtime.resolveLottery(0);this.dirty=true;},UI.dark);
+  }
+  private drawDrinksDialog():void{
+    this.summaryModalVeil();this.notificationFrame(['drinks-close'],245,475,415);this.label(180,207,'Kho nước',23,ink);
+    this.runtime.drinkStock.forEach((drink,i)=>{const y=266+i*58;this.label(104,y,drink.name+' · '+drink.quantity+' chai',13,ink,130);this.label(104,y+19,'Nhập '+drink.purchasePrice+' / bán '+drink.salePrice+' xu',10,muted,130);
+      const buy=(quantity:number)=>{const command='drink-buy:'+this.purchaseScope+':'+(++this.purchaseSerial);this.closeHubPanels();if(this.campaignSession)this.campaignSession.buyDrink(drink.id,quantity,command);else this.runtime.buyDrink(drink.id,quantity,command);this.dirty=true;};
+      this.button('drink-buy-'+drink.id,184,y-4,58,40,'+1',this.runtime.state.cash>=drink.purchasePrice,()=>buy(1));this.button('drink-buy-five-'+drink.id,250,y-4,64,40,'+5',this.runtime.state.cash>=drink.purchasePrice*5,()=>buy(5));
+    });this.button('drinks-close',80,445,200,48,'Quay lại',true,()=>this.closeHubPanels(),UI.dark);
+  }
+  private openFridgeDialog():void{
+    if(!this.runtime.canSetPrices||this.runtime.fridgeState.owned)return;
+    this.closeHubPanels();this.fridgeDialog={commandId:`fridge:${this.purchaseScope}`,lease:this.runtime.acquirePause('order')};this.dirty=true;
+  }
+  private drawFridgeDialog():void{
+    const dialog=this.fridgeDialog!,preview=this.runtime.fridgeState;
+    this.summaryModalVeil();this.notificationFrame(['fridge-cancel','fridge-confirm'],250,420,390);
+    this.label(180,207,'Mua tủ lạnh',23,ink);
+    this.label(180,275,`${preview.price} xu · Còn ${this.runtime.state.cash-preview.price} xu\nBảo quản thực phẩm lâu gấp 4.\nÁp dụng cả lô còn dùng được trong kho.\nKhông phục hồi đồ đã hết hạn hoặc đã bỏ.`,15,ink,286);
+    this.button('fridge-cancel',40,430,132,48,'Quay lại',true,()=>this.closeHubPanels(),UI.dark);
+    this.button('fridge-confirm',188,430,132,48,'Mua',!preview.owned&&preview.missing===0&&!this.runtime.pauses.some(reason=>reason!=='order'),()=>{
+      this.closeHubPanels();if(this.campaignSession)this.campaignSession.buyFridge(dialog.commandId);else this.runtime.buyFridge(dialog.commandId);this.dirty=true;
+    });
   }
   private staffDialog():void{
     const dialog=this.staffHireDialog!,employee=STAFF_CATALOG.find(entry=>entry.role===dialog.role)!,preview=this.runtime.staffPreview(dialog.role);
     const duties={prep:'Thêm nguyên liệu đúng món; không tự mua hàng.',oven:'Nướng và lấy bánh đúng lúc, theo cấp lò hiện có.',box:'Đóng hộp và tích đủ bánh cho đơn app.',delivery:'Giao đủ hộp; 1 đơn/chuyến, trở về mới nhận tiếp.'};
     this.summaryModalVeil();this.notificationFrame(['staff-hire-cancel','staff-hire-confirm'],250,420,430);
     this.label(180,207,employee.name,23,ink);
-    const body=`${preview.owned?'Đã thuê · Vai trò cố định':`Thuê: ${employee.price.toLocaleString('vi-VN')} xu`}\nLương: ${employee.dailyWage} xu/người/ngày\n${duties[dialog.role]}\n${preview.owned?'Tự làm đúng nghề khi mở ca.':!preview.available?`Mở thuê từ ngày ${STAFF_RULES.unlockDay}.`:preview.missing?`Còn thiếu ${preview.missing.toLocaleString('vi-VN')} xu.`:'Đủ tiền thuê. Mỗi loại tối đa 1 người.'}\nThu lương cuối ngày; thiếu giữ khoản chưa trả.`;
+    const body=`${preview.owned?'Đã thuê · Vai trò cố định':`Thuê: ${employee.price.toLocaleString('vi-VN')} xu`}\nLương hôm nay: ${preview.dailyWage} xu/người\n${duties[dialog.role]}\n${preview.owned?(preview.absent?'Bận một ngày · Miễn lương hôm nay.':'Tự làm đúng nghề khi mở ca.'):!preview.available?`Mở thuê từ ngày ${STAFF_RULES.unlockDay}.`:preview.missing?`Còn thiếu ${preview.missing.toLocaleString('vi-VN')} xu.`:'Đủ tiền thuê. Mỗi loại tối đa 1 người.'}\nThu lương cuối ngày; thiếu giữ khoản chưa trả.`;
     this.label(180,265,body,15,ink,286);this.game.canvas.dataset.staffHire=JSON.stringify(preview);
     this.button('staff-hire-cancel',40,430,132,48,'Quay lại',true,()=>this.closeHubPanels(),UI.dark);
     this.button('staff-hire-confirm',188,430,132,48,preview.owned?'Đã thuê':'Thuê',!preview.owned&&preview.available&&preview.missing===0&&!this.runtime.pauses.some(reason=>reason!=='order'),()=>{
@@ -1145,7 +1211,7 @@ export class CozyScene extends Phaser.Scene {
   private overlay():void{
     if(this.testCodePanel){this.resetModalControls();this.testCodePanel.draw(this,this.layer,(id,rect,enabled,action)=>this.hit(id,rect.x,rect.y,rect.width,rect.height,enabled,action));return;}
     const pauses=this.runtime.pauses;
-    const reasons=`Đang dừng: ${pauses.map(p=>({tutorial:'hướng dẫn',user:'nghỉ tay',visibility:'ẩn màn hình',orientation:'xoay ngang',order:'đọc đơn',gap:'gián đoạn',success:'hoàn thành',discard:'xác nhận bỏ bánh',delivery:'xác nhận giao món',menu:'menu chính',bargain:'mặc cả',help:'lựa chọn giúp đỡ/lời cảm ơn',save:'lưu tiến độ','special-welcome':'chào khách nổi tiếng'}[p])).join(', ')}`;
+    const reasons=`Đang dừng: ${pauses.map(p=>({tutorial:'hướng dẫn',user:'nghỉ tay',visibility:'ẩn màn hình',orientation:'xoay ngang',order:'đọc đơn',gap:'gián đoạn',success:'hoàn thành',discard:'xác nhận bỏ bánh',delivery:'xác nhận giao món',menu:'menu chính',bargain:'mặc cả',help:'lựa chọn giúp đỡ/lời cảm ơn',save:'lưu tiến độ',lottery:'chọn vé số','special-welcome':'chào khách nổi tiếng'}[p])).join(', ')}`;
     if(this.endDayConfirmation&&this.scenePauses.has('user')){
       this.notificationFrame(['cancel-end-day','confirm-end-day'],270,480,450);
       this.label(180,231,`Kết thúc ngày ${this.runtime.day}?`,21,ink);

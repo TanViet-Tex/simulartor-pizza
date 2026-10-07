@@ -1,3 +1,4 @@
+import type {DrinkId} from '../config/drinkCatalog';
 import {TEST_CODE,normalizeTestCode} from '../domain/TestCode';
 import {campaignEventSeed} from '../domain/CampaignEvents';
 import {CozyRuntime} from './CozyRuntime';
@@ -104,6 +105,9 @@ export class CozyCampaignSession {
     return this.stageShop(r=>r.claimTestCode(value),'test-code:VIETVUIVE',true);
   }
   hireStaff(role:import('../config/staffCatalog').StaffRole,commandId:string):boolean {return this.stageShop(r=>r.hireStaff(role,commandId),commandId);}
+  buyDrink(id:DrinkId,quantity:number,commandId:string):boolean {return this.stageShop(r=>r.buyDrink(id,quantity,commandId),commandId);}
+  buyFridge(commandId:string):boolean {return this.stageShop(r=>r.buyFridge(commandId),commandId);}
+  buyAdvertising(commandId:string):boolean {return this.stageShop(r=>r.buyAdvertising(commandId),commandId);}
   private stageShop(action:(candidate:CozyRuntime)=>boolean,commandId:string,testCode=false):boolean {
     if(!this.allowed()||!this.current||!(testCode?this.current.canClaimTestCode:this.current.canSetPrices)||this.current.shopCommandUsed(commandId))return false;
     if(this.status==='temporary'){const accepted=action(this.current);if(accepted)this.publish();return accepted;}

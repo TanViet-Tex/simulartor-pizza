@@ -138,14 +138,14 @@ test('real gameplay effects produce output above the quieter music mix',async({p
   await tap(page,'sauce');await expect.poll(()=>level('sauce')).toBeGreaterThan(.01);
   await tap(page,'cheese');await tap(page,'bake');await expect.poll(()=>level('oven')).toBeGreaterThan(.01);
   let state=await snapshot(page);
-  expect(state.streams.find((s:any)=>s.name==='oven').effectiveGain).toBe(graph?6:1);
-  expect(state.streams.find((s:any)=>s.name==='music2').effectiveGain).toBeCloseTo(.15);
+  expect(state.streams.find((s:any)=>s.name==='oven').effectiveGain).toBeCloseTo(graph?5.4:.9);
+  expect(state.streams.find((s:any)=>s.name==='music2').effectiveGain).toBeCloseTo(.20);
   await expect.poll(()=>level('music2')).toBeGreaterThan(.001);
   await page.evaluate(()=>(window as any).audioFixture.runtime.advanceElapsed(13000));
   await expect.poll(()=>level('arrival')).toBeGreaterThan(.01);
   await page.evaluate(()=>(window as any).audioFixture.audio.toggleMute());state=await snapshot(page);
   for(const name of ['sauce','oven','arrival'])expect(state.streams.find((s:any)=>s.name===name).effectiveGain).toBe(0);
-  expect(state.streams.find((s:any)=>s.name==='music2').effectiveGain).toBeCloseTo(.15);
+  expect(state.streams.find((s:any)=>s.name==='music2').effectiveGain).toBeCloseTo(.20);
   expect(state.streams.find((s:any)=>s.name==='music2').paused).toBe(false);
   if(graph)await page.evaluate(()=>{const f=(window as any).audioFixture;clearInterval(f.meterTimer);for(const meter of Object.values(f.meters) as any[]){meter.analyser.disconnect();meter.silent.disconnect();}});
 });

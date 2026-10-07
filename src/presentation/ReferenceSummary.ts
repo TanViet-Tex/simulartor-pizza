@@ -1,4 +1,5 @@
 import {RECIPE_CATALOG} from '../config/recipeCatalog';
+import {drinkDefinition} from '../config/drinkCatalog';
 import Phaser from 'phaser';
 import type {CozyDaySummary,CozyReview} from '../domain/CozyCheckpoint';
 import {ingredientName} from '../domain/CozyStock';
@@ -165,12 +166,13 @@ export class ReferenceSummary {
   }
   financeModal(report:CozyDaySummary):void{
     const viewport=this.modalFrame('finance',report.day),a=report.accounts;
+    const drinkSales=report.reviews.flatMap(r=>r.soldDrink?[`${drinkDefinition(r.soldDrink.id).name} × 1   ${r.soldDrink.price} xu`]:[]);
     const pill=this.scene.add.graphics().fillStyle(0xe9ebcf).fillRoundedRect(31,103,290,40,12).lineStyle(1,0xc4cea7).strokeRoundedRect(31,103,290,40,12);this.layer.add(pill);
     this.text(180,115,`Lợi nhuận: ${report.profit>0?'+':''}${report.profit} xu`,20,report.profit<0?'#ad432e':green,280,true);
     const sections:[string,string[]][]=[
-      ...(a.rewards?[[`Thưởng · ${a.rewards} xu`,[`VIP: ${report.reviews.reduce((sum,review)=>sum+(review.vip?.coins??0),0)} xu`,`Mục tiêu/nhiệm vụ/lời cảm ơn: ${a.rewards-report.reviews.reduce((sum,review)=>sum+(review.vip?.coins??0),0)} xu`,'Thưởng là dòng tiền riêng, không cộng doanh thu pizza hoặc lợi nhuận bán hàng.']] as [string,string[]]]:[]),
-      [`Doanh thu · ${a.sales} xu`,report.salesByRecipe===undefined?['Bản lưu cũ chưa có chi tiết theo món.']:report.salesByRecipe.length?report.salesByRecipe.map(r=>`${recipeNames[r.recipe]} × ${r.quantity}   ${r.revenue} xu`):['Chưa có món bán thành công.']],
-      [`Giá vốn nguyên liệu · ${a.consumed} xu`,report.costByIngredient===undefined?['Bản lưu cũ chưa có chi tiết nguyên liệu.']:report.costByIngredient.length?report.costByIngredient.map(r=>`${ingredientName(r.ingredient)}   ${r.cost} xu`):['Chưa dùng nguyên liệu.']],
+      ...(a.rewards?[[`Thưởng · ${a.rewards} xu`,[`VIP: ${report.reviews.reduce((sum,review)=>sum+(review.vip?.coins??0),0)} xu`,...(report.lotteryPrize?[`Vé số: ${report.lotteryPrize} xu`]:[]),`Mục tiêu/nhiệm vụ/lời cảm ơn: ${a.rewards-report.reviews.reduce((sum,review)=>sum+(review.vip?.coins??0),0)-(report.lotteryPrize??0)} xu`,'Thưởng là dòng tiền riêng, không cộng doanh thu pizza hoặc lợi nhuận bán hàng.']] as [string,string[]]]:[]),
+      [`Doanh thu · ${a.sales} xu`,[...(report.salesByRecipe===undefined?['Bản lưu cũ chưa có chi tiết theo món.']:report.salesByRecipe.length?report.salesByRecipe.map(r=>`${recipeNames[r.recipe]} × ${r.quantity}   ${r.revenue} xu`):drinkSales.length?[]:['Chưa có món bán thành công.']),...drinkSales]],
+      [`Giá vốn nguyên liệu · ${a.consumed} xu`,[...(report.costByIngredient===undefined?['Bản lưu cũ chưa có chi tiết nguyên liệu.']:report.costByIngredient.length?report.costByIngredient.map(r=>`${ingredientName(r.ingredient)}   ${r.cost} xu`):report.drinkCost?[]:['Chưa dùng nguyên liệu.']),...(report.drinkCost?[`Nước đã phục vụ: ${report.drinkCost} xu`]:[])]],
       ['Chi phí khác',[`Thuê quán: ${a.rent} xu`,`Lương: ${a.wages} xu`,`Sửa chữa: ${a.repairs} xu`,`Phí giao hàng: ${report.deliveryFees??0} xu`,...(a.eventLoss?[`Sự kiện A: ${a.eventLoss} xu`]:[]),`Khác: ${a.other-(report.deliveryFees??0)-(a.eventLoss??0)} xu`,`Hàng hết hạn: ${a.expired} xu`,'Bánh cháy/bỏ đã nằm trong giá vốn, không trừ lần hai.']],
       ['Đối chiếu lợi nhuận',[`${a.sales} − ${a.consumed} − ${a.expired} − ${a.rent+a.wages+a.repairs+a.other} = ${a.profit} xu`,`Giá vốn món tặng: ${a.giftCost} xu, đã tính trong giá vốn.`]],
       ['Dòng tiền riêng',[`Số dư đầu ngày: ${a.startingCash} xu`,`Tiền bán hàng: +${a.sales} xu`,`Thưởng: +${a.rewards} xu`,...(a.supportFunds?[`Hỗ trợ test: +${a.supportFunds} xu`]:[]),`Nhập kho: −${a.purchases} xu`,`Nâng cấp / thuê người: −${a.capitalPurchases??0} xu`,`Lương thực trả: ${a.wagesPaid??a.wages} xu`,`Lương chưa trả: ${report.payroll?.endingArrears??0} xu`,`Chi phí đã trả: −${a.rent+(a.wagesPaid??a.wages)+a.repairs+a.other} xu`,`Số dư cuối ngày: ${a.endingCash} xu`]],

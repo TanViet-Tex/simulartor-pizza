@@ -43,11 +43,17 @@ _Tệp này chứa các quy tắc và patterns quan trọng mà AI agent phải 
 
 ### Epic 8 — quyết định 2026-10-07
 
-Không đào tạo nhân viên, không công thức gia truyền. Nhân viên chỉ thuê theo nghề/làm việc/trả lương cuối ngày; nhân viên nguyên liệu bận một ngày sau mỗi 5–7 ngày đã xác nhận nhưng chưa triển khai, không tự sửa lương hoặc automation. Khách đặc biệt có khung/avatar/thảm đỏ/thoại hư cấu, chưa voice và không thêm thưởng mới; giữ luật VIP hiện có. Xem implementation-artifacts/requirement-epic8-next-scope.md và spec-special-customer-presentation.md. Ba ô nước thay lò thứ hai gồm nước suối, Coca, nước cam; chưa triển khai nước trong lượt khách đặc biệt.
+Cập nhật triển khai: phụ bếp làm 5–7 ngày theo seed rồi bận một ngày, miễn lương ngày bận nhưng giữ nợ cũ. Vé số giúp người vô gia cư xuất hiện một lần trong chiến dịch 30 ngày: chọn 5/10/20 tờ, 30 xu/tờ, mọi tờ mua nhận 300 xu cuối ngày một lần. Các ghi chú chưa triển khai bên dưới là lịch sử, được thay bằng spec-fridge-and-prep-absence.md và spec-advertising-and-lottery-help.md.
+
+Không đào tạo nhân viên, không công thức gia truyền. Nhân viên thuê theo nghề, trả lương cuối ngày; chỉ phụ bếp có ngày bận miễn lương theo chu kỳ seeded. Khách đặc biệt giữ avatar/khung/thảm đỏ/lời thoại hư cấu, chưa voice hoặc thưởng mới.
 
 ### Epic 7 — phạm vi tiếp theo, quyết định 2026-10-07
 
-Đang chuẩn bị triển khai: bỏ lò thứ hai/thay mục bằng 3 ô nước (công dụng chưa chốt); tủ lạnh kéo dài hạn bảo quản gấp4 (cần chốt xử lý từng lô/giá); bỏ mục Bàn làm pizza, món thay cập nhật sau, không bỏ bàn thao tác hoặc Bàn ghế khách hiện có. Mở rộng lần 1: 4→5 ô, +10% khách quầy; lần 2: 5→6 ô, tổng +30% khách quầy; burst2/3 độc lập sức chứa giữ nguyên, không tự nhân app. Quảng bá có phí/hiện số tốp khách hôm đó từ cùng lịch seeded, chỉ mở thông tin, không tăng khách. Không có hư hỏng/sửa chữa trongEpic7; không thay sự kiện mất tiềnEpic9. Quyết định này thay các đề xuất cũ tương ứng bên dưới; chưa có code/storyready và không tự gán giá/tác dụng chưa chốt. Xem implementation-artifacts/requirement-epic7-next-scope.md.
+Cập nhật triển khai: nước suối/Coca/nước cam nhập 8/10/12, bán 20/25/30 xu, ba ô thay lò thứ hai; khách quán có thể gọi một chai kèm pizza, app không gọi nước. Tủ lạnh 3000 xu bảo quản ×4 cả lô còn dùng được. Mở rộng 6000/10000 xu, 4→5→6 ô, +10% rồi tổng +30% khách quán, cộng trên gốc cùng trang trí; save cũ đã mua 6 ô giữ quyền này. Quảng bá 100 xu/ngày trong chuẩn bị chỉ mở dự báo seeded. Bỏ mục Bàn làm pizza; món thay vẫn để sau. Những điểm cần chốt bên dưới là lịch sử, được thay bằng bốn spec triển khai tương ứng.
+
+Âm thanh cập nhật: nhạc nền 20%; tiếng tiền 60% effectsVolume (giảm 20% từ 75%); tiếng lò chạy và tinh giảm 10%, tiếng khách đến giảm 10%. Các hiệu ứng khác giữ nguyên; pause/mute/voice không đổi.
+
+Luật Epic7 trên đã triển khai trong các spec mới. Không có hư hỏng hoặc sửa chữa thiết bị; giữ sự kiện mất tiền Epic9. Bàn thao tác và Bàn ghế khách giữ nguyên; chỉ món thay mục Bàn làm pizza còn để sau.
 
 ### Đồng hồ và ngân sách lượt đơn — yêu cầu 2026-10-07
 

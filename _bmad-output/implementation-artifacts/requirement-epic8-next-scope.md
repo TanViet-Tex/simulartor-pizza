@@ -6,9 +6,11 @@ status: decisions-partially-confirmed
 
 # Epic 8 — quyết định mới
 
+Đã triển khai ngày phụ bếp bận theo seed, miễn lương ngày bận và giữ nợ cũ. Nhiệm vụ ẩn được chọn là giúp người vô gia cư mua vé số một lần/30 ngày: 5/10/20 tờ, 30 xu/tờ, tất cả tờ mua nhận300xu/tờ cuối ngày. Xem spec-fridge-and-prep-absence.md và spec-advertising-and-lottery-help.md. Các gợi ý khác dưới đây vẫn để sau, không triển khai.
+
 - Không đào tạo nhân viên; chỉ thuê theo nghề, làm công việc và trả lương khi kết thúc ngày. Giữ luồng lương đã triển khai, không tự thêm tăng lương/mệt/giữ người.
 - Không thêm công thức gia truyền. Các đề xuất cũ về nhánh này không còn thuộc phần cần triển khai.
-- Đã xác nhận: cứ sau 5–7 ngày, chỉ nhân viên nguyên liệu/phụ bếp bận một ngày. Chưa triển khai nhánh này; còn chốt cách chọn khoảng ngày và tiền lương ngày bận, không đổi automation trong lượt khách đặc biệt.
+- Đã triển khai: sau 5–7 ngày làm, phụ bếp bận một ngày; ngày bận miễn lương nhưng giữ nợ cũ, không thao tác tự động.
 - Khách nổi tiếng có chào bằng thảm đỏ; thực thi phần avatar/khung/hiệu ứng/thoại theo [spec khách đặc biệt](spec-special-customer-presentation.md). Chưa voice, chưa thêm hiệu ứng kinh tế KOL hoặc thưởng mới.
 
 ## Gợi ý nhiệm vụ ẩn — chưa duyệt hoặc triển khai

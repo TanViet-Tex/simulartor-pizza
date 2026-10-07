@@ -57,9 +57,9 @@ describe('direct kitchen gameplay',()=>{
     expect(r.resolveBargain(accept)).toBe(true);expect(r.lastResult!.price).toBe(accept?45:50);if(!accept)expect(r.lastResult!.stars).toBeLessThan(3);
     expect(r.customerMemory[accept?'accepted':'declined']).toHaveLength(1);expect(r.resolveBargain(accept)).toBe(false);expect(r.state.cash).toBe(cash+(accept?45:50));
   });
-  it('upgrades queue to six only in preparation and prevents duplicate charges',()=>{
+  it('upgrades queue to five only in preparation and prevents duplicate charges',()=>{
     const r=CozyRuntime.restoreCheckpoint(fundedShopCheckpoint(),false,schedule('regular',7))!;expect(r.dispatch({type:'shop.upgrade',kind:'queue',commandId:'seats'})).toBe(true);const cash=r.state.cash;
-    expect(r.dispatch({type:'shop.upgrade',kind:'queue',commandId:'seats'})).toBe(false);expect(r.state.cash).toBe(cash);r.openShop();time(r,6);expect(r.tickets).toHaveLength(6);expect(r.queueCapacity).toBe(6);
+    expect(r.dispatch({type:'shop.upgrade',kind:'queue',commandId:'seats'})).toBe(false);expect(r.state.cash).toBe(cash);r.openShop();time(r,6);expect(r.tickets).toHaveLength(5);expect(r.queueCapacity).toBe(5);
     expect(r.dispatch({type:'shop.upgrade',kind:'oven',commandId:'hot'})).toBe(false);
   });
   it('persists an oven upgrade, then uses four to six seconds without charging it twice',()=>{

@@ -39,7 +39,7 @@ describe('Cozy latest boundary validation',()=>{
   });
   it('continues Day3 at a valid Day4 boundary without replaying closed days',()=>{
     const r=new CozyRuntime(false,true,ORDER_TEST_SCHEDULE);
-    for(let day=1;day<=3;day++){for(const id of ['dough','sauce','cheese'] as const)r.buy(id,1);if(day===1)r.openShop();else r.openNextDay();expect(r.closeDay()).toBe(true);}
+    for(let day=1;day<=3;day++){for(const id of ['dough','sauce','cheese'] as const)r.buy(id,1);if(day===1)r.openShop();else r.openNextDay();r.resolveLottery(0);expect(r.closeDay()).toBe(true);}
     const s=r.exportCheckpoint(),loaded=CozyRuntime.restoreCheckpoint(s)!;expect(s).toMatchObject({day:4,terminal:false});expect(loaded.day).toBe(4);expect(loaded.daySummary).toBeNull();expect(loaded.openNextDay()).toBe(false);expect(loaded.openShop()).toBe(true);expect(loaded.dispatch({type:'reset'})).toBe(false);
   });
 });

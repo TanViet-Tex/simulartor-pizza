@@ -9,7 +9,7 @@ export function fundedShopCheckpoint(minCash=18000):CozyCheckpoint {
  for(let day=1;r.state.cash<minCash&&day<=30;day++){
   const count=day===1?15:30;
   for(const ingredient of ['dough','sauce','cheese'] as const)r.buy(ingredient,count);
-  if(day===1)r.openShop();else r.openNextDay();r.dismissThanks();
+  if(day===1)r.openShop();else r.openNextDay();r.dismissThanks();r.resolveLottery(0);
   for(let i=0;i<count;i++){
    r.dismissThanks();
    for(const ingredient of ['dough','sauce','cheese'] as const)r.dispatch({type:'ingredient',ingredient});

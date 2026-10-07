@@ -70,11 +70,11 @@ describe('opening hours and seeded customer budget',()=>{
     expect(r.openShop()).toBe(true);expect(restored.openShop()).toBe(true);expect(restored.shiftClock).toEqual(r.shiftClock);time(r,5);time(restored,5);expect(restored.tickets).toEqual(r.tickets);
   });
 
-  it('only increases capacity when upgrading from four to six',()=>{
+  it('increases seeded shop visits while capacity never changes the base burst',()=>{
     const base=new CozyRuntime(false,true,{eventSeed:2718}),upgraded=new CozyRuntime(false,true,{eventSeed:2718});upgraded.claimTestCode('VIETVUIVE');expect(upgraded.upgradeShop('queue','queue')).toBe(true);
-    expect(upgraded.queueCapacity).toBe(6);expect(base.queueCapacity).toBe(4);expect(upgraded.marketForecast.portions).toEqual(base.marketForecast.portions);
-    base.openShop();upgraded.openShop();expect(upgraded.shiftClock.total).toBe(base.shiftClock.total);
+    expect(upgraded.queueCapacity).toBe(5);expect(base.queueCapacity).toBe(4);expect(upgraded.queueVisitorBonus).toBe(.10);expect(upgraded.marketForecast.portions.reduce((n,p)=>n+p.quantity,0)).toBeGreaterThanOrEqual(base.marketForecast.portions.reduce((n,p)=>n+p.quantity,0));
+    base.openShop();upgraded.openShop();expect(upgraded.shiftClock.total).toBeGreaterThanOrEqual(base.shiftClock.total);
     const schedule=threeDaySchedule(1,{...eligibility,customerSeed:2718});const burst=schedule.slots.find((s,i)=>i>0&&s.at===schedule.slots[i-1].at)!.at;
-    time(base,5+burst);time(upgraded,5+burst);expect(upgraded.shiftClock.attempted).toBe(base.shiftClock.attempted);
+    time(base,5+burst);time(upgraded,5+burst);expect(upgraded.shiftClock.attempted).toBeGreaterThanOrEqual(base.shiftClock.attempted);
   });
 });

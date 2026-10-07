@@ -19,7 +19,9 @@ Tài liệu này ghi yêu cầu mới để chuẩn bị triển khai, chưa ch�
 - **Quảng bá có trả tiền, chỉ cho xem trước số tốp/lượt khách hôm đó, không tăng lượng khách.** Số liệu lấy từ lịch seeded mà runtime thật sẽ dùng; phân biệt tốp, lượt đơn và số pizza, không hứa nhận đủ khi hàng chờ đầy. Mức phí, thời điểm mua và phạm vi quầy/app còn cần chốt.
 - **Không có hư hỏng/sửa chữa** trong Epic 7. Bỏ nhánh thiết kế, story và cơ chế ngẫu nhiên cho thiết bị hỏng. Quyết định này không thay các sự kiện mất tiền thuộc Epic 9.
 
-## Đang cần trả lời
+## Các quyết định cũ — đã được chốt
+
+Đã triển khai theo bốn spec mới: nước nhập8/10/12 bán20/25/30 kèm pizza; tủ lạnh3000xu áp dụng lô còn dùng được; mở rộng cộng bonus trên gốc cùng trang trí; quảng bá100xu/ngày trước ca, chỉ mở thông tin tốp/quầy/app. Các câu hỏi bên dưới lưu lịch sử, không còn chặn triển khai. Chỉ món thay Bàn làm pizza vẫn chờ cập nhật từ người dùng.
 
 1. Mở rộng đã chốt 4→5→6 ô, bonus +10% rồi tổng +30%; còn chốt cách cộng với trang trí. Giá đã có: lần 1 6000 xu, lần 2 10000 xu.
 2. Quảng bá chỉ xem trước, không tăng khách; cần bổ sung mức phí, phạm vi quầy/app và thời điểm sử dụng trước story triển khai.

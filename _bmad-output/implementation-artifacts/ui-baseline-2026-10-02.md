@@ -13,6 +13,8 @@ Dùng bộ 20 avatar và danh sách tên/thoại do người dùng cung cấp. A
 
 ### Ba ô nước thay lò thứ hai — yêu cầu 2026-10-07
 
+Đã triển khai ba ô nước tại vùng lò thứ hai, nhập kho qua mục Thiết bị. Giữ lò thứ nhất, thớt, hàng nguyên liệu và nút thao tác. Giá nhập 8/10/12, bán 20/25/30 xu; chọn đúng chai cho đơn hiện tại và giao chung pizza. Quảng bá nằm trong panel mở rộng hiện có; dialog vé số dùng khung chung. Ảnh kiểm tra mới phục vụ xem xét, không tự coi đã được người dùng duyệt.
+
 Người dùng yêu cầu thay khu vực lò nướng thứ hai bằng 3 ô nước: nước suối, Coca, nước cam. Đây là thay đổi UI được yêu cầu cho đợt Epic 7 tiếp theo, chưa triển khai hoặc duyệt hình cuối. Giữ lò thứ nhất và bố cục/phong cách các phần khác; chưa tự gán giá hay luật phục vụ. Xem [phạm vi Epic 7](requirement-epic7-next-scope.md).
 
 ### Màu đậm, chữ rõ và Menu & Giá bán — yêu cầu 2026-10-07

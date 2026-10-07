@@ -32,17 +32,27 @@ describe('Epic7 shop investment',()=>{
   const stored=CozyRuntime.restoreCheckpoint(r.exportCheckpoint())!;expect(stored.placeShopItem('customer-tables',false,'store')).toBe(true);
   expect(stored.shopState.effects.patience).toBe(0);expect(stored.state.cash).toBe(cash-4000);expect(stored.queueCapacity).toBe(4);
  });
- it('all twelve placed items never change capacity; only the single expansion changes four to six',()=>{
-  const r=CozyRuntime.restoreCheckpoint(fundedShopCheckpoint(30000))!;
+ it('all twelve placed items never change capacity; two expansions change four to five to six',()=>{
+  const r=CozyRuntime.restoreCheckpoint(fundedShopCheckpoint(30000))!;r.claimTestCode('VIETVUIVE');
   for(const item of SHOP_CATALOG){expect(r.buyShopItem(item.id,'buy-'+item.id)).toBe(true);expect(r.queueCapacity).toBe(4);expect(r.placeShopItem(item.id,true,'place-'+item.id)).toBe(true);expect(r.queueCapacity).toBe(4);}
   const prep=r.exportCheckpoint();expect(prep.shop!.acquired).toHaveLength(12);expect(validateCozyCheckpoint(prep)).not.toBeNull();
   expect(r.shopState.effects).toEqual({visitors:.29,patience:.38});expect(r.shopState.effects.patience).toBeLessThanOrEqual(.40);
   const loaded=CozyRuntime.restoreCheckpoint(prep)!;expect(loaded.queueCapacity).toBe(4);
-  expect(loaded.upgradeShop('queue','expansion')).toBe(true);expect(loaded.queueCapacity).toBe(6);expect(loaded.upgradePrice('queue')).toBeNull();
+  expect(loaded.upgradeShop('queue','expansion')).toBe(true);expect(loaded.queueCapacity).toBe(5);expect(loaded.queueVisitorBonus).toBe(.10);expect(loaded.upgradePrice('queue')).toBe(10000);expect(loaded.upgradeShop('queue','expansion-two')).toBe(true);expect(loaded.queueCapacity).toBe(6);expect(loaded.queueVisitorBonus).toBe(.30);expect(loaded.shopVisitorBonus).toBe(.59);expect(loaded.upgradePrice('queue')).toBeNull();
   const expanded=loaded.exportCheckpoint(),cash=loaded.state.cash;
   expect(loaded.upgradeShop('queue','expansion-again')).toBe(false);expect(loaded.state.cash).toBe(cash);expect(loaded.exportCheckpoint()).toEqual(expanded);
   expect(CozyRuntime.restoreCheckpoint(expanded)!.queueCapacity).toBe(6);
-  for(const level of [2,3]){const forged=structuredClone(expanded);forged.upgrades.queueLevel=level;expect(validateCozyCheckpoint(forged)).toBeNull();expect(CozyRuntime.restoreCheckpoint(forged)).toBeNull();}
+  for(const level of [3,4]){const forged=structuredClone(expanded);forged.upgrades.queueLevel=level;expect(validateCozyCheckpoint(forged)).toBeNull();expect(CozyRuntime.restoreCheckpoint(forged)).toBeNull();}
+ });
+ it('grandfathers six legacy seats without inventing a second receipt or charge',()=>{
+  for(const price of [200,6000]){
+   const old=fundedShopCheckpoint(22000);old.stock.cash-=price;
+   old.upgrades={ovenLevel:0,queueLevel:1,spent:price,pendingSpent:price,...(price===6000?{receipts:[{kind:'queue' as const,level:1,actualPrice:price}]}:{})};
+   const r=CozyRuntime.restoreCheckpoint(old)!;expect(r.queueCapacity).toBe(6);expect(r.queueLevel).toBe(1);expect(r.queueVisitorBonus).toBe(.10);expect(r.state.cash).toBe(old.stock.cash);
+   const saved=r.exportCheckpoint();expect(saved.upgrades).toMatchObject({rulesVersion:2,legacyCapacity:6,queueLevel:1,spent:price});expect(saved.upgrades.receipts).toEqual([{kind:'queue',level:1,actualPrice:price}]);
+   expect(CozyRuntime.restoreCheckpoint(saved)!.queueCapacity).toBe(6);expect(r.upgradeShop('queue','second')).toBe(true);expect(r.queueVisitorBonus).toBe(.30);expect(r.queueCapacity).toBe(6);expect(r.state.cash).toBe(old.stock.cash-10000);expect(r.exportCheckpoint().upgrades.receipts).toHaveLength(2);
+   for(const mutate of [(s:typeof saved)=>{s.upgrades.legacyCapacity=5 as 6;},(s:typeof saved)=>{s.upgrades.rulesVersion=3 as 2;},(s:typeof saved)=>{s.upgrades.queueLevel=0;}]){const forged=structuredClone(saved);mutate(forged);expect(validateCozyCheckpoint(forged)).toBeNull();}
+  }
  });
  it('restores actual receipts and capital accounting once, rejects forged investment metadata',()=>{
   const r=CozyRuntime.restoreCheckpoint(fundedShopCheckpoint())!;
