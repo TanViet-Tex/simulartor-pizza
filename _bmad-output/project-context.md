@@ -418,6 +418,12 @@ Cả quầy và app có thể gọi 2–3 pizza khác loại trong menu đã s�
 
 Phải có đế mới thêm sốt nền/topping; bỏ đế ở bước ráp thì bỏ các nguyên liệu chưa dùng cùng nó. Sau khi bắt đầu một đơn, người chơi và nhân viên chỉ làm đơn đó đến khi giao xong; đóng hộp chưa mở khóa đơn khác. Chọn khách khác vẫn xem được đơn nhưng không đặt đế hoặc dùng nguyên liệu cho đơn đó. Đơn nhiều pizza vẫn đóng hộp từng bánh rồi làm bánh kế tiếp trong cùng đơn, giao đủ cả đơn mới mở khóa. Bỏ bánh để làm lại vẫn giữ đơn; bánh đã dùng nguyên liệu mà khách hết hạn phải bỏ trước khi chuyển đơn. Bàn hiển thị bánh/hộp của đơn thực sự đang làm, không theo khách đang chọn. Giữ bố cục, giá vốn, nhịp nhân viên 1 giây và thời gian nướng hiện hành. Xem implementation-artifacts/spec-dough-first-and-single-workbench.md.
 
+### Tutorial tương tác game mới — yêu cầu 2026-10-07
+
+Game mới dùng tutorial hiện có với 34 bước: nhận biết khách/đơn/mẫu; thực hành pizza phô mai; giới thiệu Tổng kết, Chợ, Kho, sáu mục Quán và Nhiệm vụ trước ngày 1. Spotlight đen opacity 0.7 có vùng sáng/viền vàng theo tọa độ UI thật, chặn thao tác ngoài vùng và nút hướng dẫn; không đổi bố cục đã duyệt. Giới thiệu chỉ dùng Tiếp tục, không tự mua/chỉnh giá/nhận thưởng hoặc dựng báo cáo giả. Kết thúc thiếu nguyên liệu chuyển Chợ để người chơi mua thật trước khi mở ca.
+
+Đơn tập độc lập tiền/kho/XP/đánh giá/báo cáo thật; không sinh khách hoặc giảm kiên nhẫn, lò chỉ chạy tại bước chờ và dừng ở chín. Tiến độ optional trong checkpoint hiện có, lưu từng bước và retry cùng commit; save cũ không tự chạy lại, Tiếp tục khôi phục bước dở. Quản lý dùng lease `tutorial-management`; bỏ qua chỉ trả lease tutorial sở hữu, dọn đơn tập và đưa về chuẩn bị ngày 1. Completed/skipped khôi phục đúng trạng thái chuẩn bị; reset chiến dịch standalone xóa tiến độ tutorial cũ. Xem [spec](implementation-artifacts/spec-interactive-new-game-tutorial.md).
+
 # Mobile rendering performance — 2026-10-05
 
 `CozyScene` chỉ dựng lại UI khi cấu trúc/trạng thái đổi; giây lò/ngày/khách/hỏa tốc cập nhật Text/Graphics đang có. Giữ ngưỡng bật nút lấy bánh, countdown nhân viên khi không chọn đơn, ownership/cleanup hiệu ứng bấm và handler input giữ nguyên qua redraw. Không đưa giây liên tục vào signature hoặc đọc `daySummary` structuredClone mỗi frame. Fixed50ms là simulation, không phải giới hạn render. Probe chỉ bật với `?perf=1`; số đo/emulation và giới hạn xác minh thiết bị ghi ở [báo cáo](implementation-artifacts/mobile-performance-report.md). Không tự giảm chất lượng art hoặc thiết kế lại UI để tối ưu.

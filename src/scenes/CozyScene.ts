@@ -46,6 +46,8 @@ import {REFERENCE_PAUSE_ART,referencePauseLayout,preloadReferencePause} from '..
 import {ReferenceSummary,preloadSummaryArt} from '../presentation/ReferenceSummary';
 import {MarketQuantityInput} from '../presentation/MarketQuantityInput';
 import {ReferenceMarket,preloadMarketArt,type MarketFilter} from '../presentation/ReferenceMarket';
+import {INTERACTIVE_TUTORIAL_STEPS} from '../config/interactiveTutorial';
+import {drawTutorialSpotlight,tutorialContains,type TutorialRect} from '../presentation/TutorialSpotlight';
 
 type Control={id:string;x:number;y:number;width:number;height:number;enabled:boolean};
 const {cream,ink,muted,accent,wood}=UI_THEME.text;
@@ -70,6 +72,8 @@ export class CozyScene extends Phaser.Scene {
   private hitZones=new Map<string,Phaser.GameObjects.Zone>();
   private visibleActions:{id:string;x:number;y:number;w:number;h:number;action:()=>void}[]=[];
   private tapRects=new Map<string,{x:number;y:number;w:number;h:number}>();
+  private tutorialRouteIndex=-1;
+  private tutorialInputFocus:TutorialRect|null=null;
 
   private endDayConfirmation=false;
   private endedDayNotice:number|null=null;
@@ -165,6 +169,7 @@ export class CozyScene extends Phaser.Scene {
     for(const asset of [...REFERENCE_KITCHEN_MANIFEST,PIZZA_BOX_ART])if(!this.textures.exists(asset.key))this.load.image(asset.key,`${import.meta.env.BASE_URL}${asset.url}`);
   }
   create():void{
+    if(this.runtime.tutorialActive&&!this.runtime.tutorialProgress)this.runtime.beginInteractiveTutorial();
     strengthenIllustrations(this);
     registerReferenceKitchenFrames(this);
     registerCustomerPortraitFrames(this);
@@ -233,7 +238,7 @@ export class CozyScene extends Phaser.Scene {
     const s=this.runtime.state;
     this.frameTickets=this.runtime.tickets;this.frameExpress=this.runtime.expressOrders;
     const board=this.runtime.workbenchState;
-    const sig=[this.runtime.productionOwnerId,board?.stage,board?.ingredients.join(','),board?.finishingSauces.join(','),s.stage,s.ingredients.join(','),s.finishingSauces.join(','),s.extracted,!this.runtime.productionActive&&s.ovenSeconds>=this.runtime.bakeTiming.perfectStart,this.runtime.ovenState?.stage,this.runtime.ovenOwner,this.frameExpress.map(o=>o.id).join(','),this.frameTickets.map(t=>`${t.id}:${t.packed}:${t.riderState}:${t.stage}`).join(','),this.runtime.selectedTicketId,this.runtime.tutorialActive,this.runtime.pauseRevision,this.runtime.shopRevision,this.runtime.shiftClock.phase,this.runtime.deliveryStatus.phase].join('|');
+    const sig=[this.runtime.productionOwnerId,board?.stage,board?.ingredients.join(','),board?.finishingSauces.join(','),s.stage,s.ingredients.join(','),s.finishingSauces.join(','),s.extracted,!this.runtime.productionActive&&s.ovenSeconds>=this.runtime.bakeTiming.perfectStart,this.runtime.ovenState?.stage,this.runtime.ovenOwner,this.frameExpress.map(o=>o.id).join(','),this.frameTickets.map(t=>`${t.id}:${t.packed}:${t.riderState}:${t.stage}`).join(','),this.runtime.selectedTicketId,this.runtime.tutorialActive,this.runtime.tutorialProgress?.index,this.runtime.tutorialProgress?.status,this.runtime.pauseRevision,this.runtime.shopRevision,this.runtime.shiftClock.phase,this.runtime.deliveryStatus.phase].join('|');
     const presentationSig=`${sig}|${this.runtime.specialWelcome?.ticketId??''}|${this.runtime.specialBubble?.id??''}`;
     if(this.dirty||presentationSig!==this.signature){this.signature=presentationSig;this.draw();}
     const oven=this.runtime.productionActive?this.runtime.ovenState:s;
@@ -312,9 +317,7 @@ export class CozyScene extends Phaser.Scene {
     if(this.runtime.productionActive&&!this.runtime.tutorialActive&&this.runtime.shopPhase!=='making'&&this.runtime.shopPhase!=='delivered'&&!this.runtime.pauses.length){
       enabled=enabled&&(['pause','mute'].includes(id)||id.startsWith('market-')||id.startsWith('summary-')||id.startsWith('stock-')||id.startsWith('shop-'));
     }
-    if(this.runtime.tutorialActive&&!this.runtime.pauses.some(p=>p!=='tutorial')){
-      enabled=enabled&&(['pause','mute','order','customer-linh','recipe-0'].includes(id)||id===this.runtime.expectedControl||id==='dough-board'&&this.runtime.expectedControl==='dough');
-    }
+    if(this.guidedTutorialVisible)enabled=enabled&&(id.startsWith('tutorial-')||this.runtime.tutorialPhase==='practice'&&id===this.runtime.expectedControl&&this.runtime.tutorialStep!=='complete');
     if(enabled)this.visibleActions.push({id,x,y,w,h,action});
     const canvasBounds=this.game.canvas.getBoundingClientRect();
     const scale=Math.min((canvasBounds.width||360)/360,(canvasBounds.height||640)/640),min=Math.ceil(UI_THEME.minTouch/scale);
@@ -328,6 +331,7 @@ export class CozyScene extends Phaser.Scene {
     if(!zone){zone=this.add.zone(x,y,w,h).setOrigin(0).setDepth(10).setInteractive(new Phaser.Geom.Rectangle(0,0,w,h),Phaser.Geom.Rectangle.Contains);this.hitZones.set(id,zone);}
     zone.setPosition(x,y).setSize(w,h);zone.input?.hitArea.setTo(0,0,w,h);
     if(zone.input)zone.input.enabled=true;
+    if(!enabled)zone.disableInteractive();
     if(list&&rawY+rawH<=top||list&&rawY>=bottom)zone.disableInteractive();
     if(zone.listenerCount('pointerdown')||zone.listenerCount('pointerup'))return;
     if(list)zone.on('pointerdown',(pointer:Phaser.Input.Pointer)=>{
@@ -343,8 +347,12 @@ export class CozyScene extends Phaser.Scene {
       }
       // On shorter portrait screens enlarged touch padding may overlap. The
       // visible button beneath the finger always wins over a neighbour's padding.
-      const touched=[...this.tapRects].find(([key,c])=>this.controls.some(active=>active.id===key)&&pointer.x>=c.x&&pointer.x<=c.x+c.w&&pointer.y>=c.y&&pointer.y<=c.y+c.h);
+      const touched=[...this.tapRects].find(([key,c])=>this.controls.some(active=>active.id===key&&active.enabled)&&pointer.x>=c.x&&pointer.x<=c.x+c.w&&pointer.y>=c.y&&pointer.y<=c.y+c.h);
       const targetId=touched?.[0]??id,rect=touched?.[1]??this.tapRects.get(id)!;
+      if(this.guidedTutorialVisible){
+        const allowed=targetId.startsWith('tutorial-')?{x:rect.x,y:rect.y,width:rect.w,height:rect.h}:this.tutorialInputFocus;
+        if(!allowed||!tutorialContains(allowed,pointer.x,pointer.y))return;
+      }
       const flash=this.add.rectangle(rect.x+rect.w/2,rect.y+rect.h/2,rect.w-4,rect.h-4,0xfff3dc,.23).setDepth(60);
       const effect:{object:Phaser.GameObjects.Rectangle;tween?:Phaser.Tweens.Tween;timer?:Phaser.Time.TimerEvent}={object:flash};this.feedback.add(effect);
       const dispose=()=>{this.feedback.delete(effect);flash.destroy();};
@@ -396,6 +404,7 @@ export class CozyScene extends Phaser.Scene {
     this.button(id,0,0,0,0,buttonTitle,enabled,action);
   }
   private draw():void{
+    this.routeTutorial();this.tutorialInputFocus=null;
     const feedbackState=`${this.runtime.shopPhase}:${this.runtime.pauseRevision}`;
     if(this.feedbackState!==feedbackState){this.clearFeedback();this.feedbackState=feedbackState;}
     this.dirty=false;this.veilDrawn=false;this.game.canvas.dataset.settingsPanel='';this.game.canvas.dataset.modalBackdrop='';this.notification=undefined;this.game.canvas.dataset.notificationFrame='';this.game.canvas.dataset.pausePanel='';this.game.canvas.dataset.modalScroll='[]';this.timers=[];this.dynamicVisuals=[];this.heatSignature='';this.heatBar=undefined;this.layer.removeAll(true);this.controls=[];this.visibleActions=[];this.tapRects.clear();this.graphics();
@@ -481,23 +490,24 @@ export class CozyScene extends Phaser.Scene {
       else if(this.plannerInput)this.plannerInputDialog();
       else if(this.stockPlannerLease)this.stockPlannerDialog();
       else if(this.priceDraft&&!this.runtime.pauses.some(p=>p!=='order'))this.priceDialog();
-      else if(this.runtime.pauses.some(p=>p!=='save'))this.overlay();
+      else if(this.runtime.pauses.some(p=>p!=='save'&&p!=='tutorial-management'))this.overlay();
     }
     else if(this.appDialog)this.deliveryAppDialog();
     else if(this.priceDraft&&!this.runtime.pauses.some(p=>p!=='order'))this.priceDialog();
     else if(this.queueUpgradeNotice)this.queueUpgradeDialog();
     else if(this.runtime.pauses.some(p=>p!=='special-welcome'&&p!=='tutorial'&&p!=='discard'&&p!=='delivery'&&p!=='bargain'&&p!=='help'&&p!=='lottery'))this.overlay();
-    else if(this.runtime.tutorialActive)this.tutorial();
     else if(this.runtime.discardPending)this.discardDialog();
     else if(this.runtime.deliveryPending)this.deliveryDialog();
     else if(this.runtime.bargainPending)this.bargainDialog();
     else if(this.runtime.lotteryPending)this.lotteryDialog();
     else if(this.runtime.helpPending||this.runtime.thanksPending)this.helpDialog();
-    else if(s.stage==='delivered'&&!this.runtime.productionActive)this.success();
+    else if(s.stage==='delivered'&&!this.runtime.productionActive&&!this.runtime.tutorialPhase)this.success();
     if(this.expressIngredient)this.expressDialog();
     if(!this.testCodePanel&&this.campaignSession&&(['saving','error','loading','recovery'].includes(this.campaignSession.view.state)&&!this.saveDismissed||this.reloadConfirmation))this.saveDialog();
     else if(this.newCampaignConfirmation)this.newCampaignDialog();
     else if(this.finalOpen)this.finalDialog();
+    if(this.guidedTutorialVisible&&!this.notification)this.tutorial();
+    else{this.game.canvas.dataset.tutorialGuide='';this.game.canvas.dataset.tutorialFocus='';this.game.canvas.dataset.tutorialCard='';}
     if(this.campaignSession?.view.state==='temporary'&&!this.notification&&!this.newCampaignConfirmation&&!this.finalOpen)this.label(180, this.runtime.shopPhase==='summary'||this.runtime.postTutorialPreparation?572:611,'Chơi tạm không lưu · tải lại sẽ mất phiên',9,cream,330);
     for(const [id,zone] of this.hitZones)if(!this.controls.some(control=>control.id===id)){zone.destroy();this.hitZones.delete(id);}
     this.staticGraphics.bake(this.layer);
@@ -506,7 +516,7 @@ export class CozyScene extends Phaser.Scene {
     canvas.dataset.campaignProgress=JSON.stringify({day:this.runtime.day,endDay:this.runtime.campaignEndDay});
     canvas.dataset.campaignResults=JSON.stringify(this.runtime.campaignResults);
     canvas.dataset.campaignEvent=JSON.stringify(this.runtime.campaignEvent);
-    canvas.dataset.tutorial=this.runtime.tutorialStep??'off';
+    canvas.dataset.tutorial=this.runtime.tutorialProgress?.status==='active'?INTERACTIVE_TUTORIAL_STEPS[this.runtime.tutorialProgress.index].id:this.runtime.tutorialStep??'off';
     canvas.dataset.commercialCash=String(this.runtime.commercialState.cash);
     canvas.dataset.reducedMotion=String(this.reducedMotion);
     canvas.dataset.audio=this.audio.status;canvas.dataset.muted=String(this.audio.muted);
@@ -1149,7 +1159,7 @@ export class CozyScene extends Phaser.Scene {
     this.label(180,231,'Chiến dịch mới?',23,ink);
     this.explanation(278,72,this.campaignSession?'Tiến độ hiện tại sẽ được thay bằng Ngày 1, 300 xu và kho trống. Các ngày đã chốt không thể mở lại. Chỉ thay bản cũ sau khi lưu mới thành công.':'Tiền và kho hiện tại sẽ được đặt lại về 300 xu và kho trống.',14);
     this.button('market-new-cancel',48,377,264,48,'Giữ phiên',true,()=>this.closeNewCampaign(),UI.dark);
-    this.button('market-new-confirm',48,442,264,48,'Bắt đầu mới',true,()=>{this.closeNewCampaign();if(this.campaignSession)void this.campaignSession.start(false).then(runtime=>{if(runtime)this.replaceRuntime?.(runtime);});else if(this.replaceRuntime)this.replaceRuntime(new CozyRuntime(false,true,{eventSeed:campaignEventSeed(crypto.randomUUID())}));else {this.release('user');this.runtime.dispatch({type:'reset'});this.dirty=true;}});
+    this.button('market-new-confirm',48,442,264,48,'Bắt đầu mới',true,()=>{this.closeNewCampaign();if(this.campaignSession)void this.campaignSession.start(true).then(runtime=>{if(runtime)this.replaceRuntime?.(runtime);});else if(this.replaceRuntime){const runtime=new CozyRuntime(true,true,{eventSeed:campaignEventSeed(crypto.randomUUID())});runtime.beginInteractiveTutorial();this.replaceRuntime(runtime);}else {this.release('user');this.runtime.dispatch({type:'reset'});this.runtime.beginInteractiveTutorial();this.dirty=true;}});
   }
   private discardDialog():void{
     this.notificationFrame(["confirm-discard","cancel-discard"],276,332,420);
@@ -1189,29 +1199,64 @@ export class CozyScene extends Phaser.Scene {
     }
   }
   private tutorial():void{
-    const step=this.runtime.tutorialStep;
-    const messages:Record<string,[string,string]>={
-      dough:['1/7 · Đặt đế bánh','Chạm vào thớt để đặt đế bánh tập.'],
-      sauce:['2/7 · Phết sốt','Chạm chai sốt cà chua ở hàng bên dưới.'],
-      cheese:['3/7 · Thêm phô mai','Chạm ô phô mai ở hàng nguyên liệu.'],
-      bake:['4/7 · Đưa bánh vào lò','Chạm Lò 1 để nướng bánh đã đủ nguyên liệu.'],
-      warming:['Đang tập nướng','Thanh trắng chuyển xanh khi bánh chín. Ca thật đang dừng.'],
-      extract:['5/7 · Bánh chín vừa!','Chạm Lò 1 để lấy bánh ra. Đồng hồ tập đã dừng.'],
-      box:['6/7 · Đóng hộp','Bấm “Đóng hộp” để chuẩn bị giao bánh tập.'],
-      deliver:['7/7 · Giao bánh tập','Bấm “Giao bánh”. Bánh tập không tạo tiền thưởng.'],
-    };
-    if(step==='complete'){
-      this.notice('Bạn đã biết làm pizza!','Bánh tập đã hoàn thành.\nTiền và nguyên liệu của ca thật\nvẫn được giữ nguyên.','start-shift','Bắt đầu ca bán',()=>this.runtime.startShift());return;
-    }
-    const [title,detail]=messages[step??'dough'];
-    // Reuse the order area; guidance never hides the required kitchen controls.
-    this.graphics();this.art.g.fillStyle(UI.paper,1).fillRoundedRect(15,147,330,33,7);
-    this.label(26,148,title,12,ink,307,'left');this.label(26,165,detail,9,ink,307,'left');
+    const progress=this.runtime.tutorialProgress;if(!progress)return;
+    const step=INTERACTIVE_TUTORIAL_STEPS[progress.index],focus=this.tutorialFocus(step.id);
+    this.tutorialInputFocus=focus;
+    drawTutorialSpotlight(this,this.layer,{focus,text:step.text,index:progress.index,total:INTERACTIVE_TUTORIAL_STEPS.length,next:step.manual,register:(id,r,action)=>this.hit(id,r.x,r.y,r.width,r.height,true,action),advance:()=>{
+      if(this.runtime.nextTutorial()&&!this.runtime.tutorialPhase){this.summaryTab=this.runtime.menuRecipes.some(recipe=>!this.runtime.missingRecipeReason(recipe))?'summary':'market';this.shopPage='home';this.dirty=true;}
+    },skip:()=>{if(this.runtime.skipTutorial()){this.closeHubPanels();this.inspectedOrderId=null;this.inspectedRecipe=null;this.summaryTab='summary';this.shopPage='home';this.dirty=true;}}});
+    this.game.canvas.dataset.tutorialGuide=JSON.stringify({id:step.id,index:progress.index,opacity:.7,focus});
+  }
+  private get guidedTutorialVisible():boolean{return !!this.runtime.tutorialPhase&&!this.runtime.pauses.some(p=>p!=='tutorial'&&p!=='tutorial-management');}
+  private routeTutorial():void{
+    const p=this.runtime.tutorialProgress;if(p?.status!=='active'||p.index===this.tutorialRouteIndex)return;
+    this.tutorialRouteIndex=p.index;
+    const id=INTERACTIVE_TUTORIAL_STEPS[p.index].id;
+    this.marketDrag.active=false;this.stockDrag.active=false;
+    if(id.startsWith('summary-')||id==='ready')this.summaryTab='summary';
+    if(id.startsWith('market-')){this.summaryTab='market';this.marketFilter='all';this.marketOffset=0;}
+    if(id.startsWith('stock-')){this.summaryTab='stock';this.stockFilter='all';this.stockOffset=0;}
+    if(id.startsWith('shop-')){this.summaryTab='shop';this.shopPage=id.slice(5) as ShopPage;this.shopMenuPage=0;}
+    if(id.startsWith('missions-'))this.summaryTab='missions';
+  }
+  private tutorialFocus(id:string):TutorialRect{
+    const rect=(x:number,y:number,width:number,height:number)=>({x,y,width,height});
+    const control=(key:string)=>{const r=this.tapRects.get(key);return r?rect(r.x,r.y,r.w,r.h):null;};
+    if(id==='customer'){const r=KITCHEN.customer(0);return rect(r.x,r.y,r.w,r.h);}
+    if(id==='order'){const r=KITCHEN.order;return rect(49,r.y,300,r.h);}
+    if(id==='sample')return rect(17,148,32,32);
+    if(['dough','sauce','cheese','bake','extract','box','deliver'].includes(id))return control(id)??rect(238,298,110,63);
+    if(id==='warming')return rect(239,347,108,21);
+    if(id==='complete')return rect(271,3,77,30);
+    if(id==='summary-sales')return rect(18,210,103,34);
+    if(id==='summary-costs')return rect(127,210,218,34);
+    if(id==='summary-profit')return rect(21,141,220,64);
+    if(id==='summary-reviews')return rect(8,356,344,97);
+    const marketRows=JSON.parse(this.game.canvas.dataset.marketRows||'[]') as {id:string;y:number}[];
+    const stockRows=JSON.parse(this.game.canvas.dataset.stockRows||'[]') as {id:string;y:number}[];
+    const marketY=marketRows.find(row=>row.id==='dough')?.y??219,stockY=stockRows.find(row=>row.id==='dough')?.y??223;
+    if(id==='market-ingredients')return rect(22,marketY+3,175,45);
+    if(id==='market-prices')return rect(73,marketY+21,121,27);
+    if(id==='market-quantity')return control('market-quantity-dough')??rect(196,marketY+10,80,30);
+    if(id==='market-forecast')return control('market-suggest')!;
+    if(id==='market-basket')return control('market-buy-all')!;
+    if(id==='stock-owned')return rect(73,stockY+3,132,45);
+    if(id==='stock-usable')return rect(73,stockY+22,132,24);
+    if(id==='stock-expiry')return rect(209,stockY+8,106,34);
+    if(id==='shop-menu')return rect(8,180,344,107);
+    if(id==='shop-decoration'||id==='shop-amenities')return rect(8,180,168,109);
+    if(id==='shop-equipment')return rect(8,180,344,166);
+    if(id==='shop-expansion')return rect(8,309,344,118);
+    if(id==='shop-staff')return rect(8,180,168,163);
+    if(id==='missions-goal')return rect(8,133,344,147);
+    if(id==='missions-progress')return rect(8,287,344,129);
+    if(id==='missions-reward')return rect(16,378,326,30);
+    return control('summary-open-first-day')??rect(12,587,336,48);
   }
   private overlay():void{
     if(this.testCodePanel){this.resetModalControls();this.testCodePanel.draw(this,this.layer,(id,rect,enabled,action)=>this.hit(id,rect.x,rect.y,rect.width,rect.height,enabled,action));return;}
     const pauses=this.runtime.pauses;
-    const reasons=`Đang dừng: ${pauses.map(p=>({tutorial:'hướng dẫn',user:'nghỉ tay',visibility:'ẩn màn hình',orientation:'xoay ngang',order:'đọc đơn',gap:'gián đoạn',success:'hoàn thành',discard:'xác nhận bỏ bánh',delivery:'xác nhận giao món',menu:'menu chính',bargain:'mặc cả',help:'lựa chọn giúp đỡ/lời cảm ơn',save:'lưu tiến độ',lottery:'chọn vé số','special-welcome':'chào khách nổi tiếng'}[p])).join(', ')}`;
+    const reasons=`Đang dừng: ${pauses.map(p=>({tutorial:'hướng dẫn','tutorial-management':'hướng dẫn quản lý',user:'nghỉ tay',visibility:'ẩn màn hình',orientation:'xoay ngang',order:'đọc đơn',gap:'gián đoạn',success:'hoàn thành',discard:'xác nhận bỏ bánh',delivery:'xác nhận giao món',menu:'menu chính',bargain:'mặc cả',help:'lựa chọn giúp đỡ/lời cảm ơn',save:'lưu tiến độ',lottery:'chọn vé số','special-welcome':'chào khách nổi tiếng'}[p])).join(', ')}`;
     if(this.endDayConfirmation&&this.scenePauses.has('user')){
       this.notificationFrame(['cancel-end-day','confirm-end-day'],270,480,450);
       this.label(180,231,`Kết thúc ngày ${this.runtime.day}?`,21,ink);

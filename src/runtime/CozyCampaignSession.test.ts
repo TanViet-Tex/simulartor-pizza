@@ -13,6 +13,14 @@ const settle=()=>new Promise<void>(resolve=>setTimeout(resolve,0));
 async function setup(funded=false){let id=0;const port=new MemoryPort(),session=new CozyCampaignSession(port,()=>`id-${++id}`);await session.load();const r=(await session.start(false))!;if(funded){port.value!.payload=fundedShopCheckpoint();port.value!.checksum=checkpointChecksum(port.value!.payload);const loaded=(await session.load())!;return {port,session,r:loaded};}return {port,session,r};}
 function open(r:CozyRuntime){for(const id of ['dough','sauce','cheese'] as const)r.buy(id,1);expect(r.openShop()).toBe(true);}
 describe('Cozy prepare/commit/confirm session',()=>{
+  it('persists new-game tutorial progress, resumes its step and retries the identical failed commit',async()=>{
+    let serial=0;const port=new MemoryPort(),session=new CozyCampaignSession(port,()=>`tutorial-${++serial}`);await session.load();const r=(await session.start(true))!;
+    expect(port.value!.payload.tutorialProgress).toEqual({version:1,index:0,status:'active'});expect(r.nextTutorial()).toBe(true);await settle();expect(port.value!.payload.tutorialProgress?.index).toBe(1);
+    const resumed=(await session.load())!;expect(resumed.tutorialProgress?.index).toBe(1);port.fail=true;expect(resumed.nextTutorial()).toBe(true);await settle();expect(session.view.state).toBe('error');expect(resumed.pauses).toContain('save');expect(resumed.nextTutorial()).toBe(false);
+    const pending=port.calls[port.calls.length-1];port.fail=false;await session.retry();expect(port.calls[port.calls.length-1]).toEqual(pending);expect(session.runtime).toBe(resumed);expect(resumed.tutorialProgress?.index).toBe(2);expect(resumed.pauses).not.toContain('save');
+    const lease=resumed.acquirePause('orientation');expect(resumed.skipTutorial()).toBe(true);await settle();expect(port.value!.payload.tutorialProgress?.status).toBe('skipped');expect(resumed.pauses).toContain('orientation');lease.release();session.destroy();
+    const reloaded=new CozyCampaignSession(port);await reloaded.load();expect(reloaded.continue()!.tutorialPhase).toBeNull();reloaded.destroy();
+  });
   it('saves real menu prices and selling state together, rejects concurrent edits and retries the same payload',async()=>{
     const {session,port,r}=await setup();port.fail=true;
     expect(session.configureMenu('cheese',105,true)).toBe(true);expect(session.configureMenu('mushroom',100,false)).toBe(false);await settle();

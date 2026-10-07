@@ -482,3 +482,9 @@ Theo chỉnh tiếp của người dùng: phần lớn khách đến lẻ, sau b
 # Bổ sung hành vi bàn bánh — 2026-10-07
 
 Giữ nguyên bố cục và art. Bàn thể hiện bánh/hộp thuộc đơn đang làm, dù đang chọn khách khác để xem. Chưa có đế thì các nguyên liệu khác chưa dùng được. Đóng hộp vẫn khóa đơn khác đến khi giao xong; đơn nhiều bánh cho làm tiếp bánh trong cùng đơn. Không đồng thời hiển thị hộp của đơn trước trên bàn và nướng bánh cho đơn khác. Chi tiết: spec-dough-first-and-single-workbench.md.
+
+### Tutorial spotlight — yêu cầu 2026-10-07
+
+Chỉ thêm lớp hướng dẫn trên UI hiện có: đen opacity 0.7, khoét focus đúng bounds, viền vàng; thẻ kem cạnh focus với lời Việt, tiến độ 1–34, Bỏ qua hướng dẫn và Tiếp tục ở bước giới thiệu. Chỉ vùng thực hành hiện tại và nút tutorial nhận input; khi menu/visibility/orientation/save đang pause, giữ quyền điều khiển của lớp pause đó. Tự chuyển tab/mục và đưa vùng quản lý cần giới thiệu vào viewport, không thay geometry/art của bếp hoặc hub. Sáu mục Quán theo source: Menu & giá bán, Trang trí, Thiết bị, Tiện nghi, Mở rộng quán, Nhân viên.
+
+Ảnh kiểm chứng 360×640: [đế bánh](ui-baseline/interactive-tutorial-2026-10-07/practice-dough.png), [dự báo Chợ](ui-baseline/interactive-tutorial-2026-10-07/market-forecast.png), [Menu & giá bán](ui-baseline/interactive-tutorial-2026-10-07/shop-menu.png). Chi tiết: [spec](spec-interactive-new-game-tutorial.md).

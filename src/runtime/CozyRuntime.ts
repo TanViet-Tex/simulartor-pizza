@@ -1,3 +1,5 @@
+import {INTERACTIVE_TUTORIAL_IDS,interactiveTutorialPhase} from '../config/interactiveTutorial';
+import {type TutorialProgress} from '../domain/TutorialProgress';
 import {ADVERTISING} from '../config/advertising';
 import {LOTTERY_MISSION} from '../config/lotteryMission';
 import {advertisedVisitors} from '../domain/Advertising';
@@ -46,7 +48,7 @@ import { COZY_BAKE, CozyOrder, type CozyIntent } from '../domain/CozyOrder';
 import { CozyStock,STOCK_RECIPES, datedIngredientPrice, ingredientExpiry, ingredientName, recipeIngredients, recipePrice, type StockIngredient, type StockRecipe } from '../domain/CozyStock';
 export type CozyRuntimeIntent=CozyIntent|{type:'market.buy-all';entries:readonly MarketBasketEntry[];commandId:string;expectedDay:number}|{type:'customer.price';recipe:StockRecipe;percent:number}|{type:'customer.bargain';accept:boolean}|{type:'customer.help';accept:boolean}|{type:'customer.thanks'}|{type:'market.buy';ingredient:StockIngredient;quantity:number;commandId:string}|{type:'menu.configure';recipe:StockRecipe;percent:number;enabled:boolean}|{type:'express.order';ingredient:StockIngredient;quantity:number;commandId:string}|{type:'shop.buy';id:ShopItemId;commandId:string}|{type:'shop.place';id:ShopItemId;placed:boolean;commandId:string}|{type:'shop.upgrade';kind:'oven'|'queue';commandId:string};
 
-export type CozyPause = 'user' | 'visibility' | 'orientation' | 'order' | 'gap' | 'success' | 'tutorial' | 'discard' | 'delivery' | 'menu' | 'bargain' | 'help' | 'save' | 'special-welcome' | 'lottery';
+export type CozyPause = 'user' | 'visibility' | 'orientation' | 'order' | 'gap' | 'success' | 'tutorial' | 'discard' | 'delivery' | 'menu' | 'bargain' | 'help' | 'save' | 'special-welcome' | 'lottery' | 'tutorial-management';
 export type CozyAudioEffect = 'sauce' | 'box' | 'arrival';
 export type CozyTutorialStep = 'dough' | 'sauce' | 'cheese' | 'bake' | 'warming' | 'extract' | 'box' | 'deliver' | 'complete';
 const steps: readonly CozyTutorialStep[] = ['dough', 'sauce', 'cheese', 'bake', 'warming', 'extract', 'box', 'deliver', 'complete'];
@@ -242,10 +244,10 @@ export class CozyRuntime {
   get persistentMode(){return this.guarded;}
   get completedReports(){const master=this.progress.snapshot;return this.reports.map(report=>{const copy=structuredClone(report);delete copy.progressionArchive;Object.defineProperty(copy,'progression',{enumerable:true,get:()=>reportProgression(report,master)});return copy;});}
   exportCheckpoint():CozyCheckpoint {
-    if(!this.production||this.shiftOpen||this.tutorialActive||!['preparation','summary'].includes(this.phase))throw new Error('Not a day boundary');
+    if(!this.production||this.shiftOpen||this.tutorialActive&&!this.interactiveProgress||!['preparation','summary'].includes(this.phase))throw new Error('Not a day boundary');
     const terminal=!!this.summary?.ending,day=this.summary?(terminal?this.currentDay:this.currentDay+1):this.currentDay;
     const recipe=this.recipeOwnership.has(this.recipe)?this.recipe:this.menuFor(day)[0];
-    const data:CozyCheckpoint={services:structuredClone(this.services),...(this.testCodeReceipt?{testCodeReceipt:{...this.testCodeReceipt}}:{}),campaignEventSeed:this.eventSeed,campaignEndDay:this.campaignLastDay,staffAbsenceFromDay:this.staffAbsenceFromDay,staff:structuredClone(this.staff),shop:structuredClone(this.shop),deliveryAppEnabled:this.appEnabled,ownedRecipes:this.ownedRecipes,recipePurchases:this.recipePurchases,upgrades:this.upgrades,customerMemory:this.customerMemory,contentId:COZY_CONTENT_VERSION,day,terminal,stock:this.stock.exportCheckpoint(),progression:this.progress.snapshot,help:{decision:this.help.decision,outcome:this.help.outcome==='pending'?null:this.help.outcome,claims:[...this.help.claims]},menu:[...this.enabledMenu],prices:{...this.pricing},recipe,reports:structuredClone(this.reports),cumulativeProfit:this.cumulativeProfit,reputation:this.reputation,relationship:this.relationship,relationshipDays:[...this.relationshipDays],regularDay1Stars:this.regularDay1Stars,regularLatestStars:this.regularLatestStars,referral:this.referral?{...this.referral}:null};
+    const data:CozyCheckpoint={...(this.interactiveProgress?{tutorialProgress:{...this.interactiveProgress}}:{}),services:structuredClone(this.services),...(this.testCodeReceipt?{testCodeReceipt:{...this.testCodeReceipt}}:{}),campaignEventSeed:this.eventSeed,campaignEndDay:this.campaignLastDay,staffAbsenceFromDay:this.staffAbsenceFromDay,staff:structuredClone(this.staff),shop:structuredClone(this.shop),deliveryAppEnabled:this.appEnabled,ownedRecipes:this.ownedRecipes,recipePurchases:this.recipePurchases,upgrades:this.upgrades,customerMemory:this.customerMemory,contentId:COZY_CONTENT_VERSION,day,terminal,stock:this.stock.exportCheckpoint(),progression:this.progress.snapshot,help:{decision:this.help.decision,outcome:this.help.outcome==='pending'?null:this.help.outcome,claims:[...this.help.claims]},menu:[...this.enabledMenu],prices:{...this.pricing},recipe,reports:structuredClone(this.reports),cumulativeProfit:this.cumulativeProfit,reputation:this.reputation,relationship:this.relationship,relationshipDays:[...this.relationshipDays],regularDay1Stars:this.regularDay1Stars,regularLatestStars:this.regularLatestStars,referral:this.referral?{...this.referral}:null};
     const validated=validateCozyCheckpoint(data);if(!validated)throw new Error('Invalid day boundary');return validated;
   }
   static restoreCheckpoint(value:unknown,tutorial=false,dependencies:CozyScheduleDependencies={}):CozyRuntime|null {
@@ -257,6 +259,7 @@ export class CozyRuntime {
     r.ovenUpgrade=s.upgrades.ovenLevel as 0|1|2;r.queueUpgrade=s.upgrades.queueLevel;r.legacyQueueCapacity=s.upgrades.legacyCapacity;r.upgradeSpent=s.upgrades.spent;r.pendingUpgradeSpent=s.upgrades.pendingSpent;r.customerDecisions=structuredClone(s.customerMemory);r.stock=CozyStock.restore(s.stock)!;r.progress=CozyProgression.restore(s.progression)!;r.currentDay=s.day;r.enabledMenu=new Set(s.menu);r.pricing={...s.prices};r.recipe=s.recipe;r.order=new CozyOrder(false,s.recipe,true,r.ovenUpgrade);r.reports=structuredClone(s.reports);r.closedDays=new Set(s.reports.map(x=>x.day));r.cumulativeProfit=s.cumulativeProfit;r.reputation=s.reputation;r.relationship=s.relationship;r.relationshipDays=new Set(s.relationshipDays);r.regularDay1Stars=s.regularDay1Stars;r.regularLatestStars=s.regularLatestStars;r.referral=s.referral?{...s.referral}:null;
     r.serial=s.progression.outcomes.reduce((n,id)=>Math.max(n,Number(id.replace('cozy-',''))||0),0)+s.reports.reduce((n,x)=>n+x.abandoned,0)+(s.help.decision==='accepted'?1:0);
     r.help={...s.help,ticketId:null,offer:null,giftCost:0,thanksPending:false};r.startingCash=s.reports[s.reports.length-1]?.cash??300;r.openingInventoryValue=s.reports[s.reports.length-1]?.accounts.inventory.value??0;
+    if(s.tutorialProgress)r.restoreInteractiveTutorial(s.tutorialProgress);
     if(s.terminal){r.summary=expandCozyReport(s.reports[s.reports.length-1],s.progression);r.phase='summary';}return r;
   }
   private reviews:CozyReview[]=[];
@@ -418,7 +421,7 @@ export class CozyRuntime {
   private arrival = 0;
   private history: string[] = [];
   private completed: { name: string; recipe: StockRecipe; price: number } | null = null;
-  private readonly practice = new CozyOrder(true);
+  private practice = new CozyOrder(true);
   private step: CozyTutorialStep | null;
   private readonly reasons = new Set<CozyPause>();
   private readonly leases = new Map<CozyPause,Set<symbol>>();
@@ -436,7 +439,7 @@ export class CozyRuntime {
   get shopOpen() { return this.shiftOpen; }
   get simulationActive():boolean {return this.tutorialActive?this.step==='warming':this.production?this.shiftOpen&&this.phase!=='preparation'&&this.phase!=='summary'&&(this.shiftClock.phase!=='awaiting-close'||this.expressPending.size>0||this.courier?.phase==='travel'||this.courier?.phase==='return'):this.state.stage==='baking';}
   get shopPhase() { return this.phase; }
-  get postTutorialPreparation() {return this.guidedPreparation&&this.productionActive&&this.phase==='preparation'&&!this.shiftOpen&&this.currentDay===1;}
+  get postTutorialPreparation() {return (this.guidedPreparation||this.tutorialPhase==='management')&&this.productionActive&&this.phase==='preparation'&&!this.shiftOpen&&this.currentDay===1;}
   get day() {return this.currentDay;}
   /** Story 4.2 supplies all enabled unlocked recipes at this boundary. */
   eligibleMenuRecipes():readonly StockRecipe[]{return this.menuFor(this.currentDay);}
@@ -831,6 +834,47 @@ export class CozyRuntime {
     if (t.deadline <= this.elapsed) return this.shopFeedback('Đơn đã hết thời gian, không thể làm lại.');
     t.committed = false; this.message = `Làm bánh mới cho ${t.name}.`; this.event(`remake:${t.id}`); this.revision++; return true;
   }
+  private interactiveProgress:TutorialProgress|undefined;
+  private managementTutorialLease:PauseLease|null=null;
+  private readonly tutorialListeners=new Set<()=>void>();
+  get tutorialProgress(){return this.interactiveProgress?{...this.interactiveProgress}:null;}
+  get tutorialPhase(){return this.interactiveProgress?.status==='active'?interactiveTutorialPhase(this.interactiveProgress.index):null;}
+  subscribeTutorialProgress(listener:()=>void){this.tutorialListeners.add(listener);return ()=>this.tutorialListeners.delete(listener);}
+  private notifyTutorial(){this.revision++;for(const listener of this.tutorialListeners)listener();}
+  beginInteractiveTutorial():boolean {
+    if(!this.production||this.shiftOpen||this.currentDay!==1||this.reports.length||this.interactiveProgress)return false;
+    this.restoreInteractiveTutorial({version:1,index:0,status:'active'});this.notifyTutorial();return true;
+  }
+  private restoreInteractiveTutorial(progress:TutorialProgress):void {
+    this.interactiveProgress={...progress};this.practice=new CozyOrder(true);
+    this.step=null;this.legacyLeases.get('tutorial')?.release();this.legacyLeases.delete('tutorial');this.managementTutorialLease?.release();this.managementTutorialLease=null;
+    if(progress.status!=='active'){this.guidedPreparation=true;return;}
+    if(progress.index>=12){this.guidedPreparation=true;this.managementTutorialLease=this.acquirePause('tutorial-management');return;}
+    const practiceIndex=Math.max(0,progress.index-3);
+    for(let i=0;i<practiceIndex;i++){
+      const step=steps[i];
+      if(step==='warming')this.practice.tick(COZY_BAKE.perfectStart);
+      else if(['dough','sauce','cheese'].includes(step))this.practice.dispatch({type:'ingredient',ingredient:step as StockIngredient});
+      else this.practice.dispatch({type:step} as CozyIntent);
+    }
+    this.step=steps[practiceIndex];if(this.step!=='warming')this.pause('tutorial');
+  }
+  nextTutorial():boolean {
+    const p=this.interactiveProgress;
+    if(!this.saveGuard()||!p||p.status!=='active'||this.pauses.some(reason=>reason!=='tutorial'&&reason!=='tutorial-management')||p.index>=3&&p.index<11)return false;
+    const next=p.index+1;
+    if(next>=INTERACTIVE_TUTORIAL_IDS.length)this.finishInteractiveTutorial('completed');
+    else {this.restoreInteractiveTutorial({version:1,index:next,status:'active'});this.notifyTutorial();}
+    return true;
+  }
+  skipTutorial():boolean {
+    if(!this.saveGuard()||this.interactiveProgress?.status!=='active')return false;
+    this.finishInteractiveTutorial('skipped');return true;
+  }
+  private finishInteractiveTutorial(status:'completed'|'skipped'):void {
+    this.interactiveProgress={...this.interactiveProgress!,status};this.practice=new CozyOrder(true);this.step=null;this.guidedPreparation=true;
+    this.legacyLeases.get('tutorial')?.release();this.legacyLeases.delete('tutorial');this.managementTutorialLease?.release();this.managementTutorialLease=null;this.accumulator=0;this.pauseVersion++;this.notifyTutorial();
+  }
   get tutorialActive() { return this.step !== null; }
   get tutorialStep() { return this.step; }
   get expectedControl(): string | null { return this.step === 'complete' ? 'start-shift' : this.step === 'warming' ? null : this.step; }
@@ -893,10 +937,11 @@ export class CozyRuntime {
   private setStep(step: CozyTutorialStep): void {
     this.step = step; this.pauseVersion++; this.accumulator = 0;
     if (step === 'warming') {this.legacyLeases.get('tutorial')?.release();this.legacyLeases.delete('tutorial');} else this.pause('tutorial');
+    if(this.interactiveProgress?.status==='active'){this.interactiveProgress={version:1,index:INTERACTIVE_TUTORIAL_IDS.indexOf(step),status:'active'};this.notifyTutorial();}
   }
   dispatch(intent:CozyRuntimeIntent):boolean {return this.clockAction(()=>this.dispatchIntent(intent));}
   private dispatchIntent(intent: CozyRuntimeIntent): boolean {
-    if(!this.saveGuard()||this.guarded&&intent.type==='reset')return false;
+    if(!this.saveGuard()||this.guarded&&intent.type==='reset'||this.tutorialPhase==='intro'||this.tutorialPhase==='management')return false;
     if(intent.type==='menu.configure')return this.configureMenu(intent.recipe,intent.percent,intent.enabled);
     if(intent.type==='express.order')return this.orderExpress(intent.ingredient,intent.quantity,intent.commandId);
     if(intent.type==='shop.buy')return this.buyShopItem(intent.id,intent.commandId);
@@ -916,6 +961,7 @@ export class CozyRuntime {
       }
       if (intent.type === 'reset') {
         if(this.closedDays.size)return false;
+        this.interactiveProgress=undefined;this.managementTutorialLease?.release();this.managementTutorialLease=null;this.guidedPreparation=false;this.practice=new CozyOrder(true);
         this.appliedCampaignEvent=null;this.campaignEventAcknowledged=false;this.eventSeed=this.scheduleDependencies.eventSeed??LEGACY_EVENT_SEED;this.appEnabled=false;this.appCommands.clear();this.bookingCommands.clear();this.shiftEvent=null;this.shiftApp=false;this.shiftStaff=false;this.deliveryFees=0;this.pizzasSold=0;this.deliveryTime=0;this.courier=null;this.recipeOwnership=new Set(['cheese','mushroom']);this.recipeSpent=0;this.pendingRecipeSpent=0;this.purchasedRecipes=[];this.grantedRecipes=[];this.recipeCommands.clear();this.campaignLastDay=CAMPAIGN_LAST_DAY;this.staff=emptyStaff();this.staffAbsenceFromDay=1;this.shiftRoles=[];this.staffJobs.clear();this.staffCommands.clear();this.payrollWarning='';this.shop={acquired:[],spent:0,pendingSpent:0};this.shopCommands.clear();this.upgradeReceipts=[];this.frozenShopEffects=shopEffects([]);this.ovenUpgrade=0;this.queueUpgrade=0;this.legacyQueueCapacity=undefined;this.upgradeSpent=0;this.pendingUpgradeSpent=0;this.capitalPurchases=0;this.upgradeCommands.clear();this.customerDecisions={accepted:[],declined:[]};this.expressPending.clear();
         this.services=emptyServices();this.lotteryLease?.release();this.lotteryLease=null;this.testCodeReceipt=undefined;this.stock = new CozyStock();this.progress=new CozyProgression();this.rewardCash=0;this.dailyGiftCost=0;this.help={decision:'unseen',outcome:null,ticketId:null,offer:null,giftCost:0,claims:[],thanksPending:false};this.enabledMenu=new Set(['cheese','mushroom']);this.startingCash=300;this.openingInventoryValue=0;this.cumulativeProfit=0; this.purchaseCommands.clear();this.purchaseSerial=0;this.order = new CozyOrder(); this.recipe = 'cheese'; this.phase = 'preparation';
         this.active.clear(); this.productionId=null; this.processedArrivals.clear(); this.ovenId = null; this.discardId = null; this.ticket = ''; this.elapsed = 0; this.serial = 0; this.arrival = 0; this.schedule=null;this.regularDay1Stars=null;this.regularLatestStars=null; this.shiftOpen = false; this.history = [];
@@ -944,7 +990,7 @@ export class CozyRuntime {
   startShift():boolean {return this.clockAction(()=>this.startShiftNow());}
   private startShiftNow():boolean {
     if(!this.saveGuard())return false;
-    if (this.step !== 'complete' || this.otherPaused()) return false;
+    if (this.interactiveProgress?.status==='active'||this.step !== 'complete' || this.otherPaused()) return false;
     this.step = null; this.guidedPreparation=true; this.resume('tutorial'); this.accumulator = 0; this.pauseVersion++; return true;
   }
   /** Wall-clock catch-up uses bounded steps and stops at the first decision or shift boundary. */

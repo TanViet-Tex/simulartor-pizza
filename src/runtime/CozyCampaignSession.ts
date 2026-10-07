@@ -18,23 +18,25 @@ export class CozyCampaignSession {
   private saved:CozySaveEnvelope|null=null;
   private recovery:Extract<CozyLoadResult,{kind:'loaded'|'recovery'}>|null=null;
   private replacement:string|undefined;
-  private pending:{request:CozyWriteRequest;kind:'create'|'day'|'upgrade';tutorial:boolean;shopCommand?:string}|null=null;
+  private pending:{request:CozyWriteRequest;kind:'create'|'day'|'upgrade'|'tutorial';tutorial:boolean;shopCommand?:string}|null=null;
   private inFlight:Promise<CozyRuntime|null>|null=null;
   private listeners=new Set<()=>void>();
   private generation=0;
+  private tutorialUnsubscribe:(()=>void)|null=null;
+  private tutorialSaveQueued=false;
   private confirmedRecovery=false;
   constructor(private readonly repository:CozySavePort,private readonly id:()=>string=()=>crypto.randomUUID()){}
   get runtime(){return this.current;}
   get lifecycle(){return this.interruption;}
   get hasSession(){return this.current!==null||this.saved!==null;}
   get busy(){return this.status==='loading'||this.status==='saving';}
-  get view():CozySaveView {return {state:this.status,message:this.status==='loading'?'Đang đọc tiến độ…':this.status==='saving'?'Đang lưu ngày. Giữ trang này mở…':this.status==='recovery'?'Bản chính bị hỏng. Bản dự phòng cùng mốc mới nhất đã được kiểm tra. Xác nhận để tiếp tục; không quay lại ngày cũ.':this.status==='temporary'?'Chơi tạm không lưu. Đóng hoặc tải lại trang sẽ mất phiên này.':this.failure?this.failure.message+((this.pending?.kind==='day'||this.pending?.kind==='upgrade')?' Ngày này chưa lưu. Đóng trang sẽ mất kết quả chưa lưu.':''):'Lưu lúc tạo chiến dịch, mua nâng cấp và kết thúc ngày. Tải lại giữa ca trở về đầu ngày hiện tại.',code:this.failure?.code??null,day:this.current?(this.current.shopPhase==='summary'&&!this.current.daySummary?.ending?this.current.day+1:this.current.day):this.saved?.payload.day??null,revision:this.saved?.revision??0,commitId:this.pending?.request.commitId??this.saved?.commitId??null,campaignId:this.pending?.request.campaignId??this.saved?.campaignId??null,pending:this.pending!==null,canRetry:this.status==='error'&&this.pending!==null&&this.failure?.code!=='revision-conflict',canTemporary:this.status==='error'&&this.pending?.kind!=='day'&&this.pending?.kind!=='upgrade'&&this.failure?.code!=='revision-conflict'&&this.current===null&&['unavailable','timeout','write-failed'].includes(this.failure?.code??''),canReload:this.status==='error'&&(this.pending?.kind==='day'||this.pending?.kind==='upgrade')};}
+  get view():CozySaveView {return {state:this.status,message:this.status==='loading'?'Đang đọc tiến độ…':this.status==='saving'?'Đang lưu ngày. Giữ trang này mở…':this.status==='recovery'?'Bản chính bị hỏng. Bản dự phòng cùng mốc mới nhất đã được kiểm tra. Xác nhận để tiếp tục; không quay lại ngày cũ.':this.status==='temporary'?'Chơi tạm không lưu. Đóng hoặc tải lại trang sẽ mất phiên này.':this.failure?this.failure.message+((this.pending?.kind==='day'||this.pending?.kind==='upgrade'||this.pending?.kind==='tutorial')?' Ngày này chưa lưu. Đóng trang sẽ mất kết quả chưa lưu.':''):'Lưu lúc tạo chiến dịch, mua nâng cấp và kết thúc ngày. Tải lại giữa ca trở về đầu ngày hiện tại.',code:this.failure?.code??null,day:this.current?(this.current.shopPhase==='summary'&&!this.current.daySummary?.ending?this.current.day+1:this.current.day):this.saved?.payload.day??null,revision:this.saved?.revision??0,commitId:this.pending?.request.commitId??this.saved?.commitId??null,campaignId:this.pending?.request.campaignId??this.saved?.campaignId??null,pending:this.pending!==null,canRetry:this.status==='error'&&this.pending!==null&&this.failure?.code!=='revision-conflict',canTemporary:this.status==='error'&&this.pending?.kind!=='day'&&this.pending?.kind!=='upgrade'&&this.pending?.kind!=='tutorial'&&this.failure?.code!=='revision-conflict'&&this.current===null&&['unavailable','timeout','write-failed'].includes(this.failure?.code??''),canReload:this.status==='error'&&(this.pending?.kind==='day'||this.pending?.kind==='upgrade'||this.pending?.kind==='tutorial')};}
   subscribe(listener:()=>void){this.listeners.add(listener);return ()=>this.listeners.delete(listener);}
   private publish(){for(const listener of this.listeners)listener();}
   private allowed=()=>this.status==='ready'||this.status==='temporary';
   private holdSave(){this.saveLease??=this.current?.acquirePause('save')??null;}
   private releaseSave(){this.saveLease?.release();this.saveLease=null;}
-  private install(runtime:CozyRuntime){this.releaseSave();this.menuLease?.release();this.menuLease=null;this.interruption?.destroy();this.current=runtime;runtime.attachSaveGuard(()=>this.current===runtime&&this.allowed());this.interruption=new PlayLifecycle(runtime);}
+  private install(runtime:CozyRuntime){this.tutorialUnsubscribe?.();this.releaseSave();this.menuLease?.release();this.menuLease=null;this.interruption?.destroy();this.current=runtime;runtime.attachSaveGuard(()=>this.current===runtime&&this.allowed());this.interruption=new PlayLifecycle(runtime);this.tutorialUnsubscribe=runtime.subscribeTutorialProgress(()=>{if(this.tutorialSaveQueued)return;this.tutorialSaveQueued=true;queueMicrotask(()=>{this.tutorialSaveQueued=false;if(this.current===runtime)this.saveTutorialProgress();});});}
   async load():Promise<CozyRuntime|null>{
     if(this.busy&&this.inFlight)return this.inFlight;
     const generation=++this.generation;this.status='loading';this.failure=null;this.holdSave();this.publish();
@@ -52,9 +54,10 @@ export class CozyCampaignSession {
   confirmRecovery():CozyRuntime|null {if(this.status!=='recovery'||!this.recovery)return null;return this.acceptLoaded(this.recovery.envelope,true);}
   async start(tutorial=true):Promise<CozyRuntime|null> {
     if(this.busy)return null;
-    if((this.pending?.kind==='day'||this.pending?.kind==='upgrade'))return null;
-    if(this.status==='temporary'){this.install(new CozyRuntime(tutorial,true,{eventSeed:campaignEventSeed(this.id())}));this.publish();return this.current;}
-    const campaignId=this.id(),runtime=new CozyRuntime(false,true,{eventSeed:campaignEventSeed(campaignId)}),payload=runtime.exportCheckpoint();
+    if((this.pending?.kind==='day'||this.pending?.kind==='upgrade'||this.pending?.kind==='tutorial'))return null;
+    if(this.status==='temporary'){this.install(this.newRuntime(tutorial));this.publish();return this.current;}
+    const campaignId=this.id(),runtime=new CozyRuntime(false,true,{eventSeed:campaignEventSeed(campaignId)});
+    if(tutorial)runtime.beginInteractiveTutorial();const payload=runtime.exportCheckpoint();
     this.pending={kind:'create',tutorial,request:{campaignId,commitId:this.id(),sourceRevision:0,payload,...(this.replacement!==undefined?{replacementToken:this.replacement}:{})}};
     return this.writePending();
   }
@@ -66,6 +69,14 @@ export class CozyCampaignSession {
     void this.writePending();return true;
   }
   retry():Promise<CozyRuntime|null>{if(!this.view.canRetry)return Promise.resolve(null);return this.writePending();}
+  private newRuntime(tutorial:boolean):CozyRuntime {const runtime=new CozyRuntime(false,true,{eventSeed:campaignEventSeed(this.id())});if(tutorial)runtime.beginInteractiveTutorial();return runtime;}
+  saveTutorialProgress():boolean {
+    if(!this.allowed()||!this.current?.tutorialProgress)return false;
+    if(this.status==='temporary'){this.publish();return true;}
+    if(!this.saved||this.pending)return false;
+    this.pending={kind:'tutorial',tutorial:false,request:{campaignId:this.saved.campaignId,commitId:this.id(),sourceRevision:this.saved.revision,payload:this.current.exportCheckpoint(),...(this.confirmedRecovery?{confirmedRecovery:true}:{})}};
+    void this.writePending();return true;
+  }
   buyRecipe(recipe:import('../domain/CozyStock').StockRecipe,commandId:string):boolean {
     if(!this.allowed()||!this.current)return false;const before=this.current.exportCheckpoint();
     if(!this.current.buyRecipe(recipe,commandId))return false;if(this.status==='temporary'){this.publish();return true;}
@@ -125,14 +136,14 @@ export class CozyCampaignSession {
       if(!result.ok){this.status='error';this.failure=result;this.publish();return null;}
       this.saved=structuredClone(result.envelope);this.replacement=replacementToken({campaignId:result.envelope.campaignId,checksum:result.envelope.checksum,commitId:result.envelope.commitId,revision:result.envelope.revision});this.confirmedRecovery=false;
       if(pending.shopCommand)this.current!.confirmShopCheckpoint(result.envelope.payload,pending.shopCommand);
-      if(pending.kind==='create')this.install(CozyRuntime.restoreCheckpoint(result.envelope.payload,pending.tutorial)!);
+      if(pending.kind==='create')this.install(CozyRuntime.restoreCheckpoint(result.envelope.payload,false)!);
       this.pending=null;this.status='ready';this.failure=null;this.releaseSave();this.publish();return this.current;
     })().finally(()=>{this.inFlight=null;});return this.inFlight;
   }
   temporary(tutorial=true):CozyRuntime|null {
-    if(!this.view.canTemporary)return null;this.pending=null;this.saved=null;this.recovery=null;this.install(new CozyRuntime(tutorial,true,{eventSeed:campaignEventSeed(this.id())}));this.status='temporary';this.failure=null;this.publish();return this.current;
+    if(!this.view.canTemporary)return null;this.pending=null;this.saved=null;this.recovery=null;this.install(this.newRuntime(tutorial));this.status='temporary';this.failure=null;this.publish();return this.current;
   }
   returnToMenu(){if(this.current)this.menuLease??=this.current.acquirePause('menu');}
   continue():CozyRuntime|null {if(!this.allowed())return null;if(!this.current&&this.saved)this.install(CozyRuntime.restoreCheckpoint(this.saved.payload,false,{eventSeed:campaignEventSeed(this.saved.campaignId)})!);this.menuLease?.release();this.menuLease=null;return this.current;}
-  destroy(){this.generation++;this.releaseSave();this.menuLease?.release();this.menuLease=null;this.interruption?.destroy();this.interruption=null;this.current=null;this.listeners.clear();}
+  destroy(){this.tutorialUnsubscribe?.();this.tutorialUnsubscribe=null;this.generation++;this.releaseSave();this.menuLease?.release();this.menuLease=null;this.interruption?.destroy();this.interruption=null;this.current=null;this.listeners.clear();}
 }

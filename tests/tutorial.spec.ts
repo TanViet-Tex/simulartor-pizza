@@ -1,105 +1,40 @@
 import {expect,test,type Page} from '@playwright/test';
-async function tap(page:Page,id:string){
-  const canvas=page.locator('canvas');
-  await expect.poll(async()=>JSON.parse((await canvas.getAttribute('data-controls'))??'[]').some((c:{id:string;enabled:boolean})=>c.id===id&&c.enabled)).toBe(true);
-  const controls=JSON.parse((await canvas.getAttribute('data-controls'))!);
-  const c=controls.find((c:{id:string})=>c.id===id),b=(await canvas.boundingBox())!;
-  expect(c.width*b.width/360).toBeGreaterThanOrEqual(48);expect(c.height*b.height/640).toBeGreaterThanOrEqual(48);
-  await page.touchscreen.tap(b.x+(c.x+c.width/2)*b.width/360,b.y+(c.y+c.height/2)*b.height/640);
-}
-test('guided practice is isolated, freezes at green and starts the shift explicitly',async({page},info)=>{
-  test.setTimeout(60000);
-  await page.emulateMedia({reducedMotion:'reduce'});
-  await page.addInitScript(()=>{IDBFactory.prototype.open=()=>{throw new Error('Tutorial touched campaign storage');};});
-  const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));
-  await page.goto('/?mode=tutorial');const canvas=page.locator('canvas');
-  await expect(canvas).toHaveAttribute('data-tutorial','dough');
-  await expect(canvas).toHaveAttribute('data-paused','tutorial');
-  await expect(canvas).toHaveAttribute('data-reduced-motion','true');
-  await page.screenshot({path:info.outputPath('guided-dough.png')});
-  await tap(page,'pause');await expect(canvas).toHaveAttribute('data-paused',/tutorial.*user/);
-  await tap(page,'resume');await expect(canvas).toHaveAttribute('data-paused','tutorial');
-  const next=['sauce','cheese','bake','warming'];
-  for(const [i,id] of ['dough','sauce','cheese','bake'].entries()){
-    await tap(page,id);await expect(canvas).toHaveAttribute('data-tutorial',next[i]);
-    await expect(canvas).toHaveAttribute('data-commercial-cash','300');
-  }
-  await expect(canvas).toHaveAttribute('data-tutorial','extract',{timeout:20000});
-  await expect(canvas).toHaveAttribute('data-oven','3');await expect(canvas).toHaveAttribute('data-paused','tutorial');
-  await page.waitForTimeout(500);await expect(canvas).toHaveAttribute('data-oven','3');
-  await page.screenshot({path:info.outputPath('guided-green.png')});
-  for(const [id,step] of [['extract','box'],['box','deliver'],['deliver','complete']]){
-    await tap(page,id);await expect(canvas).toHaveAttribute('data-tutorial',step);
-  }
-  await expect(canvas).toHaveAttribute('data-cash','300');await expect(canvas).toHaveAttribute('data-commercial-cash','300');
-  await page.screenshot({path:info.outputPath('guided-complete.png')});
-  await tap(page,'start-shift');await expect(canvas).toHaveAttribute('data-tutorial','off');
-  await expect(canvas).toHaveAttribute('data-stage','assembly');await expect(canvas).toHaveAttribute('data-ingredients','');
-  await expect(canvas).toHaveAttribute('data-paused','');await expect(canvas).toHaveAttribute('data-cash','300');
-  await expect(canvas).toHaveAttribute('data-shop','preparation');
-  await expect(canvas).toHaveAttribute('data-screen','preparation-hub');
-  await expect(canvas).toHaveAttribute('data-summary-tab','market');
-  await expect(canvas).toHaveAttribute('data-day','1');
-  await expect(canvas).toHaveAttribute('data-day-summary','null');
-  let controls=JSON.parse((await canvas.getAttribute('data-controls'))!);
-  expect(controls.find((c:{id:string})=>c.id==='summary-open-first-day').enabled).toBe(false);
-  expect(controls.some((c:{id:string})=>c.id==='market-open')).toBe(false);
-  await page.screenshot({path:info.outputPath('post-tutorial-market.png')});
-  await tap(page,'pause');await tap(page,'market-reset');await tap(page,'market-new-cancel');await tap(page,'resume');
-  await expect(canvas).toHaveAttribute('data-cash','300');
-  await tap(page,'summary-tab-summary');
-  await expect.poll(async()=>JSON.parse((await canvas.getAttribute('data-labels'))!).some((l:{text:string})=>l.text==='Ngày 1 chưa bắt đầu')).toBe(true);
-  await tap(page,'summary-tab-market');
-  for(const ingredient of ['dough','sauce','cheese'])await tap(page,`summary-buy-${ingredient}`);
-  controls=JSON.parse((await canvas.getAttribute('data-controls'))!);
-  expect(controls.find((c:{id:string})=>c.id==='summary-open-first-day').enabled).toBe(true);
-  await tap(page,'summary-open-first-day');
-  await expect(canvas).toHaveAttribute('data-day','1');
-  await expect(canvas).toHaveAttribute('data-shop','making');
-  await expect(canvas).toHaveAttribute('data-screen','game');
-  await expect(canvas).toHaveAttribute('data-day-summary','null');
-  expect(errors).toEqual([]);
+import {build} from 'esbuild';
+
+type Rect={x:number;y:number;width:number;height:number};
+type Control=Rect&{id:string;enabled?:boolean;disabled?:boolean};
+async function data(page:Page,key:string){return JSON.parse(await page.locator('canvas').getAttribute(`data-${key}`)??'null');}
+async function settle(page:Page){await page.evaluate(()=>new Promise<void>(resolve=>requestAnimationFrame(()=>requestAnimationFrame(()=>resolve()))));}
+async function tapAt(page:Page,r:Rect){const b=(await page.locator('canvas').boundingBox())!;await page.touchscreen.tap(b.x+(r.x+r.width/2)*b.width/360,b.y+(r.y+r.height/2)*b.height/640);await settle(page);}
+async function tap(page:Page,id:string,menu=false){let control:Control|undefined;await expect.poll(async()=>{control=((await data(page,menu?'menu-targets':'controls'))??[]).find((c:Control)=>c.id===id&&(menu?!c.disabled:c.enabled));return !!control;},{message:`actionable ${id}`}).toBe(true);await tapAt(page,control!);}
+async function step(page:Page,id:string){await expect(page.locator('canvas')).toHaveAttribute('data-tutorial',id);await expect.poll(async()=>(await data(page,'save-state'))?.state).toBe('ready');}
+async function active(page:Page){return page.evaluate(()=>new Promise<any>((resolve,reject)=>{const request=indexedDB.open('pizza-cozy-checkpoints',1);request.onerror=()=>reject(request.error);request.onsuccess=()=>{const db=request.result,tx=db.transaction('latest','readonly'),read=tx.objectStore('latest').get('active');tx.oncomplete=()=>{db.close();resolve(read.result);};};}));}
+function overlaps(a:Rect,b:Rect){return a.x<b.x+b.width&&b.x<a.x+a.width&&a.y<b.y+b.height&&b.y<a.y+a.height;}
+async function geometry(page:Page){const focus:Rect=await data(page,'tutorial-focus'),card:Rect=await data(page,'tutorial-card');expect(focus).toBeTruthy();expect(card).toBeTruthy();expect(overlaps(focus,card),'instruction card must not cover focus').toBe(false);for(const r of [focus,card]){expect(r.x).toBeGreaterThanOrEqual(0);expect(r.y).toBeGreaterThanOrEqual(0);expect(r.x+r.width).toBeLessThanOrEqual(360.01);expect(r.y+r.height).toBeLessThanOrEqual(640.01);}expect((await data(page,'tutorial-guide')).opacity).toBe(.7);return focus;}
+async function newGame(page:Page){await page.goto('/');await expect(page.locator('canvas')).toHaveAttribute('data-screen','menu');await tap(page,'menu-start',true);await step(page,'customer');}
+const management=['summary-sales','summary-costs','summary-profit','summary-reviews','market-ingredients','market-prices','market-quantity','market-forecast','market-basket','stock-owned','stock-usable','stock-expiry','shop-menu','shop-decoration','shop-equipment','shop-amenities','shop-expansion','shop-staff','missions-goal','missions-progress','missions-reward','ready'];
+
+test('new game completes isolated practice and all management focuses without changing real economy',async({page},info)=>{
+ test.setTimeout(90000);const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));await newGame(page);const before=(await active(page)).payload;
+ for(const id of ['customer','order','sample']){await step(page,id);await geometry(page);await page.touchscreen.tap(8,630);await expect(page.locator('canvas')).toHaveAttribute('data-tutorial',id);await tap(page,'tutorial-next');}
+ await step(page,'dough');const focus=await geometry(page),controls:Control[]=await data(page,'controls');const dough=controls.find(c=>c.id==='dough')!;expect(overlaps(focus,dough)).toBe(true);const wrong=controls.find(c=>c.id==='cheese');if(wrong)await tapAt(page,wrong);await expect(page.locator('canvas')).toHaveAttribute('data-tutorial','dough');await expect(page.locator('canvas')).toHaveAttribute('data-ingredients','');
+ await page.locator('canvas').screenshot({path:info.outputPath('practice-dough.png')});
+ for(const [id,action] of [['dough','dough'],['sauce','sauce'],['cheese','cheese'],['bake','bake']] as const){await step(page,id);await geometry(page);await tap(page,action);}
+ await step(page,'warming');await geometry(page);await expect(page.locator('canvas')).toHaveAttribute('data-tutorial','extract',{timeout:16000});await step(page,'extract');const oven=await page.locator('canvas').getAttribute('data-oven');await page.waitForTimeout(1000);await expect(page.locator('canvas')).toHaveAttribute('data-oven',oven!);await expect(page.locator('canvas')).toHaveAttribute('data-heat','perfect');
+ for(const [id,action] of [['extract','extract'],['box','box'],['deliver','deliver']] as const){await step(page,id);await geometry(page);await tap(page,action);}
+ await step(page,'complete');await expect(page.locator('canvas')).toHaveAttribute('data-cash','300');await tap(page,'tutorial-next');
+ for(const id of management){await step(page,id);await geometry(page);await expect(page.locator('canvas')).toHaveAttribute('data-paused',/tutorial-management/);if(id==='shop-menu'||id==='market-forecast')await page.locator('canvas').screenshot({path:info.outputPath(`${id}.png`)});await tap(page,'tutorial-next');}
+ await expect(page.locator('canvas')).toHaveAttribute('data-tutorial','off');await expect(page.locator('canvas')).not.toHaveAttribute('data-paused',/tutorial/);await expect.poll(async()=>(await data(page,'save-state'))?.state).toBe('ready');await expect(page.locator('canvas')).toHaveAttribute('data-summary-tab','market');const after=(await active(page)).payload;expect(after.tutorialProgress.status).toBe('completed');expect(after.stock).toEqual(before.stock);expect(after.reports).toEqual(before.reports);expect(after.day).toBe(1);expect(after.progression).toEqual(before.progression);await expect(page.locator('canvas')).toHaveAttribute('data-cash','300');
+ await tap(page,'market-buy-all');const basket=await data(page,'market-basket');await tap(page,'market-purchase-confirm');await expect(page.locator('canvas')).toHaveAttribute('data-cash',String(300-basket.total));const stock=await data(page,'stock');for(const entry of basket.entries)expect(stock.find((s:{id:string})=>s.id===entry.ingredient)?.owned).toBe(entry.quantity);await tap(page,'summary-open-first-day');await expect(page.locator('canvas')).toHaveAttribute('data-shop','making');await expect(page.locator('canvas')).toHaveAttribute('data-day-summary','null');
+ await page.reload();await tap(page,'menu-continue',true);await expect(page.locator('canvas')).toHaveAttribute('data-tutorial','off');expect(errors).toEqual([]);
 });
 
-test('campaign tutorial hub retains preparation through pause and menu return',async({page})=>{
-  test.setTimeout(60000);
-  await page.goto('/');const canvas=page.locator('canvas');await tap(page,'menu-start');
-  for(const id of ['dough','sauce','cheese','bake'])await tap(page,id);
-  await expect(canvas).toHaveAttribute('data-tutorial','extract',{timeout:20000});
-  for(const id of ['extract','box','deliver','start-shift'])await tap(page,id);
-  await expect(canvas).toHaveAttribute('data-screen','preparation-hub');
-  await tap(page,'summary-buy-dough');
-  const cash=await canvas.getAttribute('data-cash');
-  await tap(page,'pause');await tap(page,'mute');
-  await tap(page,'main-menu');await expect(canvas).toHaveAttribute('data-screen','menu');
-  await tap(page,'menu-continue');await expect(canvas).toHaveAttribute('data-screen','preparation-hub');
-  await expect(canvas).toHaveAttribute('data-summary-tab','market');
-  await expect(canvas).toHaveAttribute('data-cash',cash!);
-  await expect(canvas).toHaveAttribute('data-day-summary','null');
-  await tap(page,'pause');await tap(page,'market-reset');
-  await tap(page,'market-new-cancel');await tap(page,'resume');
-  for(const id of ['sauce','cheese'])await tap(page,`summary-buy-${id}`);
-  await tap(page,'summary-open-first-day');
-  await expect(canvas).toHaveAttribute('data-shop','making');await expect(canvas).toHaveAttribute('data-day','1');
+test('saved tutorial resumes the same step and skip removes only tutorial state before day one',async({page},info)=>{
+ await newGame(page);for(let i=0;i<3;i++)await tap(page,'tutorial-next');await step(page,'dough');await tap(page,'dough');await step(page,'sauce');const before=(await active(page)).payload;await page.reload();await tap(page,'menu-continue',true);await step(page,'sauce');await expect(page.locator('canvas')).toHaveAttribute('data-ingredients','dough');await geometry(page);await page.setViewportSize({width:320,height:568});await settle(page);await geometry(page);await page.setViewportSize({width:360,height:640});await settle(page);await page.locator('canvas').screenshot({path:info.outputPath('restored-sauce.png')});await tap(page,'tutorial-skip');await expect(page.locator('canvas')).toHaveAttribute('data-tutorial','off');await expect.poll(async()=>(await data(page,'save-state'))?.state).toBe('ready');const after=(await active(page)).payload;expect(after.tutorialProgress.status).toBe('skipped');expect(after.stock).toEqual(before.stock);expect(after.reports).toEqual(before.reports);await expect(page.locator('canvas')).toHaveAttribute('data-ingredients','');await expect(page.locator('canvas')).not.toHaveAttribute('data-paused',/tutorial/);await page.reload();await tap(page,'menu-continue',true);await expect(page.locator('canvas')).toHaveAttribute('data-tutorial','off');
 });
 
-test('reading order and nested visibility pauses keep tutorial ownership',async({page})=>{
-  await page.goto('/?mode=tutorial');const canvas=page.locator('canvas');
-  await expect(canvas).toHaveAttribute('data-tutorial','dough');
-  await tap(page,'order');
-  await page.evaluate(()=>{
-    Object.defineProperty(document,'hidden',{configurable:true,value:true});document.dispatchEvent(new Event('visibilitychange'));
-    Object.defineProperty(document,'hidden',{configurable:true,value:false});document.dispatchEvent(new Event('visibilitychange'));
-  });
-  await expect(canvas).toHaveAttribute('data-paused',/tutorial.*order.*visibility/);
-  await tap(page,'resume');await expect(canvas).toHaveAttribute('data-paused','tutorial,order');
-  await tap(page,'close-order');await expect(canvas).toHaveAttribute('data-paused','tutorial');
-  await expect(canvas).toHaveAttribute('data-tutorial','dough');
-  await tap(page,'pause');
-  await page.setViewportSize({width:640,height:360});
-  await expect(canvas).toHaveAttribute('data-paused','tutorial,user');
-  await expect.poll(async()=>JSON.parse((await canvas.getAttribute('data-labels'))!).some((l:{text:string})=>l.text.includes('Đang dừng: hướng dẫn, nghỉ tay'))).toBe(true);
-  await page.setViewportSize({width:360,height:640});
-  await expect(canvas).toHaveAttribute('data-paused','tutorial,user');
-  await tap(page,'resume');await expect(canvas).toHaveAttribute('data-paused','tutorial');
+async function leaseFixture(page:Page){const moduleName:string='node:path',paths:{resolve:(s:string)=>string}=await import(moduleName);const bundle=await build({stdin:{resolveDir:paths.resolve('.'),loader:'ts',contents:`import Phaser from 'phaser';import {CozyScene} from './src/scenes/CozyScene';import {CozyRuntime} from './src/runtime/CozyRuntime';const r=new CozyRuntime(false,true);r.beginInteractiveTutorial();(window as any).tutorialTest={r};new Phaser.Game({type:Phaser.AUTO,parent:'fixture',width:360,height:640,scale:{mode:Phaser.Scale.FIT,autoCenter:Phaser.Scale.CENTER_BOTH},scene:[new CozyScene(r)]});`},bundle:true,platform:'browser',format:'iife',minify:true,define:{'import.meta.env.BASE_URL':'"/"'},write:false});await page.route('**/assets/index-*.js',r=>r.abort());await page.goto('/');await page.setContent('<style>html,body{margin:0;height:100%;overflow:hidden}#fixture{height:100%;width:100%}</style><div id="fixture"></div>');await page.addScriptTag({content:bundle.outputFiles[0].text});await expect(page.locator('canvas')).toHaveAttribute('data-tutorial','customer');}
+test('skip while baking and during management preserves another owner pause',async({page})=>{
+ await leaseFixture(page);await page.evaluate(()=>{const f=(window as any).tutorialTest;for(let i=0;i<3;i++)f.r.nextTutorial();for(const ingredient of ['dough','sauce','cheese'])f.r.dispatch({type:'ingredient',ingredient});f.r.dispatch({type:'bake'});f.lease=f.r.acquirePause('user');});await expect(page.locator('canvas')).toHaveAttribute('data-tutorial','warming');await page.evaluate(()=>(window as any).tutorialTest.r.skipTutorial());await expect(page.locator('canvas')).toHaveAttribute('data-paused','user');await expect(page.locator('canvas')).toHaveAttribute('data-ingredients','');await page.evaluate(()=>{const f=(window as any).tutorialTest;f.lease.release();});await expect(page.locator('canvas')).toHaveAttribute('data-paused','');
+ await leaseFixture(page);await page.evaluate(()=>{const f=(window as any).tutorialTest;for(let i=0;i<3;i++)f.r.nextTutorial();for(const ingredient of ['dough','sauce','cheese'])f.r.dispatch({type:'ingredient',ingredient});f.r.dispatch({type:'bake'});f.r.advanceElapsed(6000);for(const type of ['extract','box','deliver'])f.r.dispatch({type});f.r.nextTutorial();f.lease=f.r.acquirePause('user');});await expect(page.locator('canvas')).toHaveAttribute('data-tutorial','summary-sales');await page.evaluate(()=>(window as any).tutorialTest.r.skipTutorial());await expect(page.locator('canvas')).toHaveAttribute('data-paused','user');await expect(page.locator('canvas')).toHaveAttribute('data-cash','300');
 });
