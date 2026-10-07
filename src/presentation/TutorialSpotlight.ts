@@ -1,6 +1,7 @@
 import type Phaser from 'phaser';
 import {UI_THEME} from './theme';
 import {UI_RASTER_SCALE} from './UiRaster';
+import {MODAL_BACKDROP_ALPHA} from './ModalBackdrop';
 
 export type TutorialRect={x:number;y:number;width:number;height:number};
 export function tutorialCardBounds(focus:TutorialRect,height=100):TutorialRect{
@@ -15,7 +16,7 @@ export function tutorialContains(rect:TutorialRect,x:number,y:number):boolean{re
 export function drawTutorialSpotlight(scene:Phaser.Scene,layer:Phaser.GameObjects.Container,input:{focus:TutorialRect;text:string;index:number;total:number;next:boolean;from?:TutorialRect;reducedMotion:boolean;complete:()=>void}):{card:TutorialRect;next:TutorialRect|null}{
   const body=scene.add.text(0,0,input.text,{fontFamily:UI_THEME.typography.fontFamily,fontSize:'14px',fontStyle:'bold',color:'#2a160b',wordWrap:{width:256,useAdvancedWrap:true}}).setResolution(UI_RASTER_SCALE);
   const f=input.focus,card=tutorialCardBounds(f,32+Math.ceil(body.height)+(input.next?52:12)),g=scene.add.graphics().setData('dynamic',true);
-  const moving={...(input.from??f)},paint=()=>{g.clear().fillStyle(0x000000,.3).fillRect(0,0,360,moving.y).fillRect(0,moving.y,moving.x,moving.height).fillRect(moving.x+moving.width,moving.y,360-moving.x-moving.width,moving.height).fillRect(0,moving.y+moving.height,360,640-moving.y-moving.height);g.lineStyle(3,0xffd158,1).strokeRoundedRect(moving.x,moving.y,moving.width,moving.height,7);scene.game.canvas.dataset.tutorialAnimatedFocus=JSON.stringify(moving);};
+  const moving={...(input.from??f)},paint=()=>{g.clear().fillStyle(0x000000,MODAL_BACKDROP_ALPHA).fillRect(0,0,360,moving.y).fillRect(0,moving.y,moving.x,moving.height).fillRect(moving.x+moving.width,moving.y,360-moving.x-moving.width,moving.height).fillRect(0,moving.y+moving.height,360,640-moving.y-moving.height);g.lineStyle(3,0xffd158,1).strokeRoundedRect(moving.x,moving.y,moving.width,moving.height,7);scene.game.canvas.dataset.tutorialAnimatedFocus=JSON.stringify(moving);};
   paint();layer.add(g);
   const panel=scene.add.container(),paper=scene.add.graphics();layer.add(panel);panel.add(paper);
   paper.fillStyle(0xffefd0,1).fillRoundedRect(card.x,card.y,card.width,card.height,16).lineStyle(2,0xe7bc66).strokeRoundedRect(card.x,card.y,card.width,card.height,16);

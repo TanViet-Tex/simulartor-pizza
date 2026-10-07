@@ -1,7 +1,7 @@
 import {isFinishingSauce,isNonExpiring} from '../config/ingredientCatalog';
 import {TestCodePanel} from '../presentation/TestCodePanel';
 import type {HubDrag} from '../presentation/HubListWindow';
-import {drawModalBackdrop} from '../presentation/ModalBackdrop';
+import {drawModalBackdrop,MODAL_BACKDROP_ALPHA} from '../presentation/ModalBackdrop';
 import {drawSettingsPanel} from '../presentation/SettingsPanel';
 import {preloadSettingsArt} from '../presentation/ReferenceSettingsArt';
 import {RECIPE_CATALOG,recipeDefinition} from '../config/recipeCatalog';
@@ -1228,7 +1228,7 @@ export class CozyScene extends Phaser.Scene {
     }
     if(this.tutorialView.next){const r=this.tutorialView.next;this.hit('tutorial-next',r.x,r.y,r.width,r.height,true,()=>{if(this.runtime.nextTutorial()&&!this.runtime.tutorialPhase){this.summaryTab=this.runtime.menuRecipes.some(recipe=>!this.runtime.missingRecipeReason(recipe))?'summary':'market';this.shopPage='home';this.dirty=true;}});}
     this.game.canvas.dataset.tutorialFocus=JSON.stringify(focus);this.game.canvas.dataset.tutorialCard=JSON.stringify(this.tutorialView.card);this.game.canvas.dataset.tutorialText=step.text;this.game.canvas.dataset.tutorialTransitioning=String(this.tutorialAnimating);
-    this.game.canvas.dataset.tutorialGuide=JSON.stringify({id:step.id,index:progress.index,opacity:.3,focus});
+    this.game.canvas.dataset.tutorialGuide=JSON.stringify({id:step.id,index:progress.index,opacity:MODAL_BACKDROP_ALPHA,focus});
   }
   private get guidedTutorialVisible():boolean{return !!this.runtime.tutorialPhase&&!this.runtime.pauses.some(p=>p!=='tutorial'&&p!=='tutorial-management'&&!(p==='save'&&this.campaignSession?.savingTutorial));}
   private routeTutorial():void{

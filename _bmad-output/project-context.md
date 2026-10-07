@@ -435,3 +435,6 @@ Tutorial chuyển bước: container spotlight riêng giữ qua redraw/save, twe
 CashHeader là nguồn chung của khung/icon/chữ tiền bếp và hub; tutorial focus toàn bounds component, không hard-code vùng chỉ có số. Không đổi cash/accounting.
 
 NotificationFrame: thông báo chữ ngắn một/hai nút fit nội dung thực, đệm12/gap10/bottom18 cho one; giữ art và footer. Xác nhận có điều khiển phụ dự trù riêng để không chồng chữ; nội dung dài cuộn, nút không chạy theo scroll. Form native/illustration không dùng bộ fit thuần chữ. Tiền, hành vi xác nhận và pause lease không đổi.
+
+
+Theo chỉnh tiếp 2026-10-07: lớp phủ nền phía sau tutorial và thông báo dùng chung opacity60% (thay30%/28%). Focus và khung nội dung vẫn sáng. Số tiền cách mép trong khung5px trong cả bếp và hub, tự fit số lớn; giữ nguyên bounds và luật tiền.

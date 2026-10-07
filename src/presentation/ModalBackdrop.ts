@@ -1,6 +1,6 @@
 import type Phaser from 'phaser';
 
-export const MODAL_BACKDROP_ALPHA=.28;
+export const MODAL_BACKDROP_ALPHA=.6;
 
 /** Scenes reset their background targets before adding modal controls above this blocker. */
 export function drawModalBackdrop(scene:Phaser.Scene,layer:Phaser.GameObjects.Container):void {

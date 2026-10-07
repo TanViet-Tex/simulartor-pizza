@@ -18,11 +18,12 @@ export function paintCashHeader(scene:Phaser.Scene,ctx:CanvasRenderingContext2D,
   ctx.beginPath();ctx.arc(r.x+13,cy,9,0,Math.PI*2);ctx.fill();ctx.stroke();
   ctx.strokeStyle='#ffdd76';ctx.lineWidth=1;ctx.beginPath();ctx.arc(r.x+13,cy,6.5,0,Math.PI*2);ctx.stroke();
   ctx.font=`bold 12px ${UI_THEME.typography.fontFamily}`;ctx.fillStyle='#765018';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('$',r.x+13,cy+.5);
-  let size=17;const value=String(cash),available=r.width-30;
+  const textPadding=5,textRight=r.x+r.width-3-textPadding;
+  let size=17;const value=String(cash),available=textRight-(r.x+23);
   ctx.font=`bold ${size}px ${UI_THEME.typography.fontFamily}`;
   while(size>9&&ctx.measureText(value).width>available){size--;ctx.font=`bold ${size}px ${UI_THEME.typography.fontFamily}`;}
-  ctx.fillStyle='#2a160b';ctx.textAlign='right';ctx.fillText(value,r.x+r.width-7,cy+.5,available);ctx.restore();
-  scene.game.canvas.dataset.cashHeader=JSON.stringify({location,bounds:r,cash,fontSize:size});
+  ctx.fillStyle='#2a160b';ctx.textAlign='right';ctx.fillText(value,textRight,cy+.5,available);ctx.restore();
+  scene.game.canvas.dataset.cashHeader=JSON.stringify({location,bounds:r,cash,fontSize:size,textPadding});
 }
 export function drawCashHeader(scene:Phaser.Scene,layer:Phaser.GameObjects.Container,cash:number):void{
   const key=`kitchen-cash-${serial++}`,texture=uiCanvas(scene,key,360,40);paintCashHeader(scene,texture.context,cash,'kitchen');texture.refresh();

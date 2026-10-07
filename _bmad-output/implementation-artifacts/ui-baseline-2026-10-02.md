@@ -502,3 +502,6 @@ Chuyển bước tutorial theo chỉnh tiếp: focus chuyển dần và thẻ fa
 Thông báo một nút giảm padding ngang18→12px, khoảng chữ/nút14→10px, đệm dưới48→18px; giữ crest/art và nút48px. Xác nhận thuần chữ hai nút đo nội dung để co chiều cao, giữ art hai nút, chỗ riêng cho điều khiển phụ và khả năng cuộn khi chữ dài. Menu xác nhận chiến dịch mới dùng cùng cách fit. Các form có ô nhập/hình xem trước giữ vùng cần cho điều khiển, không đổi luật tiền/save/pause.
 
 Kiểm chứng: build/typecheck đạt;5kiểm tra Chromium360×640 liên quan đạt (thông báo ngắn/pause, xác nhận menu, chữ200%, cuộn dài, quảng bá). Ảnh: [một nút](ui-baseline/compact-notifications-2026-10-07/notification-one.png), [hai nút](ui-baseline/compact-notifications-2026-10-07/notification-two.png), [cuối ngày](ui-baseline/compact-notifications-2026-10-07/notification-end-day.png).
+
+
+Theo chỉnh tiếp 2026-10-07: lớp phủ nền phía sau tutorial và thông báo dùng chung opacity60% (thay30%/28%). Focus và khung nội dung vẫn sáng. Số tiền cách mép trong khung5px trong cả bếp và hub, tự fit số lớn; giữ nguyên bounds và luật tiền.

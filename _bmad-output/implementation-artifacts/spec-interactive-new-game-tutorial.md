@@ -17,7 +17,7 @@ Mở rộng tutorial/runtime hiện có thành hướng dẫn nhận biết đơ
 
 ## Boundaries & Constraints
 
-Lớp đen0.3 khoét focus, viền vàng, lời Việt ngắn đặt cạnh và không che thao tác; tiến độ 23 bước, không có nút Bỏ qua hướng dẫn. Focus lấy bounds UI hiện tại trong canvas360×640, theo scale và offset cuộn. Chặn input/keyboard/scroll ngoài focus và tutorial controls; thao tác thực hành chỉ qua bước khi runtime nhận thành công. Không tự mua, đổi giá, thưởng hoặc tạo báo cáo giả trong giới thiệu quản lý.
+Lớp đen0.6 khoét focus, viền vàng, lời Việt ngắn đặt cạnh và không che thao tác; tiến độ 23 bước, không có nút Bỏ qua hướng dẫn. Focus lấy bounds UI hiện tại trong canvas360×640, theo scale và offset cuộn. Chặn input/keyboard/scroll ngoài focus và tutorial controls; thao tác thực hành chỉ qua bước khi runtime nhận thành công. Không tự mua, đổi giá, thưởng hoặc tạo báo cáo giả trong giới thiệu quản lý.
 
 12 bước đầu: khách, thông tin đơn, hình pizza mẫu (Tiếp tục); đế, tương cà, phô mai, đưa lò; chờ chín vàng; lấy bánh chín thành công; đóng hộp; giao bánh; số xu (Tiếp tục). Đơn tập phô mai đủ nguyên liệu riêng, không khách mới/kiên nhẫn/cháy, chỉ lò chạy ở bước chờ; tiền/kho/XP/đánh giá/báo cáo thật giữ nguyên.
 
@@ -90,7 +90,7 @@ Ba review độc lập: blind, edge-case và acceptance. Đã sửa trạng thá
 - Spotlight nhận focus thật, giới thiệu tự chuyển tab, kết thúc sang Chợ.
   [CozyScene.ts:1201](../../src/scenes/CozyScene.ts#L1201)
 
-- Khoét overlay 0.3, viền vàng và đặt card cạnh focus.
+- Khoét overlay 0.6, viền vàng và đặt card cạnh focus.
   [TutorialSpotlight.ts:15](../../src/presentation/TutorialSpotlight.ts#L15)
 
 - 23 bước tiếng Việt, index lưu giữ tương thích bản cũ.
@@ -104,7 +104,7 @@ Ba review độc lập: blind, edge-case và acceptance. Đã sửa trạng thá
 
 ## Điều chỉnh theo người dùng — 2026-10-07
 
-Khung rộng 280px thay 328px, chiều cao theo chữ thực tế thay cố định 150px. Không có nút bỏ qua trên UI. Lớp phủ tối opacity 30%. Tổng kết, Chợ, Kho và Nhiệm vụ mỗi tab một bước, focus nút tab; Quán vẫn giữ sáu bước chi tiết. Tổng cộng 23 bước hiển thị. Save cũ giữ index và trạng thái hoàn tất; bước chi tiết cũ được gộp về bước giới thiệu tab tương ứng. Luật đơn tập và kinh tế không đổi. Quyết định này thay các mô tả chi tiết/bỏ qua của yêu cầu ban đầu phía trên.
+Khung rộng 280px thay 328px, chiều cao theo chữ thực tế thay cố định 150px. Không có nút bỏ qua trên UI. Lớp phủ tối opacity 60%. Tổng kết, Chợ, Kho và Nhiệm vụ mỗi tab một bước, focus nút tab; Quán vẫn giữ sáu bước chi tiết. Tổng cộng 23 bước hiển thị. Save cũ giữ index và trạng thái hoàn tất; bước chi tiết cũ được gộp về bước giới thiệu tab tương ứng. Luật đơn tập và kinh tế không đổi. Quyết định này thay các mô tả chi tiết/bỏ qua của yêu cầu ban đầu phía trên.
 
 ## Chuyển bước mượt — 2026-10-07
 
