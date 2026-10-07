@@ -40,9 +40,9 @@ describe('direct kitchen gameplay',()=>{
     expect(r.lastResult!.stars).toBeLessThan(5);expect(r.lastResult!.reasons.join(' ')).toContain('Sai công thức');expect(r.state.cash).toBeGreaterThan(cash);
   });
   it('orders rush once at premium, waits five simulation seconds, freezes on pause and blocks closing',()=>{
-    const r=new CozyRuntime(false,true,schedule());r.openShop();const price=r.expressPrice('dough');
+    const r=new CozyRuntime(false,true,schedule());r.openShop();const price=r.expressPrice('dough'),cash=r.state.cash;
     const modal=r.acquirePause('order');expect(r.dispatch({type:'express.order',ingredient:'dough',quantity:2,commandId:'rush'})).toBe(true);
-    expect(r.dispatch({type:'express.order',ingredient:'dough',quantity:2,commandId:'rush'})).toBe(false);expect(r.state.cash).toBe(300-2*price);
+    expect(r.dispatch({type:'express.order',ingredient:'dough',quantity:2,commandId:'rush'})).toBe(false);expect(r.state.cash).toBe(cash-2*price);
     time(r,10);expect(r.expressOrders[0].remaining).toBe(5);expect(r.closeDay()).toBe(false);modal.release();time(r,4.95);expect(r.owned('dough')).toBe(0);time(r,.05);
     expect(r.owned('dough')).toBe(2);expect(r.expressOrders).toEqual([]);time(r,1);expect(r.owned('dough')).toBe(2);expect(r.closeDay()).toBe(true);
     expect(r.daySummary!.purchases).toBe(2*price);expect(r.daySummary!.cost).toBe(0);
