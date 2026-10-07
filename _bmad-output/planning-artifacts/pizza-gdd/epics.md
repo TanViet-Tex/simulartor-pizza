@@ -120,7 +120,7 @@ Luồng giao đã chốt và được triển khai theo spec2026-10-04. Phí/h�
 
 ### Quyết định mới — 2026-10-07, chuẩn bị triển khai
 
-Bỏ lò thứ hai, thay mục đó bằng Nước (công dụng/giá chưa chốt). Tủ lạnh kéo dài hạn bảo quản gấp4; cần chốt cách áp dụng từng lô và giá/điều kiện. Bỏ mục Bàn làm pizza, món thay sẽ cập nhật sau; giữ bàn thao tác hiện tại và Bàn ghế khách. Mở rộng lần 1: 4→5 ô, +10% khách quầy; lần 2: 5→6 ô, tổng +30% khách quầy; không tăng burst hoặc đơn app. Quảng bá có phí và hiển thị số tốp khách dự kiến từ lịch seeded thật; chỉ mở thông tin, không tăng khách. **Không có hư hỏng/sửa chữa**: loại khỏi Epic7. Những mô tả lò2/bàn mới/hư hỏng và đề xuất quảng bá cũ bên dưới là lịch sử, chỉ yêu cầu đã chốt trong [phạm vi mới](../../implementation-artifacts/requirement-epic7-next-scope.md) được dùng cho đợt tiếp theo. Chưa code hoặc đánh dấu các story còn thiếu done.
+Bỏ lò thứ hai, thay mục đó bằng 3 ô nước (công dụng/giá chưa chốt). Tủ lạnh kéo dài hạn bảo quản gấp4; cần chốt cách áp dụng từng lô và giá/điều kiện. Bỏ mục Bàn làm pizza, món thay sẽ cập nhật sau; giữ bàn thao tác hiện tại và Bàn ghế khách. Mở rộng lần 1: 4→5 ô, +10% khách quầy; lần 2: 5→6 ô, tổng +30% khách quầy; không tăng burst hoặc đơn app. Quảng bá có phí và hiển thị số tốp khách dự kiến từ lịch seeded thật; chỉ mở thông tin, không tăng khách. **Không có hư hỏng/sửa chữa**: loại khỏi Epic7. Những mô tả lò2/bàn mới/hư hỏng và đề xuất quảng bá cũ bên dưới là lịch sử, chỉ yêu cầu đã chốt trong [phạm vi mới](../../implementation-artifacts/requirement-epic7-next-scope.md) được dùng cho đợt tiếp theo. Chưa code hoặc đánh dấu các story còn thiếu done.
 
 Sau demo; P08, P09, phần thiết bị của P15. Trụ cột kinh tế. Phụ thuộc E05. Theo chỉ định người dùng 2026-10-04, nhân sự/P06 chuyển sang E08; quảng bá và các yêu cầu cũ ngoài nhân sự vẫn giữ ở E07.
 
@@ -146,6 +146,8 @@ Nghiệm thu7.1/7.2 gồm UI đầy đủ hình/tên/giá/tác dụng/sở hữu
 **Triển khai 2026-10-04:** 12 món giá 500–10000 xu đã có mua/đặt/cất, vị trí cố định, preview, hiệu ứng đầu ca và lưu atomic; lò cấp 2/3 giá 2000/5000, mở rộng 4→6 giá 6000, giữ save cũ và giá lịch sử. Build, 110 unit, 7 E2E tập trung đạt. 7.1/7.4/7.5 ở review; 7.2/7.3 và toàn Epic7 còn in-progress: bàn ghế4000 đã có tác dụng10% kiên nhẫn; mở rộng2 giá10000 chưa chốt tác dụng; thiết bị mới/quảng bá/hư hỏng còn thiếu luật. Xem [spec](../../implementation-artifacts/spec-7-shop-development.md).
 
 ## E08 - Nhân viên, câu chuyện và khách đặc biệt
+
+**Quyết định mới 2026-10-07:** không đào tạo nhân viên hoặc công thức gia truyền; giữ thuê theo nghề và lương cuối ngày. Chỉ nhân viên nguyên liệu có nhánh bận một ngày, chu kỳ 5–7 cần xác nhận trước triển khai. Khách đặc biệt triển khai chào/avatar/thoại theo spec, không thêm voice/thưởng; nhiệm vụ ẩn mới là gợi ý. Phần đề xuất tương ứng bên dưới được thay bởi [phạm vi mới](../../implementation-artifacts/requirement-epic8-next-scope.md).
 
 Sau demo; P06, P10, P12, P13, P14. Trụ cột kinh tế, quan hệ và tiến độ. Phụ thuộc E06–E07 cho nhóm câu chuyện hiện có; phần nhân viên dùng UI Quán 3.8 và dữ liệu kinh tế, không tự tạo phụ thuộc vòng ngược về E07.
 

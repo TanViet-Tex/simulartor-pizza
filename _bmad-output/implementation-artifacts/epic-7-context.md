@@ -16,7 +16,7 @@ Cho người chơi đầu tư vào quán bằng trang trí, thiết bị, tiện
 
 ## Requirements & Constraints
 
-- **Mốc mới2026-10-07:** bỏ lò thứ hai/thay bằng Nước; tủ lạnh bảo quản gấp4; bỏ Bàn làm pizza, món thay cập nhật sau; mở rộng lần 1: 4→5 ô, +10% khách quầy; lần 2: 5→6 ô, tổng +30% khách quầy; quảng bá trả tiền chỉ để biết số tốp/lượt hôm đó, không tăng khách; không có hư hỏng/sửa chữa. Các điểm còn cần chốt nằm trong [phạm vi tiếp theo](requirement-epic7-next-scope.md). Đây là planning, không phải chức năng đã triển khai. Sức chứa tối đa 6 ô; burst2–3 độc lập sức chứa giữ nguyên.
+- **Mốc mới2026-10-07:** bỏ lò thứ hai/thay bằng 3 ô nước; tủ lạnh bảo quản gấp4; bỏ Bàn làm pizza, món thay cập nhật sau; mở rộng lần 1: 4→5 ô, +10% khách quầy; lần 2: 5→6 ô, tổng +30% khách quầy; quảng bá trả tiền chỉ để biết số tốp/lượt hôm đó, không tăng khách; không có hư hỏng/sửa chữa. Các điểm còn cần chốt nằm trong [phạm vi tiếp theo](requirement-epic7-next-scope.md). Đây là planning, không phải chức năng đã triển khai. Sức chứa tối đa 6 ô; burst2–3 độc lập sức chứa giữ nguyên.
 
 - Mỗi loại đồ sở hữu một bản; mua không tự đặt. Chỉ mua/đặt/cất trong chuẩn bị. Xem/hủy không trừ tiền; thiếu tiền báo số còn thiếu; cất giữ sở hữu, không bán/hoàn tiền. Kiểm tra lại điều kiện trên trạng thái thật khi xác nhận.
 - Trang trí tăng kỳ vọng khách: cây để bàn 3%, tranh pizza 5%, đèn trang trí 5%, bảng hiệu 8%, chậu cây lớn 5%, rèm cửa 3%. Tiện nghi tăng kiên nhẫn: ghế chờ 5%, Wi-Fi 8%, quạt đứng 5%, máy lạnh 10%, loa 5%; bàn ghế khách +10% kiên nhẫn, không tăng sức chứa.

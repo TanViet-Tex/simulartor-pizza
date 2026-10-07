@@ -10,7 +10,7 @@ source: user
 
 ## Phạm vi tiếp theo — quyết định 2026-10-07
 
-Bỏ lò thứ hai, thay mục đó bằng Nước; tủ lạnh giữ thực phẩm lâu gấp4; bỏ Bàn làm pizza, món thay cập nhật sau. Mở rộng lần 1: 4→5 ô, +10% khách quầy; lần 2: 5→6 ô, tổng +30% khách quầy. Quảng bá có phí, chỉ cho xem số tốp/lượt khách hôm đó, không tăng khách; không có hư hỏng/sửa chữa. Các đoạn đề xuất cũ tương ứng bên dưới được thay bởi [phạm vi mới](requirement-epic7-next-scope.md), nơi ghi các luật còn cần chốt. Chưa triển khai UI/gameplay trong lượt ghi quyết định này; giữ các nhóm và bố cục ngoài đúng mục được yêu cầu thay.
+Bỏ lò thứ hai, thay mục đó bằng 3 ô nước; tủ lạnh giữ thực phẩm lâu gấp4; bỏ Bàn làm pizza, món thay cập nhật sau. Mở rộng lần 1: 4→5 ô, +10% khách quầy; lần 2: 5→6 ô, tổng +30% khách quầy. Quảng bá có phí, chỉ cho xem số tốp/lượt khách hôm đó, không tăng khách; không có hư hỏng/sửa chữa. Các đoạn đề xuất cũ tương ứng bên dưới được thay bởi [phạm vi mới](requirement-epic7-next-scope.md), nơi ghi các luật còn cần chốt. Chưa triển khai UI/gameplay trong lượt ghi quyết định này; giữ các nhóm và bố cục ngoài đúng mục được yêu cầu thay.
 
 ## Cập nhật Epic 5 — 2026-10-04
 

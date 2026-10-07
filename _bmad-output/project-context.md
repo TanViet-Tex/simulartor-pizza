@@ -36,9 +36,18 @@ _Tệp này chứa các quy tắc và patterns quan trọng mà AI agent phải 
 
 ## Critical Implementation Rules
 
+### Khách đặc biệt — triển khai 2026-10-07
+
+20 tên/thoại người dùng cung cấp nằm trong specialCustomers.ts; ảnh gốc bộ20 và ba khung references được tách textureframe, không crop tóc/mặt. VIP vàng/crown, KOL tím/camera, attentionđỏcam chỉfictional. Chào2.5s ownspecial-welcomelease dừng ca/lò/kiên nhẫn; đồng hồ trình bày dùngperformance.now/time-boundary, reducedmotionstatic. Một bubble3s ghi lời thoại hư cấu; recipekhôngkhớp/drink/chưarõsauce dùngcâuchung. Skin seeded thaylượtđãcó, khôngtăngngânsách/tiền/kho/bonusVIP; giữcácVIPrewardđãduyệt. Build/typecheckđạt,69unitđạt+1assertionlegacytái hiệnHEAD,3Chromium360×640đạt. Xem implementation-artifacts/spec-special-customer-presentation.md.
+
+
+### Epic 8 — quyết định 2026-10-07
+
+Không đào tạo nhân viên, không công thức gia truyền. Nhân viên chỉ thuê theo nghề/làm việc/trả lương cuối ngày; nhân viên nguyên liệu bận một ngày sau mỗi 5–7 ngày đã xác nhận nhưng chưa triển khai, không tự sửa lương hoặc automation. Khách đặc biệt có khung/avatar/thảm đỏ/thoại hư cấu, chưa voice và không thêm thưởng mới; giữ luật VIP hiện có. Xem implementation-artifacts/requirement-epic8-next-scope.md và spec-special-customer-presentation.md. Ba ô nước thay lò thứ hai gồm nước suối, Coca, nước cam; chưa triển khai nước trong lượt khách đặc biệt.
+
 ### Epic 7 — phạm vi tiếp theo, quyết định 2026-10-07
 
-Đang chuẩn bị triển khai: bỏ lò thứ hai/thay mục bằng Nước (công dụng chưa chốt); tủ lạnh kéo dài hạn bảo quản gấp4 (cần chốt xử lý từng lô/giá); bỏ mục Bàn làm pizza, món thay cập nhật sau, không bỏ bàn thao tác hoặc Bàn ghế khách hiện có. Mở rộng lần 1: 4→5 ô, +10% khách quầy; lần 2: 5→6 ô, tổng +30% khách quầy; burst2/3 độc lập sức chứa giữ nguyên, không tự nhân app. Quảng bá có phí/hiện số tốp khách hôm đó từ cùng lịch seeded, chỉ mở thông tin, không tăng khách. Không có hư hỏng/sửa chữa trongEpic7; không thay sự kiện mất tiềnEpic9. Quyết định này thay các đề xuất cũ tương ứng bên dưới; chưa có code/storyready và không tự gán giá/tác dụng chưa chốt. Xem implementation-artifacts/requirement-epic7-next-scope.md.
+Đang chuẩn bị triển khai: bỏ lò thứ hai/thay mục bằng 3 ô nước (công dụng chưa chốt); tủ lạnh kéo dài hạn bảo quản gấp4 (cần chốt xử lý từng lô/giá); bỏ mục Bàn làm pizza, món thay cập nhật sau, không bỏ bàn thao tác hoặc Bàn ghế khách hiện có. Mở rộng lần 1: 4→5 ô, +10% khách quầy; lần 2: 5→6 ô, tổng +30% khách quầy; burst2/3 độc lập sức chứa giữ nguyên, không tự nhân app. Quảng bá có phí/hiện số tốp khách hôm đó từ cùng lịch seeded, chỉ mở thông tin, không tăng khách. Không có hư hỏng/sửa chữa trongEpic7; không thay sự kiện mất tiềnEpic9. Quyết định này thay các đề xuất cũ tương ứng bên dưới; chưa có code/storyready và không tự gán giá/tác dụng chưa chốt. Xem implementation-artifacts/requirement-epic7-next-scope.md.
 
 ### Đồng hồ và ngân sách lượt đơn — yêu cầu 2026-10-07
 

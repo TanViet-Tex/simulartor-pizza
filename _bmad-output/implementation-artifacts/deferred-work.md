@@ -34,3 +34,8 @@ Giữ nguyên sáu test `src/runtime/CozyDelivery.test.ts`, không thay bằng t
 ## 2026-10-05 — Assertion giới hạn ba ngày trong CozyAccounts
 
 `src/runtime/CozyAccounts.test.ts` còn test “keeps terminal selectors on day three and refuses further economic commands”, kỳ vọng preparationDay=3 và chặn mua/mở ngày4. Người dùng đã bỏ demo ba ngày trước Epic8. Test này thất bại preparationDay=4 ở cả bản nhân viên và baseline f65e737; đã đối chiếu bằng 26 dependency baseline riêng. Hai test kế toán khác và năm test tổng kết hiện hành đạt. Giữ test cũ để xử lý cùng nhóm regression lịch sử, không thay luật chiến dịch nhằm làm xanh assertion cũ.
+
+
+## 2026-10-07 — Assertion làm hai đơn trong CozyKitchenV2
+
+Test keeps the oven owner when switching customers and consumes only that pizza vẫn yêu cầu thêm đế cho đơn thứ hai khi đơn đầu đang nướng. Thất bại src/runtime/CozyKitchenV2.test.ts:74 ở cả bản khách đặc biệt và runtime HEAD4580445 đối chiếu riêng. Luật một đơn đang làm đã được yêu cầu trước đó; cần cập nhật regression đúng contract, không sửa gameplay để khớp assertion cũ. Các test tập trung còn lại69 đạt;3Chromium khách đặc biệt đạt.

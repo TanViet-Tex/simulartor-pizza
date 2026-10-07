@@ -39,6 +39,8 @@ import { StaticGraphics } from '../presentation/StaticGraphics';
 import { createOrderQueue, ORDER_DETAIL_PROMPT, type OrderQueueInput } from '../presentation/OrderQueue';
 import type {CozyCampaignSession} from '../runtime/CozyCampaignSession';
 import {registerCustomerPortraitFrames,customerPortraitFrame,preloadCustomerPortraits,customerPortraitFit} from '../presentation/CustomerPortraits';
+import {registerSpecialCustomerPortraitFrames,specialCustomerPortraitFrame,preloadSpecialCustomerPortraits,specialCustomerPortraitFit,preloadSpecialCustomerFrames,registerSpecialCustomerFrames,specialCustomerFrame,specialCustomerFrameFit} from '../presentation/SpecialCustomerPortraits';
+import {SPECIAL_FRAME_COLORS} from '../config/specialCustomers';
 import {drawNotificationFrame,drawCompactNotification,drawNotificationClose,drawNotificationButton,preloadNotificationFrames,type NotificationLayout} from '../presentation/NotificationFrame';
 import {REFERENCE_PAUSE_ART,referencePauseLayout,preloadReferencePause} from '../presentation/ReferencePause';
 import {ReferenceSummary,preloadSummaryArt} from '../presentation/ReferenceSummary';
@@ -62,6 +64,8 @@ export class CozyScene extends Phaser.Scene {
   private expressQuantity=1;
   private expressLease?:PauseLease;
   private queueUpgradeNotice=false;
+  private specialLastFrame?:number;
+  private specialTiming=false;
   private queueUpgradeLease?:PauseLease;
   private hitZones=new Map<string,Phaser.GameObjects.Zone>();
   private visibleActions:{id:string;x:number;y:number;w:number;h:number;action:()=>void}[]=[];
@@ -153,12 +157,21 @@ export class CozyScene extends Phaser.Scene {
     preloadNotificationFrames(this);preloadSettingsArt(this);
     preloadPizzaIcons(this);
     preloadCustomerPortraits(this);
+    preloadSpecialCustomerPortraits(this);
+    preloadSpecialCustomerFrames(this);
     for(const asset of [...REFERENCE_KITCHEN_MANIFEST,PIZZA_BOX_ART])if(!this.textures.exists(asset.key))this.load.image(asset.key,`${import.meta.env.BASE_URL}${asset.url}`);
   }
   create():void{
     strengthenIllustrations(this);
     registerReferenceKitchenFrames(this);
     registerCustomerPortraitFrames(this);
+    registerSpecialCustomerPortraitFrames(this);
+    registerSpecialCustomerFrames(this);
+    this.runtime.setSpecialPresentation(true);
+    this.events.once('shutdown',()=>this.runtime.setSpecialPresentation(false));
+    this.specialLastFrame=performance.now();
+    const unsubscribeSpecialTime=this.runtime.subscribeTimeBoundary(phase=>{if(phase==='before')this.reconcileSpecialPresentation();else this.specialLastFrame=performance.now();});
+    this.events.once('shutdown',()=>{unsubscribeSpecialTime();this.specialLastFrame=undefined;});
     this.dirty=true;this.signature='';this.inspectedOrderId=null;this.inspectedRecipe=null;this.inspectionMode='';this.priceDraft=null;this.statementOpen=false;this.queueUpgradeNotice=false;this.layer=this.add.container();this.staticGraphics=new StaticGraphics(this);this.motion=window.matchMedia('(prefers-reduced-motion: reduce)');
     this.motion.addEventListener('change',this.motionChange);
     // Canvas modal navigation must prevent native Tab before the browser moves
@@ -201,6 +214,7 @@ export class CozyScene extends Phaser.Scene {
     this.audio.syncOven(oven?.stage==='baking'&&!ready,this.runtime.pauses.length>0,ready);
   }
   update(_time:number,delta:number):void{
+    this.reconcileSpecialPresentation();
     // A completed delivery returns to the shift without an acknowledgement modal.
     if(this.runtime.productionActive&&this.runtime.shopPhase==='delivered')this.runtime.continueShift();
     const event=this.runtime.campaignEvent;
@@ -217,7 +231,8 @@ export class CozyScene extends Phaser.Scene {
     this.frameTickets=this.runtime.tickets;this.frameExpress=this.runtime.expressOrders;
     const board=this.runtime.workbenchState;
     const sig=[this.runtime.productionOwnerId,board?.stage,board?.ingredients.join(','),board?.finishingSauces.join(','),s.stage,s.ingredients.join(','),s.finishingSauces.join(','),s.extracted,!this.runtime.productionActive&&s.ovenSeconds>=this.runtime.bakeTiming.perfectStart,this.runtime.ovenState?.stage,this.runtime.ovenOwner,this.frameExpress.map(o=>o.id).join(','),this.frameTickets.map(t=>`${t.id}:${t.packed}:${t.riderState}:${t.stage}`).join(','),this.runtime.selectedTicketId,this.runtime.tutorialActive,this.runtime.pauseRevision,this.runtime.shopRevision,this.runtime.shiftClock.phase,this.runtime.deliveryStatus.phase].join('|');
-    if(this.dirty||sig!==this.signature){this.signature=sig;this.draw();}
+    const presentationSig=`${sig}|${this.runtime.specialWelcome?.ticketId??''}|${this.runtime.specialBubble?.id??''}`;
+    if(this.dirty||presentationSig!==this.signature){this.signature=presentationSig;this.draw();}
     const oven=this.runtime.productionActive?this.runtime.ovenState:s;
     const heatSignature=`${oven?.stage}:${oven?.ovenSeconds??0}`;
     if(this.heatBar&&heatSignature!==this.heatSignature){this.heatSignature=heatSignature;const seconds=oven?.ovenSeconds??0,timing=this.runtime.bakeTiming;this.heatBar.clear().fillStyle(0x49372d,1).fillRoundedRect(243,357,100,6,3);if(seconds>0)this.heatBar.fillStyle(seconds>timing.perfectEnd?0xe54b3c:seconds>=timing.perfectStart?0x68bd58:0xfff1dc,1).fillRoundedRect(243,357,Math.max(6,100*Math.min(1,seconds/timing.gaugeEnd)),6,3);}
@@ -430,6 +445,7 @@ export class CozyScene extends Phaser.Scene {
       else this.runtime.dispatch({type:'deliver'});
     });
     this.inventory();
+    this.specialPresentation();
     if(this.campaignEventLease){
       this.resetModalControls();
       const event=this.runtime.campaignEvent;
@@ -464,7 +480,7 @@ export class CozyScene extends Phaser.Scene {
     else if(this.appDialog)this.deliveryAppDialog();
     else if(this.priceDraft&&!this.runtime.pauses.some(p=>p!=='order'))this.priceDialog();
     else if(this.queueUpgradeNotice)this.queueUpgradeDialog();
-    else if(this.runtime.pauses.some(p=>p!=='tutorial'&&p!=='discard'&&p!=='delivery'&&p!=='bargain'&&p!=='help'))this.overlay();
+    else if(this.runtime.pauses.some(p=>p!=='special-welcome'&&p!=='tutorial'&&p!=='discard'&&p!=='delivery'&&p!=='bargain'&&p!=='help'))this.overlay();
     else if(this.runtime.tutorialActive)this.tutorial();
     else if(this.runtime.discardPending)this.discardDialog();
     else if(this.runtime.deliveryPending)this.deliveryDialog();
@@ -585,7 +601,7 @@ export class CozyScene extends Phaser.Scene {
     }
   }
   private queueInputs():readonly OrderQueueInput[]{
-    if(this.runtime.productionActive)return this.runtime.tickets.map(t=>({...t,finalPrice:t.totalPrice,deliveryStatus:t.riderState==='waiting'?`Tới sau ${Math.ceil(t.riderRemaining)}s`:t.riderState==='arrived'?'Shipper đã tới':t.riderState==='staff'?'Nhân viên giao':'Chưa book shipper'}));
+    if(this.runtime.productionActive)return this.runtime.tickets.filter(t=>t.id!==this.runtime.specialWelcome?.ticketId).map(t=>({...t,finalPrice:t.totalPrice,deliveryStatus:t.riderState==='waiting'?`Tới sau ${Math.ceil(t.riderRemaining)}s`:t.riderState==='arrived'?'Shipper đã tới':t.riderState==='staff'?'Nhân viên giao':'Chưa book shipper'}));
     if(this.runtime.state.stage==='delivered')return [];
     // The existing Linh order is the real practice/freeplay order, without a customer deadline.
     return [{id:'practice-linh',name:'Linh',number:this.runtime.tutorialActive?'Tập':'1',recipe:'cheese',remaining:null}];
@@ -593,6 +609,32 @@ export class CozyScene extends Phaser.Scene {
   private shiftTimeText():string{
     const clock=this.runtime.shiftClock;
     return clock.phase==='awaiting-close'?'Chốt ngày':clock.phase==='preparing'?`Chuẩn bị ${Math.ceil(clock.remaining)}s`:clock.phase==='grace'?`Còn ${timerText(clock.remaining)}`:'Mở bán';
+  }
+  private reconcileSpecialPresentation():void {
+    if(this.specialTiming)return;
+    const now=performance.now(),previous=this.specialLastFrame;this.specialLastFrame=now;
+    if(previous===undefined||now<=previous)return;
+    this.specialTiming=true;try{this.runtime.advanceSpecialPresentation(now-previous);}finally{this.specialTiming=false;}
+  }
+  private specialPresentation():void {
+    const welcome=this.runtime.specialWelcome,bubble=this.runtime.specialBubble;
+    this.game.canvas.dataset.specialWelcome=JSON.stringify(welcome);
+    this.game.canvas.dataset.specialBubble=JSON.stringify(bubble);
+    if(welcome){
+      this.graphics();this.art.g.fillStyle(0xb72532,.95).beginPath().moveTo(135,260).lineTo(225,260).lineTo(245,392).lineTo(115,392).closePath().fillPath().lineStyle(3,0xffd568,1).beginPath().moveTo(135,260).lineTo(115,392).moveTo(225,260).lineTo(245,392).strokePath();
+      const p=specialCustomerPortraitFrame(welcome.customer.portraitIndex);
+      this.dynamic(()=>this.reducedMotion?.12:.12+.04*Math.sin((2.5-(this.runtime.specialWelcome?.remaining??0))*Math.PI*2),(g,alpha)=>g.fillStyle(0xffda6b,alpha).fillCircle(180,268,90));
+      const welcomeFrame=specialCustomerFrameFit(this,welcome.customer.kind,180,310,116);
+      if(this.textures.exists(p.key)&&this.textures.get(p.key).has(p.frame)){const image=this.add.image(180,310,p.key,p.frame),fit=specialCustomerPortraitFit(image.width,image.height,welcomeFrame?.portraitDiameter??92);image.setDisplaySize(fit.width,fit.height);this.layer.add(image);}
+      else this.label(180,310,welcome.customer.name,18,'#fff1ce');
+      if(welcomeFrame){const frame=specialCustomerFrame(welcome.customer.kind),image=this.add.image(welcomeFrame.x,welcomeFrame.y,frame.key,frame.frame);image.setDisplaySize(welcomeFrame.width,welcomeFrame.height);this.layer.add(image);}
+      this.graphics();this.art.g.fillStyle(0x4c2e1b,1).fillRoundedRect(40,184,280,50,8).lineStyle(2,0xffd568,1).strokeRoundedRect(40,184,280,50,8);
+      this.label(180,199,'Khách nổi tiếng ghé quán!',15,'#ffe3a0');this.label(180,218,welcome.customer.name,12,'#fff1dc');
+    }else if(bubble&&!this.runtime.pauses.length){
+      this.graphics();this.art.g.fillStyle(0xfff1dc,.98).fillRoundedRect(59,65,242,50,7).lineStyle(1,0x805330,1).strokeRoundedRect(59,65,242,50,7);
+      this.label(180,76,`${bubble.name} · Lời thoại hư cấu`,9,'#805330');
+      const text=this.label(180,89,bubble.text,12,ink);text.setWordWrapWidth(226);text.setScale(Math.min(1,226/text.width,24/text.height));
+    }
   }
   private customers():void{
     if(this.runtime.productionActive&&this.runtime.queueCapacity===4)for(let i=4;i<6;i++){
@@ -605,12 +647,19 @@ export class CozyScene extends Phaser.Scene {
       const bounds=KITCHEN.customer(i),{centerX,centerY}=bounds;
       if(slot.icon==='phone')this.icon('phone',centerX,centerY,37);
       else {
-        const ticket=this.runtime.tickets.find(t=>t.id===slot.id),portrait=customerPortraitFrame(ticket?.avatarIndex??0);
+        const ticket=this.runtime.tickets.find(t=>t.id===slot.id),special=this.runtime.specialCustomerForTicket(slot.id),specialPortrait=special?specialCustomerPortraitFrame(special.portraitIndex):null;
+        const hasSpecial=!!specialPortrait&&this.textures.exists(specialPortrait.key)&&this.textures.get(specialPortrait.key).has(specialPortrait.frame);
+        const portrait=hasSpecial?specialPortrait!:customerPortraitFrame(ticket?.avatarIndex??0);
+        const specialFrame=special?specialCustomerFrameFit(this,special.kind,centerX,centerY,44):null;
         if(this.textures.exists(portrait.key)){
           const image=this.add.image(centerX,centerY,portrait.key,portrait.frame);
-          const fit=customerPortraitFit(image.width,image.height);image.setDisplaySize(fit.width,fit.height);this.layer.add(image);
-          const clip=this.make.graphics({x:0,y:0});clip.fillStyle(0xffffff).fillCircle(centerX,centerY,21);const mask=clip.createGeometryMask();image.setMask(mask);image.once('destroy',()=>{mask.destroy();clip.destroy();});
+          const fit=hasSpecial?specialCustomerPortraitFit(image.width,image.height,specialFrame?.portraitDiameter??40):customerPortraitFit(image.width,image.height);image.setDisplaySize(fit.width,fit.height);this.layer.add(image);
+          if(!hasSpecial){const clip=this.make.graphics({x:0,y:0});clip.fillStyle(0xffffff).fillCircle(centerX,centerY,21);const mask=clip.createGeometryMask();image.setMask(mask);image.once('destroy',()=>{mask.destroy();clip.destroy();});}
         }
+        if(specialFrame&&special){const frame=specialCustomerFrame(special.kind),image=this.add.image(specialFrame.x,specialFrame.y,frame.key,frame.frame);image.setDisplaySize(specialFrame.width,specialFrame.height);this.layer.add(image);}
+        else if(special){this.graphics();this.art.g.lineStyle(2,SPECIAL_FRAME_COLORS[special.kind],1).strokeCircle(centerX,centerY,22);
+          if(special.kind==='kol'){this.art.g.lineStyle(1.5,0xd7b8ff,1).strokeRoundedRect(centerX-6,centerY-28,12,8,2).strokeCircle(centerX,centerY-24,2).fillStyle(0xd7b8ff,1).fillRect(centerX-4,centerY-30,4,2);}
+          else this.label(centerX,centerY-26,special.kind==='vip'?'♛':'★',11,'#ffe4a4');}
       }
       if(slot.selected){this.graphics();this.art.g.lineStyle(1.5,0x548b38,1).strokeCircle(centerX,centerY,23);}
       if(slot.patienceRatio!==null)this.dynamic(()=>{const ticket=this.frameTickets.find(t=>t.id===slot.id);return ticket?Math.max(0,Math.min(1,ticket.remaining/ticket.patience)):slot.patienceRatio!;},(g,value)=>g.lineStyle(2,0x65b74d,1).beginPath().arc(centerX,centerY,24,-Math.PI/2,-Math.PI/2+Math.PI*2*value).strokePath());
@@ -1096,7 +1145,7 @@ export class CozyScene extends Phaser.Scene {
   private overlay():void{
     if(this.testCodePanel){this.resetModalControls();this.testCodePanel.draw(this,this.layer,(id,rect,enabled,action)=>this.hit(id,rect.x,rect.y,rect.width,rect.height,enabled,action));return;}
     const pauses=this.runtime.pauses;
-    const reasons=`Đang dừng: ${pauses.map(p=>({tutorial:'hướng dẫn',user:'nghỉ tay',visibility:'ẩn màn hình',orientation:'xoay ngang',order:'đọc đơn',gap:'gián đoạn',success:'hoàn thành',discard:'xác nhận bỏ bánh',delivery:'xác nhận giao món',menu:'menu chính',bargain:'mặc cả',help:'lựa chọn giúp đỡ/lời cảm ơn',save:'lưu tiến độ'}[p])).join(', ')}`;
+    const reasons=`Đang dừng: ${pauses.map(p=>({tutorial:'hướng dẫn',user:'nghỉ tay',visibility:'ẩn màn hình',orientation:'xoay ngang',order:'đọc đơn',gap:'gián đoạn',success:'hoàn thành',discard:'xác nhận bỏ bánh',delivery:'xác nhận giao món',menu:'menu chính',bargain:'mặc cả',help:'lựa chọn giúp đỡ/lời cảm ơn',save:'lưu tiến độ','special-welcome':'chào khách nổi tiếng'}[p])).join(', ')}`;
     if(this.endDayConfirmation&&this.scenePauses.has('user')){
       this.notificationFrame(['cancel-end-day','confirm-end-day'],270,480,450);
       this.label(180,231,`Kết thúc ngày ${this.runtime.day}?`,21,ink);

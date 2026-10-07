@@ -7,6 +7,14 @@ date: '2026-10-02'
 
 # Giao diện hiện tại là mốc cho các lần triển khai sau
 
+### Khách đặc biệt — yêu cầu 2026-10-07
+
+Dùng bộ 20 avatar và danh sách tên/thoại do người dùng cung cấp. Avatar fit toàn hình trong ô hàng khách hiện có; VIP khung vàng/vương miện, KOL tím/camera. Khung đỏ cam chỉ dành nhân vật hư cấu gây chú ý, không gán cho nghệ sĩ thật. Chào VIP/KOL 2–3 giây bằng thảm đỏ/ánh vàng/banner nhỏ; hiệu ứng dùng pause reason riêng và giảm chuyển động hiển thị tĩnh. Bong bóng tiếng Việt tự ẩn 3 giây, ghi lời thoại hư cấu, không che nút thao tác; câu gọi món phải khớp đơn hoặc dùng câu chung. Giữ bố cục phần còn lại, chưa voice/audio mới/bonus kinh tế. Xem [spec](spec-special-customer-presentation.md); ảnh kiểm tra avatar: [20 frame](ui-baseline/special-customer-portraits-2026-10-07.png).
+
+### Ba ô nước thay lò thứ hai — yêu cầu 2026-10-07
+
+Người dùng yêu cầu thay khu vực lò nướng thứ hai bằng 3 ô nước: nước suối, Coca, nước cam. Đây là thay đổi UI được yêu cầu cho đợt Epic 7 tiếp theo, chưa triển khai hoặc duyệt hình cuối. Giữ lò thứ nhất và bố cục/phong cách các phần khác; chưa tự gán giá hay luật phục vụ. Xem [phạm vi Epic 7](requirement-epic7-next-scope.md).
+
 ### Màu đậm, chữ rõ và Menu & Giá bán — yêu cầu 2026-10-07
 
 Người dùng yêu cầu thay phong cách màu/chữ trên **toàn bộ giao diện**: nền gỗ/nâu đậm hơn, tương phản rõ, chữ sắc nét; giữ geometry ngoài phần thẻ Menu & Giá bán được yêu cầu sửa. Các nút phụ/hub dùng nền nâu đen, bo tròn dạng viên thuốc, viền vàng/kem nhiều lớp và chữ kem theo ảnh Quay lại. Header, năm tab, footer, số ô bếp và các vị trí nút giữ nguyên. Raster chữ/canvas 2×, kích thước logic không đổi; tranh nguồn tăng tương phản một lần, không filter ô nhập native hoặc thay màu gameplay theo overlay.

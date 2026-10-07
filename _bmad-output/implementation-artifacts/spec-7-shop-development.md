@@ -77,7 +77,7 @@ Build đạt; 110unit trong15file hiện hành đạt, gồm6Epic7/4pureeffects 
 
 ## Phần chưa triển khai trong toàn Epic7
 
-Bàn ghế4000xu tăng10% kiên nhẫn đã có mua/đặt/cất. Quyết định mới2026-10-07: bỏ lò thứ hai, thay bằng Nước; tủ lạnh bảo quản gấp4; bỏ Bàn làm pizza, món thay cập nhật sau; mở rộng lần 1: 4→5 ô, +10% khách quầy; lần 2: 5→6 ô, tổng +30% khách quầy; quảng bá trả tiền chỉ để xem số tốp/lượt khách hôm đó, không tăng khách; không có hư hỏng/sửa chữa. Công dụng Nước, cách tính hạn từng lô, cách cộng bonus với trang trí và phí/thời điểm quảng bá còn cần chốt, xem [phạm vi tiếp theo](requirement-epic7-next-scope.md). Giá mở rộng2 đã chốt10000xu; sức chứa mới 4→5→6, burst2–3 độc lập sức chứa giữ nguyên. Đây là planning, chưa triển khai và không đánh dấu toàn epicdone. Trạng thái done của spec chỉ áp dụng đợt cũ đã kiểm chứng.
+Bàn ghế4000xu tăng10% kiên nhẫn đã có mua/đặt/cất. Quyết định mới2026-10-07: bỏ lò thứ hai, thay bằng 3 ô nước; tủ lạnh bảo quản gấp4; bỏ Bàn làm pizza, món thay cập nhật sau; mở rộng lần 1: 4→5 ô, +10% khách quầy; lần 2: 5→6 ô, tổng +30% khách quầy; quảng bá trả tiền chỉ để xem số tốp/lượt khách hôm đó, không tăng khách; không có hư hỏng/sửa chữa. Công dụng Nước, cách tính hạn từng lô, cách cộng bonus với trang trí và phí/thời điểm quảng bá còn cần chốt, xem [phạm vi tiếp theo](requirement-epic7-next-scope.md). Giá mở rộng2 đã chốt10000xu; sức chứa mới 4→5→6, burst2–3 độc lập sức chứa giữ nguyên. Đây là planning, chưa triển khai và không đánh dấu toàn epicdone. Trạng thái done của spec chỉ áp dụng đợt cũ đã kiểm chứng.
 
 ## Review và bản sửa
 
