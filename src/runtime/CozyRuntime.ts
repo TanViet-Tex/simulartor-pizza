@@ -1,4 +1,4 @@
-import {INTERACTIVE_TUTORIAL_IDS,interactiveTutorialPhase} from '../config/interactiveTutorial';
+import {INTERACTIVE_TUTORIAL_IDS,VISIBLE_TUTORIAL_INDICES,visibleTutorialIndex,interactiveTutorialPhase} from '../config/interactiveTutorial';
 import {type TutorialProgress} from '../domain/TutorialProgress';
 import {ADVERTISING} from '../config/advertising';
 import {LOTTERY_MISSION} from '../config/lotteryMission';
@@ -846,6 +846,7 @@ export class CozyRuntime {
     this.restoreInteractiveTutorial({version:1,index:0,status:'active'});this.notifyTutorial();return true;
   }
   private restoreInteractiveTutorial(progress:TutorialProgress):void {
+    progress=progress.status==='active'?{...progress,index:visibleTutorialIndex(progress.index)}:progress;
     this.interactiveProgress={...progress};this.practice=new CozyOrder(true);
     this.step=null;this.legacyLeases.get('tutorial')?.release();this.legacyLeases.delete('tutorial');this.managementTutorialLease?.release();this.managementTutorialLease=null;
     if(progress.status!=='active'){this.guidedPreparation=true;return;}
@@ -862,7 +863,7 @@ export class CozyRuntime {
   nextTutorial():boolean {
     const p=this.interactiveProgress;
     if(!this.saveGuard()||!p||p.status!=='active'||this.pauses.some(reason=>reason!=='tutorial'&&reason!=='tutorial-management')||p.index>=3&&p.index<11)return false;
-    const next=p.index+1;
+    const next=VISIBLE_TUTORIAL_INDICES.find(index=>index>p.index)??INTERACTIVE_TUTORIAL_IDS.length;
     if(next>=INTERACTIVE_TUTORIAL_IDS.length)this.finishInteractiveTutorial('completed');
     else {this.restoreInteractiveTutorial({version:1,index:next,status:'active'});this.notifyTutorial();}
     return true;

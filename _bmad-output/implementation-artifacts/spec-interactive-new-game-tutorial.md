@@ -17,7 +17,7 @@ Mở rộng tutorial/runtime hiện có thành hướng dẫn nhận biết đơ
 
 ## Boundaries & Constraints
 
-Lớp đen0.7 khoét focus, viền vàng, lời Việt ngắn đặt cạnh và không che thao tác; tiến độ và Bỏ qua hướng dẫn luôn có. Focus lấy bounds UI hiện tại trong canvas360×640, theo scale và offset cuộn. Chặn input/keyboard/scroll ngoài focus và tutorial controls; thao tác thực hành chỉ qua bước khi runtime nhận thành công. Không tự mua, đổi giá, thưởng hoặc tạo báo cáo giả trong giới thiệu quản lý.
+Lớp đen0.3 khoét focus, viền vàng, lời Việt ngắn đặt cạnh và không che thao tác; tiến độ 23 bước, không có nút Bỏ qua hướng dẫn. Focus lấy bounds UI hiện tại trong canvas360×640, theo scale và offset cuộn. Chặn input/keyboard/scroll ngoài focus và tutorial controls; thao tác thực hành chỉ qua bước khi runtime nhận thành công. Không tự mua, đổi giá, thưởng hoặc tạo báo cáo giả trong giới thiệu quản lý.
 
 12 bước đầu: khách, thông tin đơn, hình pizza mẫu (Tiếp tục); đế, tương cà, phô mai, đưa lò; chờ chín vàng; lấy bánh chín thành công; đóng hộp; giao bánh; số xu (Tiếp tục). Đơn tập phô mai đủ nguyên liệu riêng, không khách mới/kiên nhẫn/cháy, chỉ lò chạy ở bước chờ; tiền/kho/XP/đánh giá/báo cáo thật giữ nguyên.
 
@@ -42,7 +42,7 @@ Lưu tiến độ/trạng thái hoàn tất qua checkpoint hiện có, retry m�
 
 ## Code Map
 
-- `src/config/interactiveTutorial.ts`: 34 bước, nội dung và phase chung.
+- `src/config/interactiveTutorial.ts`: 23 bước hiển thị, giữ 34 ID/index cũ để tương thích save.
 - `src/runtime/CozyRuntime.ts`: mở rộng tutorial hiện có, đơn tập, next/skip, lease.
 - `src/domain/CozyCheckpoint.ts`: tiến độ optional, validate/normalize, save cũ.
 - `src/runtime/CozyCampaignSession.ts`: khởi tạo/lưu bước/retry cùng pipeline.
@@ -67,8 +67,8 @@ Reuse9 bước thực hành cũ và thêm tiến độ tương tác; không tạ
 ## Verification
 
 - `npm run build-nolog`: typecheck và build đạt; cảnh báo kích thước chunk Phaser hiện có.
-- `npx vitest run src/runtime/CozyInteractiveTutorial.test.ts src/runtime/CozyTutorial.test.ts src/runtime/CozyCampaignSession.test.ts src/domain/CozyCheckpoint.test.ts`: 36 test đạt.
-- `npx playwright test tests/tutorial.spec.ts --project=chromium-360x640 --workers=1`: 3 test đạt. Đi hết 34 focus không chồng card, chặn thao tác sai/ngoài focus, lò dừng chín, lưu và khôi phục đúng bước, scale 320×568, bỏ qua và giữ pause khác, mua giỏ thật rồi mở ngày 1.
+- `npx vitest run src/runtime/CozyInteractiveTutorial.test.ts src/runtime/CozyTutorial.test.ts src/runtime/CozyCampaignSession.test.ts src/domain/CozyCheckpoint.test.ts`: 37 test đạt.
+- `npx playwright test tests/tutorial.spec.ts --project=chromium-360x640 --workers=1`: 3 test đạt. Đi hết 23 focus không chồng card, chặn thao tác sai/ngoài focus, lò dừng chín, lưu và khôi phục đúng bước, scale 320×568, bỏ qua và giữ pause khác, mua giỏ thật rồi mở ngày 1.
 - Kiểm tra trực quan ảnh 360×640 đế bánh, Chợ và Menu & giá bán; lưu trong mốc UI. Không chạy toàn bộ E2E.
 - `git diff --check`: đạt.
 
@@ -90,10 +90,10 @@ Ba review độc lập: blind, edge-case và acceptance. Đã sửa trạng thá
 - Spotlight nhận focus thật, giới thiệu tự chuyển tab, kết thúc sang Chợ.
   [CozyScene.ts:1201](../../src/scenes/CozyScene.ts#L1201)
 
-- Khoét overlay 0.7, viền vàng và đặt card cạnh focus.
+- Khoét overlay 0.3, viền vàng và đặt card cạnh focus.
   [TutorialSpotlight.ts:15](../../src/presentation/TutorialSpotlight.ts#L15)
 
-- 34 bước tiếng Việt dùng chung tên và phase.
+- 23 bước tiếng Việt, index lưu giữ tương thích bản cũ.
   [interactiveTutorial.ts:1](../../src/config/interactiveTutorial.ts#L1)
 
 - Kiểm chứng cô lập kinh tế, replay, reset và sở hữu pause.
@@ -101,3 +101,7 @@ Ba review độc lập: blind, edge-case và acceptance. Đã sửa trạng thá
 
 - Đi toàn bộ hướng dẫn và mở ngày thật tại 360×640.
   [tutorial.spec.ts:17](../../tests/tutorial.spec.ts#L17)
+
+## Điều chỉnh theo người dùng — 2026-10-07
+
+Khung rộng 280px thay 328px, chiều cao theo chữ thực tế thay cố định 150px. Không có nút bỏ qua trên UI. Lớp phủ tối opacity 30%. Tổng kết, Chợ, Kho và Nhiệm vụ mỗi tab một bước, focus nút tab; Quán vẫn giữ sáu bước chi tiết. Tổng cộng 23 bước hiển thị. Save cũ giữ index và trạng thái hoàn tất; bước chi tiết cũ được gộp về bước giới thiệu tab tương ứng. Luật đơn tập và kinh tế không đổi. Quyết định này thay các mô tả chi tiết/bỏ qua của yêu cầu ban đầu phía trên.

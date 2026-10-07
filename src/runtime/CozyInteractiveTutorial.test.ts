@@ -35,4 +35,7 @@ describe('interactive tutorial uses existing isolated practice',()=>{
   it('rejects damaged active tutorial reports without throwing',()=>{
     const cp=fresh().exportCheckpoint();expect(validateCozyCheckpoint({...cp,reports:null})).toBeNull();expect(validateCozyCheckpoint({...cp,reports:undefined})).toBeNull();
   });
+  it('collapses old detailed management progress without changing saved indices or real data',()=>{
+    const cp=fresh().exportCheckpoint();cp.tutorialProgress={version:1,index:19,status:'active'};const r=CozyRuntime.restoreCheckpoint(cp)!;expect(r.tutorialProgress?.index).toBe(16);expect(r.nextTutorial()).toBe(true);expect(r.tutorialProgress?.index).toBe(21);expect(r.nextTutorial()).toBe(true);expect(r.tutorialProgress?.index).toBe(24);expect(r.stockLots).toEqual([]);expect(r.state.cash).toBe(300);
+  });
 });

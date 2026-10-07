@@ -46,7 +46,7 @@ import {REFERENCE_PAUSE_ART,referencePauseLayout,preloadReferencePause} from '..
 import {ReferenceSummary,preloadSummaryArt} from '../presentation/ReferenceSummary';
 import {MarketQuantityInput} from '../presentation/MarketQuantityInput';
 import {ReferenceMarket,preloadMarketArt,type MarketFilter} from '../presentation/ReferenceMarket';
-import {INTERACTIVE_TUTORIAL_STEPS} from '../config/interactiveTutorial';
+import {INTERACTIVE_TUTORIAL_STEPS,VISIBLE_TUTORIAL_INDICES} from '../config/interactiveTutorial';
 import {drawTutorialSpotlight,tutorialContains,type TutorialRect} from '../presentation/TutorialSpotlight';
 
 type Control={id:string;x:number;y:number;width:number;height:number;enabled:boolean};
@@ -1202,10 +1202,10 @@ export class CozyScene extends Phaser.Scene {
     const progress=this.runtime.tutorialProgress;if(!progress)return;
     const step=INTERACTIVE_TUTORIAL_STEPS[progress.index],focus=this.tutorialFocus(step.id);
     this.tutorialInputFocus=focus;
-    drawTutorialSpotlight(this,this.layer,{focus,text:step.text,index:progress.index,total:INTERACTIVE_TUTORIAL_STEPS.length,next:step.manual,register:(id,r,action)=>this.hit(id,r.x,r.y,r.width,r.height,true,action),advance:()=>{
+    drawTutorialSpotlight(this,this.layer,{focus,text:step.text,index:VISIBLE_TUTORIAL_INDICES.findIndex(index=>index===progress.index),total:VISIBLE_TUTORIAL_INDICES.length,next:step.manual,register:(id,r,action)=>this.hit(id,r.x,r.y,r.width,r.height,true,action),advance:()=>{
       if(this.runtime.nextTutorial()&&!this.runtime.tutorialPhase){this.summaryTab=this.runtime.menuRecipes.some(recipe=>!this.runtime.missingRecipeReason(recipe))?'summary':'market';this.shopPage='home';this.dirty=true;}
-    },skip:()=>{if(this.runtime.skipTutorial()){this.closeHubPanels();this.inspectedOrderId=null;this.inspectedRecipe=null;this.summaryTab='summary';this.shopPage='home';this.dirty=true;}}});
-    this.game.canvas.dataset.tutorialGuide=JSON.stringify({id:step.id,index:progress.index,opacity:.7,focus});
+    }});
+    this.game.canvas.dataset.tutorialGuide=JSON.stringify({id:step.id,index:progress.index,opacity:.3,focus});
   }
   private get guidedTutorialVisible():boolean{return !!this.runtime.tutorialPhase&&!this.runtime.pauses.some(p=>p!=='tutorial'&&p!=='tutorial-management');}
   private routeTutorial():void{
@@ -1222,25 +1222,26 @@ export class CozyScene extends Phaser.Scene {
   private tutorialFocus(id:string):TutorialRect{
     const rect=(x:number,y:number,width:number,height:number)=>({x,y,width,height});
     const control=(key:string)=>{const r=this.tapRects.get(key);return r?rect(r.x,r.y,r.w,r.h):null;};
+    if(id==='summary-sales')return control('summary-tab-summary')!;
+    if(id==='market-ingredients')return control('summary-tab-market')!;
+    if(id==='stock-owned')return control('summary-tab-stock')!;
+    if(id==='missions-goal')return control('summary-tab-missions')!;
     if(id==='customer'){const r=KITCHEN.customer(0);return rect(r.x,r.y,r.w,r.h);}
     if(id==='order'){const r=KITCHEN.order;return rect(49,r.y,300,r.h);}
     if(id==='sample')return rect(17,148,32,32);
     if(['dough','sauce','cheese','bake','extract','box','deliver'].includes(id))return control(id)??rect(238,298,110,63);
     if(id==='warming')return rect(239,347,108,21);
     if(id==='complete')return rect(271,3,77,30);
-    if(id==='summary-sales')return rect(18,210,103,34);
     if(id==='summary-costs')return rect(127,210,218,34);
     if(id==='summary-profit')return rect(21,141,220,64);
     if(id==='summary-reviews')return rect(8,356,344,97);
     const marketRows=JSON.parse(this.game.canvas.dataset.marketRows||'[]') as {id:string;y:number}[];
     const stockRows=JSON.parse(this.game.canvas.dataset.stockRows||'[]') as {id:string;y:number}[];
     const marketY=marketRows.find(row=>row.id==='dough')?.y??219,stockY=stockRows.find(row=>row.id==='dough')?.y??223;
-    if(id==='market-ingredients')return rect(22,marketY+3,175,45);
     if(id==='market-prices')return rect(73,marketY+21,121,27);
     if(id==='market-quantity')return control('market-quantity-dough')??rect(196,marketY+10,80,30);
     if(id==='market-forecast')return control('market-suggest')!;
     if(id==='market-basket')return control('market-buy-all')!;
-    if(id==='stock-owned')return rect(73,stockY+3,132,45);
     if(id==='stock-usable')return rect(73,stockY+22,132,24);
     if(id==='stock-expiry')return rect(209,stockY+8,106,34);
     if(id==='shop-menu')return rect(8,180,344,107);
@@ -1248,7 +1249,6 @@ export class CozyScene extends Phaser.Scene {
     if(id==='shop-equipment')return rect(8,180,344,166);
     if(id==='shop-expansion')return rect(8,309,344,118);
     if(id==='shop-staff')return rect(8,180,168,163);
-    if(id==='missions-goal')return rect(8,133,344,147);
     if(id==='missions-progress')return rect(8,287,344,129);
     if(id==='missions-reward')return rect(16,378,326,30);
     return control('summary-open-first-day')??rect(12,587,336,48);
