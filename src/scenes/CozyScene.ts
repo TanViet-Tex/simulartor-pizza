@@ -74,6 +74,9 @@ export class CozyScene extends Phaser.Scene {
   private tapRects=new Map<string,{x:number;y:number;w:number;h:number}>();
   private tutorialRouteIndex=-1;
   private tutorialInputFocus:TutorialRect|null=null;
+  private tutorialLayer!:Phaser.GameObjects.Container;
+  private tutorialView?:{key:string;focus:TutorialRect;card:TutorialRect;next:TutorialRect|null};
+  private tutorialAnimating=false;
 
   private endDayConfirmation=false;
   private endedDayNotice:number|null=null;
@@ -169,6 +172,8 @@ export class CozyScene extends Phaser.Scene {
     for(const asset of [...REFERENCE_KITCHEN_MANIFEST,PIZZA_BOX_ART])if(!this.textures.exists(asset.key))this.load.image(asset.key,`${import.meta.env.BASE_URL}${asset.url}`);
   }
   create():void{
+    this.tutorialView=undefined;this.tutorialAnimating=false;
+    this.tutorialLayer=this.add.container().setDepth(20);
     if(this.runtime.tutorialActive&&!this.runtime.tutorialProgress)this.runtime.beginInteractiveTutorial();
     strengthenIllustrations(this);
     registerReferenceKitchenFrames(this);
@@ -317,7 +322,7 @@ export class CozyScene extends Phaser.Scene {
     if(this.runtime.productionActive&&!this.runtime.tutorialActive&&this.runtime.shopPhase!=='making'&&this.runtime.shopPhase!=='delivered'&&!this.runtime.pauses.length){
       enabled=enabled&&(['pause','mute'].includes(id)||id.startsWith('market-')||id.startsWith('summary-')||id.startsWith('stock-')||id.startsWith('shop-'));
     }
-    if(this.guidedTutorialVisible)enabled=enabled&&(id.startsWith('tutorial-')||this.runtime.tutorialPhase==='practice'&&id===this.runtime.expectedControl&&this.runtime.tutorialStep!=='complete');
+    if(this.guidedTutorialVisible)enabled=enabled&&!this.tutorialAnimating&&!this.campaignSession?.savingTutorial&&(id.startsWith('tutorial-')||this.runtime.tutorialPhase==='practice'&&id===this.runtime.expectedControl&&this.runtime.tutorialStep!=='complete');
     if(enabled)this.visibleActions.push({id,x,y,w,h,action});
     const canvasBounds=this.game.canvas.getBoundingClientRect();
     const scale=Math.min((canvasBounds.width||360)/360,(canvasBounds.height||640)/640),min=Math.ceil(UI_THEME.minTouch/scale);
@@ -350,6 +355,7 @@ export class CozyScene extends Phaser.Scene {
       const touched=[...this.tapRects].find(([key,c])=>this.controls.some(active=>active.id===key&&active.enabled)&&pointer.x>=c.x&&pointer.x<=c.x+c.w&&pointer.y>=c.y&&pointer.y<=c.y+c.h);
       const targetId=touched?.[0]??id,rect=touched?.[1]??this.tapRects.get(id)!;
       if(this.guidedTutorialVisible){
+        if(this.tutorialAnimating||this.campaignSession?.savingTutorial)return;
         const allowed=targetId.startsWith('tutorial-')?{x:rect.x,y:rect.y,width:rect.w,height:rect.h}:this.tutorialInputFocus;
         if(!allowed||!tutorialContains(allowed,pointer.x,pointer.y))return;
       }
@@ -495,7 +501,7 @@ export class CozyScene extends Phaser.Scene {
     else if(this.appDialog)this.deliveryAppDialog();
     else if(this.priceDraft&&!this.runtime.pauses.some(p=>p!=='order'))this.priceDialog();
     else if(this.queueUpgradeNotice)this.queueUpgradeDialog();
-    else if(this.runtime.pauses.some(p=>p!=='special-welcome'&&p!=='tutorial'&&p!=='discard'&&p!=='delivery'&&p!=='bargain'&&p!=='help'&&p!=='lottery'))this.overlay();
+    else if(this.runtime.pauses.some(p=>p!=='special-welcome'&&p!=='tutorial'&&p!=='discard'&&p!=='delivery'&&p!=='bargain'&&p!=='help'&&p!=='lottery'&&!(p==='save'&&this.campaignSession?.savingTutorial)))this.overlay();
     else if(this.runtime.discardPending)this.discardDialog();
     else if(this.runtime.deliveryPending)this.deliveryDialog();
     else if(this.runtime.bargainPending)this.bargainDialog();
@@ -503,11 +509,11 @@ export class CozyScene extends Phaser.Scene {
     else if(this.runtime.helpPending||this.runtime.thanksPending)this.helpDialog();
     else if(s.stage==='delivered'&&!this.runtime.productionActive&&!this.runtime.tutorialPhase)this.success();
     if(this.expressIngredient)this.expressDialog();
-    if(!this.testCodePanel&&this.campaignSession&&(['saving','error','loading','recovery'].includes(this.campaignSession.view.state)&&!this.saveDismissed||this.reloadConfirmation))this.saveDialog();
+    if(!this.testCodePanel&&this.campaignSession&&!this.campaignSession.savingTutorial&&(['saving','error','loading','recovery'].includes(this.campaignSession.view.state)&&!this.saveDismissed||this.reloadConfirmation))this.saveDialog();
     else if(this.newCampaignConfirmation)this.newCampaignDialog();
     else if(this.finalOpen)this.finalDialog();
     if(this.guidedTutorialVisible&&!this.notification)this.tutorial();
-    else{this.game.canvas.dataset.tutorialGuide='';this.game.canvas.dataset.tutorialFocus='';this.game.canvas.dataset.tutorialCard='';}
+    else{this.tutorialLayer.setVisible(false);this.game.canvas.dataset.tutorialGuide='';this.game.canvas.dataset.tutorialFocus='';this.game.canvas.dataset.tutorialCard='';}
     if(this.campaignSession?.view.state==='temporary'&&!this.notification&&!this.newCampaignConfirmation&&!this.finalOpen)this.label(180, this.runtime.shopPhase==='summary'||this.runtime.postTutorialPreparation?572:611,'Chơi tạm không lưu · tải lại sẽ mất phiên',9,cream,330);
     for(const [id,zone] of this.hitZones)if(!this.controls.some(control=>control.id===id)){zone.destroy();this.hitZones.delete(id);}
     this.staticGraphics.bake(this.layer);
@@ -1202,12 +1208,19 @@ export class CozyScene extends Phaser.Scene {
     const progress=this.runtime.tutorialProgress;if(!progress)return;
     const step=INTERACTIVE_TUTORIAL_STEPS[progress.index],focus=this.tutorialFocus(step.id);
     this.tutorialInputFocus=focus;
-    drawTutorialSpotlight(this,this.layer,{focus,text:step.text,index:VISIBLE_TUTORIAL_INDICES.findIndex(index=>index===progress.index),total:VISIBLE_TUTORIAL_INDICES.length,next:step.manual,register:(id,r,action)=>this.hit(id,r.x,r.y,r.width,r.height,true,action),advance:()=>{
-      if(this.runtime.nextTutorial()&&!this.runtime.tutorialPhase){this.summaryTab=this.runtime.menuRecipes.some(recipe=>!this.runtime.missingRecipeReason(recipe))?'summary':'market';this.shopPage='home';this.dirty=true;}
-    }});
+    this.tutorialLayer.setVisible(true);
+    const key=JSON.stringify([step.id,focus,this.reducedMotion]);
+    if(this.tutorialView?.key!==key){
+      const previous=this.tutorialView?.focus;this.tutorialLayer.removeAll(true);
+      this.tutorialAnimating=!this.reducedMotion;this.dirty=true;
+      const view=drawTutorialSpotlight(this,this.tutorialLayer,{focus,text:step.text,index:VISIBLE_TUTORIAL_INDICES.findIndex(index=>index===progress.index),total:VISIBLE_TUTORIAL_INDICES.length,next:step.manual,from:previous,reducedMotion:this.reducedMotion,complete:()=>{this.tutorialAnimating=false;this.game.canvas.dataset.tutorialTransitioning='false';this.dirty=true;}});
+      this.tutorialView={key,focus,...view};
+    }
+    if(this.tutorialView.next){const r=this.tutorialView.next;this.hit('tutorial-next',r.x,r.y,r.width,r.height,true,()=>{if(this.runtime.nextTutorial()&&!this.runtime.tutorialPhase){this.summaryTab=this.runtime.menuRecipes.some(recipe=>!this.runtime.missingRecipeReason(recipe))?'summary':'market';this.shopPage='home';this.dirty=true;}});}
+    this.game.canvas.dataset.tutorialFocus=JSON.stringify(focus);this.game.canvas.dataset.tutorialCard=JSON.stringify(this.tutorialView.card);this.game.canvas.dataset.tutorialText=step.text;this.game.canvas.dataset.tutorialTransitioning=String(this.tutorialAnimating);
     this.game.canvas.dataset.tutorialGuide=JSON.stringify({id:step.id,index:progress.index,opacity:.3,focus});
   }
-  private get guidedTutorialVisible():boolean{return !!this.runtime.tutorialPhase&&!this.runtime.pauses.some(p=>p!=='tutorial'&&p!=='tutorial-management');}
+  private get guidedTutorialVisible():boolean{return !!this.runtime.tutorialPhase&&!this.runtime.pauses.some(p=>p!=='tutorial'&&p!=='tutorial-management'&&!(p==='save'&&this.campaignSession?.savingTutorial));}
   private routeTutorial():void{
     const p=this.runtime.tutorialProgress;if(p?.status!=='active'||p.index===this.tutorialRouteIndex)return;
     this.tutorialRouteIndex=p.index;

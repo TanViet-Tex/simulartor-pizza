@@ -67,8 +67,8 @@ Reuse9 bước thực hành cũ và thêm tiến độ tương tác; không tạ
 ## Verification
 
 - `npm run build-nolog`: typecheck và build đạt; cảnh báo kích thước chunk Phaser hiện có.
-- `npx vitest run src/runtime/CozyInteractiveTutorial.test.ts src/runtime/CozyTutorial.test.ts src/runtime/CozyCampaignSession.test.ts src/domain/CozyCheckpoint.test.ts`: 37 test đạt.
-- `npx playwright test tests/tutorial.spec.ts --project=chromium-360x640 --workers=1`: 3 test đạt. Đi hết 23 focus không chồng card, chặn thao tác sai/ngoài focus, lò dừng chín, lưu và khôi phục đúng bước, scale 320×568, bỏ qua và giữ pause khác, mua giỏ thật rồi mở ngày 1.
+- `npx vitest run src/runtime/CozyInteractiveTutorial.test.ts src/runtime/CozyTutorial.test.ts src/runtime/CozyCampaignSession.test.ts src/domain/CozyCheckpoint.test.ts`: 38 test đạt.
+- `npx playwright test tests/tutorial.spec.ts --project=chromium-360x640 --workers=1`: 4 test đạt. Đi hết 23 focus không chồng card, chặn thao tác sai/ngoài focus, lò dừng chín, lưu và khôi phục đúng bước, scale 320×568, bỏ qua và giữ pause khác, mua giỏ thật rồi mở ngày 1.
 - Kiểm tra trực quan ảnh 360×640 đế bánh, Chợ và Menu & giá bán; lưu trong mốc UI. Không chạy toàn bộ E2E.
 - `git diff --check`: đạt.
 
@@ -105,3 +105,9 @@ Ba review độc lập: blind, edge-case và acceptance. Đã sửa trạng thá
 ## Điều chỉnh theo người dùng — 2026-10-07
 
 Khung rộng 280px thay 328px, chiều cao theo chữ thực tế thay cố định 150px. Không có nút bỏ qua trên UI. Lớp phủ tối opacity 30%. Tổng kết, Chợ, Kho và Nhiệm vụ mỗi tab một bước, focus nút tab; Quán vẫn giữ sáu bước chi tiết. Tổng cộng 23 bước hiển thị. Save cũ giữ index và trạng thái hoàn tất; bước chi tiết cũ được gộp về bước giới thiệu tab tương ứng. Luật đơn tập và kinh tế không đổi. Quyết định này thay các mô tả chi tiết/bỏ qua của yêu cầu ban đầu phía trên.
+
+## Chuyển bước mượt — 2026-10-07
+
+Spotlight nằm trên container riêng, không bị hủy khi bếp/hub redraw hoặc ghi bước. Focus nội suy và thẻ chữ fade/trượt nhẹ trong240ms; khóa thao tác trong chuyển động. Giảm chuyển động dùng vị trí cuối ngay. Lưu tutorial đang chạy giữ overlay và guard save, không hiện popup chờ lưu mỗi bước; lỗi ghi vẫn hiện phục hồi/retry như cũ. Tween dọn khi graphics/container bị hủy. Không rebuild toàn scene theo từng frame animation.
+
+Kiểm chứng chuyển bước: ba test luồng tutorial đạt; test frame riêng đạt (focus có vị trí trung gian, overlay không chớp popup lưu, ReducedMotion đổi ngay). 38unit đạt, build/typecheck đạt; không fullE2E.

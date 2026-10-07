@@ -490,3 +490,5 @@ Chỉ thêm lớp hướng dẫn trên UI hiện có: đen opacity 0.3, khoét f
 Ảnh kiểm chứng 360×640: [đế bánh](ui-baseline/interactive-tutorial-2026-10-07/practice-dough.png), [dự báo Chợ](ui-baseline/interactive-tutorial-2026-10-07/market-forecast.png), [Menu & giá bán](ui-baseline/interactive-tutorial-2026-10-07/shop-menu.png). Chi tiết: [spec](spec-interactive-new-game-tutorial.md).
 
 Theo chỉnh tiếp: thẻ hướng dẫn rộng280px, cao vừa nội dung; Tổng kết/Chợ/Kho/Nhiệm vụ chỉ focus nút tab một lần và giới thiệu ngắn. Riêng Quán giữ hướng dẫn chi tiết sáu mục. Lớp phủ tối30%; bếp/hub giữ nguyên bố cục.
+
+Chuyển bước tutorial theo chỉnh tiếp: focus chuyển dần và thẻ fade/trượt nhẹ trong240ms, overlay không nhấp nháy qua lưu bước. Giảm chuyển động đổi ngay; opacity30%, kích thước gọn và các vị trí UI đã duyệt giữ nguyên.

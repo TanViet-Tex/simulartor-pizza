@@ -13,6 +13,9 @@ const settle=()=>new Promise<void>(resolve=>setTimeout(resolve,0));
 async function setup(funded=false){let id=0;const port=new MemoryPort(),session=new CozyCampaignSession(port,()=>`id-${++id}`);await session.load();const r=(await session.start(false))!;if(funded){port.value!.payload=fundedShopCheckpoint();port.value!.checksum=checkpointChecksum(port.value!.payload);const loaded=(await session.load())!;return {port,session,r:loaded};}return {port,session,r};}
 function open(r:CozyRuntime){for(const id of ['dough','sauce','cheese'] as const)r.buy(id,1);expect(r.openShop()).toBe(true);}
 describe('Cozy prepare/commit/confirm session',()=>{
+  it('identifies only an in-flight tutorial save and exposes failures for normal recovery UI',async()=>{
+    const port=new MemoryPort(),session=new CozyCampaignSession(port);await session.load();const r=(await session.start(true))!;port.defer=true;r.nextTutorial();await settle();expect(session.savingTutorial).toBe(true);expect(r.nextTutorial()).toBe(false);port.fail=true;port.release!();await settle();expect(session.savingTutorial).toBe(false);expect(session.view.state).toBe('error');port.defer=false;port.fail=false;await session.retry();expect(session.savingTutorial).toBe(false);expect(session.view.state).toBe('ready');session.destroy();
+  });
   it('persists new-game tutorial progress, resumes its step and retries the identical failed commit',async()=>{
     let serial=0;const port=new MemoryPort(),session=new CozyCampaignSession(port,()=>`tutorial-${++serial}`);await session.load();const r=(await session.start(true))!;
     expect(port.value!.payload.tutorialProgress).toEqual({version:1,index:0,status:'active'});expect(r.nextTutorial()).toBe(true);await settle();expect(port.value!.payload.tutorialProgress?.index).toBe(1);
