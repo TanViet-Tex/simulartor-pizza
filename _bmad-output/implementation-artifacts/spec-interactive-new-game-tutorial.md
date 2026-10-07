@@ -111,3 +111,7 @@ Khung rộng 280px thay 328px, chiều cao theo chữ thực tế thay cố đ�
 Spotlight nằm trên container riêng, không bị hủy khi bếp/hub redraw hoặc ghi bước. Focus nội suy và thẻ chữ fade/trượt nhẹ trong240ms; khóa thao tác trong chuyển động. Giảm chuyển động dùng vị trí cuối ngay. Lưu tutorial đang chạy giữ overlay và guard save, không hiện popup chờ lưu mỗi bước; lỗi ghi vẫn hiện phục hồi/retry như cũ. Tween dọn khi graphics/container bị hủy. Không rebuild toàn scene theo từng frame animation.
 
 Kiểm chứng chuyển bước: ba test luồng tutorial đạt; test frame riêng đạt (focus có vị trí trung gian, overlay không chớp popup lưu, ReducedMotion đổi ngay). 38unit đạt, build/typecheck đạt; không fullE2E.
+
+## Đồng bộ ô tiền — 2026-10-07
+
+CashHeader dùng chung khung, icon xu và chữ cho bếp và mọi tab quản lý. Giữ vị trí/kích thước vùng header từng màn, tự fit số lớn. Focus bước tiền lấy toàn bounds của CashHeader bếp, gồm icon và viền, không chỉ số. Không thay số dư hoặc luật thanh toán.

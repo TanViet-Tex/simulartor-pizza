@@ -33,6 +33,7 @@ import { PlayLifecycle, type PauseLease } from '../runtime/PlayLifecycle';
 import { BrowserPlayLifecycle } from '../infrastructure/BrowserPlayLifecycle';
 import { PlayAudio } from '../presentation/PlayAudio';
 import {CashFeedback} from '../presentation/CashFeedback';
+import {CASH_HEADER_BOUNDS,drawCashHeader} from '../presentation/CashHeader';
 import { PLAY_BANDS, timerText } from '../presentation/PlayHud';
 import { modalText } from '../presentation/ModalText';
 import { StaticGraphics } from '../presentation/StaticGraphics';
@@ -436,7 +437,7 @@ export class CozyScene extends Phaser.Scene {
       this.timer(224,23,()=>this.runtime.shiftClock.phase==='awaiting-close'?'Chốt ngày':timerText(this.runtime.shiftClock.remaining),9,cream);
     }else this.timer(189,23,()=>this.runtime.productionActive&&!this.runtime.ovenOwner?this.shiftTimeText():`Lò ${timerText(Math.floor(this.runtime.ovenState?.ovenSeconds??this.runtime.state.ovenSeconds))}`,10,'#ead1b3');
     if(this.runtime.shopOpen)this.hit('end-day',133,22,114,20,this.runtime.canCloseDay,()=>{this.hold('user');this.endDayConfirmation=true;this.dirty=true;});
-    this.label(306,10,`${s.cash}`,17,ink);
+    drawCashHeader(this,this.layer,s.cash);
     this.customers();this.orderCard();this.recipes();this.graphics();
     const board=this.runtime.productionActive?this.runtime.workbenchState:s;
     if(board?.stage==='boxed'){
@@ -1244,7 +1245,7 @@ export class CozyScene extends Phaser.Scene {
     if(id==='sample')return rect(17,148,32,32);
     if(['dough','sauce','cheese','bake','extract','box','deliver'].includes(id))return control(id)??rect(238,298,110,63);
     if(id==='warming')return rect(239,347,108,21);
-    if(id==='complete')return rect(271,3,77,30);
+    if(id==='complete')return {...CASH_HEADER_BOUNDS.kitchen};
     if(id==='summary-costs')return rect(127,210,218,34);
     if(id==='summary-profit')return rect(21,141,220,64);
     if(id==='summary-reviews')return rect(8,356,344,97);

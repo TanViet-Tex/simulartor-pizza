@@ -492,3 +492,7 @@ Chỉ thêm lớp hướng dẫn trên UI hiện có: đen opacity 0.3, khoét f
 Theo chỉnh tiếp: thẻ hướng dẫn rộng280px, cao vừa nội dung; Tổng kết/Chợ/Kho/Nhiệm vụ chỉ focus nút tab một lần và giới thiệu ngắn. Riêng Quán giữ hướng dẫn chi tiết sáu mục. Lớp phủ tối30%; bếp/hub giữ nguyên bố cục.
 
 Chuyển bước tutorial theo chỉnh tiếp: focus chuyển dần và thẻ fade/trượt nhẹ trong240ms, overlay không nhấp nháy qua lưu bước. Giảm chuyển động đổi ngay; opacity30%, kích thước gọn và các vị trí UI đã duyệt giữ nguyên.
+
+Ô tiền đồng bộ theo yêu cầu tiếp: dùng chung CashHeader (khung nâu/kem/viền vàng, icon xu, chữ17px tự fit số lớn) trong bếp và hub. Giữ bounds bếp247/5/100/28 và hub290/12/65/28 để không che bảng tiêu đề. Focus tutorial tiền bao toàn bounds bếp, gồm icon/viền.
+
+Ảnh kiểm tra ô tiền: [focus cả khung](ui-baseline/interactive-tutorial-2026-10-07/cash-full-focus.png), [Tổng kết](ui-baseline/interactive-tutorial-2026-10-07/summary-cash.png). Build/typecheck và2testChromium360×640 liên quan đạt.

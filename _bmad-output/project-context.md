@@ -431,3 +431,5 @@ Game mới dùng tutorial hiện có với 23 bước hiển thị: nhận biế
 Tutorial chỉnh gọn theo yêu cầu tiếp: khung rộng280px, cao theo chữ; bỏ nút Bỏ qua hướng dẫn. Tổng kết/Chợ/Kho/Nhiệm vụ mỗi tab một giới thiệu, chỉ Quán giữ sáu mục chi tiết. Giữ index save cũ và cleanup API nội bộ; active index ở bước quản lý đã gộp khôi phục về bước giới thiệu tương ứng.
 
 Tutorial chuyển bước: container spotlight riêng giữ qua redraw/save, tween240ms chỉ cập nhật graphics/card; không redraw toàn scene theo từng frame. Tạm chặn thao tác khi focus đang chuyển. ReducedMotion bỏ tween. Saving tutorial không hiện popup chờ mỗi bước nhưng vẫn guard input; lỗi giữ UI retry và lease save.
+
+CashHeader là nguồn chung của khung/icon/chữ tiền bếp và hub; tutorial focus toàn bounds component, không hard-code vùng chỉ có số. Không đổi cash/accounting.
