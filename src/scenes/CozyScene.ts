@@ -36,6 +36,7 @@ import {CashFeedback} from '../presentation/CashFeedback';
 import {ManagementBackground,preloadManagementBackground} from '../presentation/ManagementBackground';
 import {HUB_WALL_LAYOUT,HUB_SHELL_LAYOUT,hubWallPoint,hubWallRect} from '../presentation/HubWallLayout';
 import {drawHubShell} from '../presentation/HubHeader';
+import {SUMMARY_MODAL_LAYOUT} from '../presentation/SummaryModalLayout';
 import {CASH_HEADER_BOUNDS,drawCashHeader} from '../presentation/CashHeader';
 import { PLAY_BANDS, timerText } from '../presentation/PlayHud';
 import { modalText } from '../presentation/ModalText';
@@ -864,7 +865,7 @@ export class CozyScene extends Phaser.Scene {
   private statementDialog():void{
     const summary=this.runtime.daySummary;if(!summary)return;
     this.summaryModalVeil();this.referenceSummary().financeModal(summary);
-    this.hit('summary-statement-close',295,46,40,40,true,()=>this.closeStatement());
+    const close=SUMMARY_MODAL_LAYOUT.finance.close;this.hit('summary-statement-close',close.x,close.y,close.width,close.height,true,()=>this.closeStatement());
   }
   private referenceSummary(hub=false):ReferenceSummary{return new ReferenceSummary(this,hub?this.hubLayer!:this.layer,(...args)=>hub?this.hubHit(...args):this.hit(...args),this.textScale);}
   private summaryModalVeil():void{
@@ -876,7 +877,7 @@ export class CozyScene extends Phaser.Scene {
   private reviewsDialog():void{
     this.summaryModalVeil();const summary=this.runtime.daySummary;
     this.referenceSummary().reviewModal(summary?.reviews??[],summary?.day??this.runtime.day,this.reviewFilter,filter=>{this.reviewFilter=filter;this.dirty=true;});
-    this.hit('summary-reviews-close',295,82,40,40,true,()=>this.closeReviews());
+    const close=SUMMARY_MODAL_LAYOUT.reviews.close;this.hit('summary-reviews-close',close.x,close.y,close.width,close.height,true,()=>this.closeReviews());
   }
   private dayHub():void{
     const summary=this.runtime.daySummary,initial=this.preparationHub;

@@ -8,6 +8,7 @@ import {UI_THEME} from './theme';
 import {drawHubShell} from './HubHeader';
 import {uiCanvas,UI_RASTER_SCALE} from './UiRaster';
 import {HubCanvasUI} from './HubCanvasUI';
+import {SUMMARY_MODAL_LAYOUT} from './SummaryModalLayout';
 
 export const SUMMARY_ART=[
   {key:'reference-summary',url:'assets/references/bảng tổng kết.png'},
@@ -138,37 +139,45 @@ export class ReferenceSummary {
   }
   modalFrame(kind:'reviews'|'finance',day:number):Rect{
     const source=kind==='reviews'?{x:92,y:303,width:760,height:1094}:{x:92,y:167,width:760,height:1438};
-    this.frame(`reference-${kind}`,source,{x:18,y:kind==='reviews'?80:44,width:324,height:kind==='reviews'?480:552});
-    this.crop(`reference-${kind}`,kind==='reviews'?{x:138,y:328,width:162,height:104}:{x:142,y:191,width:151,height:96},{x:32,y:kind==='reviews'?92:57,width:40,height:27});
-    this.crop(`reference-${kind}`,kind==='reviews'?{x:714,y:340,width:39,height:65}:{x:689,y:210,width:43,height:73},{x:281,y:kind==='reviews'?106:70,width:13,height:23});
-    this.text(177,kind==='reviews'?99:65,`${kind==='reviews'?'Đánh giá':'Thu chi'} ngày ${day}`,23,ink,242,true);
+    const layout=SUMMARY_MODAL_LAYOUT[kind],top=layout.bounds.y;
+    this.frame(`reference-${kind}`,source,layout.bounds);
+    this.crop(`reference-${kind}`,kind==='reviews'?{x:138,y:328,width:162,height:104}:{x:142,y:191,width:151,height:96},{x:43,y:top+12,width:35,height:24});
+    this.text(180,top+19,`${kind==='reviews'?'Đánh giá':'Thu chi'} ngày ${day}`,23,ink,202,true);
     // Original native × roundel is decorative; the hit target belongs to the scene.
-    this.crop(`reference-${kind}`,kind==='reviews'?{x:775,y:322,width:61,height:64}:{x:774,y:186,width:62,height:64},{x:304,y:kind==='reviews'?87:51,width:25,height:26});
-    return kind==='reviews'?{x:31,y:202,width:290,height:332}:{x:31,y:152,width:290,height:409};
+    this.crop(`reference-${kind}`,kind==='reviews'?{x:775,y:322,width:61,height:64}:{x:774,y:186,width:62,height:64},{x:292,y:top+7,width:25,height:26});
+    this.scene.game.canvas.dataset.summaryModalLayout=JSON.stringify({kind,...layout});
+    this.scene.game.canvas.dataset.summaryModalIcons='[]';
+    return layout.viewport;
+  }
+  private modalIcon(name:string,x:number,y:number,size=20):Phaser.GameObjects.Image|undefined{
+    const key=`pizza-icon-${name}`;if(!this.scene.textures.exists(key))return;
+    const image=this.scene.add.image(x,y,key).setOrigin(0).setDisplaySize(size,size);this.layer.add(image);
+    const icons=JSON.parse(this.scene.game.canvas.dataset.summaryModalIcons||'[]');icons.push({key,x,y,width:size,height:size});
+    this.scene.game.canvas.dataset.summaryModalIcons=JSON.stringify(icons);return image;
   }
   reviewModal(reviews:readonly CozyReview[],day:number,filter:'all'|'5'|'4'|'low',setFilter:(filter:'all'|'5'|'4'|'low')=>void):void{
     const viewport=this.modalFrame('reviews',day),rating=reviews.length?reviews.reduce((n,r)=>n+r.stars,0)/reviews.length:null;
-    const pill=this.scene.add.graphics().fillStyle(0xe9ebcf).fillRoundedRect(45,134,270,30,15).lineStyle(1,0xc4cea7).strokeRoundedRect(45,134,270,30,15);this.layer.add(pill);
-    if(rating!==null){pill.fillStyle(0x608341).fillRoundedRect(49,138,125,23,12);this.text(111,141,`★ ${rating.toFixed(1)} / 5`,16,'#fff0d5',120,true);}
-    else this.text(50,142,'Chưa có đánh giá',12,wood,139);
-    this.text(191,144,`${reviews.length} lượt đánh giá`,12,wood,120);
+    const pill=this.scene.add.graphics().fillStyle(0xe9ebcf).fillRoundedRect(43,154,266,30,15).lineStyle(1,0xc4cea7).strokeRoundedRect(43,154,266,30,15);this.layer.add(pill);
+    if(rating!==null){pill.fillStyle(0x608341).fillRoundedRect(47,158,117,23,12);this.text(105,161,`★ ${rating.toFixed(1)} / 5`,16,'#fff0d5',112,true);}
+    else this.text(48,162,'Chưa có đánh giá',12,wood,128);
+    this.modalIcon('user',173,160,18);this.text(195,164,`${reviews.length} lượt đánh giá`,12,wood,109);
     const filters=[['all','Tất cả'],['5','5 sao'],['4','4 sao'],['low','1–3 sao']] as const;
-    filters.forEach(([id,title],i)=>{const x=32+i*73;const g=this.scene.add.graphics().fillStyle(id===filter?0xb85b37:0xf4dfbd).fillRoundedRect(x,171,69,25,10);this.layer.add(g);this.text(x+34,178,title,11,id===filter?'#fff0d5':ink,68,true);this.hit(`summary-review-filter-${id}`,x,168,69,28,true,()=>setFilter(id));});
+    filters.forEach(([id,title],i)=>{const x=43+i*67;const g=this.scene.add.graphics().fillStyle(id===filter?0xb85b37:0xf4dfbd).fillRoundedRect(x,191,64,25,10);this.layer.add(g);this.text(x+32,198,title,11,id===filter?'#fff0d5':ink,63,true);this.hit(`summary-review-filter-${id}`,x,188,64,28,true,()=>setFilter(id));});
     const filtered=reviews.filter(r=>filter==='all'||filter==='low'?filter==='all'||r.stars<=3:r.stars===Number(filter));
     const elements:{object:Phaser.GameObjects.GameObject;y:number}[]=[];let y=viewport.y;
-    if(!filtered.length){this.text(45,viewport.y+25,reviews.length?'Không có đánh giá ở mức sao này.':'Chưa có đánh giá',14,wood,258);}
+    if(!filtered.length){this.text(51,viewport.y+25,reviews.length?'Không có đánh giá ở mức sao này.':'Chưa có đánh giá',14,wood,250);}
     for(const review of [...filtered].reverse()){
-      const row=this.reviewRow(review,39,y,272);for(const object of row)elements.push({object,y:(object as unknown as {y:number}).y});
+      const row=this.reviewRow(review,51,y,250);for(const object of row)elements.push({object,y:(object as unknown as {y:number}).y});
       const rowHeight=Math.max(91,...row.filter(o=>o instanceof Phaser.GameObjects.Text).map(o=>(o as Phaser.GameObjects.Text).y+(o as Phaser.GameObjects.Text).height-y+15));
-      const before=this.layer.list.length;this.line(39,y+rowHeight-8,273);const object=this.layer.list[before];elements.push({object,y:0});y+=rowHeight;
+      const before=this.layer.list.length;this.line(51,y+rowHeight-8,250);const object=this.layer.list[before];elements.push({object,y:0});y+=rowHeight;
     }
-    this.scroll(viewport,elements,Math.max(0,y-viewport.y));this.text(180,538,'Kéo để xem thêm đánh giá',10,wood,277,true);
+    this.scroll(viewport,elements,Math.max(0,y-viewport.y));this.modalIcon('checklist',69,513,18);this.text(190,518,'Kéo để xem thêm đánh giá',10,wood,230,true);
   }
   financeModal(report:CozyDaySummary):void{
     const viewport=this.modalFrame('finance',report.day),a=report.accounts;
     const drinkSales=report.reviews.flatMap(r=>r.soldDrink?[`${drinkDefinition(r.soldDrink.id).name} × 1   ${r.soldDrink.price} xu`]:[]);
-    const pill=this.scene.add.graphics().fillStyle(0xe9ebcf).fillRoundedRect(31,103,290,40,12).lineStyle(1,0xc4cea7).strokeRoundedRect(31,103,290,40,12);this.layer.add(pill);
-    this.text(180,115,`Lợi nhuận: ${report.profit>0?'+':''}${report.profit} xu`,20,report.profit<0?'#ad432e':green,280,true);
+    const pill=this.scene.add.graphics().fillStyle(0xe9ebcf).fillRoundedRect(43,136,266,40,12).lineStyle(1,0xc4cea7).strokeRoundedRect(43,136,266,40,12);this.layer.add(pill);
+    this.modalIcon('coin',51,146,20);this.text(189,148,`Lợi nhuận: ${report.profit>0?'+':''}${report.profit} xu`,20,report.profit<0?'#ad432e':green,230,true);
     const sections:[string,string[]][]=[
       ...(a.rewards?[[`Thưởng · ${a.rewards} xu`,[`VIP: ${report.reviews.reduce((sum,review)=>sum+(review.vip?.coins??0),0)} xu`,...(report.lotteryPrize?[`Vé số: ${report.lotteryPrize} xu`]:[]),`Mục tiêu/nhiệm vụ/lời cảm ơn: ${a.rewards-report.reviews.reduce((sum,review)=>sum+(review.vip?.coins??0),0)-(report.lotteryPrize??0)} xu`,'Thưởng là dòng tiền riêng, không cộng doanh thu pizza hoặc lợi nhuận bán hàng.']] as [string,string[]]]:[]),
       [`Doanh thu · ${a.sales} xu`,[...(report.salesByRecipe===undefined?['Bản lưu cũ chưa có chi tiết theo món.']:report.salesByRecipe.length?report.salesByRecipe.map(r=>`${recipeNames[r.recipe]} × ${r.quantity}   ${r.revenue} xu`):drinkSales.length?[]:['Chưa có món bán thành công.']),...drinkSales]],
@@ -179,13 +188,15 @@ export class ReferenceSummary {
       ['Đối chiếu tồn kho',[`Đầu ${a.openingInventoryValue} + nhập ${a.purchases} = dùng ${a.consumed} + hết hạn ${a.expired} + cuối ${a.inventory.value} xu`,'Nhập kho không trừ thêm vào lợi nhuận. Báo cáo này giữ nguyên khi mua cho ngày sau.']],
     ];
     const elements:{object:Phaser.GameObjects.GameObject;y:number}[]=[];let y=viewport.y;
-    for(const [title,lines] of sections){
+    for(const [sectionIndex,[title,lines]] of sections.entries()){
       const start=y,index=elements.length;
-      const header=this.text(41,y+8,title,16,ink,272,false,true);elements.push({object:header,y:header.y});y+=header.height+18;
-      for(const line of lines){const text=this.text(45,y,line,13,wood,265,false,true);elements.push({object:text,y:text.y});y+=text.height+10;}y+=14;
+      const names=a.rewards?['coin','coin','basket','ledger','checklist','coin','crate']:['coin','basket','ledger','checklist','coin','crate'];
+      const icon=this.modalIcon(names[sectionIndex]??'ledger',51,y+9,20);if(icon)elements.push({object:icon,y:icon.y});
+      const header=this.text(77,y+8,title,16,ink,224,false,true);elements.push({object:header,y:header.y});y+=Math.max(header.height,22)+18;
+      for(const line of lines){const text=this.text(55,y,line,13,wood,246,false,true);elements.push({object:text,y:text.y});y+=text.height+10;}y+=14;
       const panel=this.scene.add.graphics().setData('summaryPanel',{x:viewport.x,y:start,width:viewport.width,height:y-start-7});this.layer.add(panel);elements.splice(index,0,{object:panel,y:0});
     }
-    this.scroll(viewport,elements,y-viewport.y);this.text(180,572,'Số liệu thật của ngày đã chốt',10,wood,278,true);
+    this.scroll(viewport,elements,y-viewport.y);this.text(180,535,'Số liệu thật của ngày đã chốt',10,wood,266,true);
   }
   private scroll(viewport:Rect,elements:{object:Phaser.GameObjects.GameObject;y:number}[],contentHeight:number):void{
     // A viewport-sized texture avoids both legacy masks and GPU texture-size

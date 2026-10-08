@@ -16,6 +16,12 @@ sources:
 
 # Project Context for AI Agents
 
+### Hai bảng báo cáo gọn — yêu cầu 2026-10-08
+
+Build và5E2E Chromium360×640 đạt: report thật, empty/1/2review, filter/scroll/close và chữ200%/longreview. Ảnh kiểm chứng implementation-artifacts/ui-baseline/compact-finance-reviews-2026-10-08; ba review không có lỗi code.
+
+Thu chi300×476 tại30/82, Đánh giá300×440 tại30/100 theo yêu cầu nhỏ lại/thêm icon; cỡ chữ và dữ liệu thật giữ nguyên, body266×340/266×285 cuộn/clip. SummaryModalLayout dùng chung bounds/viewport/close; hit mở rộng48px. Finance heading icon raster Image cùng scroll; review user/checklist ở count/hint. Không đổi hub/bếp/modal khác, filter/close/pause lease và thu chi giữ nguyên. Xem implementation-artifacts/spec-compact-finance-reviews.md.
+
 ### Nền chung quản lý — yêu cầu 2026-10-08
 
 Theo steering cụ thể tiếp theo: tiêu đề dưới mái che80/25/200×50; Pause dưới đèn trái44/48/31×28; tiền dưới đèn phải290/48/65×28; nav5tab22/80/316×49 vừa tường gỗ. Shell riêng trên layer ngoài, body/footer scale0.88 offset21.6/21.6; không thu nhỏ cả hub chung nữa. HubWallLayout là nguồn transform chung cho hit/list clip/cuộn/tutorial; cash feedback theo header mới. Modal/bếp giữ geometry cũ. Phiên tạm ghi status ở sàn dưới footer để không chồng thẻ. Các quyết định này thay phần geometry hub trước đó theo yêu cầu rõ của người dùng.

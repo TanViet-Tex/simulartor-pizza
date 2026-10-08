@@ -7,6 +7,12 @@ date: '2026-10-02'
 
 # Giao diện hiện tại là mốc cho các lần triển khai sau
 
+### Thu chi và Đánh giá gọn, thêm icon — yêu cầu 2026-10-08
+
+Kiểm chứng build và5E2E Chromium360×640 đạt, ba review không có lỗi code. Ảnh: [Thu chi](ui-baseline/compact-finance-reviews-2026-10-08/reference-finance.png), [Thu chi cuộn](ui-baseline/compact-finance-reviews-2026-10-08/reference-finance-scrolled.png), [Đánh giá](ui-baseline/compact-finance-reviews-2026-10-08/reference-reviews.png), [Đánh giá cuộn](ui-baseline/compact-finance-reviews-2026-10-08/reference-reviews-scrolled.png).
+
+Người dùng yêu cầu hai bảng nhỏ lại một chút và thêm icon. Thu chi300×476 tại30/82, Đánh giá300×440 tại30/100; giữ cỡ chữ, khung reference, avatar, số liệu thật và thứ tự nội dung. Body cuộn266×340/266×285; close dùng bounds chung, vùng chạm tối thiểu48px. Thêm icon có sẵn: coin/basket/ledger/checklist/crate cho mục Thu chi, user/checklist cho Đánh giá. Header/lợi nhuận/rating/filter/hint cố định ngoài vùng cuộn. Hub, bếp và các popup khác giữ nguyên. Xem [spec](spec-compact-finance-reviews.md). Ảnh triển khai để xem xét, không tự đánh dấu đã duyệt.
+
 ### Nền ảnh chung quản lý — yêu cầu 2026-10-08
 
 Theo lời chỉnh rõ hơn của người dùng, **không thu nhỏ toàn bộ hub thành một cụm giữa tường**. Bảng tiêu đề nằm dưới mái che tại80/25/200×50; Pause dưới đèn trái44/48/31×28, tiền dưới đèn phải290/48/65×28; thanh5tab rộng316px tại22/80, vừa tường gỗ. Các thẻ và footer bên dưới fit trong tường qua scale0.88/offset21.6/21.6, giữ bố cục tương đối. Vùng bấm/cuộn/tutorial theo geometry mới; bếp và modal giữ nguyên. Thông tin phiên tạm đặt trên sàn dưới footer để tránh chồng nội dung. Đây là phạm vi người dùng yêu cầu, thay giới hạn giữ geometry hub cho riêng phần này.

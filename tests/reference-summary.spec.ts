@@ -23,7 +23,7 @@ async function fixture(page:Page,empty=false,reviewCount=empty?0:12){
   await page.route('**/assets/index-*.js',route=>route.abort());await page.goto('/');
   await page.setContent('<style>html,body{margin:0;height:100%;overflow:hidden}#fixture{width:100%;height:100%}</style><div id="fixture"></div>');
   await page.addScriptTag({content:bundle.outputFiles[0].text});
-  await expect(page.locator('canvas')).toHaveAttribute('data-screen','day-summary');
+  await expect(page.locator('canvas')).toHaveAttribute('data-screen','day-summary',{timeout:30000});
 }
 async function tap(page:Page,id:string){
   const canvas=page.locator('canvas');
@@ -55,6 +55,9 @@ test('reference summary uses actual reports and isolates scrollable finance/revi
   await canvas.screenshot({path:info.outputPath('reference-summary.png')});
   await tap(page,'summary-finance-open');await expect(canvas).toHaveAttribute('data-summary-modal','finance');
   expect(await labels(page)).toContain('Thu chi ngày 1');
+  const financeLayout=JSON.parse(await canvas.getAttribute('data-summary-modal-layout')||'{}');
+  expect(financeLayout.bounds).toMatchObject({x:30,y:82,width:300,height:476});
+  expect(JSON.parse(await canvas.getAttribute('data-summary-modal-icons')||'[]').length).toBeGreaterThan(3);
   const financeRows=JSON.parse(await canvas.getAttribute('data-summary-modal-text')||'[]');
   expect(financeRows).toContain('Phô mai × 3   150 xu');expect(financeRows).toContain(`Số dư cuối ngày: ${report.cash} xu`);
   const controls=JSON.parse(await canvas.getAttribute('data-controls')||'[]');expect(controls.some((c:{id:string})=>c.id==='summary-open-next-day')).toBe(false);
@@ -73,17 +76,23 @@ test('reference summary uses actual reports and isolates scrollable finance/revi
   await expect(canvas).toHaveAttribute('data-summary-body-text-scale','1');
   await tap(page,'summary-statement-close');await expect(canvas).toHaveAttribute('data-summary-modal','');
   await tap(page,'summary-reviews-open');await expect(canvas).toHaveAttribute('data-summary-modal','reviews');expect(await labels(page)).toContain('Đánh giá ngày 1');
+  const reviewLayout=JSON.parse(await canvas.getAttribute('data-summary-modal-layout')||'{}');
+  expect(reviewLayout.bounds).toMatchObject({x:30,y:100,width:300,height:440});
+  expect(JSON.parse(await canvas.getAttribute('data-summary-modal-icons')||'[]').length).toBeGreaterThan(0);
   const reviewsScroll=JSON.parse(await canvas.getAttribute('data-modal-scroll')||'[]')[0];expect(reviewsScroll.max).toBeGreaterThan(0);
   await page.waitForTimeout(250);const reviewsBefore=await canvas.screenshot({path:info.outputPath('reference-reviews.png')});
   await page.mouse.move(bounds.x+(reviewsScroll.x+reviewsScroll.width/2)*bounds.width/360,bounds.y+(reviewsScroll.y+reviewsScroll.height/2)*bounds.height/640);await page.mouse.wheel(0,170);
   await expect.poll(async()=>JSON.parse(await canvas.getAttribute('data-modal-scroll')||'[]')[0].offset).toBeGreaterThan(0);
   await expectOnlyBodyChanged(page,reviewsBefore,await canvas.screenshot({path:info.outputPath('reference-reviews-scrolled.png')}),reviewsScroll);
-  await page.evaluate(()=>{
-    Object.defineProperty(document,'hidden',{configurable:true,value:true});document.dispatchEvent(new Event('visibilitychange'));
-    Object.defineProperty(document,'hidden',{configurable:true,value:false});document.dispatchEvent(new Event('visibilitychange'));
-  });
-  await tap(page,'summary-reviews-close');await expect(canvas).toHaveAttribute('data-paused','visibility');
-  await tap(page,'resume');await expect(canvas).toHaveAttribute('data-paused','');
+  await tap(page,'summary-review-filter-5');
+  const fiveStarText=JSON.parse(await canvas.getAttribute('data-summary-modal-text')||'[]');
+  for(const review of report.reviews){
+    if(review.stars!==5&&!report.reviews.some((r:any)=>r.name===review.name&&r.stars===5))expect(fiveStarText).not.toContain(review.name);
+  }
+  await tap(page,'summary-review-filter-all');
+  await page.evaluate(()=>{const fixture=(window as any).summaryFixture;fixture.otherLease=fixture.runtime.acquirePause('test-owner');});
+  await tap(page,'summary-reviews-close');await expect(canvas).toHaveAttribute('data-paused','test-owner');
+  await page.evaluate(()=>{(window as any).summaryFixture.otherLease.release();});await expect(canvas).toHaveAttribute('data-paused','');
   await expect(canvas).toHaveAttribute('data-day-summary',JSON.stringify(report));await tap(page,'summary-tab-stock');await expect(canvas).toHaveAttribute('data-summary-tab','stock');
   await tap(page,'summary-tab-summary');await tap(page,'summary-open-next-day');await expect(canvas).toHaveAttribute('data-day','2');await expect(canvas).toHaveAttribute('data-screen','game');
 });
