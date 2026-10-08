@@ -534,3 +534,7 @@ Chỉ popup hỏa tốc đổi theo references/hỏa tốc.png: khung kem 280px,
 ### Thu chi theo ảnh mẫu — yêu cầu tiếp 2026-10-08
 
 Thu chi dùng các icon trong reference ở từng dòng, tiêu đề trái và số tiền phải; đối chiếu xanh, dòng tiền vàng. Giữ khung300×476, viewport266×340; chữ200% xếp tiền dưới tên, cuộn chỉ nội dung. Đánh giá/hub/bếp giữ nguyên. Ảnh kiểm tra: [Thu chi](ui-baseline/reference-finance-art-2026-10-08/reference-finance.png), [chữ200%](ui-baseline/reference-finance-art-2026-10-08/reference-finance-200.png).
+
+### Sáu màn con Quản lý quán — triển khai theo yêu cầu 2026-10-08
+
+Theo yêu cầu thiết kế lại rõ ràng, sáu màn con dùng riêng header kem treo dây, lá, back trái và xu phải; không có nav5tab trên các màn con. Header/footer cố định, nội dung cuộn trong360×640, nền chung giữ tỷ lệ. Home Quản lý quán và mọi hub/bếp khác giữ bố cục cũ. Component chung ShopScreenUI/Art/ShopScreens; dữ liệu và giao dịch lấy runtime/session. Menu8món, hai cấp mở rộng thật, thiết bị lò/tủ lạnh/nước, tiện nghi và trang trí6đồ, nhân viên4nghề. Trang trí/nhân viên có tabs thực. Giá/lương/hiệu ứng theo game, không theo số mẫu ảnh. Ảnh kiểm chứng tại ui-baseline/six-shop-screens-2026-10-08. Đây là bản triển khai để người dùng xem và phản hồi.
