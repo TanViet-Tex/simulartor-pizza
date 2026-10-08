@@ -6,9 +6,9 @@ import {HUB_THEME} from './HubTheme';
 let serial=0;
 export class ReferenceMissions{
   constructor(private scene:Phaser.Scene,private layer:Phaser.GameObjects.Container,private hit:HubHit){}
-  draw(input:{day:number;cash:number;progress:CozyRuntime['progression'];ending:boolean;tab:(id:HubTab)=>void;pause:()=>void;footer:{id:string;title:string;enabled:boolean;action:()=>void}}):void{
+  draw(input:{shell?:boolean;day:number;cash:number;progress:CozyRuntime['progression'];ending:boolean;tab:(id:HubTab)=>void;pause:()=>void;footer:{id:string;title:string;enabled:boolean;action:()=>void}}):void{
     const key=`missions-${serial++}`,texture=uiCanvas(this.scene,key,360,640),ui=new HubCanvasUI(this.scene,texture.context,this.hit),p=input.progress,c=HUB_THEME.colors;
-    ui.background();ui.header({title:'Nhiệm vụ',subtitle:`Ngày ${input.day} · Cấp ${p.level}`,cash:input.cash,pause:input.pause});ui.navigation('missions',input.tab);
+    if(input.shell!==false)ui.header({title:'Nhiệm vụ',subtitle:`Ngày ${input.day} · Cấp ${p.level}`,cash:input.cash,pause:input.pause});if(input.shell!==false)ui.navigation('missions',input.tab);
     const status=(s:string)=>s==='completed'?'Hoàn thành':s==='expired'?'Đã hết hạn':'Đang thực hiện';
     ui.frame({x:8,y:133,width:344,height:147});ui.text(22,145,`Mục tiêu ngày ${p.goal.day}`,19);ui.text(22,176,p.goal.description,14,c.ink,false,313);ui.text(22,204,p.goal.progress,18,c.muted);
     ui.text(22,235,status(p.goal.status),13,p.goal.status==='completed'?'#345f28':c.muted);

@@ -21,11 +21,12 @@ export function hubListWindow(scene:Phaser.Scene,layer:Phaser.GameObjects.Contai
   }
   const render=(offset:number)=>{image.setPosition(0,viewport.y-offset).setCrop(viewport.x*UI_RASTER_SCALE,offset*UI_RASTER_SCALE,viewport.width*UI_RASTER_SCALE,viewport.height*UI_RASTER_SCALE);thumb?.setY(viewport.y+offset/max*(viewport.height-65));input.update(offset);};
   const controller=new HubListScroll(input.offset,max,render,input.allowed);input.drag.controller=controller;render(controller.offset);
-  const within=(p:Phaser.Input.Pointer)=>p.x>=viewport.x&&p.x<=viewport.x+viewport.width&&p.y>=viewport.y&&p.y<=viewport.y+viewport.height;
-  const down=(p:Phaser.Input.Pointer)=>{if(within(p))controller.down(p.x,p.y,p.id);else controller.cancel();};
-  const move=(p:Phaser.Input.Pointer)=>{if(p.isDown)controller.move(p.x,p.y,p.id);};
+  const local=(p:Phaser.Input.Pointer)=>layer.getWorldTransformMatrix().applyInverse(p.x,p.y);
+  const within=(p:{x:number;y:number})=>p.x>=viewport.x&&p.x<=viewport.x+viewport.width&&p.y>=viewport.y&&p.y<=viewport.y+viewport.height;
+  const down=(p:Phaser.Input.Pointer)=>{const point=local(p);if(within(point))controller.down(point.x,point.y,p.id);else controller.cancel();};
+  const move=(p:Phaser.Input.Pointer)=>{const point=local(p);if(p.isDown)controller.move(point.x,point.y,p.id);};
   const up=()=>{controller.flush();controller.cancel();};
-  const wheel=(p:Phaser.Input.Pointer,_objects:unknown,_dx:number,dy:number)=>{if(within(p))controller.wheel(dy);};
+  const wheel=(p:Phaser.Input.Pointer,_objects:unknown,_dx:number,dy:number)=>{if(within(local(p)))controller.wheel(dy/Math.abs(layer.getWorldTransformMatrix().scaleY));};
   const flush=()=>controller.flush();
   scene.input.on('pointerdown',down);scene.input.on('pointermove',move);scene.input.on('pointerup',up);scene.input.on('pointerupoutside',up);scene.input.on('wheel',wheel);scene.events.on('preupdate',flush);
   image.once('destroy',()=>{scene.input.off('pointerdown',down);scene.input.off('pointermove',move);scene.input.off('pointerup',up);scene.input.off('pointerupoutside',up);scene.input.off('wheel',wheel);scene.events.off('preupdate',flush);controller.destroy();if(input.drag.controller===controller)input.drag.controller=undefined;scene.textures.remove(key);});

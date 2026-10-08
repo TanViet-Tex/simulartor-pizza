@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import {HUB_THEME} from './HubTheme';
-import {paintHubWood,paintHubHeader,paintHubNavigation} from './HubHeader';
+import {paintHubHeader,paintHubNavigation} from './HubHeader';
 
 export const HUB_ART = {key:'reference-market',url:'assets/references/chợ.png'};
 export type HubTab = 'summary'|'market'|'stock'|'shop'|'missions';
@@ -67,7 +67,6 @@ export class HubCanvasUI {
     this.text(x+w/2,y+(h-size)/2-1,title,size,HUB_THEME.colors.cream,true,w-8);
   }
 
-  background():void {paintHubWood(this.ctx);}
   header(input:{title:string;subtitle:string;cash:number;pause:()=>void}):void {paintHubHeader(this.scene,this.ctx,this.hit,input);}
   navigation(active:HubTab,tab:(id:HubTab)=>void):void {paintHubNavigation(this.scene,this.ctx,this.hit,active,tab);}
 

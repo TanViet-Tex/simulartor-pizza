@@ -8,6 +8,7 @@ import { MENU_CURTAIN } from '../presentation/MenuAmbience';
 import { PIZZA_BOX_ART } from '../presentation/PizzaBoxArt';
 import { REFERENCE_KITCHEN_MANIFEST,registerReferenceKitchenFrames } from '../presentation/ReferenceKitchenArt';
 import { CUSTOMER_PORTRAIT_MANIFEST } from '../presentation/CustomerPortraits';
+import { MANAGEMENT_BACKGROUND_ASSET } from '../presentation/ManagementBackground';
 
 // Retained as a catalog for optional legacy views, not a mandatory campaign download.
 export const LEGACY_ASSET_MANIFEST = Object.freeze(Object.entries(COZY_ASSETS).map(([name,url]) => Object.freeze({key:`cozy-${name}`,url,type:'image' as const})));
@@ -55,7 +56,7 @@ export class StartupScene extends Phaser.Scene {
       return;
     }
     this.show('Đang chuẩn bị nguyên liệu…');
-    const manifest: readonly {key:string;url:string;type:'svg'|'image'}[] = this.campaign ? [] : [...PIZZA_ICON_MANIFEST,PIZZA_BOX_ART,...REFERENCE_KITCHEN_MANIFEST,CUSTOMER_PORTRAIT_MANIFEST[0],...(this.menu?[MAIN_MENU_BACKGROUND,MENU_CURTAIN]:[])];
+    const manifest: readonly {key:string;url:string;type:'svg'|'image'}[] = this.campaign ? [] : [...PIZZA_ICON_MANIFEST,PIZZA_BOX_ART,...REFERENCE_KITCHEN_MANIFEST,MANAGEMENT_BACKGROUND_ASSET,CUSTOMER_PORTRAIT_MANIFEST[0],...(this.menu?[MAIN_MENU_BACKGROUND,MENU_CURTAIN]:[])];
     this.load.once(Phaser.Loader.Events.FILE_LOAD_ERROR, () => { if (attempt === this.attempt) this.fail('assets'); });
     const enterGame = () => {
       if (!this.live || this.failed || attempt !== this.attempt) return;

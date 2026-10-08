@@ -16,6 +16,12 @@ sources:
 
 # Project Context for AI Agents
 
+### Nền chung quản lý — yêu cầu 2026-10-08
+
+Theo steering cụ thể tiếp theo: tiêu đề dưới mái che80/25/200×50; Pause dưới đèn trái44/48/31×28; tiền dưới đèn phải290/48/65×28; nav5tab22/80/316×49 vừa tường gỗ. Shell riêng trên layer ngoài, body/footer scale0.88 offset21.6/21.6; không thu nhỏ cả hub chung nữa. HubWallLayout là nguồn transform chung cho hit/list clip/cuộn/tutorial; cash feedback theo header mới. Modal/bếp giữ geometry cũ. Phiên tạm ghi status ở sàn dưới footer để không chồng thẻ. Các quyết định này thay phần geometry hub trước đó theo yêu cầu rõ của người dùng.
+
+Tổng kết/Chợ/Kho/Quán/Nhiệm vụ dùng đúng ảnh `public/assets/management-background.png` từ `references/Phông nền tiệm pizza Việt ấm cúng.png`, thay nền gỗ code. StartupScene tải qua manifest hiện có; CozyScene có preload fallback guard. ManagementBackground giữ một Image ngoài layer redraw/list mask, depth−1, scrollFactor0, scale cover đồng nhất/căn giữa; show tại hub, hide tại bếp, cleanup idempotent/resize. Không tăng tương phản ảnh này; nội dung header/tab/thẻ/footer và luật gameplay/save giữ nguyên; vị trí theo steering bên trên. Build, 10unit và 3E2E tập trung Chromium360×640 đạt; ba review không có lỗi code. Ảnh kiểm chứng tại implementation-artifacts/ui-baseline/management-shell-fit-2026-10-08.
+
 _Tệp này chứa các quy tắc và patterns quan trọng mà AI agent phải tuân theo khi triển khai game. Chỉ giữ những chi tiết dễ bị bỏ sót; GDD và game-architecture.md vẫn là nguồn đầy đủ._
 
 ---

@@ -19,12 +19,12 @@ let serial=0;
 /** A bounded canvas window keeps native borders and row artwork clipped in WebGL. */
 export class ReferenceMarket{
   constructor(private scene:Phaser.Scene,private layer:Phaser.GameObjects.Container,private hit:Hit,private sync:(render:()=>void)=>void){}
-  draw(input:{access:(id:StockIngredient)=>{unlocked:boolean;recipes:StockRecipe[]};basketTotal:number;reservePercent:number;suggest:()=>void;buyAll:()=>void;unitPrice:(id:StockIngredient)=>number;supplier:{familiar:boolean;purchased:number;threshold:number};day:number;cash:number;canBuy:boolean;readOnlyReason:string;canScroll:()=>boolean;filter:MarketFilter;offset:number;drag:MarketDrag;quantities:Partial<Record<StockIngredient,number>>;available:(id:StockIngredient)=>number;quantity:(id:StockIngredient,delta:number)=>void;buy:(id:StockIngredient)=>void;editQuantity:(id:StockIngredient)=>void;scroll:(offset:number)=>void;setFilter:(filter:MarketFilter)=>void;tab:(id:'summary'|'market'|'stock'|'shop'|'missions')=>void;pause:()=>void;price:()=>void;footer:{id:string;title:string;enabled:boolean;action:()=>void}}):void{
+  draw(input:{shell?:boolean;access:(id:StockIngredient)=>{unlocked:boolean;recipes:StockRecipe[]};basketTotal:number;reservePercent:number;suggest:()=>void;buyAll:()=>void;unitPrice:(id:StockIngredient)=>number;supplier:{familiar:boolean;purchased:number;threshold:number};day:number;cash:number;canBuy:boolean;readOnlyReason:string;canScroll:()=>boolean;filter:MarketFilter;offset:number;drag:MarketDrag;quantities:Partial<Record<StockIngredient,number>>;available:(id:StockIngredient)=>number;quantity:(id:StockIngredient,delta:number)=>void;buy:(id:StockIngredient)=>void;editQuantity:(id:StockIngredient)=>void;scroll:(offset:number)=>void;setFilter:(filter:MarketFilter)=>void;tab:(id:'summary'|'market'|'stock'|'shop'|'missions')=>void;pause:()=>void;price:()=>void;footer:{id:string;title:string;enabled:boolean;action:()=>void}}):void{
     const key=`market-window-${serial++}`,texture=uiCanvas(this.scene,key,360,640),ctx=texture.context;
     const ui=new HubCanvasUI(this.scene,ctx,this.hit),colors=HUB_THEME.colors;
     const frame=ui.frame.bind(ui),text=ui.text.bind(ui),panel=ui.panel.bind(ui);
-    ui.background();ui.header({title:'Chợ nguyên liệu',subtitle:`Chuẩn bị ngày ${input.day}`,cash:input.cash,pause:input.pause});
-    ui.navigation('market',input.tab);
+    if(input.shell!==false)ui.header({title:'Chợ nguyên liệu',subtitle:`Chuẩn bị ngày ${input.day}`,cash:input.cash,pause:input.pause});
+    if(input.shell!==false)ui.navigation('market',input.tab);
     frame({x:8,y:133,width:344,height:40});
     const filters=[['all','Tất cả'],['sauce','Sốt'],['topping','Topping'],['base','Đế & phô mai']] as const;
     filters.forEach(([id,title],i)=>{const x=15+i*84;panel(x,139,78,28,id===input.filter?colors.active:colors.inset);text(x+39,148,title,i===3?10:12,id===input.filter?colors.cream:colors.ink,true);this.hit(`market-filter-${id}`,x,136,78,34,true,()=>input.setFilter(id));});

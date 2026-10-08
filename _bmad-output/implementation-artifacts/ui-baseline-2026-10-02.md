@@ -7,6 +7,14 @@ date: '2026-10-02'
 
 # Giao diện hiện tại là mốc cho các lần triển khai sau
 
+### Nền ảnh chung quản lý — yêu cầu 2026-10-08
+
+Theo lời chỉnh rõ hơn của người dùng, **không thu nhỏ toàn bộ hub thành một cụm giữa tường**. Bảng tiêu đề nằm dưới mái che tại80/25/200×50; Pause dưới đèn trái44/48/31×28, tiền dưới đèn phải290/48/65×28; thanh5tab rộng316px tại22/80, vừa tường gỗ. Các thẻ và footer bên dưới fit trong tường qua scale0.88/offset21.6/21.6, giữ bố cục tương đối. Vùng bấm/cuộn/tutorial theo geometry mới; bếp và modal giữ nguyên. Thông tin phiên tạm đặt trên sàn dưới footer để tránh chồng nội dung. Đây là phạm vi người dùng yêu cầu, thay giới hạn giữ geometry hub cho riêng phần này.
+
+Người dùng yêu cầu dùng đúng ảnh `Phông nền tiệm pizza Việt ấm cúng.png` cho Tổng kết, Chợ, Kho, Quán và Nhiệm vụ, thay nền gỗ vẽ bằng code. Asset triển khai `public/assets/management-background.png`; cover giữ tỷ lệ, cố định phía sau toàn bộ UI khi cuộn, tái sử dụng một object qua render. Không áp dụng cho bếp bán pizza. Giữ toàn bộ bố cục/chữ/nút/chức năng hiện có.
+
+Ảnh kiểm chứng Chromium360×640: [Tổng kết](ui-baseline/management-shell-fit-2026-10-08/background-summary.png), [Chợ](ui-baseline/management-shell-fit-2026-10-08/background-market.png), [Kho](ui-baseline/management-shell-fit-2026-10-08/background-stock.png), [Quán](ui-baseline/management-shell-fit-2026-10-08/background-shop.png), [Nhiệm vụ](ui-baseline/management-shell-fit-2026-10-08/background-missions.png), [cuộn Chợ](ui-baseline/management-shell-fit-2026-10-08/background-market-scrolled.png), [bếp giữ nguyên](ui-baseline/management-shell-fit-2026-10-08/background-kitchen-unchanged.png), [cuối ngày](ui-baseline/management-shell-fit-2026-10-08/background-closed-summary.png). Đây là ảnh triển khai để xem xét, chưa tự đánh dấu đã duyệt. Build/10unit/3E2E tập trung đạt. Xem [spec](spec-shared-management-background.md).
+
 ### Khách đặc biệt — yêu cầu 2026-10-07
 
 Dùng bộ 20 avatar và danh sách tên/thoại do người dùng cung cấp. Avatar fit toàn hình trong ô hàng khách hiện có; VIP khung vàng/vương miện, KOL tím/camera. Khung đỏ cam chỉ dành nhân vật hư cấu gây chú ý, không gán cho nghệ sĩ thật. Chào VIP/KOL 2–3 giây bằng thảm đỏ/ánh vàng/banner nhỏ; hiệu ứng dùng pause reason riêng và giảm chuyển động hiển thị tĩnh. Bong bóng tiếng Việt tự ẩn 3 giây, ghi lời thoại hư cấu, không che nút thao tác; câu gọi món phải khớp đơn hoặc dùng câu chung. Giữ bố cục phần còn lại, chưa voice/audio mới/bonus kinh tế. Xem [spec](spec-special-customer-presentation.md); ảnh kiểm tra avatar: [20 frame](ui-baseline/special-customer-portraits-2026-10-07.png).

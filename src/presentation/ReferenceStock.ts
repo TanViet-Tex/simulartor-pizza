@@ -15,7 +15,7 @@ let serial=0;
 /** Read-only stock projection. The scene owns filters, criteria and all actions. */
 export class ReferenceStock{
   constructor(private scene:Phaser.Scene,private layer:Phaser.GameObjects.Container,private hit:HubHit,private sync:(render:()=>void)=>void){}
-  draw(input:{day:number;cash:number;rows:readonly StockRow[];filter:StockFilter;low:number|null;expiryDays:number|null;offset:number;drag:MarketDrag;canScroll:()=>boolean;scroll:(n:number)=>void;setFilter:(f:StockFilter)=>void;detail:(id:StockIngredient)=>void;suggestions:()=>void;market:()=>void;tab:(tab:HubTab)=>void;pause:()=>void}):void{
+  draw(input:{shell?:boolean;day:number;cash:number;rows:readonly StockRow[];filter:StockFilter;low:number|null;expiryDays:number|null;offset:number;drag:MarketDrag;canScroll:()=>boolean;scroll:(n:number)=>void;setFilter:(f:StockFilter)=>void;detail:(id:StockIngredient)=>void;suggestions:()=>void;market:()=>void;tab:(tab:HubTab)=>void;pause:()=>void}):void{
     const key=`stock-window-${serial++}`,texture=uiCanvas(this.scene,key,360,640),ctx=texture.context;
     const ui=new HubCanvasUI(this.scene,ctx,this.hit),colors=HUB_THEME.colors;
     const text=ui.text.bind(ui),panel=ui.panel.bind(ui);
@@ -25,7 +25,7 @@ export class ReferenceStock{
       return {...row,validLots,nearestExpiry,low:input.low!==null&&row.usable<=input.low,expiring:input.expiryDays!==null&&nearestExpiry!==null&&nearestExpiry-input.day<=input.expiryDays};
     });
     const filtered=projected.filter(row=>input.filter==='all'||input.filter==='low'&&(input.low===null||row.low)||input.filter==='expiry'&&!isNonExpiring(row.id)&&(input.expiryDays===null||row.expiring));
-    ui.background();ui.header({title:'Kho nguyên liệu',subtitle:`Chuẩn bị ngày ${input.day}`,cash:input.cash,pause:input.pause});ui.navigation('stock',input.tab);
+    if(input.shell!==false)ui.header({title:'Kho nguyên liệu',subtitle:`Chuẩn bị ngày ${input.day}`,cash:input.cash,pause:input.pause});if(input.shell!==false)ui.navigation('stock',input.tab);
     ui.frame({x:8,y:133,width:344,height:46});
     const stats=[{label:'Tổng nguyên liệu',value:`${projected.length} loại`,icon:'stock'},{label:'Sắp hết',value:input.low===null?'Chọn ngưỡng':`${projected.filter(row=>row.low).length} loại`,icon:'warning'},{label:'Sắp hết hạn',value:input.expiryDays===null?'Chọn ngưỡng':`${projected.filter(row=>row.expiring).length} loại`,icon:'clock'}];
     stats.forEach((stat,i)=>{const x=16+i*110;panel(x,140,106,32,colors.highlight);text(x+53,144,stat.value,stat.value==='Chọn ngưỡng'?11:14,i?colors.danger:colors.ink,true);text(x+53,161,stat.label,10,colors.muted,true);});

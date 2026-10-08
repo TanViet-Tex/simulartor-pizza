@@ -99,9 +99,9 @@ export class ReferenceSummary {
     while(low<high){const mid=Math.ceil((low+high)/2);text.setText(value.slice(0,mid)+'…');if(text.width<=width)low=mid;else high=mid-1;}
     text.setText(value.slice(0,low)+'…');
   }
-  summary(input:{report:CozyDaySummary|null;day:number;cash:number;xp:number;previousXp:number;stockUnits:number;ending:boolean;paused:boolean;footer:{id:string;title:string;enabled:boolean;action:()=>void};tab:(id:'summary'|'market'|'stock'|'shop'|'missions')=>void;pause:()=>void;finance:()=>void;reviews:()=>void}):void{
+  summary(input:{shell?:boolean;report:CozyDaySummary|null;day:number;cash:number;xp:number;previousXp:number;stockUnits:number;ending:boolean;paused:boolean;footer:{id:string;title:string;enabled:boolean;action:()=>void};tab:(id:'summary'|'market'|'stock'|'shop'|'missions')=>void;pause:()=>void;finance:()=>void;reviews:()=>void}):void{
     const {report:r}=input;
-    drawHubShell(this.scene,this.layer,this.hit,{title:r?`Kết thúc ngày ${r.day}`:'Chuẩn bị mở tiệm',subtitle:r?`Ngày ${input.day} · Cấp ${input.xp>=150?3:input.xp>=60?2:1}`:`Ngày ${input.day} chưa bắt đầu`,cash:input.cash,pause:input.pause,active:'summary',tab:input.tab});
+    if(input.shell!==false)drawHubShell(this.scene,this.layer,this.hit,{title:r?`Kết thúc ngày ${r.day}`:'Chuẩn bị mở tiệm',subtitle:r?`Ngày ${input.day} · Cấp ${input.xp>=150?3:input.xp>=60?2:1}`:`Ngày ${input.day} chưa bắt đầu`,cash:input.cash,pause:input.pause,active:'summary',tab:input.tab});
     this.frame('reference-summary',{x:20,y:338,width:902,height:369},{x:8,y:130,width:344,height:139});
     this.text(21,141,'Lợi nhuận hôm nay',19);
     this.text(64,164,r?`${r.profit>0?'+':''}${r.profit} xu`:'Chưa mở ca',28,r&&r.profit<0?'#af4630':green,220);

@@ -8,8 +8,8 @@ export const CASH_HEADER_BOUNDS=Object.freeze({
 });
 let serial=0;
 /** Shared coin, frame and typography; each header keeps its approved position. */
-export function paintCashHeader(scene:Phaser.Scene,ctx:CanvasRenderingContext2D,cash:number,location:keyof typeof CASH_HEADER_BOUNDS):void{
-  const r=CASH_HEADER_BOUNDS[location],cy=r.y+r.height/2;
+export function paintCashHeader(scene:Phaser.Scene,ctx:CanvasRenderingContext2D,cash:number,location:keyof typeof CASH_HEADER_BOUNDS,bounds?:{x:number;y:number;width:number;height:number}):void{
+  const r=bounds??CASH_HEADER_BOUNDS[location],cy=r.y+r.height/2;
   ctx.save();ctx.lineWidth=2;ctx.fillStyle='#382215';ctx.strokeStyle='#b68a43';
   ctx.beginPath();ctx.roundRect(r.x,r.y,r.width,r.height,14);ctx.fill();ctx.stroke();
   ctx.fillStyle='#f6dfb4';ctx.strokeStyle='#6d4925';ctx.lineWidth=1;
