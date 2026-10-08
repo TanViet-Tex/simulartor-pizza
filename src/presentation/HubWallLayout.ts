@@ -1,6 +1,12 @@
 /** Uniformly fit body frames; the header and navigation use world coordinates. */
 export const HUB_WALL_BOUNDS=Object.freeze({x:22,y:130,width:316,height:450});
 export const HUB_WALL_SCALE=.88;
+/** Shop subpages share the hub shell and its compact body frame. */
+export const SHOP_SCREEN_LAYOUT=Object.freeze({
+  viewport:Object.freeze({x:8,y:180,width:344,height:400}),
+  filteredViewport:Object.freeze({x:8,y:222,width:344,height:358}),
+  tabsY:178,
+});
 export const HUB_WALL_LAYOUT=Object.freeze({x:21.6,y:21.6,scale:HUB_WALL_SCALE,width:360*HUB_WALL_SCALE,height:640*HUB_WALL_SCALE});
 export const HUB_SHELL_LAYOUT=Object.freeze({
   title:Object.freeze({x:80,y:25,width:200,height:50}),

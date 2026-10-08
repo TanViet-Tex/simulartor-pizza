@@ -80,3 +80,11 @@ Build/typecheck passed. Seven focused Chromium360×640 tests passed for sixpage 
 - Real transactions, save retry and responsive screenshots.
   [reference-shop-screens.spec.ts:43](../../tests/reference-shop-screens.spec.ts#L43)
 
+
+## User correction: compact like management tab
+
+2026-10-08: user explicitly requests all six pages compact to the management tab size. Supersedes dedicatedfullsize shell geometry. Reuse common hub shell with5tabs, body .88/21.6; backtoolbar133, viewport180–580 or222–580 with fixedtabs178. Hit clipping and tutorial focus use the common transform. Artwork/accounting/session unchanged. Focused regression and screenshots updated below.
+
+Compact correction verified: build/typecheck and6focusedChromium360×640 regressions passed (allpages, menu, purchases/upgrades/staff/reload, locked/drag, failedsave/retry, fulltutorial). Tab Quán now returns to management home from a subpage; final navigation test below. Evidence: ui-baseline/compact-shop-screens-2026-10-08.
+
+Final sixpage navigation/scroll/resourcecleanup check also passed after adding tabQuán→home behavior. All6pages use the same compact transform as managementhome.

@@ -46,7 +46,8 @@ test('all six illustrated pages have fixed shell, scroll and independent navigat
   const initial=await liveResources();
   for(const section of ['menu','expansion','equipment','amenities','decoration','staff']){
     await open(page,section);
-    expect((await data(page,'controls')).some((c:Control)=>c.id.startsWith('summary-tab-'))).toBe(false);
+    expect((await data(page,'controls')).filter((c:Control)=>c.id.startsWith('summary-tab-'))).toHaveLength(5);
+    expect(await page.evaluate(()=>{const layer=(window as any).shopFixture.scene.hubLayer;return {x:layer.x,y:layer.y,scale:layer.scaleX};})).toEqual({x:21.6,y:21.6,scale:.88});
     const art=(await data(page,'shop-screen-art'))||[];
     if(section==='menu'){
       const pizzas=art.filter((entry:any)=>entry.id.startsWith('recipe-'));
@@ -58,6 +59,10 @@ test('all six illustrated pages have fixed shell, scroll and independent navigat
     await scroll(page,200);
     expect((await data(page,'controls')).find((c:Control)=>c.id==='shop-back')).toEqual(before);
     await page.locator('canvas').screenshot({path:info.outputPath('shop-'+section+'-scrolled.png')});
+    if(section==='menu'){
+      await tap(page,'summary-tab-shop');await expect(page.locator('canvas')).toHaveAttribute('data-shop-page','home');
+      await open(page,section);
+    }
     await tap(page,'shop-back');await expect(page.locator('canvas')).toHaveAttribute('data-shop-page','home');
   }
   expect(await liveResources()).toEqual(initial);

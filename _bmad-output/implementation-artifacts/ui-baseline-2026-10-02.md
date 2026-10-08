@@ -538,3 +538,7 @@ Thu chi dùng các icon trong reference ở từng dòng, tiêu đề trái và 
 ### Sáu màn con Quản lý quán — triển khai theo yêu cầu 2026-10-08
 
 Theo yêu cầu thiết kế lại rõ ràng, sáu màn con dùng riêng header kem treo dây, lá, back trái và xu phải; không có nav5tab trên các màn con. Header/footer cố định, nội dung cuộn trong360×640, nền chung giữ tỷ lệ. Home Quản lý quán và mọi hub/bếp khác giữ bố cục cũ. Component chung ShopScreenUI/Art/ShopScreens; dữ liệu và giao dịch lấy runtime/session. Menu8món, hai cấp mở rộng thật, thiết bị lò/tủ lạnh/nước, tiện nghi và trang trí6đồ, nhân viên4nghề. Trang trí/nhân viên có tabs thực. Giá/lương/hiệu ứng theo game, không theo số mẫu ảnh. Ảnh kiểm chứng tại ui-baseline/six-shop-screens-2026-10-08. Đây là bản triển khai để người dùng xem và phản hồi.
+
+Theo chỉnh tiếp của người dùng: sáu màn con thu gọn bằng tab Quản lý quán, giữ nav5tab và header chung. Body/footer cùng scale0.88/offset21.6; viewporty180 hoặc222, backtoolbar dưới nav. Mốc này thay phần fullscreen/header riêng của sáu màn ngay phía trên; không đổi artwork hoặc chức năng.
+
+Ảnh thu gọn: [Trang trí](ui-baseline/compact-shop-screens-2026-10-08/shop-decoration.png), [Menu](ui-baseline/compact-shop-screens-2026-10-08/shop-menu.png). Build và6hồi quy360×640 đạt, gồm giao dịch và toàn bộ tutorial.

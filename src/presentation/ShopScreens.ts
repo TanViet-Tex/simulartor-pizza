@@ -1,4 +1,4 @@
-﻿import type Phaser from 'phaser';
+import type Phaser from 'phaser';
 import type {ShopScreenInput} from './ReferenceShop';
 import type {HubHit} from './HubCanvasUI';
 import {ShopScreenUI} from './ShopScreenUI';
@@ -6,15 +6,15 @@ import {SHOP_SCREEN_ART,SHOP_PIZZA_CROPS,SHOP_STAFF_CROPS} from './ShopScreenArt
 import {hubListWindow} from './HubListWindow';
 import {SHOP_CATALOG} from '../config/shopCatalog';
 import {STAFF_CATALOG} from '../config/staffCatalog';
+import {SHOP_SCREEN_LAYOUT,HUB_SHELL_LAYOUT} from './HubWallLayout';
 let serial=0;
-const titles={menu:'Menu & giá bán',decoration:'Trang trí',equipment:'Thiết bị',amenities:'Tiện nghi',expansion:'Mở rộng quán',staff:'Nhân viên'};
 type Action={id:string;title?:string;x:number;y:number;width:number;height:number;enabled:boolean;run:()=>void};
 export function drawShopScreen(scene:Phaser.Scene,layer:Phaser.GameObjects.Container,hit:HubHit,input:ShopScreenInput):void{
   if(input.page==='home')return;
-  const page=input.page,filtered=page==='decoration'||page==='staff',viewport={x:8,y:filtered?132:90,width:344,height:filtered?448:490};
+  const page=input.page,filtered=page==='decoration'||page==='staff',viewport=filtered?SHOP_SCREEN_LAYOUT.filteredViewport:SHOP_SCREEN_LAYOUT.viewport;
   const actions:Action[]=[],cards:unknown[]=[];let height=0;
   scene.game.canvas.dataset.shopScreenArt='[]';
-  ShopScreenUI.shell(scene,layer,hit,titles[page],input.cash,()=>input.open('home'));
+  ShopScreenUI.shell(scene,layer,hit,()=>input.open('home'));
   const draw=(ui:ShopScreenUI)=>{
     const action=(id:string,x:number,y:number,w:number,h:number,title:string,enabled:boolean,run:()=>void)=>{
       const cost=id==='summary-upgrade-oven'?input.ovenPrice:id==='shop-fridge-buy'&&!input.fridge?.owned?(input.fridge?.price??3000):id==='summary-upgrade-queue'?input.queuePrice:null;
@@ -79,7 +79,6 @@ export function drawShopScreen(scene:Phaser.Scene,layer:Phaser.GameObjects.Conta
     scene.game.canvas.dataset.shopScreenActions=JSON.stringify(actions.map(({run,...action})=>({...action,y:viewport.y+action.y-offset})));
     scene.game.canvas.dataset.shopScreenCards=JSON.stringify(cardsSnapshot.map((card:any)=>({...card,y:viewport.y+card.y-offset})));
   }});
-  if(filtered){const key=`shop-screen-tabs-${serial++}`,texture=scene.textures.createCanvas(key,720,128)!;texture.context.scale(2,2);const ui=new ShopScreenUI(scene,texture.context,hit),tabs=page==='decoration'?[['store','Cửa hàng'],['owned','Đã sở hữu']]:[['recruit','Tuyển dụng'],['working','Đang làm']];for(const [i,[id,title]] of tabs.entries()){const x=8+i*176;ui.panel(x,5,168,32,id===input.filter?'#aa4e26':'#fff0d1');ui.text(x+84,14,title,14,id===input.filter?'#fff0d1':'#623619',true,154);hit(`shop-${page}-tab-${id}`,x,90,168,38,true,()=>input.setFilter?.(id));}texture.refresh();const image=scene.add.image(0,85,key).setOrigin(0).setDisplaySize(360,64);layer.add(image);image.once('destroy',()=>scene.textures.remove(key));}
-  scene.game.canvas.dataset.shopScreen=JSON.stringify({page,header:{x:69,y:9,width:218,height:65},viewport});scene.game.canvas.dataset.shopPage=page;
+  if(filtered){const key=`shop-screen-tabs-${serial++}`,texture=scene.textures.createCanvas(key,720,128)!;texture.context.scale(2,2);const ui=new ShopScreenUI(scene,texture.context,hit),tabs=page==='decoration'?[['store','Cửa hàng'],['owned','Đã sở hữu']]:[['recruit','Tuyển dụng'],['working','Đang làm']];for(const [i,[id,title]] of tabs.entries()){const x=8+i*176;ui.panel(x,5,168,32,id===input.filter?'#aa4e26':'#fff0d1');ui.text(x+84,14,title,14,id===input.filter?'#fff0d1':'#623619',true,154);hit(`shop-${page}-tab-${id}`,x,SHOP_SCREEN_LAYOUT.tabsY,168,38,true,()=>input.setFilter?.(id));}texture.refresh();const image=scene.add.image(0,SHOP_SCREEN_LAYOUT.tabsY-5,key).setOrigin(0).setDisplaySize(360,64);layer.add(image);image.once('destroy',()=>scene.textures.remove(key));}
+  scene.game.canvas.dataset.shopScreen=JSON.stringify({page,header:HUB_SHELL_LAYOUT.title,viewport});scene.game.canvas.dataset.shopPage=page;
 }
-
