@@ -530,3 +530,7 @@ Theo chỉnh tiếp 2026-10-08: màn tải bỏ khung thông báo và câu phụ
 ### Popup Đặt hỏa tốc — 2026-10-08
 
 Chỉ popup hỏa tốc đổi theo references/hỏa tốc.png: khung kem 280px, viền nâu/vàng, nền phía sau tối70%; giữ bếp và luật kho/giao. Icon từ MarketIngredientArt, tên catalog, giá hỏa tốc từ runtime đã gồm phụ phí60%; tổng=giá hỏa tốc×số lượng, không cộng lần nữa. Nhận sau5giây chạy ca theo cấu hình hiện có. Hai lựa chọn5/10, mặc định5 và mức chọn vàng; bỏ −/+. Hủy/Đặt hàng màu đen, thiếu xu khóa Đặt hàng và ghi số xu thiếu. Theo chỉnh tiếp, khung số64×36px, nút cuối112×36px, vùng chạm tối thiểu48px; chiều cao vừa nội dung, chữ lớn vẫn nằm trong viewport. Build/typecheck,1unit thanh toán/pause/giao và3test Chromium360×640 đạt. Ảnh: [popup gọn](ui-baseline/express-popup-2026-10-08/express-popup.png), [thiếu xu](ui-baseline/express-popup-2026-10-08/express-insufficient.png).
+
+### Thu chi theo ảnh mẫu — yêu cầu tiếp 2026-10-08
+
+Thu chi dùng các icon trong reference ở từng dòng, tiêu đề trái và số tiền phải; đối chiếu xanh, dòng tiền vàng. Giữ khung300×476, viewport266×340; chữ200% xếp tiền dưới tên, cuộn chỉ nội dung. Đánh giá/hub/bếp giữ nguyên. Ảnh kiểm tra: [Thu chi](ui-baseline/reference-finance-art-2026-10-08/reference-finance.png), [chữ200%](ui-baseline/reference-finance-art-2026-10-08/reference-finance-200.png).

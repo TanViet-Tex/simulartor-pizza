@@ -47,6 +47,7 @@ async function expectOnlyBodyChanged(page:Page,before:{toString(encoding:'base64
 }
 
 test('reference summary uses actual reports and isolates scrollable finance/review overlays',async({page},info)=>{
+  test.setTimeout(60000);
   await fixture(page);const canvas=page.locator('canvas');
   const report=JSON.parse(await canvas.getAttribute('data-day-summary')||'{}');
   expect(report).toMatchObject({revenue:150,delivered:3,cost:45,profit:85});expect(report.reviews.length).toBeGreaterThan(2);
@@ -57,9 +58,16 @@ test('reference summary uses actual reports and isolates scrollable finance/revi
   expect(await labels(page)).toContain('Thu chi ngày 1');
   const financeLayout=JSON.parse(await canvas.getAttribute('data-summary-modal-layout')||'{}');
   expect(financeLayout.bounds).toMatchObject({x:30,y:82,width:300,height:476});
-  expect(JSON.parse(await canvas.getAttribute('data-summary-modal-icons')||'[]').length).toBeGreaterThan(3);
-  const financeRows=JSON.parse(await canvas.getAttribute('data-summary-modal-text')||'[]');
-  expect(financeRows).toContain('Phô mai × 3   150 xu');expect(financeRows).toContain(`Số dư cuối ngày: ${report.cash} xu`);
+  const financeIcons=JSON.parse(await canvas.getAttribute('data-summary-modal-icons')||'[]');
+  expect(financeIcons.length).toBeGreaterThan(12);
+  expect(financeIcons.every((icon:any)=>icon.sourceKey==='reference-finance')).toBe(true);
+  expect(financeIcons.map((icon:any)=>icon.id)).toEqual(expect.arrayContaining(['profit','sales','cheese','cost','dough','rent','wage','cash','bag','cart','stock','ending']));
+  const financeRows=JSON.parse(await canvas.getAttribute('data-summary-finance-rows')||'[]');
+  expect(financeRows).toEqual(expect.arrayContaining([
+    expect.objectContaining({section:'Doanh thu',label:'Phô mai × 3',amount:'150 xu'}),
+    expect.objectContaining({section:'Dòng tiền riêng',label:'Số dư cuối ngày',amount:`${report.cash} xu`}),
+  ]));
+  for(const cost of report.costByIngredient)expect(financeRows.some((row:any)=>row.section==='Giá vốn nguyên liệu'&&row.amount===`${cost.cost} xu`)).toBe(true);
   const controls=JSON.parse(await canvas.getAttribute('data-controls')||'[]');expect(controls.some((c:{id:string})=>c.id==='summary-open-next-day')).toBe(false);
   const bounds=(await canvas.boundingBox())!;
   await page.touchscreen.tap(bounds.x+300*bounds.width/360,bounds.y+610*bounds.height/640);
@@ -72,6 +80,9 @@ test('reference summary uses actual reports and isolates scrollable finance/revi
   await page.evaluate(()=>{document.documentElement.style.fontSize='32px';window.dispatchEvent(new Event('resize'));});
   await expect(canvas).toHaveAttribute('data-summary-body-text-scale','2');
   expect(JSON.parse(await canvas.getAttribute('data-modal-scroll')||'[]')[0].max).toBeGreaterThan(scroll.max);
+  await canvas.screenshot({path:info.outputPath('reference-finance-200.png')});
+  await page.mouse.wheel(0,100000);await page.waitForTimeout(150);
+  await canvas.screenshot({path:info.outputPath('reference-finance-200-end.png')});
   await page.evaluate(()=>{document.documentElement.style.fontSize='16px';window.dispatchEvent(new Event('resize'));});
   await expect(canvas).toHaveAttribute('data-summary-body-text-scale','1');
   await tap(page,'summary-statement-close');await expect(canvas).toHaveAttribute('data-summary-modal','');
@@ -95,6 +106,20 @@ test('reference summary uses actual reports and isolates scrollable finance/revi
   await page.evaluate(()=>{(window as any).summaryFixture.otherLease.release();});await expect(canvas).toHaveAttribute('data-paused','');
   await expect(canvas).toHaveAttribute('data-day-summary',JSON.stringify(report));await tap(page,'summary-tab-stock');await expect(canvas).toHaveAttribute('data-summary-tab','stock');
   await tap(page,'summary-tab-summary');await tap(page,'summary-open-next-day');await expect(canvas).toHaveAttribute('data-day','2');await expect(canvas).toHaveAttribute('data-screen','game');
+});
+
+test('finance keeps negative cash in amount columns',async({page})=>{
+  await fixture(page,true);
+  await page.evaluate(()=>{
+    const report=(window as any).summaryFixture.runtime.summary;
+    report.accounts.startingCash=-10;report.accounts.endingCash=-20;
+  });
+  await tap(page,'summary-finance-open');
+  const rows=JSON.parse(await page.locator('canvas').getAttribute('data-summary-finance-rows')||'[]');
+  expect(rows).toEqual(expect.arrayContaining([
+    expect.objectContaining({label:'Số dư đầu ngày',amount:'-10 xu'}),
+    expect.objectContaining({label:'Số dư cuối ngày',amount:'-20 xu'}),
+  ]));
 });
 
 test('zero-review report opens an honest empty reviews modal',async({page})=>{

@@ -9,6 +9,7 @@ import {drawHubShell} from './HubHeader';
 import {uiCanvas,UI_RASTER_SCALE} from './UiRaster';
 import {HubCanvasUI} from './HubCanvasUI';
 import {SUMMARY_MODAL_LAYOUT} from './SummaryModalLayout';
+import {FINANCE_ART,type FinanceArtId} from './ReferenceFinanceArt';
 
 export const SUMMARY_ART=[
   {key:'reference-summary',url:'assets/references/bảng tổng kết.png'},
@@ -155,6 +156,12 @@ export class ReferenceSummary {
     const icons=JSON.parse(this.scene.game.canvas.dataset.summaryModalIcons||'[]');icons.push({key,x,y,width:size,height:size});
     this.scene.game.canvas.dataset.summaryModalIcons=JSON.stringify(icons);return image;
   }
+  private financeIcon(id:FinanceArtId,x:number,y:number,size=22):Phaser.GameObjects.Image{
+    const [sx,sy,width,height]=FINANCE_ART[id],fit=Math.min(size/width,size/height);
+    const image=this.crop('reference-finance',{x:sx,y:sy,width,height},{x,y,width:width*fit,height:height*fit});
+    const icons=JSON.parse(this.scene.game.canvas.dataset.summaryModalIcons||'[]');icons.push({key:'reference-finance',sourceKey:'reference-finance',id,x,y,width:width*fit,height:height*fit});
+    this.scene.game.canvas.dataset.summaryModalIcons=JSON.stringify(icons);return image;
+  }
   reviewModal(reviews:readonly CozyReview[],day:number,filter:'all'|'5'|'4'|'low',setFilter:(filter:'all'|'5'|'4'|'low')=>void):void{
     const viewport=this.modalFrame('reviews',day),rating=reviews.length?reviews.reduce((n,r)=>n+r.stars,0)/reviews.length:null;
     const pill=this.scene.add.graphics().fillStyle(0xe9ebcf).fillRoundedRect(43,154,266,30,15).lineStyle(1,0xc4cea7).strokeRoundedRect(43,154,266,30,15);this.layer.add(pill);
@@ -177,7 +184,7 @@ export class ReferenceSummary {
     const viewport=this.modalFrame('finance',report.day),a=report.accounts;
     const drinkSales=report.reviews.flatMap(r=>r.soldDrink?[`${drinkDefinition(r.soldDrink.id).name} × 1   ${r.soldDrink.price} xu`]:[]);
     const pill=this.scene.add.graphics().fillStyle(0xe9ebcf).fillRoundedRect(43,136,266,40,12).lineStyle(1,0xc4cea7).strokeRoundedRect(43,136,266,40,12);this.layer.add(pill);
-    this.modalIcon('coin',51,146,20);this.text(189,148,`Lợi nhuận: ${report.profit>0?'+':''}${report.profit} xu`,20,report.profit<0?'#ad432e':green,230,true);
+    this.financeIcon('profit',51,142,28);this.text(195,148,`Lợi nhuận: ${report.profit>0?'+':''}${report.profit} xu`,20,report.profit<0?'#ad432e':green,216,true);
     const sections:[string,string[]][]=[
       ...(a.rewards?[[`Thưởng · ${a.rewards} xu`,[`VIP: ${report.reviews.reduce((sum,review)=>sum+(review.vip?.coins??0),0)} xu`,...(report.lotteryPrize?[`Vé số: ${report.lotteryPrize} xu`]:[]),`Mục tiêu/nhiệm vụ/lời cảm ơn: ${a.rewards-report.reviews.reduce((sum,review)=>sum+(review.vip?.coins??0),0)-(report.lotteryPrize??0)} xu`,'Thưởng là dòng tiền riêng, không cộng doanh thu pizza hoặc lợi nhuận bán hàng.']] as [string,string[]]]:[]),
       [`Doanh thu · ${a.sales} xu`,[...(report.salesByRecipe===undefined?['Bản lưu cũ chưa có chi tiết theo món.']:report.salesByRecipe.length?report.salesByRecipe.map(r=>`${recipeNames[r.recipe]} × ${r.quantity}   ${r.revenue} xu`):drinkSales.length?[]:['Chưa có món bán thành công.']),...drinkSales]],
@@ -188,14 +195,43 @@ export class ReferenceSummary {
       ['Đối chiếu tồn kho',[`Đầu ${a.openingInventoryValue} + nhập ${a.purchases} = dùng ${a.consumed} + hết hạn ${a.expired} + cuối ${a.inventory.value} xu`,'Nhập kho không trừ thêm vào lợi nhuận. Báo cáo này giữ nguyên khi mua cho ngày sau.']],
     ];
     const elements:{object:Phaser.GameObjects.GameObject;y:number}[]=[];let y=viewport.y;
-    for(const [sectionIndex,[title,lines]] of sections.entries()){
+    const metadata:{section:string;id:string;label:string;amount?:string;text?:string}[]=[];
+    // Match the reference order, keeping rewards as their own auditable section.
+    const ordered=a.rewards?[...sections.slice(1,5),sections[0],...sections.slice(5)]:sections;
+    const add=(object:Phaser.GameObjects.GameObject)=>elements.push({object,y:(object as unknown as {y:number}).y});
+    for(const [sectionIndex,[title,lines]] of ordered.entries()){
       const start=y,index=elements.length;
-      const names=a.rewards?['coin','coin','basket','ledger','checklist','coin','crate']:['coin','basket','ledger','checklist','coin','crate'];
-      const icon=this.modalIcon(names[sectionIndex]??'ledger',51,y+9,20);if(icon)elements.push({object:icon,y:icon.y});
-      const header=this.text(77,y+8,title,16,ink,224,false,true);elements.push({object:header,y:header.y});y+=Math.max(header.height,22)+18;
-      for(const line of lines){const text=this.text(55,y,line,13,wood,246,false,true);elements.push({object:text,y:text.y});y+=text.height+10;}y+=14;
-      const panel=this.scene.add.graphics().setData('summaryPanel',{x:viewport.x,y:start,width:viewport.width,height:y-start-7});this.layer.add(panel);elements.splice(index,0,{object:panel,y:0});
+      const revenue=sectionIndex===0,cost=sectionIndex===1,expense=sectionIndex===2,reconciliation=sectionIndex===3;
+      const cash=title===sections[sections.length-2]![0],inventory=title===sections[sections.length-1]![0];
+      const sectionIcon:FinanceArtId=revenue?'sales':cost?'cost':expense?'expense':cash?'cash':inventory?'stock':'profit';
+      const [label,amount]=title.split(' · ');
+      add(this.financeIcon(sectionIcon,51,y+9,24));
+      const stacked=this.textScale>1,heading=this.text(81,y+8,label!,16,ink,stacked?216:148,false,true);add(heading);
+      let headerHeight=Math.max(heading.height,25);
+      if(amount){const value=this.text(stacked?81:301,stacked?y+headerHeight+10:y+10,amount,16,ink,stacked?216:76,false,true);if(!stacked)value.setOrigin(1,0);add(value);headerHeight=stacked?headerHeight+value.height+10:Math.max(headerHeight,value.height+2);}
+      metadata.push({section:label!,id:'heading',label:label!,...(amount?{amount}:{})});
+      y+=headerHeight+19;
+      for(const [rowIndex,line] of lines.entries()){
+        const match=/^(.*?)(?:\s{2,}|:\s*)([+−-]?\d+ xu)$/.exec(line);
+        const rowLabel=match?.[1]??line,rowAmount=match?.[2];
+        let icon:FinanceArtId=sectionIcon;
+        if(revenue){const recipe=report.salesByRecipe?.[rowIndex]?.recipe;icon=recipe==='cheese'?'cheese':recipe==='mushroom'?'mushroom':recipe==='sausage'?'sausage':'sales';}
+        if(cost){const ingredient=report.costByIngredient?.[rowIndex]?.ingredient;icon=ingredient==='dough'?'dough':ingredient==='cheese'?'cheese':ingredient==='mushroom'?'mushroom':ingredient==='sausage'?'sausage':ingredient?.startsWith('sauce')?'sauce':'toppings';}
+        if(expense)icon=rowIndex===0?'rent':rowIndex===1?'wage':rowIndex===2?'expense':rowIndex===lines.length-2?'trash':'paid';
+        if(cash)icon=rowIndex===0?'bag':rowIndex===1?'cart':rowIndex===lines.length-1?'ending':rowLabel.startsWith('Nhập kho')?'stock':rowLabel.startsWith('Lương')?'wage':'paid';
+        add(this.financeIcon(icon,53,y+1,21));
+        const stackedRow=!!rowAmount&&this.textScale>1;
+        const text=this.text(81,y,rowLabel,13,reconciliation?green:wood,rowAmount&&!stackedRow?135:219,false,true);add(text);
+        let height=Math.max(23,text.height);
+        if(rowAmount){const value=this.text(stackedRow?81:301,stackedRow?y+height+4:y,rowAmount,13,cash&&rowAmount.startsWith('+')?green:wood,stackedRow?219:78,false,true);if(!stackedRow)value.setOrigin(1,0);add(value);height=stackedRow?height+value.height+4:Math.max(height,value.height);}
+        metadata.push({section:label!,id:String(rowIndex),label:rowLabel,...(rowAmount?{amount:rowAmount}:{text:line})});
+        y+=height+9;
+        if(rowIndex<lines.length-1){const before=this.layer.list.length;this.line(51,y-4,250);elements.push({object:this.layer.list[before]!,y:0});}
+      }
+      y+=12;
+      const panel=this.scene.add.graphics().setData('summaryPanel',{x:viewport.x,y:start,width:viewport.width,height:y-start-7,fill:reconciliation?'#e9ebcf':cash?'#ffefce':'#fff6e5'});this.layer.add(panel);elements.splice(index,0,{object:panel,y:0});
     }
+    this.scene.game.canvas.dataset.summaryFinanceRows=JSON.stringify(metadata);
     this.scroll(viewport,elements,y-viewport.y);this.text(180,535,'Số liệu thật của ngày đã chốt',10,wood,266,true);
   }
   private scroll(viewport:Rect,elements:{object:Phaser.GameObjects.GameObject;y:number}[],contentHeight:number):void{
@@ -210,8 +246,8 @@ export class ReferenceSummary {
       if(object instanceof Phaser.GameObjects.Graphics){
         const circle=object.getData('summaryCircle') as {x:number;y:number;size:number}|undefined;
         const line=object.getData('summaryLine') as {x:number;y:number;width:number}|undefined;
-        const panel=object.getData('summaryPanel') as Rect|undefined;
-        if(panel)draws.push(ctx=>{ctx.fillStyle='#fff6e5';ctx.strokeStyle='#dcc7a5';ctx.lineWidth=1;ctx.beginPath();ctx.roundRect(panel.x+.5,panel.y+.5,panel.width-1,panel.height-1,10);ctx.fill();ctx.stroke();});
+        const panel=object.getData('summaryPanel') as (Rect&{fill?:string})|undefined;
+        if(panel)draws.push(ctx=>{ctx.fillStyle=panel.fill??'#fff6e5';ctx.strokeStyle='#dcc7a5';ctx.lineWidth=1;ctx.beginPath();ctx.roundRect(panel.x+.5,panel.y+.5,panel.width-1,panel.height-1,10);ctx.fill();ctx.stroke();});
         if(circle)draws.push(ctx=>{ctx.fillStyle='#efc08c';ctx.beginPath();ctx.arc(circle.x+circle.size/2,circle.y+circle.size/2,circle.size/2,0,Math.PI*2);ctx.fill();});
         if(line)draws.push(ctx=>{ctx.strokeStyle='#d3b48a';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(line.x,line.y);ctx.lineTo(line.x+line.width,line.y);ctx.stroke();});
       }else if(object instanceof Phaser.GameObjects.Text){
