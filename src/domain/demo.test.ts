@@ -9,7 +9,7 @@ const serve = (g: DemoGame) => {
   g.dispatch({ type: 'select', id: offer.id });
   for (const ingredient of recipes.find(r => r.id === offer.recipe)!.ingredients) g.dispatch({ type: 'ingredient', ingredient });
   expect(g.dispatch({ type: 'bake' }).ok).toBe(true);
-  g.tick(3.1); g.dispatch({ type: 'remove' });
+  g.tick(6.1); g.dispatch({ type: 'remove' });
   if (offer.takeaway) g.dispatch({ type: 'box' });
   expect(g.dispatch({ type: 'deliver' }).ok).toBe(true);
 };

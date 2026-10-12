@@ -71,7 +71,7 @@ describe('direct kitchen gameplay',()=>{
   });
   it('keeps the oven owner when switching customers and consumes only that pizza',()=>{
     const r=new CozyRuntime(false,true,schedule('regular',2));for(const id of ['dough','sauce','cheese'] as const)r.buy(id,2);r.openShop();const first=r.selectedTicketId;oven(r);time(r,1);
-    const second=r.tickets.find(t=>t.id!==first)!;r.selectTicket(second.id);expect(r.ovenOwner).toBe(first);expect(r.state.stage).toBe('assembly');expect(r.dispatch({type:'ingredient',ingredient:'dough'})).toBe(true);
+    const second=r.tickets.find(t=>t.id!==first)!;r.selectTicket(second.id);expect(r.ovenOwner).toBe(first);expect(r.state.stage).toBe('assembly');expect(r.dispatch({type:'ingredient',ingredient:'dough'})).toBe(false);expect(r.productionOwnerId).toBe(first);
     expect(r.dispatch({type:'bake'})).toBe(false);expect(r.owned('dough')).toBe(1);time(r,5);r.selectPizza(first);expect(r.dispatch({type:'extract'})).toBe(true);expect(r.ovenOwner).toBeNull();
   });
 });

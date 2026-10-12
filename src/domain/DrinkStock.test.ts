@@ -19,7 +19,7 @@ describe('drink inventory and seeded requests',()=>{
     expect(stock.buyDrink('water',2,1)).toBe(true);
     expect(stock.buyDrink('cola',1,1)).toBe(true);
     expect(stock.buyDrink('orange',1,1)).toBe(true);
-    expect(stock.cash).toBe(262);
+    expect(stock.cash).toBe(462);
     expect(stock.consumeDrink('water',1)).toBe(true);
     expect(stock.ledger(1)).toEqual({purchases:38,consumed:8});
     expect(stock.inventorySnapshot().value).toBe(30);

@@ -17,10 +17,10 @@ it('rejects inconsistent expanded history before normalization using a real lega
  const extraClaim=structuredClone(input);extraClaim.reports[0].progression.claims.push('goal.day-2');expect(validateCozyCheckpoint(extraClaim)).toBeNull();
 });
 it('stores 30 real completed days with linear history and restores readable historical progression',()=>{
- const r=new CozyRuntime(false,true,{schedule});r.configureMenu('mushroom',100,false);let at15=0;
+ const r=new CozyRuntime(false,true,{schedule,eventRoll:()=>1,vipRoll:()=>1});r.configureMenu('mushroom',100,false);let at15=0;
  for(let day=1;day<=30;day++){
   for(const ingredient of ['dough','sauce','cheese'] as const)expect(r.buy(ingredient,1)).toBe(true);
-  expect(day===1?r.openShop():r.openNextDay()).toBe(true);
+  expect(day===1?r.openShop():r.openNextDay()).toBe(true);if(r.lotteryPending)expect(r.resolveLottery(0)).toBe(true);if(r.thanksPending)expect(r.dismissThanks()).toBe(true);
   for(const ingredient of ['dough','sauce','cheese'] as const)r.dispatch({type:'ingredient',ingredient});
   expect(r.dispatch({type:'bake'})).toBe(true);for(let tick=0;tick<140;tick++)r.advance(50);
   expect(r.dispatch({type:'extract'})).toBe(true);expect(r.dispatch({type:'box'})).toBe(true);

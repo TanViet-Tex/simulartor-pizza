@@ -12,12 +12,12 @@ it('deduplicates accepted purchase commands while allowing independent purchases
   const r=new CozyRuntime(false,true,ORDER_TEST_SCHEDULE);
   const command={type:'market.buy' as const,ingredient:'dough' as const,quantity:2,commandId:'purchase-1'};
   expect(r.dispatch(command)).toBe(true);expect(r.dispatch(command)).toBe(false);
-  expect(r.state.cash).toBe(290);expect(r.owned('dough')).toBe(2);
-  expect(r.dispatch({...command,commandId:'purchase-2'})).toBe(true);expect(r.state.cash).toBe(280);
+  expect(r.state.cash).toBe(490);expect(r.owned('dough')).toBe(2);
+  expect(r.dispatch({...command,commandId:'purchase-2'})).toBe(true);expect(r.state.cash).toBe(480);
 });
 it('reports rent and warning without inventing next day prices',()=>{
-  const r=new CozyRuntime(false,true,ORDER_TEST_SCHEDULE);provision(r,19);
-  expect(r.preparationBudget).toMatchObject({cash:15,rent:20,afterRent:-5});
+  const r=new CozyRuntime(false,true,ORDER_TEST_SCHEDULE);provision(r,33);
+  expect(r.preparationBudget).toMatchObject({cash:5,rent:20,afterRent:-15});
   expect(r.preparationBudget.warning).toContain('thuê');expect(r.canOpen).toBe(true);
   expect(r.price('dough')).toBe(5);
 });

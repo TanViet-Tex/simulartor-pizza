@@ -21,7 +21,7 @@ describe('isolated first-shift guide', () => {
     expect(runtime.postTutorialPreparation).toBe(true);
     expect(runtime.day).toBe(1);expect(runtime.shopPhase).toBe('preparation');
     expect(runtime.daySummary).toBeNull();expect(runtime.completedReports).toEqual([]);
-    expect(runtime.stockLots).toEqual([]);expect(runtime.state.cash).toBe(300);
+    expect(runtime.stockLots).toEqual([]);expect(runtime.state.cash).toBe(500);
     expect(runtime.progression.xp).toBe(0);expect(runtime.canOpen).toBe(true);
     for(const ingredient of ingredients)expect(runtime.dispatch({type:'market.buy',ingredient,quantity:1,commandId:ingredient})).toBe(true);
     const cash=runtime.state.cash;
@@ -65,13 +65,13 @@ describe('isolated first-shift guide', () => {
       expect(runtime.dispatch({ type })).toBe(false);
       expect(JSON.stringify(runtime.commercialState)).toBe(commercial);
     }
-    expect(runtime.state).toMatchObject({ cash: 300, reputation: 50, energy: 80 });
+    expect(runtime.state).toMatchObject({ cash: 500, reputation: 50, energy: 80 });
     expect(runtime.tutorialStep).toBe('complete');
     expect(runtime.expectedControl).toBe('start-shift');
     expect(runtime.pauses).toEqual(['tutorial']);
     expect(runtime.startShift()).toBe(true);
     expect(runtime.tutorialActive).toBe(false);
-    expect(runtime.state).toMatchObject({ stage: 'assembly', ingredients: [], ovenSeconds: 0, cash: 300 });
+    expect(runtime.state).toMatchObject({ stage: 'assembly', ingredients: [], ovenSeconds: 0, cash: 500 });
     expect(runtime.startShift()).toBe(false);
     expect(runtime.dispatch({ type: 'ingredient', ingredient: 'dough' })).toBe(true);
   });
@@ -119,7 +119,7 @@ describe('isolated first-shift guide', () => {
     warm(runtime);
     for (let i = 0; i < 24; i++) runtime.advance(250);
     for (const type of ['extract', 'box', 'deliver'] as const) runtime.dispatch({ type });
-    expect(runtime.state).toMatchObject({ cash: 350, reputation: 51, energy: 75 });
+    expect(runtime.state).toMatchObject({ cash: 550, reputation: 51, energy: 75 });
   });
 
   it('increments render revision on transitions even when the lease remains held', () => {

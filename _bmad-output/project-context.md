@@ -40,7 +40,7 @@ _Tệp này chứa các quy tắc và patterns quan trọng mà AI agent phải 
 - Vitest `4.1.11` cho unit/integration; Playwright `1.63.0` cho Chromium/WebKit.
 - Mobile web dọc: Chrome Android và Safari iOS; desktop chỉ là nền tảng kiểm tra phụ.
 - Không React, backend, auth, realtime, physics, service worker/PWA hoặc MCP trong baseline demo.
-- Chưa có source tree hoặc dependency được cài; các phiên bản trên là quyết định kiến trúc, không phải trạng thái repository hiện tại.
+- Ghi chú khởi tạo lịch sử: khi chốt stack chưa có source/dependency; hiện dự án đã có source và dependency, không scaffold hoặc cài đè từ ghi chú cũ.
 - Không dùng API hoặc ví dụ Phaser 3 nếu chưa kiểm tra với Phaser `4.2.1`.
 - Starter chính thức là `phaserjs/template-vite-ts` version `1.4.0`; khi được phép scaffold phải clone vào staging và ghi commit SHA, không clone đè repository.
 - Giữ Vitest `4.1.11` với Vite `6.3.1`; không tự nâng Vitest 5 hoặc bất kỳ major nào để “dùng bản mới nhất”.
@@ -474,3 +474,9 @@ Theo yêu cầu tiếp 2026-10-08: Thu chi dùng artwork riêng từ ảnh refer
 Menu/giá, Mở rộng, Thiết bị, Tiện nghi, Trang trí và Nhân viên nay là màn riêng trong canvas360×640, hubLayer identity chỉ các subpage; home/hub khác giữ shell và transform0.88. ShopScreenUI/Art/ShopScreens dùng header treo dây, back48px, cash thật, footer vềQuán; viewport8/90/344/490 hoặc8/132/344/448 với tabs. List giữ texture/cuộn/clip/hit theo shopDrag, modal confirmations vẫn quản lý lease riêng. Menu8món cuộn và chọn lãi thật; trang trí Cửa hàng/Đã sở hữu, nhân viên Tuyển dụng/Đang làm. Đồ/nhân vật lấy artwork riêng từ references, nước dùng minh họa Cola/Suối có sẵn. Không thêm gameplay hoặc giá mẫu; oven/fridge/drinks và hai cấp4→5→6 theo runtime, save/session không đổi. Tutorial focus cập nhật. Xem spec-six-shop-screens.md và ui-baseline/six-shop-screens-2026-10-08.
 
 Theo chỉnh tiếp 2026-10-08: cả sáu màn con Quán thu gọn bằng tab Quản lý quán: dùng hubLayer0.88 offset21.6, shell/title/pause/cash/nav5tab chung. Backtoolbar y133, viewport8/180/344/400 hoặc8/222/344/358 có tabs y178, footer cùng khung hub. SHOP_SCREEN_LAYOUT trong HubWallLayout là nguồn geometry; hit/list clip/tutorial map qua hubWallRect, không dùng identity/fullscreen nữa. Artwork, nội dung và giao dịch giữ nguyên.
+
+### Regression và tiến độ — 2026-10-12
+
+Đã cập nhật fixture/assertion lịch sử theo luật đã duyệt; không đổi production runtime/domain/scene/art/UI. Baseline75file/518test:401đạt,117lỗi; cuối75file/518test:518đạt,0lỗi,0skip và sốcase từngfile giữ nguyên. New500/legacy300, presale5s chỉ với lịch thật, oven6–8/4–6/2–4, stocktạibake, mộtworkbench, lottery/thanks qua publicAPI,30ngày giữ report/accounting thật. LegacyDemoGame riêng vẫn3ngày/300xu; không dùng để suy ra luật CozyRuntime hiện tại. Build/typecheck và2E2EChromium360×640 giao dịch/reload/lỗi-lưu–retry đạt. Xem implementation-artifacts/regression-refresh-summary-2026-10-12.md.
+
+Sprint đã cập nhật3.4–3.9/7.2–7.3→review theo bằng chứng implementation, không tựmarkdonehumanacceptance. Playtest5người vẫn0phiên, điện thoại thật/slow-network/releasebrowsermatrix chưa kiểm chứng. Deferredregressionlịch sử đã đóng theo báo cáo518/518.

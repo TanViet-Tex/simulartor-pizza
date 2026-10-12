@@ -9,10 +9,10 @@ import type {ScheduleFactory} from '../config/cozySchedule';
 
 const schedule:ScheduleFactory=day=>({day,duration:240,grace:120,slots:[{id:`day-${day}`,at:0,kind:'picky',opportunity:'commercial',commercialOrdinal:1,takeaway:true}]});
 function throughDay29(){
- const r=new CozyRuntime(false,true,{schedule});r.configureMenu('mushroom',100,false);
+ const r=new CozyRuntime(false,true,{schedule,eventRoll:()=>1,vipRoll:()=>1});r.configureMenu('mushroom',100,false);
  for(let day=1;day<=29;day++){
   for(const id of ['dough','sauce','cheese'] as const)expect(r.buy(id,1)).toBe(true);
-  expect(day===1?r.openShop():r.openNextDay()).toBe(true);
+  expect(day===1?r.openShop():r.openNextDay()).toBe(true);if(r.lotteryPending)expect(r.resolveLottery(0)).toBe(true);if(r.thanksPending)expect(r.dismissThanks()).toBe(true);
   for(const id of ['dough','sauce','cheese'] as const)r.dispatch({type:'ingredient',ingredient:id});
   expect(r.dispatch({type:'bake'})).toBe(true);for(let i=0;i<140;i++)r.advance(50);
   r.dispatch({type:'extract'});r.dispatch({type:'box'});r.dispatch({type:'deliver',commandId:'served-'+day});r.continueShift();expect(r.closeDay()).toBe(true);
@@ -66,7 +66,7 @@ describe('Epic9 finite campaign',()=>{
   memory.allow();await session.retry();expect(memory.writes[1]).toEqual(memory.writes[0]);expect(r.exportCheckpoint()).toEqual(final);expect(session.runtime).toBe(r);
   const restartMemory=portWith(final),restart=new CozyCampaignSession(restartMemory.port,()=>`restart-${++id}`),old=(await restart.load())!;
   expect(await restart.start(false)).toBeNull();expect(restart.runtime).toBe(old);expect(restartMemory.saved().payload).toEqual(final);restartMemory.allow();const fresh=(await restart.retry())!;
-  expect(restartMemory.writes[1]).toEqual(restartMemory.writes[0]);expect(fresh).not.toBe(old);expect(fresh.exportCheckpoint()).toMatchObject({day:1,campaignEndDay:30,terminal:false,reports:[],stock:{cash:300}});expect(restart.view.campaignId).not.toBe('existing');
+  expect(restartMemory.writes[1]).toEqual(restartMemory.writes[0]);expect(fresh).not.toBe(old);expect(fresh.exportCheckpoint()).toMatchObject({day:1,campaignEndDay:30,terminal:false,reports:[],stock:{cash:500}});expect(restart.view.campaignId).not.toBe('existing');
  });
  it('earns the richest existing shop fixture before the final day',()=>{
   const checkpoint=fundedShopCheckpoint(30000);expect(checkpoint.day).toBeLessThanOrEqual(30);expect(checkpoint.stock.cash).toBeGreaterThanOrEqual(30000);expect(validateCozyCheckpoint(checkpoint)).not.toBeNull();

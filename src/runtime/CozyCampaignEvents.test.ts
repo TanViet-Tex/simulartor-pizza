@@ -34,7 +34,7 @@ describe('Campaign Event A',()=>{
     expect(r.campaignEvent.day).toBe(1);
   });
   it('applies the full 200 to cash50 once and acknowledgement/menu leases cannot spend again',()=>{
-    const r=eventRuntime();expect(r.buy('dough',50)).toBe(true);expect(r.state.cash).toBe(50);
+    const r=eventRuntime();expect(r.buy('dough',90)).toBe(true);expect(r.state.cash).toBe(50);
     expect(r.openShop()).toBe(true);expect(r.state.cash).toBe(-150);
     expect(r.campaignEvent).toEqual({day:1,id:'A',loss:200,acknowledged:false});
     expect(r.openShop()).toBe(false);expect(r.acknowledgeCampaignEvent()).toBe(true);expect(r.acknowledgeCampaignEvent()).toBe(false);
@@ -47,7 +47,7 @@ describe('Campaign Event A',()=>{
     expect(restored.closeDay()).toBe(false);expect(restored.state.cash).toBe(-170);
   });
   it('still receives and delivers orders with negative cash',()=>{
-    const r=eventRuntime();for(const id of ['dough','sauce','cheese'] as const)r.buy(id,1);r.buy('dough',47);
+    const r=eventRuntime();for(const id of ['dough','sauce','cheese'] as const)r.buy(id,1);r.buy('dough',87);
     expect(r.state.cash).toBe(50);r.openShop();expect(r.state.cash).toBe(-150);expect(r.tickets).toHaveLength(1);
     for(const ingredient of ['dough','sauce','cheese'] as const)expect(r.dispatch({type:'ingredient',ingredient})).toBe(true);
     expect(r.dispatch({type:'bake'})).toBe(true);for(let t=0;t<120;t++)r.advance(50);
@@ -64,10 +64,10 @@ describe('Campaign Event A',()=>{
     one.acknowledgeCampaignEvent();expect(one.campaignEvent.id).toBe('A');
   });
   it('permits overdrafts only with exact event ledger costs and rejects mismatched report economics',()=>{
-    const stock=new CozyStock();stock.buy('dough',50);expect(stock.applyCampaignLoss(1)).toBe(true);expect(stock.applyCampaignLoss(1)).toBe(false);
+    const stock=new CozyStock();stock.buy('dough',90);expect(stock.applyCampaignLoss(1)).toBe(true);expect(stock.applyCampaignLoss(1)).toBe(false);
     expect(stock.cash).toBe(-150);expect(stock.debit(1)).toBe(false);expect(CozyStock.restore(stock.exportCheckpoint())?.cash).toBe(-150);
     const unproven=stock.exportCheckpoint();delete unproven.books[0].eventLoss;expect(validateStockSnapshot(unproven)).toBeNull();
-    const r=eventRuntime();r.buy('dough',50);r.openShop();r.closeDay();const original=r.exportCheckpoint();
+    const r=eventRuntime();r.buy('dough',90);r.openShop();r.closeDay();const original=r.exportCheckpoint();
     const changes:((s:typeof original)=>void)[]=[s=>{s.campaignEventSeed=-1;},s=>{s.reports[0].campaignEvent!.loss=199 as 200;},s=>{s.reports[0].accounts.eventLoss=0;},s=>{s.reports[0].accounts.other=0;},s=>{delete s.stock.books[0].eventLoss;},s=>{delete s.reports[0].campaignEvent;},s=>{s.stock.cash--;},s=>{s.reports[0].profit++;}];
     for(const change of changes){const value=structuredClone(original);change(value);expect(validateCozyCheckpoint(value)).toBeNull();}
   });

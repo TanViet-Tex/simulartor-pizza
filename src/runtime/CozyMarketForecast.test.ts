@@ -85,7 +85,7 @@ it('bulk confirmation validates prices, day, duplicates, pauses and current cash
   const pause=r.acquirePause('visibility');expect(r.buyAll(quote.entries,'pause',1)).toBe(false);pause.release();
   expect(r.exportCheckpoint()).toEqual(before);
   expect(r.buyAll(quote.entries,'commit',1)).toBe(true);
-  expect(r.state.cash).toBe(300-quote.total);expect(r.stockLots).toHaveLength(2);
+  expect(r.state.cash).toBe(500-quote.total);expect(r.stockLots).toHaveLength(2);
   expect(r.buyAll(quote.entries,'commit',1)).toBe(false);
   expect(r.shiftClock.phase).toBe('preparation');
   const expensive=r.quoteMarketBasket([{ingredient:'cheese',quantity:100}])!,after=r.exportCheckpoint();
@@ -121,6 +121,7 @@ it('excludes expired and reserved units, tolerates legacy history and rechecks c
   expect(marketForecast(1,['cheese'],{cheese:3},[],id=>stock.available(id,1),{reservePercent:0,recentReports:3,historyWeight:.5}).rows[0]).toMatchObject({available:2,missing:1});
   expect(marketForecast(3,['cheese'],{cheese:3},[{day:2} as CozyDaySummary],id=>stock.available(id,3)).rows[0]).toMatchObject({available:0,missing:4});
   const r=new CozyRuntime(false,true),quote=r.quoteMarketBasket([{ingredient:'dough',quantity:25}])!;
+  expect(r.buy('dough',40,'consume-budget')).toBe(true); // Leave 100 xu after the 200-xu recipe.
   expect(quote.total).toBe(125);expect(r.buyRecipe('pepperoni','spend')).toBe(true);
   const before=r.exportCheckpoint();expect(r.buyAll(quote.entries,'stale-cash',quote.day)).toBe(false);expect(r.exportCheckpoint()).toEqual(before);
 });

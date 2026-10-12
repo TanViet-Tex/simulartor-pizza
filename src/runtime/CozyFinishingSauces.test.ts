@@ -1,4 +1,4 @@
-﻿import {describe,it,expect} from 'vitest';
+import {describe,it,expect} from 'vitest';
 import {CozyRuntime} from './CozyRuntime';
 import {CozyStock} from '../domain/CozyStock';
 import {CozyOrder} from '../domain/CozyOrder';
@@ -14,7 +14,7 @@ describe('finishing sauces and persistent sauce lots',()=>{
  r.configureMenu('mushroom',100,false);
  for(let day=1;day<=4;day++){
    for(const id of ['dough','sauce','cheese'] as const)expect(r.buy(id,1)).toBe(true);
-   expect(day===1?r.openShop():r.openNextDay()).toBe(true);r.dismissThanks();
+   expect(day===1?r.openShop():r.openNextDay()).toBe(true);if(r.lotteryPending)expect(r.resolveLottery(0)).toBe(true);if(r.thanksPending)expect(r.dismissThanks()).toBe(true);
    for(const ingredient of ['dough','sauce','cheese'] as const)r.dispatch({type:'ingredient',ingredient});
    r.dispatch({type:'bake'});r.advanceElapsed(6000);r.dispatch({type:'extract'});r.dispatch({type:'box'});expect(r.dispatch({type:'deliver'})).toBe(true);r.continueShift();r.closeDay();
  }

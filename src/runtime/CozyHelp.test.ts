@@ -18,7 +18,7 @@ function day2(seed=helpSeed){const r=new CozyRuntime(false,true,{eventSeed:seed}
 it('skips help in non-selected campaigns without losing the first commercial visit',()=>{
   const seed=Array.from({length:100},(_,i)=>i).find(seed=>!helpOfferEligible(seed))!;
   const r=day2(seed);expect(r.helpPending).toBeNull();expect(r.pauses).not.toContain('help');
-  expect(r.tickets[0]).toMatchObject({help:false,kind:'hurry'});expect(r.shiftClock.total).toBe(15);
+  expect(r.tickets[0]).toMatchObject({help:false,kind:'hurry'});expect(r.shiftClock.total).toBeGreaterThanOrEqual(22);expect(r.shiftClock.total).toBeLessThanOrEqual(28);
   r.closeDay();const checkpoint=r.exportCheckpoint(),restored=CozyRuntime.restoreCheckpoint(checkpoint,false)!;
   expect(restored.campaignEvents.seed).toBe(seed);expect(helpOfferEligible(restored.campaignEvents.seed)).toBe(false);
   expect(restored.marketForecast).toEqual(r.marketForecast);
@@ -26,7 +26,7 @@ it('skips help in non-selected campaigns without losing the first commercial vis
 it('gates actual Day2 help, pauses before ticket/reservation, declines without economic consequences',()=>{
   const r=day2(),cash=r.state.cash,rep=r.customerProgress,stock=r.stockLots,xp=r.progression.xp;
   expect(r.helpPending).toMatchObject({canAccept:true});expect(r.tickets).toEqual([]);expect(r.pauses).toContain('help');
-  time(r,100);expect(r.shiftClock.elapsed).toBe(10);expect(r.reserved('dough')).toBe(0);
+  time(r,100);expect(r.shiftClock.elapsed).toBe(0);expect(r.reserved('dough')).toBe(0);
   expect(r.dispatch({type:'customer.help',accept:false})).toBe(true);expect(r.dispatch({type:'customer.help',accept:false})).toBe(false);
   expect(r.state.cash).toBe(cash);expect(r.customerProgress).toEqual(rep);expect(r.stockLots).toEqual(stock);expect(r.progression.xp).toBe(xp);
   expect(r.helpState).toMatchObject({decision:'declined',outcome:null});
@@ -75,7 +75,7 @@ it('Day3 thanks grants twenty cash once separately from sales and XP',()=>{
 it('wrong commercial pizza given to help fails once and books its actual cost as a gift subset',()=>{
   const schedule:ScheduleFactory=day=>({day,duration:180,grace:120,slots:day===1?[{id:'regular',at:0,kind:'regular',opportunity:'commercial',commercialOrdinal:1,takeaway:false}]:[{id:'help',at:0,kind:'regular',opportunity:'help',commercialOrdinal:null,takeaway:false},{id:'other',at:1,kind:'picky',opportunity:'commercial',commercialOrdinal:3,takeaway:false}]});
   const r=new CozyRuntime(false,true,{schedule});buy(r,3);r.openShop();serve(r);r.closeDay();r.buy('mushroom',1);r.openNextDay();r.resolveHelp(true);const helpId=r.selectedTicketId;time(r,1);
-  const other=r.tickets.find(t=>!t.help)!;r.selectTicket(other.id);for(const ingredient of recipeIngredients('mushroom'))r.dispatch({type:'ingredient',ingredient});r.dispatch({type:'bake'});time(r,3);r.dispatch({type:'extract'});
+  const other=r.tickets.find(t=>!t.help)!;r.selectTicket(other.id);for(const ingredient of recipeIngredients('mushroom'))r.dispatch({type:'ingredient',ingredient});r.dispatch({type:'bake'});time(r,r.bakeTiming.perfectStart);r.dispatch({type:'extract'});
   const xp=r.progression.xp;expect(r.dispatch({type:'deliver',sourceId:other.id,targetId:helpId,commandId:'wrong-help'})).toBe(true);expect(r.deliveryPending).not.toBeNull();expect(r.confirmDelivery()).toBe(true);
   expect(r.helpState).toMatchObject({outcome:'failed',giftCost:21});expect(r.customerProgress.relationship).toBe(0);expect(r.progression.xp).toBe(xp);r.closeDay();
   expect(r.daySummary).toMatchObject({cost:21,revenue:0,delivered:0,accounts:{giftCost:21}});expect(r.daySummary!.reviews.some(review=>review.name==='Linh')).toBe(false);
@@ -89,7 +89,7 @@ it('permits help before stocking ingredients and a relationship already at zero 
 it('a help pizza sold to a commercial ticket is consumed cost but no longer gift cost',()=>{
   const schedule:ScheduleFactory=day=>({day,duration:180,grace:120,slots:day===1?[{id:'regular',at:0,kind:'regular',opportunity:'commercial',commercialOrdinal:1,takeaway:false}]:[{id:'help',at:0,kind:'regular',opportunity:'help',commercialOrdinal:null,takeaway:false},{id:'other',at:1,kind:'picky',opportunity:'commercial',commercialOrdinal:1,takeaway:false}]});
   const r=new CozyRuntime(false,true,{schedule,resolveRecipe:()=> 'cheese'});buy(r,3);r.openShop();serve(r);r.closeDay();r.openNextDay();r.resolveHelp(true);const help=r.selectedTicketId;time(r,1);r.selectTicket(help);
-  for(const ingredient of recipeIngredients('cheese'))r.dispatch({type:'ingredient',ingredient});r.dispatch({type:'bake'});time(r,3);r.dispatch({type:'extract'});
+  for(const ingredient of recipeIngredients('cheese'))r.dispatch({type:'ingredient',ingredient});r.dispatch({type:'bake'});time(r,r.bakeTiming.perfectStart);r.dispatch({type:'extract'});
   const commercial=r.tickets.find(t=>!t.help)!;expect(r.dispatch({type:'deliver',sourceId:help,targetId:commercial.id,commandId:'sold-help-pizza'})).toBe(true);if(r.deliveryPending)r.confirmDelivery();
   r.closeDay();expect(r.daySummary).toMatchObject({delivered:1,cost:15,accounts:{giftCost:0}});expect(r.helpState.giftCost).toBe(0);
 });

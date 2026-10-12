@@ -13,7 +13,7 @@ describe('free pizza assembly and real ingredient cost', () => {
     expect(order.dispatch({type:'extract'})).toBe(true);
     expect(order.dispatch({type:'box'})).toBe(true);
     expect(order.dispatch({type:'deliver'})).toBe(true);
-    expect(order.state.cash).toBe(300);
+    expect(order.state.cash).toBe(500);
     expect(order.state.feedback).toContain('không đúng');
   });
   it.each([0,1,2] as OvenLevel[])('uses exact upgrade %i boundaries', level => {
@@ -49,7 +49,7 @@ describe('free pizza assembly and real ingredient cost', () => {
     expect(price).toBe(12);
     expect(stock.orderExpress('rush','cheese',2,1)?.total).toBe(24);
     expect(stock.orderExpress('rush','cheese',2,1)?.total).toBe(24);
-    expect(stock.cash).toBe(276);
+    expect(stock.cash).toBe(476);
     expect(stock.owned('cheese')).toBe(0);
     expect(stock.receiveExpress('rush')).toBe(true);
     expect(stock.receiveExpress('rush')).toBe(false);

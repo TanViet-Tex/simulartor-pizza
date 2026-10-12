@@ -20,7 +20,7 @@ function campaign(deps:CozyScheduleDependencies={schedule}){
  const r=new CozyRuntime(false,true,deps);r.configureMenu('mushroom',100,false);
  for(let day=1;day<=4;day++){
   for(const i of ingredients)expect(r.buy(i,1)).toBe(true);
-  expect(day===1?r.openShop():r.openNextDay()).toBe(true);cook(r,`shop-${day}`);r.continueShift();expect(r.closeDay()).toBe(true);
+  expect(day===1?r.openShop():r.openNextDay()).toBe(true);if(r.lotteryPending)expect(r.resolveLottery(0)).toBe(true);if(r.thanksPending)expect(r.dismissThanks()).toBe(true);cook(r,`shop-${day}`);r.continueShift();expect(r.closeDay()).toBe(true);
  }
  return r;
 }

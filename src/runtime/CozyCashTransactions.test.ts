@@ -7,7 +7,7 @@ it('emits one atomic basket delta, ignores duplicate and rejected purchases',()=
   const r=new CozyRuntime(false,true),{list}=receipts(r);
   const quote=r.quoteMarketBasket([{ingredient:'dough',quantity:2},{ingredient:'cheese',quantity:2}])!;
   expect(r.buyAll(quote.entries,'basket',quote.day)).toBe(true);
-  expect(list).toEqual([{id:1,amount:-quote.total,cash:300-quote.total}]);
+  expect(list).toEqual([{id:1,amount:-quote.total,cash:500-quote.total}]);
   expect(r.buyAll(quote.entries,'basket',quote.day)).toBe(false);expect(r.buy('dough',100,'too-much')).toBe(false);
   expect(r.buy('shrimp',1,'locked')).toBe(false);expect(list).toHaveLength(1);
 });
@@ -37,7 +37,7 @@ it('publishes a confirmed persisted purchase once without replaying its checkpoi
   // Recipe commits follow their own existing session path; shop confirmation covers upgrades.
   expect(candidate.claimTestCode('VIETVUIVE')).toBe(true);
   expect(r.confirmShopCheckpoint(candidate.exportCheckpoint(),'confirmed')).toBe(true);
-  expect(list).toHaveLength(1);expect(list[0].amount).toBe(candidate.state.cash-300);
+  expect(list).toHaveLength(1);expect(list[0].amount).toBe(candidate.state.cash-500);
   expect(r.confirmShopCheckpoint(candidate.exportCheckpoint(),'confirmed')).toBe(true);expect(list).toHaveLength(1);
 });
 it('reports a committed thank-you reward even when the arriving order is rejected by a full queue',()=>{
@@ -49,6 +49,8 @@ it('reports a committed thank-you reward even when the arriving order is rejecte
     expect(day===1?r.openShop():r.openNextDay()).toBe(true);if(day===2)expect(r.resolveHelp(true)).toBe(true);
     for(const id of ['dough','sauce','cheese'] as const)r.dispatch({type:'ingredient',ingredient:id});r.dispatch({type:'bake'});r.advanceElapsed(6000);r.dispatch({type:'extract'});r.dispatch({type:'deliver',commandId:'gift-'+day});if(r.deliveryPending)r.confirmDelivery();r.closeDay();
   }
-  expect(r.customerProgress.relationship).toBe(2);r.openNextDay();const {list}=receipts(r),before=r.state.cash;r.advanceElapsed(1000);
+  expect(r.customerProgress.relationship).toBe(2);expect(r.openNextDay()).toBe(true);
+  if(r.lotteryPending)expect(r.resolveLottery(0)).toBe(true);
+  const {list}=receipts(r),before=r.state.cash;r.advanceElapsed(1000);
   expect(r.tickets).toHaveLength(4);expect(list.map(e=>e.amount)).toEqual([20]);expect(r.state.cash).toBe(before+20);
 });

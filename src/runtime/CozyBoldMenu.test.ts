@@ -22,7 +22,9 @@ describe('always available sauce purchases',()=>{
     }
   });
   it('still enforces phase, cash, quantity and non-sauce recipe access',()=>{
-    const r=new CozyRuntime(false,true),before=r.exportCheckpoint();
+    const r=new CozyRuntime(false,true);
+    expect(r.buy('dough',50,'setup-poor')).toBe(true); // 250 xu left: 100 BBQ portions cost 400.
+    const before=r.exportCheckpoint();
     expect(r.orderExpress('sauce-bbq',1,'before-open')).toBe(false);
     expect(r.buy('sauce-bbq',0)).toBe(false);expect(r.buy('sauce-bbq',100)).toBe(false);
     expect(r.buy('chicken',1)).toBe(false);expect(r.quoteMarketBasket([{ingredient:'sauce-bbq',quantity:101}])).toBeNull();

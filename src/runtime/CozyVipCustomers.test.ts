@@ -15,7 +15,7 @@ function tick(r:CozyRuntime,seconds:number){for(let i=0;i<seconds*20;i++)r.advan
 function serve(r:CozyRuntime,quality:'good'|'raw'|'burnt'='good',wrong=false){
   for(const id of ['dough','sauce',wrong?'mushroom':'cheese'] as const)expect(r.dispatch({type:'ingredient',ingredient:id})).toBe(true);
   expect(r.dispatch({type:'bake'})).toBe(true);tick(r,quality==='raw'?1:quality==='burnt'?12:7);
-  if(quality!=='burnt')expect(r.dispatch({type:'extract'})).toBe(true);
+  expect(r.dispatch({type:'extract'})).toBe(true);
   if(quality==='good')expect(r.dispatch({type:'box'})).toBe(true);expect(r.dispatch({type:'deliver',commandId:'deliver-'+r.selectedTicketId})).toBe(true);
   if(r.deliveryPending)expect(r.confirmDelivery()).toBe(true);
 }

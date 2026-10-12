@@ -32,34 +32,34 @@ describe('Cozy prepare/commit/confirm session',()=>{
     expect(session.configureMenu('mushroom',100,false)).toBe(true);await settle();const restored=(await session.load())!;
     expect(restored.customerProgress.pricePercents.cheese).toBe(105);expect(restored.menuRecipes).toEqual(['cheese']);
     expect(session.configureMenu('cheese',105,false)).toBe(false);expect(session.configureMenu('sausage',100,true)).toBe(false);
-    restored.openShop();expect(session.configureMenu('cheese',100,true)).toBe(false);expect(r.state.cash).toBe(300);session.destroy();
+    restored.openShop();expect(session.configureMenu('cheese',100,true)).toBe(false);expect(r.state.cash).toBe(500);session.destroy();
   });
   it('grants test funds only after commit, once per campaign, with retry and owned pauses intact',async()=>{
     const {session,port,r}=await setup();const menu=r.acquirePause('menu'),user=r.acquirePause('user'),editor=r.acquirePause('order');port.fail=true;
     const receipts:number[]=[];r.subscribeCash(receipt=>receipts.push(receipt.amount));
-    expect(session.claimTestCode(' vietvuive ')).toBe(true);expect(r.state.cash).toBe(300);expect(session.claimTestCode('VIETVUIVE')).toBe(false);
-    await settle();expect(receipts).toEqual([]);expect(session.view.state).toBe('error');expect(r.state.cash).toBe(300);expect(port.value!.payload.stock.cash).toBe(300);
-    const pending=port.calls[port.calls.length-1];port.fail=false;await session.retry();expect(port.calls[port.calls.length-1]).toEqual(pending);expect(r.state.cash).toBe(100300);expect(r.pauses).toEqual(expect.arrayContaining(['menu','user','order']));
+    expect(session.claimTestCode(' vietvuive ')).toBe(true);expect(r.state.cash).toBe(500);expect(session.claimTestCode('VIETVUIVE')).toBe(false);
+    await settle();expect(receipts).toEqual([]);expect(session.view.state).toBe('error');expect(r.state.cash).toBe(500);expect(port.value!.payload.stock.cash).toBe(500);
+    const pending=port.calls[port.calls.length-1];port.fail=false;await session.retry();expect(port.calls[port.calls.length-1]).toEqual(pending);expect(r.state.cash).toBe(100500);expect(r.pauses).toEqual(expect.arrayContaining(['menu','user','order']));
     expect(receipts).toEqual([100000]);expect(session.claimTestCode('VIETVUIVE')).toBe(false);expect(receipts).toEqual([100000]);menu.release();user.release();editor.release();
-    const restored=(await session.load())!;expect(restored.state.cash).toBe(100300);expect(restored.testCodeClaimed).toBe(true);expect(session.claimTestCode('VIETVUIVE')).toBe(false);
+    const restored=(await session.load())!;expect(restored.state.cash).toBe(100500);expect(restored.testCodeClaimed).toBe(true);expect(session.claimTestCode('VIETVUIVE')).toBe(false);
     expect(restored.progression.xp).toBe(0);expect(restored.state.reputation).toBe(50);
-    expect((await session.start(false))!.state.cash).toBe(300);expect(session.claimTestCode('VIETVUIVE')).toBe(true);await settle();expect(session.runtime!.state.cash).toBe(100300);
+    expect((await session.start(false))!.state.cash).toBe(500);expect(session.claimTestCode('VIETVUIVE')).toBe(true);await settle();expect(session.runtime!.state.cash).toBe(100500);
   });
   it('rejects empty, wrong, no campaign, midshift and conflict without changing cash',async()=>{
     const empty=new CozyCampaignSession(new MemoryPort());await empty.load();expect(empty.claimTestCode('VIETVUIVE')).toBe(false);empty.destroy();
     const {session,port,r}=await setup();expect(session.claimTestCode('')).toBe(false);expect(session.claimTestCode('other')).toBe(false);open(r);const before=r.state.cash;session.returnToMenu();
     expect(session.claimTestCode('VIETVUIVE')).toBe(false);expect(r.state.cash).toBe(before);expect(port.calls).toHaveLength(1);session.destroy();
-    const next=await setup();next.port.conflict=true;expect(next.session.claimTestCode('VIETVUIVE')).toBe(true);await settle();expect(next.r.state.cash).toBe(300);expect(next.session.view.canRetry).toBe(false);expect(next.session.claimTestCode('VIETVUIVE')).toBe(false);next.session.destroy();
+    const next=await setup();next.port.conflict=true;expect(next.session.claimTestCode('VIETVUIVE')).toBe(true);await settle();expect(next.r.state.cash).toBe(500);expect(next.session.view.canRetry).toBe(false);expect(next.session.claimTestCode('VIETVUIVE')).toBe(false);next.session.destroy();
   });
   it('reconciles preparation support after day close without inflating commercial income or profit',async()=>{
     const {session,r}=await setup();expect(session.claimTestCode('VIETVUIVE')).toBe(true);await settle();r.openShop();expect(session.closeDay()).toBe(true);await settle();
-    const report=r.daySummary!;expect(report.accounts.supportFunds).toBe(100000);expect(report.revenue).toBe(0);expect(report.rewards).toBe(0);expect(report.profit).toBe(-20);expect(report.cash).toBe(100280);
-    const restored=(await session.load())!;expect(restored.state.cash).toBe(100280);expect(restored.completedReports[0].accounts.supportFunds).toBe(100000);expect(session.claimTestCode('VIETVUIVE')).toBe(false);session.destroy();
+    const report=r.daySummary!;expect(report.accounts.supportFunds).toBe(100000);expect(report.revenue).toBe(0);expect(report.rewards).toBe(0);expect(report.profit).toBe(-20);expect(report.cash).toBe(100480);
+    const restored=(await session.load())!;expect(restored.state.cash).toBe(100480);expect(restored.completedReports[0].accounts.supportFunds).toBe(100000);expect(session.claimTestCode('VIETVUIVE')).toBe(false);session.destroy();
   });
   it('accepts funds in next-day summary preparation without rewriting yesterday or double accounting on day two',async()=>{
     const {session,r}=await setup();r.openShop();expect(session.closeDay()).toBe(true);await settle();const yesterday=r.daySummary;
-    expect(session.claimTestCode('VIETVUIVE')).toBe(true);await settle();expect(r.daySummary).toEqual(yesterday);expect(r.state.cash).toBe(100280);
-    expect(r.openNextDay()).toBe(true);expect(session.closeDay()).toBe(true);await settle();expect(r.daySummary!.accounts.supportFunds).toBe(100000);expect(r.daySummary!.accounts.startingCash).toBe(280);expect(r.daySummary!.cash).toBe(100260);
+    expect(session.claimTestCode('VIETVUIVE')).toBe(true);await settle();expect(r.daySummary).toEqual(yesterday);expect(r.state.cash).toBe(100480);
+    expect(r.openNextDay()).toBe(true);expect(session.closeDay()).toBe(true);await settle();expect(r.daySummary!.accounts.supportFunds).toBe(100000);expect(r.daySummary!.accounts.startingCash).toBe(480);expect(r.daySummary!.cash).toBe(100460);
     const restored=(await session.load())!;expect(restored.completedReports[0].accounts.supportFunds).toBeUndefined();expect(restored.completedReports[1].accounts.supportFunds).toBe(100000);session.destroy();
   });
   it('saves upgrade money and ownership together; blocked retries never charge twice',async()=>{
@@ -81,10 +81,10 @@ describe('Cozy prepare/commit/confirm session',()=>{
     const {session,port,r}=await setup();port.value=null;expect(await session.load()).toBeNull();expect(session.runtime).toBeNull();expect(session.hasSession).toBe(false);expect(r.buy('dough',1)).toBe(false);expect(await session.start(false)).not.toBeNull();
   });
   it('new temporary campaign keeps explicit no-save mode when storage is unavailable',async()=>{
-    let writes=0;const session=new CozyCampaignSession({load:async()=>saveFailure('unavailable'),commit:async()=>{writes++;return saveFailure('unavailable');}});await session.load();const old=session.temporary(false)!;old.buy('dough',1);const fresh=(await session.start(false))!;expect(fresh).not.toBe(old);expect(fresh.state.cash).toBe(300);expect(session.view.state).toBe('temporary');expect(writes).toBe(0);
+    let writes=0;const session=new CozyCampaignSession({load:async()=>saveFailure('unavailable'),commit:async()=>{writes++;return saveFailure('unavailable');}});await session.load();const old=session.temporary(false)!;old.buy('dough',1);const fresh=(await session.start(false))!;expect(fresh).not.toBe(old);expect(fresh.state.cash).toBe(500);expect(session.view.state).toBe('temporary');expect(writes).toBe(0);
   });
   it('creates before purchases; RAM taps do not write and reload restores same unclosed day',async()=>{
-    const {session,port,r}=await setup();open(r);r.advance(100);expect(port.calls).toHaveLength(1);expect(port.value?.payload.stock.cash).toBe(300);const loaded=(await session.load())!;expect(loaded.day).toBe(1);expect(loaded.state.cash).toBe(300);expect(loaded.shopOpen).toBe(false);expect(loaded.tickets).toEqual([]);
+    const {session,port,r}=await setup();open(r);r.advance(100);expect(port.calls).toHaveLength(1);expect(port.value?.payload.stock.cash).toBe(500);const loaded=(await session.load())!;expect(loaded.day).toBe(1);expect(loaded.state.cash).toBe(500);expect(loaded.shopOpen).toBe(false);expect(loaded.tickets).toEqual([]);
   });
   it('blocks every preparation/reset/advance until confirmation and retries the exact once-calculated payload',async()=>{
     const {session,port,r}=await setup();open(r);const hidden=r.acquirePause('visibility');hidden.release();port.fail=true;expect(session.closeDay()).toBe(true);const summary=r.daySummary;expect(session.closeDay()).toBe(false);await settle();expect(session.view).toMatchObject({state:'error',pending:true,canRetry:true});expect(r.buy('dough',1)).toBe(false);expect(r.configureMenu('cheese',100,true)).toBe(false);expect(r.openNextDay()).toBe(false);expect(r.dispatch({type:'reset'})).toBe(false);

@@ -16,12 +16,12 @@ describe('preview simulation boundaries', () => {
     expect(runtime.state.ovenSeconds).toBe(0);
     runtime.advance(1);
     expect(runtime.state.ovenSeconds).toBe(.05);
-    for (let frame = 0; frame < 295; frame++) runtime.advance(10);
+    for (let frame = 0; frame < 595; frame++) runtime.advance(10);
     expect(runtime.state.stage).toBe('baking');
-    expect(runtime.state.ovenSeconds).toBe(3);
+    expect(runtime.state.ovenSeconds).toBe(6);
     runtime.pause('user');runtime.advance(200);
     expect(runtime.dispatch({type:'extract'})).toBe(false);
-    expect(runtime.state.ovenSeconds).toBe(3);
+    expect(runtime.state.ovenSeconds).toBe(6);
     runtime.resume('user');
     expect(runtime.dispatch({type:'extract'})).toBe(true);
     expect(runtime.state.stage).toBe('ready');

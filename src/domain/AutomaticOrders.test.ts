@@ -54,7 +54,7 @@ describe('campaign automatic customer arrivals', () => {
       const g = shop(); g.tick(10);
       g.state.tickets[0]!.kind = kind;
       for (const ingredient of ['dough', 'sauce']) g.dispatch({ type: 'ingredient', ingredient });
-      g.dispatch({ type: 'bake' }); g.tick(3.1); g.dispatch({ type: 'remove' }); g.dispatch({ type: 'deliver', confirmed:true });
+      g.dispatch({ type: 'bake' }); g.tick(6.1); g.dispatch({ type: 'remove' }); g.dispatch({ type: 'deliver', confirmed:true });
       return g.state.ratings[0];
     }
     expect(wrongOrder('regular')).toBe(3);

@@ -21,7 +21,8 @@ describe('Epic8 fixed-role staff',()=>{
   expect(r.owned('sauce')).toBeGreaterThanOrEqual(2);expect(r.state.stage).toBe('assembly');
  });
  it('keeps legacy saves empty and guards unlock, ownership, pause and shift hiring',()=>{
-  const old=new CozyRuntime(false,true).exportCheckpoint();delete old.staff;const loaded=CozyRuntime.restoreCheckpoint(old)!;
+  const old=new CozyRuntime(false,true).exportCheckpoint();delete old.staff;delete old.initialCash;old.stock.cash=300;
+  const loaded=CozyRuntime.restoreCheckpoint(old)!;
   expect(loaded.staffState.acquired).toEqual([]);expect(loaded.state.cash).toBe(300);expect(loaded.hireStaff('prep','early')).toBe(false);
   const r=staffRuntime(['prep']);const cash=r.state.cash;expect(r.staffState.acquired[0]).toMatchObject({role:'prep',actualPrice:2000});expect(r.hireStaff('prep','duplicate')).toBe(false);
   const lease=r.acquirePause('user');expect(r.hireStaff('oven','paused')).toBe(false);lease.release();r.openShop();expect(r.hireStaff('oven','shift')).toBe(false);expect(r.state.cash).toBe(cash);

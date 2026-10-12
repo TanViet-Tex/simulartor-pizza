@@ -18,7 +18,8 @@ describe('Epic7 shop investment',()=>{
   expect(r.placeShopItem('table-plant',false,'store')).toBe(true);expect(r.state.cash).toBe(cash-500);expect(r.shopState.acquired).toHaveLength(1);
   expect(SHOP_CATALOG.find(i=>i.id==='customer-tables')).toMatchObject({price:4000,available:true});
   r.openShop();expect(r.buyShopItem('wifi','shift')).toBe(false);expect(r.placeShopItem('table-plant',true,'shift-place')).toBe(false);
-  const poor=new CozyRuntime(false,true);expect(poor.buyShopItem('table-plant','poor')).toBe(false);expect(poor.shopItemPreview('table-plant').missing).toBe(200);expect(poor.state.cash).toBe(300);
+  const poor=new CozyRuntime(false,true);expect(poor.buy('dough',40,'setup-poor')).toBe(true);
+  expect(poor.buyShopItem('table-plant','poor')).toBe(false);expect(poor.shopItemPreview('table-plant').missing).toBe(200);expect(poor.state.cash).toBe(300);
  });
  it('tables activate only after placement, survive reload and cask without changing capacity',()=>{
   const r=CozyRuntime.restoreCheckpoint(fundedShopCheckpoint(),false,{schedule:day=>({day,duration:180,grace:120,slots:[{id:'counter',at:0,kind:'regular',opportunity:'commercial',commercialOrdinal:1,takeaway:false}]})})!,cash=r.state.cash;
@@ -67,7 +68,7 @@ describe('Epic7 shop investment',()=>{
   const wrongSpent=structuredClone(prep);wrongSpent.shop!.pendingSpent--;expect(validateCozyCheckpoint(wrongSpent)).toBeNull();
  });
  it('migrates old upgrade receipts and prices only future upgrades',()=>{
-  const old=new CozyRuntime(false,true).exportCheckpoint();delete old.shop;
+  const old=new CozyRuntime(false,true).exportCheckpoint();delete old.shop;delete old.initialCash;
   old.upgrades={ovenLevel:1,queueLevel:0,spent:150,pendingSpent:150};old.stock.cash=150;
   const r=CozyRuntime.restoreCheckpoint(old)!;expect(r.state.cash).toBe(150);expect(r.shopState.acquired).toEqual([]);expect(r.upgradePrice('oven')).toBe(5000);
   expect(r.exportCheckpoint().upgrades.receipts).toEqual([{kind:'oven',level:1,actualPrice:150}]);
