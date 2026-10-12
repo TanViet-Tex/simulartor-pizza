@@ -119,7 +119,7 @@ describe('isolated first-shift guide', () => {
     warm(runtime);
     for (let i = 0; i < 24; i++) runtime.advance(250);
     for (const type of ['extract', 'box', 'deliver'] as const) runtime.dispatch({ type });
-    expect(runtime.state).toMatchObject({ cash: 550, reputation: 51, energy: 75 });
+    expect(runtime.state).toMatchObject({ cash: 560, reputation: 51, energy: 75 });
   });
 
   it('increments render revision on transitions even when the lease remains held', () => {

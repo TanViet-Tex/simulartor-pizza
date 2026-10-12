@@ -11,7 +11,7 @@ describe('Cozy latest boundary validation',()=>{
     expect(r.state.cash).toBe(500);expect(r.exportCheckpoint().initialCash).toBe(500);
     for(const id of ['dough','sauce','cheese'] as const)expect(r.buy(id,1)).toBe(true);
     const loaded=CozyRuntime.restoreCheckpoint(r.exportCheckpoint())!;
-    expect(loaded.state.cash).toBe(485);expect(loaded.openShop()).toBe(true);
+    expect(loaded.state.cash).toBe(482);expect(loaded.openShop()).toBe(true);
     expect(loaded.closeDay()).toBe(true);expect(loaded.daySummary!.accounts.startingCash).toBe(500);
     const saved=loaded.exportCheckpoint();expect(validateCozyCheckpoint(saved)).not.toBeNull();
     expect(CozyRuntime.restoreCheckpoint(saved)!.state.cash).toBe(loaded.state.cash);
@@ -31,8 +31,8 @@ describe('Cozy latest boundary validation',()=>{
   it('migrates old saves and preserves preparation purchases alongside an upgrade',()=>{
     const oldUpgrade=new CozyRuntime(false,true).exportCheckpoint();delete oldUpgrade.initialCash;oldUpgrade.stock.cash=150;oldUpgrade.upgrades={ovenLevel:1,queueLevel:0,spent:150,pendingSpent:150};const r=CozyRuntime.restoreCheckpoint(oldUpgrade)!;r.buy('dough',2);expect(r.upgradePrice('oven')).toBe(5000);
     const saved=r.exportCheckpoint(),loaded=CozyRuntime.restoreCheckpoint(saved)!;
-    expect(loaded.state.cash).toBe(140);expect(loaded.owned('dough')).toBe(2);expect(loaded.ovenLevel).toBe(1);
-    expect(loaded.openShop()).toBe(true);loaded.closeDay();expect(loaded.daySummary!.accounts.endingCash).toBe(120);
+    expect(loaded.state.cash).toBe(138);expect(loaded.owned('dough')).toBe(2);expect(loaded.ovenLevel).toBe(1);
+    expect(loaded.openShop()).toBe(true);loaded.closeDay();expect(loaded.daySummary!.accounts.endingCash).toBe(118);
     const old=new CozyRuntime(false,true).exportCheckpoint() as Record<string,unknown>;delete old.upgrades;delete old.customerMemory;
     expect(CozyRuntime.restoreCheckpoint(old)?.queueCapacity).toBe(4);
     expect(CozyRuntime.restoreCheckpoint(old)?.ovenLevel).toBe(0);
@@ -57,7 +57,7 @@ describe('Cozy latest boundary validation',()=>{
   });
   it('uses independent rent and missing-unit thresholds, including a cheaper unlocked omitted recipe',()=>{
     expect(cozyViability(19,2,['cheese'],()=>1)).toMatchObject({viable:false,cause:'rent',missing:1});expect(cozyViability(20,2,['cheese'],()=>1).viable).toBe(true);
-    expect(cozyViability(20,2,['cheese'],()=>0)).toMatchObject({viable:true,ingredientCost:17});expect(cozyViability(20,2,['sausage'],()=>0)).toMatchObject({viable:false,cause:'ingredients',missing:8});expect(cozyViability(20,2,['sausage','cheese'],()=>0)).toMatchObject({viable:true,recipe:'cheese'});
+    expect(cozyViability(20,2,['cheese'],()=>0)).toMatchObject({viable:true,ingredientCost:20});expect(cozyViability(20,2,['sausage'],()=>0)).toMatchObject({viable:false,cause:'ingredients',missing:13});expect(cozyViability(20,2,['sausage','cheese'],()=>0)).toMatchObject({viable:true,recipe:'cheese'});
   });
   it('continues Day3 at a valid Day4 boundary without replaying closed days',()=>{
     const r=new CozyRuntime(false,true,ORDER_TEST_SCHEDULE);

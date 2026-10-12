@@ -25,7 +25,7 @@ describe('direct kitchen gameplay',()=>{
   });
   it('lets a bargain customer order an affordable discounted price before asking at delivery',()=>{
     const r=new CozyRuntime(false,true,schedule('bargain'));r.setMenuPrice('cheese',110);r.openShop();
-    expect(r.tickets).toHaveLength(1);expect(r.selectedTicket!.finalPrice).toBe(55);expect(r.bargainPending).toBeNull();
+    expect(r.tickets).toHaveLength(1);expect(r.selectedTicket!.finalPrice).toBe(66);expect(r.bargainPending).toBeNull();
   });
   it('receives four orders with zero stock and reserves only actual assembly at bake',()=>{
     const r=new CozyRuntime(false,true,schedule('regular',7));expect(r.openShop()).toBe(true);time(r,6);
@@ -54,8 +54,8 @@ describe('direct kitchen gameplay',()=>{
   it.each([true,false])('asks bargain only after cooking and delivery, decision=%s settles exactly once',accept=>{
     const r=new CozyRuntime(false,true,schedule('bargain'));for(const id of ['dough','sauce','cheese'] as const)r.buy(id,1);r.openShop();expect(r.bargainPending).toBeNull();oven(r);time(r,6);r.dispatch({type:'extract'});
     const cash=r.state.cash;expect(r.dispatch({type:'deliver',commandId:'discount'})).toBe(true);expect(r.state.cash).toBe(cash);expect(r.bargainPending).not.toBeNull();
-    expect(r.resolveBargain(accept)).toBe(true);expect(r.lastResult!.price).toBe(accept?45:50);if(!accept)expect(r.lastResult!.stars).toBeLessThan(3);
-    expect(r.customerMemory[accept?'accepted':'declined']).toHaveLength(1);expect(r.resolveBargain(accept)).toBe(false);expect(r.state.cash).toBe(cash+(accept?45:50));
+    expect(r.resolveBargain(accept)).toBe(true);expect(r.lastResult!.price).toBe(accept?54:60);if(!accept)expect(r.lastResult!.stars).toBeLessThan(3);
+    expect(r.customerMemory[accept?'accepted':'declined']).toHaveLength(1);expect(r.resolveBargain(accept)).toBe(false);expect(r.state.cash).toBe(cash+(accept?54:60));
   });
   it('upgrades queue to five only in preparation and prevents duplicate charges',()=>{
     const r=CozyRuntime.restoreCheckpoint(fundedShopCheckpoint(),false,schedule('regular',7))!;expect(r.dispatch({type:'shop.upgrade',kind:'queue',commandId:'seats'})).toBe(true);const cash=r.state.cash;

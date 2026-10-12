@@ -77,6 +77,25 @@ test('polished management market and stock keep real purchases filters and fixed
   expect(page.context().pages()).toHaveLength(1);expect(errors).toEqual([]);
 });
 
+test('market sauce labels match all five kitchen bottles and current economy',async({page},info)=>{
+  await fixture(page,false);const canvas=page.locator('canvas');
+  expect((await data(page,'customer-progress')).prices.cheese).toBe(60);
+  await tap(page,'summary-tab-market');await tap(page,'market-filter-sauce');
+  expect((await data(page,'market-rows')).find((r:any)=>r.id==='sauce').unitPrice).toBe(4);
+  const frames=await page.evaluate(()=>{
+    const texture=(window as any).shopFixture.game.textures.get('market-sauces-labeled');
+    return ['sauce','sauce-white','sauce-bbq','sauce-pesto','sauce-hot'].map(id=>({id,exists:texture.has('label-'+id),frame:texture.get('label-'+id).cutX}));
+  });
+  expect(frames.every(frame=>frame.exists)).toBe(true);expect(new Set(frames.map(frame=>frame.frame)).size).toBe(5);
+  await canvas.screenshot({path:info.outputPath('market-labeled-sauces.png')});
+  await tap(page,'market-buy-sauce');await tap(page,'market-filter-base');
+  await tap(page,'market-buy-dough');await tap(page,'market-buy-cheese');
+  await tap(page,'summary-open-first-day');await expect(canvas).toHaveAttribute('data-screen','game');
+  const labels=(await data(page,'kitchen-art')).filter((entry:any)=>entry.key==='market-sauces-labeled');
+  expect(labels.map((entry:any)=>entry.frame).sort()).toEqual(frames.map(frame=>'label-'+frame.id).sort());
+  await canvas.screenshot({path:info.outputPath('kitchen-labeled-sauces.png')});
+});
+
 test('all six illustrated pages have fixed shell, scroll and independent navigation',async({page},info)=>{
   const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));await fixture(page);
   const liveResources=()=>page.evaluate(()=>{const f=(window as any).shopFixture;return {textures:Object.keys(f.game.textures.list).filter(key=>key.startsWith('shop-')).length,handlers:['pointerdown','pointermove','pointerup','wheel'].map(name=>f.scene.input.listenerCount(name))};});

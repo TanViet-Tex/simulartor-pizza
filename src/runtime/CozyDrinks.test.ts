@@ -19,7 +19,7 @@ describe('drinks served with pizza',()=>{
     for(const ingredient of ['dough','sauce','cheese'] as const)r.dispatch({type:'ingredient',ingredient});
     r.dispatch({type:'bake'});r.advanceElapsed(6000);r.dispatch({type:'extract'});
     const cash=r.state.cash;expect(r.dispatch({type:'deliver',commandId:'deliver-once'})).toBe(true);
-    expect(r.state.cash-cash).toBe(75);expect(r.dispatch({type:'deliver',commandId:'deliver-once'})).toBe(false);
+    expect(r.state.cash-cash).toBe(85);expect(r.dispatch({type:'deliver',commandId:'deliver-once'})).toBe(false);
     expect(r.closeDay()).toBe(true);const report=r.daySummary!;expect(report.drinkCost).toBe(10);expect(report.reviews[0].soldDrink).toEqual({id:'cola',price:25});
     expect(validateCozyCheckpoint(r.exportCheckpoint())).not.toBeNull();
   });

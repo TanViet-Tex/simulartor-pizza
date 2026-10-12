@@ -1,4 +1,4 @@
-import type {DrinkId} from '../config/drinkCatalog';
+﻿import type {DrinkId} from '../config/drinkCatalog';
 import {TEST_CODE,normalizeTestCode} from '../domain/TestCode';
 import {campaignEventSeed} from '../domain/CampaignEvents';
 import {CozyRuntime} from './CozyRuntime';
@@ -18,7 +18,7 @@ export class CozyCampaignSession {
   private saved:CozySaveEnvelope|null=null;
   private recovery:Extract<CozyLoadResult,{kind:'loaded'|'recovery'}>|null=null;
   private replacement:string|undefined;
-  private pending:{request:CozyWriteRequest;kind:'create'|'day'|'upgrade'|'tutorial';tutorial:boolean;shopCommand?:string}|null=null;
+  private pending:{request:CozyWriteRequest;kind:'create'|'day'|'upgrade'|'tutorial';tutorial:boolean;menu?:boolean;shopCommand?:string}|null=null;
   private inFlight:Promise<CozyRuntime|null>|null=null;
   private listeners=new Set<()=>void>();
   private generation=0;
@@ -31,7 +31,8 @@ export class CozyCampaignSession {
   get hasSession(){return this.current!==null||this.saved!==null;}
   get busy(){return this.status==='loading'||this.status==='saving';}
   get savingTutorial(){return this.status==='saving'&&this.pending?.kind==='tutorial';}
-  get view():CozySaveView {return {state:this.status,message:this.status==='loading'?'Đang đọc tiến độ…':this.status==='saving'?'Đang lưu ngày. Giữ trang này mở…':this.status==='recovery'?'Bản chính bị hỏng. Bản dự phòng cùng mốc mới nhất đã được kiểm tra. Xác nhận để tiếp tục; không quay lại ngày cũ.':this.status==='temporary'?'Chơi tạm không lưu. Đóng hoặc tải lại trang sẽ mất phiên này.':this.failure?this.failure.message+((this.pending?.kind==='day'||this.pending?.kind==='upgrade'||this.pending?.kind==='tutorial')?' Ngày này chưa lưu. Đóng trang sẽ mất kết quả chưa lưu.':''):'Lưu lúc tạo chiến dịch, mua nâng cấp và kết thúc ngày. Tải lại giữa ca trở về đầu ngày hiện tại.',code:this.failure?.code??null,day:this.current?(this.current.shopPhase==='summary'&&!this.current.daySummary?.ending?this.current.day+1:this.current.day):this.saved?.payload.day??null,revision:this.saved?.revision??0,commitId:this.pending?.request.commitId??this.saved?.commitId??null,campaignId:this.pending?.request.campaignId??this.saved?.campaignId??null,pending:this.pending!==null,canRetry:this.status==='error'&&this.pending!==null&&this.failure?.code!=='revision-conflict',canTemporary:this.status==='error'&&this.pending?.kind!=='day'&&this.pending?.kind!=='upgrade'&&this.pending?.kind!=='tutorial'&&this.failure?.code!=='revision-conflict'&&this.current===null&&['unavailable','timeout','write-failed'].includes(this.failure?.code??''),canReload:this.status==='error'&&(this.pending?.kind==='day'||this.pending?.kind==='upgrade'||this.pending?.kind==='tutorial')};}
+  get savingMenu(){return this.status==='saving'&&this.pending?.menu===true;}
+  get view():CozySaveView {return {state:this.status,message:this.status==='loading'?'Đang đọc tiến độ…':this.status==='saving'?(this.pending?.menu?'Đang lưu giá bán…':'Đang lưu ngày. Giữ trang này mở…'):this.status==='recovery'?'Bản chính bị hỏng. Bản dự phòng cùng mốc mới nhất đã được kiểm tra. Xác nhận để tiếp tục; không quay lại ngày cũ.':this.status==='temporary'?'Chơi tạm không lưu. Đóng hoặc tải lại trang sẽ mất phiên này.':this.failure?this.failure.message+((this.pending?.kind==='day'||this.pending?.kind==='upgrade'||this.pending?.kind==='tutorial')?(this.pending?.menu?' Thay đổi menu chưa lưu. Thử lưu lại để giữ giá bán.':' Ngày này chưa lưu. Đóng trang sẽ mất kết quả chưa lưu.'):''):'Lưu lúc tạo chiến dịch, mua nâng cấp và kết thúc ngày. Tải lại giữa ca trở về đầu ngày hiện tại.',code:this.failure?.code??null,day:this.current?(this.current.shopPhase==='summary'&&!this.current.daySummary?.ending?this.current.day+1:this.current.day):this.saved?.payload.day??null,revision:this.saved?.revision??0,commitId:this.pending?.request.commitId??this.saved?.commitId??null,campaignId:this.pending?.request.campaignId??this.saved?.campaignId??null,pending:this.pending!==null,canRetry:this.status==='error'&&this.pending!==null&&this.failure?.code!=='revision-conflict',canTemporary:this.status==='error'&&this.pending?.kind!=='day'&&this.pending?.kind!=='upgrade'&&this.pending?.kind!=='tutorial'&&this.failure?.code!=='revision-conflict'&&this.current===null&&['unavailable','timeout','write-failed'].includes(this.failure?.code??''),canReload:this.status==='error'&&(this.pending?.kind==='day'||this.pending?.kind==='upgrade'||this.pending?.kind==='tutorial')};}
   subscribe(listener:()=>void){this.listeners.add(listener);return ()=>this.listeners.delete(listener);}
   private publish(){for(const listener of this.listeners)listener();}
   private allowed=()=>this.status==='ready'||this.status==='temporary';
@@ -97,7 +98,7 @@ export class CozyCampaignSession {
     const before=this.current.exportCheckpoint();
     if(!this.current.configureMenu(recipe,percent,enabled))return false;
     if(this.status==='temporary'){this.publish();return true;}
-    try{this.pending={kind:'upgrade',tutorial:false,request:{campaignId:this.saved!.campaignId,commitId:this.id(),sourceRevision:this.saved!.revision,payload:this.current.exportCheckpoint(),...(this.confirmedRecovery?{confirmedRecovery:true}:{})}};}
+    try{this.pending={kind:'upgrade',tutorial:false,menu:true,request:{campaignId:this.saved!.campaignId,commitId:this.id(),sourceRevision:this.saved!.revision,payload:this.current.exportCheckpoint(),...(this.confirmedRecovery?{confirmedRecovery:true}:{})}};}
     catch{this.install(CozyRuntime.restoreCheckpoint(before)!);this.publish();return false;}
     void this.writePending();return true;
   }

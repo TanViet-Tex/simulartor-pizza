@@ -1,5 +1,7 @@
-import {INITIAL_CASH,LEGACY_INITIAL_CASH} from '../config/campaignRules';
+﻿import {INITIAL_CASH,LEGACY_INITIAL_CASH} from '../config/campaignRules';
 import {validateTutorialProgress,type TutorialProgress} from './TutorialProgress';
+import {PRE_BALANCE_INGREDIENT_PRICES} from '../config/ingredientCatalog';
+import {supplierPrice} from '../config/cozyContinuity';
 import {validateServices,serviceCostForDay,servicePrizeForDay,type ServiceCheckpoint} from './ServiceCheckpoint';
 import {drinkDefinition,type DrinkId} from '../config/drinkCatalog';
 import {isDrinkId,validateDrinkInventory,drinkInventoryValue} from './DrinkStock';
@@ -17,7 +19,7 @@ import {prepStaffAbsent} from './StaffAbsence';
 import {recipeDefinition,defaultRecipePercents} from '../config/recipeCatalog';
 import {CozyProgression,type ProgressionSnapshot,type GoalView} from './CozyProgression';
 import {validateHelpCheckpoint,type CozyHelpCheckpoint} from './CozyHelp';
-import {datedIngredientPrice,expressIngredientPrice,ingredientExpiry,validateStockSnapshot,STOCK_RECIPES,STOCK_INGREDIENTS,type StockIngredient,type StockRecipe,type CozyStockSnapshot} from './CozyStock';
+import {ordinaryOrExpressLotCost,ingredientExpiry,validateStockSnapshot,STOCK_RECIPES,STOCK_INGREDIENTS,type StockIngredient,type StockRecipe,type CozyStockSnapshot} from './CozyStock';
 import {closeAccounts,type DayAccounts} from './DayAccounts';
 import {referralEligibility} from './CustomerProgression';
 import type {CozyViability} from './CozyViability';
@@ -143,7 +145,7 @@ function validatedCheckpoint(value:unknown):CozyCheckpoint|null {
   if(stock.refrigeration&&stock.refrigeration.acquiredDay>s.day)return null;
   const fridgeSpent=stock.refrigeration?FRIDGE_PRICE:0,fridgePending=!s.terminal&&stock.refrigeration?.acquiredDay===s.day?FRIDGE_PRICE:0;
   const master=progress.snapshot;
-  if(stock.lots.some(l=>l.unitCost!==datedIngredientPrice(l.ingredient,l.day)&&l.unitCost!==expressIngredientPrice(l.ingredient,l.day)&&stock.books.filter(b=>b.day<l.day).reduce((n,b)=>n+(b.ordinaryPurchases??0),0)<500))return null;
+  if(stock.lots.some(l=>!ordinaryOrExpressLotCost(l.ingredient,l.day,l.unitCost)&&stock.books.filter(b=>b.day<l.day).reduce((n,b)=>n+(b.ordinaryPurchases??0),0)<500))return null;
   if(!Array.isArray(s.menu)||!s.menu.length||s.menu.length>8||s.menu.some(id=>!STOCK_RECIPES.includes(id))||new Set(s.menu).size!==s.menu.length||!STOCK_RECIPES.includes(s.recipe)||!s.menu.includes(s.recipe)||!s.prices||STOCK_RECIPES.some(id=>typeof s.prices[id]!=='number'||!Number.isFinite(s.prices[id])||s.prices[id]<80||s.prices[id]>140))return null;
   if(!Array.isArray(s.reports)||s.reports.length>1000000||s.reports.some((r,i)=>!summaryValid(r,master,s.reports.slice(0,i).reduce((sum,report)=>sum+(report.campaignEvent?.loss??0),0),stock.refrigeration,services)||r.day!==i+1||i<s.reports.length-1&&r.ending!==null)||!Array.isArray(s.relationshipDays)||s.relationshipDays.length>1000000||s.relationshipDays.some(d=>!integer(d,1,1000000)||d>s.reports.length)||new Set(s.relationshipDays).size!==s.relationshipDays.length)return null;
   const eventHistory:CampaignLossEvent[]=[];
@@ -196,7 +198,15 @@ function validatedCheckpoint(value:unknown):CozyCheckpoint|null {
   for(const report of s.reports){
     if(legacy&&report.day===3){if(report.ending!=='complete')return null;continue;}
     const inventory=CozyStock.restore({cash:0,nextLot:1000000000,activeDay:report.day+1,...(stock.refrigeration&&stock.refrigeration.acquiredDay<=report.day?{refrigeration:stock.refrigeration}:{}),drinkService:report.accounts.inventory.drinks?true:undefined,drinks:report.accounts.inventory.drinks,lots:report.accounts.inventory.lots,books:[],settlements:[]})!;
-    const expected=cozyViability(report.cash,report.day+1,report.ownedRecipes??STOCK_RECIPES.filter(recipe=>recipe==='cheese'||recipe==='mushroom'||recipe==='sausage'&&report.progression.unlockDay!==null&&report.day+1>=report.progression.unlockDay),id=>inventory.available(id,report.day+1),id=>CozyStock.restore(stock)!.purchasePrice(id,report.day+1));
+    const owned=report.ownedRecipes??STOCK_RECIPES.filter(recipe=>recipe==='cheese'||recipe==='mushroom'||recipe==='sausage'&&report.progression.unlockDay!==null&&report.day+1>=report.progression.unlockDay);
+    const ordinaryPurchased=stock.books.filter(book=>book.day<=report.day).reduce((sum,book)=>sum+(book.ordinaryPurchases??0),0);
+    const candidates=[
+      cozyViability(report.cash,report.day+1,owned,id=>inventory.available(id,report.day+1),id=>CozyStock.restore(stock)!.purchasePrice(id,report.day+1)),
+      cozyViability(report.cash,report.day+1,owned,id=>inventory.available(id,report.day+1),id=>supplierPrice(Math.round(PRE_BALANCE_INGREDIENT_PRICES[id]*[1,1.1,.9][report.day%3]!),ordinaryPurchased)),
+    ];
+    // Validate the recorded boundary using either shipped economy, without rewriting history.
+    const expected=candidates.find(candidate=>JSON.stringify(report.viability)===JSON.stringify(candidate));
+    if(!expected)return null;
     const finalDay=report.day===campaignEndDay;
     const expectedEnding=finalDay?'complete':expected.viable?null:'insolvent';
     const preservedInsolvency=finalDay&&report.ending==='insolvent'&&!expected.viable;

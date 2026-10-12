@@ -8,12 +8,12 @@ function shop(q=4){const r=new CozyRuntime(false,true,SERVICE_SCHEDULE);for(cons
 it('separates goal cash from sales/profit and buys sausage ownership only in preparation',()=>{
   const r=shop();for(let i=0;i<4;i++){serve(r);if(i<3)time(r,14);}
   expect(r.progression).toMatchObject({xp:60,level:2,unlockDay:2,cheeseSales:4});expect(r.buy('sausage',1)).toBe(false);r.closeDay();
-  const closed=r.daySummary!;expect(closed).toMatchObject({revenue:200,rewards:20,profit:120,cash:640,goal:{status:'completed'},progression:{xp:70}});
+  const closed=r.daySummary!;expect(closed).toMatchObject({revenue:240,rewards:20,profit:148,cash:668,goal:{status:'completed'},progression:{xp:70}});
   expect(closed.accounts.endingCash).toBe(closed.accounts.startingCash+closed.revenue+closed.rewards-closed.purchases-closed.rent);
   expect(r.availableRecipes).not.toContain('sausage');expect(r.buyRecipe('sausage','buy-sausage')).toBe(true);expect(r.availableRecipes).toContain('sausage');expect(r.buy('sausage',1)).toBe(true);for(const id of ['dough','sauce','cheese'] as const)r.buy(id,1);
   expect(r.dispatch({type:'menu.configure',recipe:'sausage',percent:100,enabled:true})).toBe(true);expect(r.daySummary).toEqual(closed);
   r.selectRecipe('sausage');expect(r.openNextDay()).toBe(true);expect(r.selectedTicket?.recipe).toBe('sausage');serve(r);r.closeDay();
-  expect(r.daySummary).toMatchObject({day:2,rewards:0,cost:28,goal:{status:'expired'}});expect(r.progression.xp).toBe(85);
+  expect(r.daySummary).toMatchObject({day:2,rewards:0,cost:33,goal:{status:'expired'}});expect(r.progression.xp).toBe(85);
 });
 it('mission reward and XP apply once and remain separate from sale review reputation',()=>{
   const r=shop(8);for(let i=0;i<8;i++){const id=serve(r);expect(r.dispatch({type:'deliver',targetId:id,commandId:'repeat-'+id})).toBe(false);if(i<7)time(r,14);}
@@ -34,7 +34,7 @@ it('default generator skips omitted recipes and never requests the locked sausag
 it('sausage lots carry real dated prices, four-part recipe and same-day expiration',()=>{
   const s=new CozyStock();for(const id of ['dough','sauce','cheese','sausage'] as const)s.buy(id,2,2);
   expect(s.reserve('A','sausage',100,2)).toBe(true);expect(s.commit('A',recipeIngredients('sausage'),2)).toBe(true);
-  expect(s.ledger(2)).toEqual({purchases:56,consumed:28});expect(s.settle(2)).toEqual({expired:11,rent:20});expect(s.inventorySnapshot().value).toBe(17);
+  expect(s.ledger(2)).toEqual({purchases:66,consumed:33});expect(s.settle(2)).toEqual({expired:13,rent:20});expect(s.inventorySnapshot().value).toBe(20);
 });
 it('timeouts, practice and replay before close cannot retain commercial XP/rewards',()=>{
   const r=shop(1);time(r,120);expect(r.progression.xp).toBe(0);expect(r.progression.cheeseSales).toBe(0);
@@ -50,17 +50,17 @@ it('completes the mission across canonical days and attributes its reward only t
   r.configureMenu('sausage',100,false);for(const id of ['dough','sauce','cheese'] as const)r.buy(id,2);r.openNextDay();
   serve(r);time(r,14);serve(r);
   expect(r.progression).toMatchObject({xp:150,cheeseSales:8,mission:'completed'});expect(r.lastResult).toMatchObject({rewardCoins:30,rewardReputation:2,xpDelta:35});
-  expect(day1.progression.cheeseSales).toBe(6);expect(day1.rewards).toBe(20);r.closeDay();expect(r.daySummary).toMatchObject({day:2,revenue:100,rewards:30,goal:{status:'expired'}});
+  expect(day1.progression.cheeseSales).toBe(6);expect(day1.rewards).toBe(20);r.closeDay();expect(r.daySummary).toMatchObject({day:2,revenue:120,rewards:30,goal:{status:'expired'}});
   for(const id of ['dough','sauce','cheese'] as const)r.buy(id,1);r.openNextDay();serve(r);r.closeDay();
   expect(r.daySummary).toMatchObject({day:3,rewards:20,progression:{xp:165,cheeseSales:9,mission:'completed'}});expect(r.progression.claims.filter(id=>id==='mission.cheese-8')).toHaveLength(1);
 });
 it('permits a cheaper unlocked menu after close rather than locking a viable campaign',()=>{
-  const r=new CozyRuntime(false,true);r.configureMenu('cheese',100,false);for(const id of ['dough','sauce','cheese'] as const)r.buy(id,1);expect(r.buy('mushroom',89)).toBe(true);r.openShop();time(r,35);
+  const r=new CozyRuntime(false,true);r.configureMenu('cheese',100,false);for(const id of ['dough','sauce','cheese'] as const)r.buy(id,1);expect(r.buy('mushroom',73)).toBe(true);r.openShop();time(r,35);
   for(const ingredient of recipeIngredients('mushroom'))r.dispatch({type:'ingredient',ingredient});r.dispatch({type:'bake'});r.closeDay();
   expect(r.menuRecipes).toEqual(['mushroom']);
-  expect(r.daySummary).toMatchObject({cash:20,ending:null,viability:{viable:true,recipe:'cheese',ingredientCost:17}});
+  expect(r.daySummary).toMatchObject({cash:24,ending:null,viability:{viable:true,recipe:'cheese',ingredientCost:20}});
   const mushroomCost=recipeIngredients('mushroom').reduce((sum,id)=>sum+(r.available(id)?0:r.price(id)),0);
-  expect(mushroomCost).toBe(23);expect(r.state.cash).toBeLessThan(mushroomCost);
+  expect(mushroomCost).toBe(27);expect(r.state.cash).toBeLessThan(mushroomCost);
   expect(r.configureMenu('cheese',100,true)).toBe(true);
   for(const id of ['dough','sauce','cheese'] as const)expect(r.buy(id,1)).toBe(true);expect(r.openNextDay()).toBe(true);
 });

@@ -8,9 +8,9 @@ describe('dated exact reservations',()=>{
     expect(s.reserve('A','cheese',100,2)).toBe(true);expect(s.reserve('B','cheese',100,2)).toBe(true);
     expect(s.reserve('C','cheese',100,2)).toBe(false);
     expect(s.commit('B',['dough','sauce','cheese'],2)).toBe(true);
-    expect(s.ledger(2).consumed).toBe(17);expect(s.lots.every(l=>l.day===1)).toBe(true);
+    expect(s.ledger(2).consumed).toBe(20);expect(s.lots.every(l=>l.day===1)).toBe(true);
     expect(s.available('dough',2)).toBe(0);expect(s.reserved('dough',2)).toBe(1);
-    expect(s.commit('A',['dough','sauce','cheese'],2)).toBe(true);expect(s.ledger(2).consumed).toBe(32);
+    expect(s.commit('A',['dough','sauce','cheese'],2)).toBe(true);expect(s.ledger(2).consumed).toBe(38);
     expect(s.lots).toEqual([]);
   });
   it('excludes past expiry and future purchases, but includes the expiry day',()=>{
@@ -29,7 +29,7 @@ describe('dated exact reservations',()=>{
     for(const day of [0,4,NaN,1.5])expect(s.commit('A',['dough'],day)).toBe(false);
     expect(s.lots).toEqual(lots);expect(s.ledger(1).consumed).toBe(0);
     expect(s.commit('A',['dough'],1)).toBe(true);expect(s.available('cheese',1)).toBe(1);
-    expect(s.commit('A',['sauce'],1)).toBe(false);expect(s.ledger(1).consumed).toBe(5);
+    expect(s.commit('A',['sauce'],1)).toBe(false);expect(s.ledger(1).consumed).toBe(6);
   });
   it('rejects an invalid recipe or day, and never leaves partial holds on shortage',()=>{
     const s=new CozyStock();s.buy('dough',2);

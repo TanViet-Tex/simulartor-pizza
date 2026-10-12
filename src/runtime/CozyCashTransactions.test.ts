@@ -28,7 +28,7 @@ it('reports delivery net cash only once and safely isolates failed presentation'
   for(const id of ['dough','sauce','cheese'] as const)r.dispatch({type:'ingredient',ingredient:id});r.dispatch({type:'bake'});
   r.advanceElapsed(6000);r.dispatch({type:'extract'});const before=r.state.cash;
   expect(r.dispatch({type:'deliver',commandId:'paid'})).toBe(true);
-  expect(list).toEqual([{id:list[0].id,amount:50,cash:before+50}]);
+  expect(list).toEqual([{id:list[0].id,amount:60,cash:before+60}]);
   expect(r.dispatch({type:'deliver',commandId:'paid'})).toBe(false);r.continueShift();expect(list).toHaveLength(1);
 });
 it('publishes a confirmed persisted purchase once without replaying its checkpoint',()=>{

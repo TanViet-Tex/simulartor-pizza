@@ -27,13 +27,13 @@ describe('finishing sauces and persistent sauce lots',()=>{
    expect(r.dispatch({type:'ingredient',ingredient:'sauce-white'})).toBe(true);expect(r.dispatch({type:'ingredient',ingredient:'sauce-white'})).toBe(false);
    r.dispatch({type:'box'});expect(r.dispatch({type:'deliver'})).toBe(true);
  }
- expect(r.owned('sauce-white')).toBe(0);expect(r.lastResult?.stars).toBe(5);r.closeDay();expect(r.daySummary).toMatchObject({pizzasSold:2,cost:42});
+ expect(r.owned('sauce-white')).toBe(0);expect(r.lastResult?.stars).toBe(5);r.closeDay();expect(r.daySummary).toMatchObject({pizzasSold:2,cost:52});
  });
  it('rejects assembly/oven/boxed additions and consumes each finishing portion once without recipe changes',()=>{
  const r=prepared();for(const ingredient of FINISHING_SAUCES)expect(r.dispatch({type:'ingredient',ingredient})).toBe(false);
  r.dispatch({type:'bake'});expect(r.dispatch({type:'ingredient',ingredient:'sauce-white'})).toBe(false);r.advanceElapsed(6000);r.dispatch({type:'extract'});
  for(const ingredient of FINISHING_SAUCES){expect(r.dispatch({type:'ingredient',ingredient})).toBe(true);expect(r.dispatch({type:'ingredient',ingredient})).toBe(false);expect(r.owned(ingredient)).toBe(1);}
- expect(r.state.ingredients).toEqual(['dough','sauce','cheese']);expect(r.state.finishingSauces).toEqual([...FINISHING_SAUCES]);r.dispatch({type:'box'});expect(r.dispatch({type:'ingredient',ingredient:'sauce-white'})).toBe(false);expect(r.dispatch({type:'deliver'})).toBe(true);expect(r.lastResult?.stars).toBe(5);expect(r.progression.cheeseSales).toBe(1);r.closeDay();expect(r.daySummary?.cost).toBe(27);
+ expect(r.state.ingredients).toEqual(['dough','sauce','cheese']);expect(r.state.finishingSauces).toEqual([...FINISHING_SAUCES]);r.dispatch({type:'box'});expect(r.dispatch({type:'ingredient',ingredient:'sauce-white'})).toBe(false);expect(r.dispatch({type:'deliver'})).toBe(true);expect(r.lastResult?.stars).toBe(5);expect(r.progression.cheeseSales).toBe(1);r.closeDay();expect(r.daySummary?.cost).toBe(33);
  });
  it('retains burned quality after owner extraction and permits a drizzle only then',()=>{
  const r=prepared();r.dispatch({type:'bake'});r.advanceElapsed(8500);expect(r.state.stage).toBe('burnt');expect(r.state.extracted).toBe(false);expect(r.deliverySource).toBeNull();expect(r.dispatch({type:'ingredient',ingredient:'sauce-pesto'})).toBe(false);expect(r.dispatch({type:'deliver'})).toBe(false);expect(r.dispatch({type:'extract'})).toBe(true);expect(r.deliverySource?.stage).toBe('burnt');expect(r.ovenOwner).toBeNull();expect(r.dispatch({type:'ingredient',ingredient:'sauce-pesto'})).toBe(true);r.advanceElapsed(1000);expect(r.state).toMatchObject({stage:'burnt',ovenSeconds:8.05,extracted:true});
@@ -43,7 +43,7 @@ describe('finishing sauces and persistent sauce lots',()=>{
  });
  it('retains all five sauces at settlement and restores only valid legacy expiries without mutating input',()=>{
  const stock=new CozyStock();for(const id of ['sauce','sauce-white','sauce-bbq','sauce-pesto','sauce-hot'] as const)stock.buy(id,2);stock.buy('mushroom',1);const snapshot=stock.exportCheckpoint();for(const lot of snapshot.lots)if(lot.ingredient.startsWith('sauce'))lot.expiry=lot.day+1;
- const old=JSON.stringify(snapshot),restored=CozyStock.restore(snapshot)!;expect(JSON.stringify(snapshot)).toBe(old);expect(restored.settle(1).expired).toBe(5);expect(restored.settle(2).expired).toBe(0);expect(restored.lots).toHaveLength(5);for(const lot of restored.lots)expect(lot.expiry).toBe(1000001);snapshot.lots[0].expiry=3;expect(CozyStock.restore(snapshot)).toBeNull();
+ const old=JSON.stringify(snapshot),restored=CozyStock.restore(snapshot)!;expect(JSON.stringify(snapshot)).toBe(old);expect(restored.settle(1).expired).toBe(6);expect(restored.settle(2).expired).toBe(0);expect(restored.lots).toHaveLength(5);for(const lot of restored.lots)expect(lot.expiry).toBe(1000001);snapshot.lots[0].expiry=3;expect(CozyStock.restore(snapshot)).toBeNull();
  });
  it('normalizes valid preparation checkpoints and rejects invented expiry',()=>{
  const r=new CozyRuntime(false,true);r.buy('sauce-white',2);const saved=r.exportCheckpoint();saved.stock.lots[0].expiry=2;const before=JSON.stringify(saved),loaded=validateCozyCheckpoint(saved)!;expect(loaded).not.toBeNull();expect(loaded.stock.lots[0]).toMatchObject({quantity:2,expiry:1000001});expect(JSON.stringify(saved)).toBe(before);saved.stock.lots[0].expiry=10;expect(validateCozyCheckpoint(saved)).toBeNull();

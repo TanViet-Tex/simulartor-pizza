@@ -2,7 +2,7 @@ import {describe,expect,it} from 'vitest';
 import {CozyRuntime,type CozyAudioEffect,type CozyScheduleDependencies} from './CozyRuntime';
 import {fundedShopCheckpoint} from './shopTestFixture';
 
-const deps:CozyScheduleDependencies={
+const deps:CozyScheduleDependencies={vipRoll:()=>1,
   schedule:day=>({day,duration:240,grace:120,slots:[0,20].map((at,i)=>({id:'board-'+i,at,kind:'regular',opportunity:'commercial',commercialOrdinal:i+1,takeaway:true}))}),
   resolveItems:()=>[{recipe:'cheese',price:50,finishingSauces:[]}],
 };
@@ -68,7 +68,7 @@ describe('dough-first single production order',()=>{
     const r=CozyRuntime.restoreCheckpoint(fundedShopCheckpoint(22000),false,{...deps,deliveryStaffAvailable:()=>staff,schedule:day=>({day,duration:240,grace:120,slots:[{id:'app',at:0,source:'app',quantity:1,kind:'regular',opportunity:'commercial',commercialOrdinal:1,takeaway:true},{id:'counter',at:0,kind:'regular',opportunity:'commercial',commercialOrdinal:2,takeaway:true}]})})!;
     r.configureDeliveryApp(true,'app');for(const id of ['dough','sauce','cheese'] as const)r.buy(id,3);r.openShop();const first=r.tickets[0].id,second=r.tickets[1].id;
     if(!staff)expect(r.bookShipper(first,'book')).toBe(true);cook(r);const cash=r.state.cash;
-    if(!staff){expect(r.dispatch({type:'deliver'})).toBe(true);expect(r.state.cash).toBe(cash);expect(r.productionOwnerId).toBe(first);r.selectTicket(second);expect(r.dispatch({type:'ingredient',ingredient:'dough'})).toBe(false);r.advanceElapsed(4000);r.selectTicket(first);}
+    if(!staff){expect(r.dispatch({type:'deliver'})).toBe(true);expect(r.state.cash).toBe(cash);expect(r.productionOwnerId).toBe(first);r.selectTicket(second);expect(r.dispatch({type:'ingredient',ingredient:'dough'})).toBe(false);r.advanceElapsed(r.tickets.find(t=>t.id===first)!.riderRemaining*1000);r.selectTicket(first);}
     expect(r.dispatch({type:'deliver',commandId:'app-final'})).toBe(true);expect(r.productionOwnerId).toBeNull();expect(r.workbenchState).toBeNull();expect(r.state.cash).toBe(cash+50-(staff?0:5));expect(r.deliveryStatus.phase).toBe(staff?'return':'idle');
     r.selectTicket(second);expect(r.dispatch({type:'ingredient',ingredient:'dough'})).toBe(true);expect(r.productionOwnerId).toBe(second);
   });

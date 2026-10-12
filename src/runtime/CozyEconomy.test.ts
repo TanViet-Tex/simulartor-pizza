@@ -12,21 +12,21 @@ it('deduplicates accepted purchase commands while allowing independent purchases
   const r=new CozyRuntime(false,true,ORDER_TEST_SCHEDULE);
   const command={type:'market.buy' as const,ingredient:'dough' as const,quantity:2,commandId:'purchase-1'};
   expect(r.dispatch(command)).toBe(true);expect(r.dispatch(command)).toBe(false);
-  expect(r.state.cash).toBe(490);expect(r.owned('dough')).toBe(2);
-  expect(r.dispatch({...command,commandId:'purchase-2'})).toBe(true);expect(r.state.cash).toBe(480);
+  expect(r.state.cash).toBe(488);expect(r.owned('dough')).toBe(2);
+  expect(r.dispatch({...command,commandId:'purchase-2'})).toBe(true);expect(r.state.cash).toBe(476);
 });
 it('reports rent and warning without inventing next day prices',()=>{
-  const r=new CozyRuntime(false,true,ORDER_TEST_SCHEDULE);provision(r,33);
-  expect(r.preparationBudget).toMatchObject({cash:5,rent:20,afterRent:-15});
+  const r=new CozyRuntime(false,true,ORDER_TEST_SCHEDULE);provision(r,27);
+  expect(r.preparationBudget).toMatchObject({cash:14,rent:20,afterRent:-6});
   expect(r.preparationBudget.warning).toContain('thuê');expect(r.canOpen).toBe(true);
-  expect(r.price('dough')).toBe(5);
+  expect(r.price('dough')).toBe(6);
 });
 it('prices stay immutable in a shift and prepare next day without rewriting the report',()=>{
   const r=new CozyRuntime(false,true,ORDER_TEST_SCHEDULE);provision(r);
   expect(r.dispatch({type:'customer.price',recipe:'cheese',percent:120})).toBe(true);
   expect(r.customerProgress.pricePercents.cheese).toBe(120);r.openShop();
-  expect(r.tickets[0]!.finalPrice).toBe(60);r.prepareAgain();
+  expect(r.tickets[0]!.finalPrice).toBe(72);r.prepareAgain();
   expect(r.setMenuPrice('cheese',80)).toBe(false);r.returnToOrders();r.closeDay();
   const report=r.daySummary;expect(r.setMenuPrice('cheese',80)).toBe(true);
-  expect(r.daySummary).toEqual(report);expect(r.customerProgress.prices.cheese).toBe(40);
+  expect(r.daySummary).toEqual(report);expect(r.customerProgress.prices.cheese).toBe(48);
 });

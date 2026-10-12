@@ -19,7 +19,7 @@ describe('Epic7 shop investment',()=>{
   expect(SHOP_CATALOG.find(i=>i.id==='customer-tables')).toMatchObject({price:4000,available:true});
   r.openShop();expect(r.buyShopItem('wifi','shift')).toBe(false);expect(r.placeShopItem('table-plant',true,'shift-place')).toBe(false);
   const poor=new CozyRuntime(false,true);expect(poor.buy('dough',40,'setup-poor')).toBe(true);
-  expect(poor.buyShopItem('table-plant','poor')).toBe(false);expect(poor.shopItemPreview('table-plant').missing).toBe(200);expect(poor.state.cash).toBe(300);
+  expect(poor.buyShopItem('table-plant','poor')).toBe(false);expect(poor.shopItemPreview('table-plant').missing).toBe(240);expect(poor.state.cash).toBe(260);
  });
  it('tables activate only after placement, survive reload and cask without changing capacity',()=>{
   const r=CozyRuntime.restoreCheckpoint(fundedShopCheckpoint(),false,{schedule:day=>({day,duration:180,grace:120,slots:[{id:'counter',at:0,kind:'regular',opportunity:'commercial',commercialOrdinal:1,takeaway:false}]})})!,cash=r.state.cash;
@@ -74,7 +74,7 @@ describe('Epic7 shop investment',()=>{
   expect(r.exportCheckpoint().upgrades.receipts).toEqual([{kind:'oven',level:1,actualPrice:150}]);
  });
  it('freezes paying counter patience including referrals at open and leaves app deadlines unchanged',()=>{
-  const r=CozyRuntime.restoreCheckpoint(fundedShopCheckpoint(),false,{schedule:day=>({day,duration:180,grace:120,slots:[{id:'counter',at:0,kind:'regular',opportunity:'commercial',commercialOrdinal:1,takeaway:false},{id:'referral',at:20,kind:'regular',opportunity:'referral',commercialOrdinal:2,takeaway:false},{id:'app',at:40,kind:'hurry',opportunity:'commercial',commercialOrdinal:3,takeaway:true,source:'app'}]})})!;
+  const r=CozyRuntime.restoreCheckpoint(fundedShopCheckpoint(),false,{vipRoll:()=>1,schedule:day=>({day,duration:180,grace:120,slots:[{id:'counter',at:0,kind:'regular',opportunity:'commercial',commercialOrdinal:1,takeaway:false},{id:'referral',at:20,kind:'regular',opportunity:'referral',commercialOrdinal:2,takeaway:false},{id:'app',at:40,kind:'hurry',opportunity:'commercial',commercialOrdinal:3,takeaway:true,source:'app'}]})})!;
   r.buyShopItem('waiting-chair','chair');r.buyShopItem('wifi','wifi');r.placeShopItem('waiting-chair',true,'install-chair');r.placeShopItem('wifi',true,'install-wifi');r.configureDeliveryApp(true,'app-on');
   r.openShop();expect(r.tickets[0].patience).toBeCloseTo(135.6);expect(r.shopState.frozenEffects.patience).toBe(.13);expect(r.placeShopItem('wifi',false,'no')).toBe(false);
   for(let i=0;i<400;i++)r.advance(50);expect(r.tickets[1].patience).toBeCloseTo(135.6);

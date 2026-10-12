@@ -33,9 +33,9 @@ describe('cozy day-one interaction fixture', () => {
     game.tick(30); expect(game.state.stage).toBe('ready');
     expect(game.dispatch({ type: 'deliver' })).toBe(false);
     game.dispatch({ type: 'box' }); game.dispatch({ type: 'deliver' });
-    expect(game.state).toMatchObject({ cash: 550, reputation: 51, energy: 75 });
+    expect(game.state).toMatchObject({ cash: 560, reputation: 51, energy: 75 });
     expect(game.dispatch({ type: 'deliver' })).toBe(false);
-    expect(game.state.cash).toBe(550);
+    expect(game.state.cash).toBe(560);
   });
   it('keeps the green window inclusive and burns only after its end', () => {
     const game = new CozyOrder(); prepare(game); game.dispatch({ type: 'bake' });

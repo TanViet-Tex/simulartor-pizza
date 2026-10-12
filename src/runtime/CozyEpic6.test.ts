@@ -50,9 +50,9 @@ describe('app order settlement',()=>{
    for(const ingredient of ingredients)r.dispatch({type:'ingredient',ingredient});expect(r.dispatch({type:'bake'})).toBe(true);r.advanceElapsed(7000);r.dispatch({type:'extract'});r.dispatch({type:'box'});
    expect(r.dispatch({type:'deliver'})).toBe(true);
   }
-  expect(r.deliveryStatus.phase).toBe('idle');expect(r.lastResult?.price).toBe(100);
+  expect(r.deliveryStatus.phase).toBe('idle');expect(r.lastResult?.price).toBe(120);
   const early=app(1);early.bookShipper(early.selectedTicketId,'early');for(const ingredient of ingredients)early.dispatch({type:'ingredient',ingredient});early.dispatch({type:'bake'});early.advanceElapsed(7000);early.dispatch({type:'extract'});early.dispatch({type:'box'});
-  expect(early.dispatch({type:'deliver'})).toBe(true);expect(early.selectedTicket?.packed).toBe(1);early.advanceElapsed(3000);expect(early.dispatch({type:'deliver'})).toBe(true);expect(early.deliveryStatus.phase).toBe('idle');expect(early.lastResult?.price).toBe(50);
+  expect(early.dispatch({type:'deliver'})).toBe(true);expect(early.selectedTicket?.packed).toBe(1);early.advanceElapsed(3000);expect(early.dispatch({type:'deliver'})).toBe(true);expect(early.deliveryStatus.phase).toBe('idle');expect(early.lastResult?.price).toBe(60);
  });
  it('requires booking before bake, waits for rider, consumes two pies and charges once per order',()=>{
   const r=app(),id=r.selectedTicketId,cash=r.state.cash,cost=r.available('dough');
@@ -61,12 +61,12 @@ describe('app order settlement',()=>{
   expect(r.dispatch({type:'bake'})).toBe(false);expect(r.bookShipper(id,'book')).toBe(true);expect(r.bookShipper(id,'again')).toBe(false);
   expect(r.dispatch({type:'bake'})).toBe(true);r.advanceElapsed(7000);r.dispatch({type:'extract'});r.dispatch({type:'box'});expect(r.dispatch({type:'deliver',commandId:'part0'})).toBe(true);
   expect(r.selectedTicket?.packed).toBe(1);expect(r.state.stage).toBe('assembly');expect(r.dispatch({type:'deliver',commandId:'part0'})).toBe(false);
-  cook(r,'part1');expect(r.tickets).toHaveLength(0);expect(r.deliveryStatus.phase).toBe('idle');expect(r.canCloseDay).toBe(true);expect(r.state.cash).toBe(cash+95);
-  expect(r.available('dough')).toBe(cost-2);expect(r.state.cash).toBe(cash+95);expect(payments).toEqual([95]);
+  cook(r,'part1');expect(r.tickets).toHaveLength(0);expect(r.deliveryStatus.phase).toBe('idle');expect(r.canCloseDay).toBe(true);expect(r.state.cash).toBe(cash+115);
+  expect(r.available('dough')).toBe(cost-2);expect(r.state.cash).toBe(cash+115);expect(payments).toEqual([115]);
   expect(r.deliveryStatus.phase).toBe('idle');expect(r.dispatch({type:'deliver',sourceId:id,targetId:id,commandId:'send-again'})).toBe(false);
   expect(r.closeDay()).toBe(true);const report=r.daySummary!;
-  expect(report.delivered).toBe(1);expect(report.pizzasSold).toBe(2);expect(report.revenue).toBe(100);expect(report.deliveryFees).toBe(5);expect(report.accounts.other).toBe(5);
-  expect(report.salesByRecipe).toEqual([{recipe:'cheese',quantity:2,revenue:100}]);expect(report.reviews).toHaveLength(1);expect(report.goal.stats.delivered).toBe(1);
+  expect(report.delivered).toBe(1);expect(report.pizzasSold).toBe(2);expect(report.revenue).toBe(120);expect(report.deliveryFees).toBe(5);expect(report.accounts.other).toBe(5);
+  expect(report.salesByRecipe).toEqual([{recipe:'cheese',quantity:2,revenue:120}]);expect(report.reviews).toHaveLength(1);expect(report.goal.stats.delivered).toBe(1);
   const checkpoint=r.exportCheckpoint();expect(validateCozyCheckpoint(checkpoint)).not.toBeNull();expect(CozyRuntime.restoreCheckpoint(checkpoint)?.deliveryApp.enabled).toBe(true);
   const bad=structuredClone(checkpoint);bad.reports[4].pizzasSold=3;expect(validateCozyCheckpoint(bad)).toBeNull();
   const fee=structuredClone(checkpoint);fee.reports[4].reviews[0].deliveryFee=0;expect(validateCozyCheckpoint(fee)).toBeNull();
@@ -75,7 +75,7 @@ describe('app order settlement',()=>{
   const r=app(3,true),xp=r.progression.xp,cash=r.state.cash,id=r.selectedTicketId;
   expect(r.bookShipper(id,'not-needed')).toBe(false);
   for(let i=0;i<3;i++)cook(r,`part${i}`);
-  expect(r.deliveryStatus.mode).toBe('staff');expect(r.state.cash).toBe(cash+150);expect(r.progression.xp-xp).toBe(15);
+  expect(r.deliveryStatus.mode).toBe('staff');expect(r.state.cash).toBe(cash+180);expect(r.progression.xp-xp).toBe(15);
   expect(r.deliveryStatus.phase).toBe('return');expect(r.canCloseDay).toBe(false);r.advanceElapsed(20000);expect(r.deliveryStatus.busy).toBe(false);
   expect(r.closeDay()).toBe(true);expect(r.daySummary?.pizzasSold).toBe(3);expect(r.daySummary?.deliveryFees).toBe(0);expect(r.daySummary?.reviews).toHaveLength(1);expect(()=>r.exportCheckpoint()).not.toThrow();
  });

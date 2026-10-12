@@ -19,10 +19,10 @@ it('records actual prices only after successful commercial transactions and free
   expect(r.bargainPending).not.toBeNull();expect(r.resolveBargain(true)).toBe(true);expect(r.resolveBargain(true)).toBe(false);
   expect(r.closeDay()).toBe(true);
   const report=r.daySummary!;
-  expect(report.salesByRecipe).toEqual([{recipe:'cheese',quantity:2,revenue:110}]);
-  expect(report.costByIngredient).toEqual([{ingredient:'dough',cost:10},{ingredient:'sauce',cost:6},{ingredient:'cheese',cost:14}]);
+  expect(report.salesByRecipe).toEqual([{recipe:'cheese',quantity:2,revenue:133}]);
+  expect(report.costByIngredient).toEqual([{ingredient:'dough',cost:12},{ingredient:'sauce',cost:8},{ingredient:'cheese',cost:16}]);
   expect(report.reviews.map(review=>review.avatarIndex)).toEqual([first,second]);
-  expect(report.revenue).toBe(110);expect(report.cost).toBe(30);
+  expect(report.revenue).toBe(133);expect(report.cost).toBe(36);
   const checkpoint=r.exportCheckpoint(),loaded=CozyRuntime.restoreCheckpoint(checkpoint)!;
   expect(loaded.completedReports[0]).toEqual(report);
   r.buy('dough',1);expect(r.daySummary).toEqual(report);
@@ -35,22 +35,22 @@ it('collects actual retained lot costs once and excludes failed commits and unco
   stock.settle(1);stock.buy('dough',1,2);
   stock.reserve('baked','cheese',60);expect(stock.commit('baked',['dough','sauce','cheese'],2)).toBe(true);
   expect(stock.commit('baked',['dough'],2)).toBe(false);
-  expect(stock.consumedByIngredient(2)).toEqual([{ingredient:'dough',cost:5},{ingredient:'sauce',cost:3},{ingredient:'cheese',cost:7}]);
+  expect(stock.consumedByIngredient(2)).toEqual([{ingredient:'dough',cost:6},{ingredient:'sauce',cost:4},{ingredient:'cheese',cost:8}]);
   const detached=stock.consumedByIngredient(2);detached[0].cost=999;
-  stock.settle(2);expect(stock.consumedByIngredient(2)[0].cost).toBe(5);expect(stock.consumedByIngredient(1)).toEqual([]);
+  stock.settle(2);expect(stock.consumedByIngredient(2)[0].cost).toBe(6);expect(stock.consumedByIngredient(1)).toEqual([]);
 });
 
 it('counts discarded batches in ingredient cost once without inventing another expense',()=>{
   const r=shop();bake(r);r.dispatch({type:'extract'});r.requestDiscard();r.confirmDiscard();r.remake();bake(r);r.closeDay();
-  expect(r.daySummary).toMatchObject({salesByRecipe:[],cost:30,profit:-50,costByIngredient:[{ingredient:'dough',cost:10},{ingredient:'sauce',cost:6},{ingredient:'cheese',cost:14}]});
+  expect(r.daySummary).toMatchObject({salesByRecipe:[],cost:36,profit:-56,costByIngredient:[{ingredient:'dough',cost:12},{ingredient:'sauce',cost:8},{ingredient:'cheese',cost:16}]});
 });
 
 it('keeps burnt ingredients in consumed cost without charging an additional loss',()=>{
   const r=shop();bake(r);time(r,9);expect(r.ovenState?.stage).toBe('burnt');
   expect(r.closeDay()).toBe(true);
   const summary=r.daySummary!;
-  expect(summary).toMatchObject({revenue:0,cost:15,profit:-35,rent:20});
-  expect(summary.costByIngredient?.reduce((sum,row)=>sum+row.cost,0)).toBe(15);
+  expect(summary).toMatchObject({revenue:0,cost:18,profit:-38,rent:20});
+  expect(summary.costByIngredient?.reduce((sum,row)=>sum+row.cost,0)).toBe(18);
   expect(summary.accounts.other).toBe(0);
 });
 

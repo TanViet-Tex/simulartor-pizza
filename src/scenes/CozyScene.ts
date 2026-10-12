@@ -25,6 +25,7 @@ import { CozyArt, UI } from '../presentation/CozyArt';
 import { preloadPizzaIcons } from '../presentation/PizzaIcons';
 import { PIZZA_BOX_ART } from '../presentation/PizzaBoxArt';
 import { REFERENCE_KITCHEN_MANIFEST,registerReferenceKitchenFrames } from '../presentation/ReferenceKitchenArt';
+import {MARKET_SAUCE_ART,registerSauceLabelFrames} from '../presentation/MarketIngredientArt';
 import { REFERENCE_KITCHEN_LAYOUT as KITCHEN } from '../presentation/ReferenceKitchenLayout';
 import { UI_THEME } from '../presentation/theme';
 import {INGREDIENT_CATALOG as catalog} from '../config/ingredientCatalog';
@@ -202,6 +203,7 @@ export class CozyScene extends Phaser.Scene {
     strengthenIllustrations(this);
     this.managementBackground=new ManagementBackground(this);
     registerReferenceKitchenFrames(this);
+    registerSauceLabelFrames(this);
     registerCustomerPortraitFrames(this);
     registerSpecialCustomerPortraitFrames(this);
     registerSpecialCustomerFrames(this);
@@ -541,7 +543,7 @@ export class CozyScene extends Phaser.Scene {
     else if(this.appDialog)this.deliveryAppDialog();
     else if(this.priceDraft&&!this.runtime.pauses.some(p=>p!=='order'))this.priceDialog();
     else if(this.queueUpgradeNotice)this.queueUpgradeDialog();
-    else if(!this.expressIngredient&&this.runtime.pauses.some(p=>p!=='special-welcome'&&p!=='tutorial'&&p!=='discard'&&p!=='delivery'&&p!=='bargain'&&p!=='help'&&p!=='lottery'&&!(p==='save'&&this.campaignSession?.savingTutorial)))this.overlay();
+    else if(!this.expressIngredient&&this.runtime.pauses.some(p=>p!=='special-welcome'&&p!=='tutorial'&&p!=='discard'&&p!=='delivery'&&p!=='bargain'&&p!=='help'&&p!=='lottery'&&!(p==='save'&&(this.campaignSession?.savingTutorial||this.campaignSession?.savingMenu))))this.overlay();
     else if(this.runtime.discardPending)this.discardDialog();
     else if(this.runtime.deliveryPending)this.deliveryDialog();
     else if(this.runtime.bargainPending)this.bargainDialog();
@@ -549,7 +551,7 @@ export class CozyScene extends Phaser.Scene {
     else if(this.runtime.helpPending||this.runtime.thanksPending)this.helpDialog();
     else if(s.stage==='delivered'&&!this.runtime.productionActive&&!this.runtime.tutorialPhase)this.success();
     if(this.expressIngredient)this.expressDialog();
-    if(!this.testCodePanel&&this.campaignSession&&!this.campaignSession.savingTutorial&&(['saving','error','loading','recovery'].includes(this.campaignSession.view.state)&&!this.saveDismissed||this.reloadConfirmation))this.saveDialog();
+    if(!this.testCodePanel&&this.campaignSession&&!this.campaignSession.savingTutorial&&!this.campaignSession.savingMenu&&(['saving','error','loading','recovery'].includes(this.campaignSession.view.state)&&!this.saveDismissed||this.reloadConfirmation))this.saveDialog();
     else if(this.newCampaignConfirmation)this.newCampaignDialog();
     else if(this.finalOpen)this.finalDialog();
     if(this.guidedTutorialVisible&&!this.notification)this.tutorial();
@@ -611,9 +613,7 @@ export class CozyScene extends Phaser.Scene {
       const {x,y,w,h}=KITCHEN.ingredient(i),available=!this.runtime.tutorialActive||i===0;
       this.ingredientState(x,y,w,h,available,available&&s.ingredients.includes(id),needed.includes(id));
       // Paper labels sit on the bottle body; full names remain readable beneath it.
-      this.graphics();this.art.g.fillStyle(0xfff1d4,1).fillRoundedRect(x+w/2-7,y+15,14,9,2);
-      const bottleLabel=this.label(x+w/2,y+16,['CÀ','KEM','BBQ','PESTO','CAY'][i],9,ink);
-      bottleLabel.setScale(Math.min(12/bottleLabel.width,6/bottleLabel.height));
+      this.layer.add(this.add.image(x+w/2,y+20,MARKET_SAUCE_ART.key,`label-${id}`).setDisplaySize(14,10));
       const sauceName=this.label(x+w/2,y+27,name,9,available?cream:muted);
       sauceName.setScale(Math.min(1,(w-8)/sauceName.width,12/sauceName.height));
       this.hit(id,x,y,w,h,available&&this.runtime.canUseIngredient(id),()=>this.useIngredient(id));if(this.runtime.productionActive)this.stockBadge(id,x,y,w);

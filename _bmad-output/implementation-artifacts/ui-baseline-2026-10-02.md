@@ -546,3 +546,11 @@ Theo chỉnh tiếp của người dùng: sáu màn con thu gọn bằng tab Qu�
 ### Quán / Chợ / Kho — refinement requested 2026-10-12
 
 Chỉnh riêng body ba tab theo Quán.png/chợ.png/kho.png: thẻ kem viền nâu mềm, hình nguyên liệu lớn hơn, icon minh họa cho bộ lọc/xu/kho, thống kê Kho và badge xanh/cam/đỏ theo tồn/hạn dùng thật. Quán giữ sáu thẻ với chevron, chip lò/ô chờ và ảnh quán ghi Minh họa, trạng thái app giao hàng, ghi chú Đặt/Cất xanh. ManagementTabArt dùng crop art riêng từ references, không lấy chữ/số mẫu. Giữ header/cash/pause/nav5tab, transform0.88, nền fixed và toàn bộ hit/viewport/row53, các màn con/bếp/Tổng kết không đổi. Build/typecheck và3kiểm tra Chromium360×640 đạt; hai lỗi thông tin hiển thị qua review đã sửa. Ảnh: ui-baseline/management-market-stock-polish-2026-10-12. Đây là bản chỉnh theo yêu cầu để người dùng xem.
+
+### Nút hành động đen viền vàng — yêu cầu 2026-10-12
+
+Theo ảnh nút Về quản lý quán người dùng gửi: các nút hành động management dùng chung HubCanvasUI.button: nền đen đậm, viền vàng cam rõ, chữ trắng và bo góc11px (giới hạn theo kích thước), bỏ viền kem bên trong và lớp gradient sáng của panel. ShopScreenUI kế thừa cùng painter, không còn màu nút riêng. Disabled giữ nền tối, viền/chữ giảm tương phản và khóa input như cũ. Giữ toàn bộ bounds/hit/chức năng; filter màu cam, toggle, bếp và nút xanh cuối ngày giữ riêng. Build/typecheck và2focusedChromium360×640 đạt, đã xem ảnh market-buttons.png/shop-buttons.png trong ui-baseline/black-gold-buttons-2026-10-12.
+
+### Lưu giá ngầm và nhãn sốt — yêu cầu 2026-10-12
+
++/−giá pizza và bật/tắt bán giữ save tức thời nhưng không hiện bảng Đang lưu ngày hoặc lớp pause trong lúc menu save; guard chặn ghi đồng thời giữ nguyên. Lỗi/retry/recovery vẫn hiện và thông báo menu chưa lưu ghi đúng ngữ cảnh. Năm chai sốt trong Chợ/Kho dùng atlas có nhãn tomato/cream/flame/basil/chili; tiệm dùng đúng5label crop trên chai có sẵn. Không đổi bố cục/hit/nền bếp hoặc14ingredient art còn lại. Asset public/assets/market-sauces-labeled.png tải bằng preloadMarketArt, frames đăng ký khi CozyScene create. Ảnh kiểm chứng ui-baseline/menu-economy-sauces-2026-10-12; build,521unit và4focusedE2E360×640 đạt.

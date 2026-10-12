@@ -33,10 +33,10 @@ describe('Repeatable VIP customers',()=>{
     const r=prepare();for(const id of ['dough','sauce','cheese'] as const)r.buy(id,2);
     const before=r.state.cash,xp=r.progression.xp;r.openShop();expect(r.selectedTicket).toMatchObject({vip:true,quantity:1,patience:100,kindLabel:'VIP'});
     const payments:number[]=[];r.subscribeCash(receipt=>payments.push(receipt.amount));
-    serve(r);expect(payments).toEqual([550]);expect(r.lastResult).toMatchObject({vip:true,vipRewardCoins:500,xpDelta:15});expect(r.state.cash).toBe(before+550);
-    expect(r.dispatch({type:'deliver',commandId:'again'})).toBe(false);expect(r.state.cash).toBe(before+550);
+    serve(r);expect(payments).toEqual([560]);expect(r.lastResult).toMatchObject({vip:true,vipRewardCoins:500,xpDelta:15});expect(r.state.cash).toBe(before+560);
+    expect(r.dispatch({type:'deliver',commandId:'again'})).toBe(false);expect(r.state.cash).toBe(before+560);
     r.continueShift();tick(r,3);expect(r.selectedTicket?.vip).toBe(true);serve(r);r.continueShift();r.closeDay();
-    expect(r.daySummary!.reviews.filter(v=>v.vip?.coins===500)).toHaveLength(2);expect(r.daySummary!.revenue).toBe(100);expect(r.daySummary!.rewards).toBe(1000);
+    expect(r.daySummary!.reviews.filter(v=>v.vip?.coins===500)).toHaveLength(2);expect(r.daySummary!.revenue).toBe(120);expect(r.daySummary!.rewards).toBe(1000);
     expect(r.progression.xp-xp).toBe(30);const saved=r.exportCheckpoint();expect(validateCozyCheckpoint(saved)).not.toBeNull();
     const restored=CozyRuntime.restoreCheckpoint(saved)!;expect(restored.state.cash).toBe(r.state.cash);expect(restored.closeDay()).toBe(false);expect(restored.exportCheckpoint()).toEqual(saved);
     const forged=structuredClone(saved);forged.reports[forged.reports.length-1].reviews[0].vip!.coins=1000;expect(validateCozyCheckpoint(forged)).toBeNull();
@@ -60,8 +60,8 @@ describe('Repeatable VIP customers',()=>{
   it('recovers negative event cash by a qualified VIP without changing salary or revenue rules',()=>{
     const r=prepare(10,{eventRoll:()=>0});for(const id of ['dough','sauce','cheese'] as const)r.buy(id,1);
     while(r.state.cash>150){const quantity=Math.min(100,Math.floor((r.state.cash-150)/r.price('dough')));if(!quantity)break;expect(r.buy('dough',quantity)).toBe(true);}
-    const before=r.state.cash;r.openShop();expect(r.state.cash).toBe(before-200);serve(r);expect(r.state.cash).toBe(before-200+550);r.closeDay();const report=r.daySummary!;
-    expect(report.accounts.eventLoss).toBe(200);expect(report.rewards).toBe(500);expect(report.revenue).toBe(50);expect(validateCozyCheckpoint(r.exportCheckpoint())).not.toBeNull();
+    const before=r.state.cash;r.openShop();expect(r.state.cash).toBe(before-200);serve(r);expect(r.state.cash).toBe(before-200+560);r.closeDay();const report=r.daySummary!;
+    expect(report.accounts.eventLoss).toBe(200);expect(report.rewards).toBe(500);expect(report.revenue).toBe(60);expect(validateCozyCheckpoint(r.exportCheckpoint())).not.toBeNull();
   });
   it('preserves old report explanation text and legacy rewards rather than inserting VIP history',()=>{
     const old=fundedShopCheckpoint(8000);old.reports[0].accounts.zeroReasons.rewards='Lời giải thích lịch sử.';

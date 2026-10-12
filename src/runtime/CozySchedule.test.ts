@@ -1,4 +1,4 @@
-﻿import {describe,expect,it} from 'vitest';
+import {describe,expect,it} from 'vitest';
 import {CozyRuntime} from './CozyRuntime';
 import {threeDaySchedule} from '../config/cozySchedule';
 import {deliverySchedule} from '../config/deliveryEvents';
@@ -59,7 +59,7 @@ describe('opening hours and seeded customer budget',()=>{
   it('keeps counter payment and the third commercial order box requirement under the new schedule',()=>{
     const r=shop(),schedule=threeDaySchedule(1,{...eligibility,customerSeed:2718});time(r,5);const cash=r.state.cash;
     const cook=()=>{for(const ingredient of recipeIngredients(r.selectedRecipe))r.dispatch({type:'ingredient',ingredient});expect(r.dispatch({type:'bake'})).toBe(true);time(r,r.bakeTiming.perfectStart);expect(r.dispatch({type:'extract'})).toBe(true);};
-    cook();expect(r.dispatch({type:'deliver'})).toBe(true);expect(r.lastResult).toMatchObject({stars:5,price:50});expect(r.state.cash).toBe(cash+50);r.continueShift();
+    cook();expect(r.dispatch({type:'deliver'})).toBe(true);expect(r.lastResult).toMatchObject({stars:5,price:60});expect(r.state.cash).toBe(cash+60);r.continueShift();
     time(r,schedule.slots[1].at-r.shiftClock.elapsed);r.selectTicket(r.tickets[0].id);cook();expect(r.dispatch({type:'deliver'})).toBe(true);r.continueShift();
     time(r,schedule.slots[2].at-r.shiftClock.elapsed);r.selectTicket(r.tickets[0].id);expect(r.selectedTicket?.takeaway).toBe(true);cook();expect(r.dispatch({type:'deliver'})).toBe(true);expect(r.deliveryPending?.reasons.join(' ')).toContain('hộp');expect(r.confirmDelivery()).toBe(true);expect(r.lastResult!.stars).toBeLessThan(5);
   });

@@ -96,7 +96,7 @@ it('stock bulk uses supplier prices and existing ordinary ledger without reprici
   const s=new CozyStock();s.receive(1000);s.buy('dough',100,1);s.settle(1);
   const entries=[{ingredient:'cheese' as const,quantity:2,unitPrice:s.purchasePrice('cheese',2)},{ingredient:'mushroom' as const,quantity:2,unitPrice:s.purchasePrice('mushroom',2)}];
   expect(s.buyAll(entries,2)).toBe(true);expect(s.ledger(2).purchases).toBe(entries.reduce((n,e)=>n+e.unitPrice*e.quantity,0));
-  expect(s.lots.find(l=>l.day===1)!.unitCost).toBe(5);expect(CozyStock.restore(s.exportCheckpoint())).not.toBeNull();
+  expect(s.lots.find(l=>l.day===1)!.unitCost).toBe(6);expect(CozyStock.restore(s.exportCheckpoint())).not.toBeNull();
 });
 
 it('forecasts the pending day with its app and event quantities without starting the next shift',()=>{
@@ -121,7 +121,7 @@ it('excludes expired and reserved units, tolerates legacy history and rechecks c
   expect(marketForecast(1,['cheese'],{cheese:3},[],id=>stock.available(id,1),{reservePercent:0,recentReports:3,historyWeight:.5}).rows[0]).toMatchObject({available:2,missing:1});
   expect(marketForecast(3,['cheese'],{cheese:3},[{day:2} as CozyDaySummary],id=>stock.available(id,3)).rows[0]).toMatchObject({available:0,missing:4});
   const r=new CozyRuntime(false,true),quote=r.quoteMarketBasket([{ingredient:'dough',quantity:25}])!;
-  expect(r.buy('dough',40,'consume-budget')).toBe(true); // Leave 100 xu after the 200-xu recipe.
-  expect(quote.total).toBe(125);expect(r.buyRecipe('pepperoni','spend')).toBe(true);
+  expect(r.buy('dough',40,'consume-budget')).toBe(true); // Leave 60 xu after the 200-xu recipe.
+  expect(quote.total).toBe(150);expect(r.buyRecipe('pepperoni','spend')).toBe(true);
   const before=r.exportCheckpoint();expect(r.buyAll(quote.entries,'stale-cash',quote.day)).toBe(false);expect(r.exportCheckpoint()).toEqual(before);
 });

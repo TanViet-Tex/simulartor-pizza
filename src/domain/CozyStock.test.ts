@@ -4,11 +4,11 @@ import { CozyStock, STOCK_INGREDIENTS } from './CozyStock';
 describe('real stock ledger', () => {
   it('settles dated lots once and uses retained lot cost instead of the new purchase price',()=>{
     const stock=new CozyStock();stock.buy('dough',2,1);stock.buy('sauce',2,1);stock.buy('cheese',2,1);stock.buy('mushroom',2,1);
-    expect(stock.settle(1)).toEqual({expired:10,rent:20});const cash=stock.cash;expect(stock.settle(1)).toEqual({expired:10,rent:20});expect(stock.cash).toBe(cash);
-    expect(stock.buy('dough',1,1)).toBe(false);expect(stock.buy('dough',1,2)).toBe(true);expect(stock.lots[stock.lots.length-1]).toMatchObject({day:2,expiry:3,unitCost:6});
+    expect(stock.settle(1)).toEqual({expired:12,rent:20});const cash=stock.cash;expect(stock.settle(1)).toEqual({expired:12,rent:20});expect(stock.cash).toBe(cash);
+    expect(stock.buy('dough',1,1)).toBe(false);expect(stock.buy('dough',1,2)).toBe(true);expect(stock.lots[stock.lots.length-1]).toMatchObject({day:2,expiry:3,unitCost:7});
     stock.reserve('day2','cheese',120);expect(stock.commit('day2',['dough','sauce','cheese'],2)).toBe(true);
-    expect(stock.ledger(1)).toEqual({purchases:40,consumed:0});expect(stock.ledger(2)).toEqual({purchases:6,consumed:15});
-    expect(stock.settle(2)).toEqual({expired:12,rent:20});expect(stock.lots).toEqual([expect.objectContaining({ingredient:'sauce',quantity:1,expiry:1000001}),expect.objectContaining({ingredient:'dough',quantity:1,unitCost:6,expiry:3})]);
+    expect(stock.ledger(1)).toEqual({purchases:48,consumed:0});expect(stock.ledger(2)).toEqual({purchases:7,consumed:18});
+    expect(stock.settle(2)).toEqual({expired:14,rent:20});expect(stock.lots).toEqual([expect.objectContaining({ingredient:'sauce',quantity:1,expiry:1000001}),expect.objectContaining({ingredient:'dough',quantity:1,unitCost:7,expiry:3})]);
   });
   it('rejects unsupported dates without cash or ledger mutations',()=>{
     const stock=new CozyStock();for(const day of [0,1000001,-1,NaN,.5]){expect(stock.buy('cheese',1,day)).toBe(false);expect(stock.settle(day)).toEqual({expired:0,rent:0});}
@@ -18,18 +18,18 @@ describe('real stock ledger', () => {
     const stock = new CozyStock();
     stock.buy('dough', 1); stock.buy('dough', 2); stock.buy('sauce', 3); stock.buy('cheese', 3); stock.buy('mushroom', 2);
     expect(stock.lots).toEqual([
-      { id: 1, ingredient: 'dough', quantity: 1, unitCost: 5, day: 1, expiry: 2 },
-      { id: 2, ingredient: 'dough', quantity: 2, unitCost: 5, day: 1, expiry: 2 },
-      { id: 3, ingredient: 'sauce', quantity: 3, unitCost: 3, day: 1, expiry: 1000001 },
-      { id: 4, ingredient: 'cheese', quantity: 3, unitCost: 7, day: 1, expiry: 2 },
-      { id: 5, ingredient: 'mushroom', quantity: 2, unitCost: 5, day: 1, expiry: 1 },
+      { id: 1, ingredient: 'dough', quantity: 1, unitCost: 6, day: 1, expiry: 2 },
+      { id: 2, ingredient: 'dough', quantity: 2, unitCost: 6, day: 1, expiry: 2 },
+      { id: 3, ingredient: 'sauce', quantity: 3, unitCost: 4, day: 1, expiry: 1000001 },
+      { id: 4, ingredient: 'cheese', quantity: 3, unitCost: 8, day: 1, expiry: 2 },
+      { id: 5, ingredient: 'mushroom', quantity: 2, unitCost: 6, day: 1, expiry: 1 },
     ]);
     const totalCost = stock.lots.reduce((sum, lot) => sum + lot.quantity * lot.unitCost, 0);
     expect(stock.cash + totalCost).toBe(500);
     stock.reserve('pizza', 'cheese', 60); stock.commit('pizza', ['dough', 'sauce', 'cheese']);
     expect(stock.lots.some(lot => lot.id === 1)).toBe(false);
     expect(stock.lots.find(lot => lot.id === 2)?.quantity).toBe(2);
-    expect(stock.lots.reduce((sum, lot) => sum + lot.quantity * lot.unitCost, 0)).toBe(totalCost - 15);
+    expect(stock.lots.reduce((sum, lot) => sum + lot.quantity * lot.unitCost, 0)).toBe(totalCost - 18);
     const detached = stock.lots[0] as { quantity: number }; detached.quantity = 999;
     expect(stock.owned('dough')).toBe(2);
   });
@@ -39,10 +39,10 @@ describe('real stock ledger', () => {
     for (const qty of [0, -1, .5, NaN, Infinity, 101]) expect(stock.buy('cheese', qty)).toBe(false);
     expect(stock.buy('cheese', 100)).toBe(false);
     expect(stock.cash).toBe(500); expect(stock.owned('cheese')).toBe(0);
-    expect(stock.buy('dough', 2)).toBe(true); expect(stock.cash).toBe(490);
-    expect(stock.buy('sauce', 2)).toBe(true); expect(stock.cash).toBe(484);
-    expect(stock.buy('cheese', 2)).toBe(true); expect(stock.cash).toBe(470);
-    expect(stock.buy('mushroom', 2)).toBe(true); expect(stock.cash).toBe(460);
+    expect(stock.buy('dough', 2)).toBe(true); expect(stock.cash).toBe(488);
+    expect(stock.buy('sauce', 2)).toBe(true); expect(stock.cash).toBe(480);
+    expect(stock.buy('cheese', 2)).toBe(true); expect(stock.cash).toBe(464);
+    expect(stock.buy('mushroom', 2)).toBe(true); expect(stock.cash).toBe(452);
   });
   it('excludes reserved units across simultaneous tickets, releases unused stock and prevents duplicate consumption', () => {
     const stock = new CozyStock();

@@ -6,7 +6,7 @@ import {STOCK_INGREDIENTS,ingredientName,type StockIngredient} from '../domain/C
 import {HUB_THEME} from './HubTheme';
 import {HUB_HEADER_ART} from './HubHeader';
 import {HUB_ART,HubCanvasUI} from './HubCanvasUI';
-import {MARKET_INGREDIENT_ART,drawMarketIngredient} from './MarketIngredientArt';
+import {MARKET_INGREDIENT_ART,MARKET_SAUCE_ART,drawMarketIngredient} from './MarketIngredientArt';
 import {recipeDefinition} from '../config/recipeCatalog';
 import type {StockRecipe} from '../domain/CozyStock';
 import {STOCK_REFERENCE_ART,drawManagementDetail,managementCard} from './ManagementTabArt';
@@ -15,7 +15,7 @@ export type MarketFilter='all'|'sauce'|'topping'|'base';
 export type MarketDrag=HubDrag;
 type Hit=(id:string,x:number,y:number,w:number,h:number,enabled:boolean,action:()=>void)=>void;
 export const MARKET_ART=HUB_ART;
-export function preloadMarketArt(scene:Phaser.Scene):void{for(const art of [MARKET_ART,MARKET_INGREDIENT_ART,HUB_HEADER_ART,STOCK_REFERENCE_ART])if(!scene.textures.exists(art.key))scene.load.image(art.key,`${import.meta.env.BASE_URL}${art.url}`);}
+export function preloadMarketArt(scene:Phaser.Scene):void{for(const art of [MARKET_ART,MARKET_INGREDIENT_ART,MARKET_SAUCE_ART,HUB_HEADER_ART,STOCK_REFERENCE_ART])if(!scene.textures.exists(art.key))scene.load.image(art.key,`${import.meta.env.BASE_URL}${art.url}`);}
 let serial=0;
 /** A bounded canvas window keeps native borders and row artwork clipped in WebGL. */
 export class ReferenceMarket{

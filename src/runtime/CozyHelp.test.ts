@@ -36,16 +36,16 @@ it('gates actual Day2 help, pauses before ticket/reservation, declines without e
 it('resolves good gift once without commercial XP, sales, rating, reputation, goals or mission',()=>{
   const r=day2(),xp=r.progression.xp,rep=r.customerProgress.reputation,cash=r.state.cash;
   expect(r.dispatch({type:'customer.help',accept:true})).toBe(true);expect(r.selectedTicket).toMatchObject({help:true,takeaway:false,finalPrice:0,remaining:120});
-  const id=serve(r);expect(r.helpState).toMatchObject({decision:'accepted',outcome:'succeeded',giftCost:15});
+  const id=serve(r);expect(r.helpState).toMatchObject({decision:'accepted',outcome:'succeeded',giftCost:18});
   expect(r.customerProgress).toMatchObject({relationship:2,reputation:rep});expect(r.progression).toMatchObject({xp,cheeseSales:1,goal:{stats:{delivered:0,sales:0,stars:[]}}});
   expect(r.state.cash).toBe(cash);expect(r.dispatch({type:'deliver',targetId:id,commandId:'duplicate'})).toBe(false);
-  r.closeDay();expect(r.daySummary).toMatchObject({delivered:0,abandoned:0,revenue:0,rewards:0,rating:null,cost:15,expired:12,profit:-47,accounts:{giftCost:15},reviews:[]});
+  r.closeDay();expect(r.daySummary).toMatchObject({delivered:0,abandoned:0,revenue:0,rewards:0,rating:null,cost:18,expired:14,profit:-52,accounts:{giftCost:18},reviews:[]});
   expect(r.daySummary!.accounts.endingCash).toBe(r.state.cash);
 });
 it.each(['raw','burnt'] as const)('fails %s help once without commercial penalties',quality=>{
   const r=day2(),rep=r.customerProgress.reputation,xp=r.progression.xp;r.resolveHelp(true);serve(r,quality);
   expect(r.helpState.outcome).toBe('failed');expect(r.customerProgress).toMatchObject({relationship:0,reputation:rep});expect(r.progression.xp).toBe(xp);
-  r.closeDay();expect(r.daySummary).toMatchObject({delivered:0,abandoned:0,rating:null,accounts:{giftCost:15}});
+  r.closeDay();expect(r.daySummary).toMatchObject({delivered:0,abandoned:0,rating:null,accounts:{giftCost:18}});
 });
 it('help remains successful after half-patience when exact good pizza arrives before its deadline',()=>{
   const r=day2();r.resolveHelp(true);time(r,61);serve(r);expect(r.helpState.outcome).toBe('succeeded');expect(r.customerProgress.relationship).toBe(2);
@@ -77,8 +77,8 @@ it('wrong commercial pizza given to help fails once and books its actual cost as
   const r=new CozyRuntime(false,true,{schedule});buy(r,3);r.openShop();serve(r);r.closeDay();r.buy('mushroom',1);r.openNextDay();r.resolveHelp(true);const helpId=r.selectedTicketId;time(r,1);
   const other=r.tickets.find(t=>!t.help)!;r.selectTicket(other.id);for(const ingredient of recipeIngredients('mushroom'))r.dispatch({type:'ingredient',ingredient});r.dispatch({type:'bake'});time(r,r.bakeTiming.perfectStart);r.dispatch({type:'extract'});
   const xp=r.progression.xp;expect(r.dispatch({type:'deliver',sourceId:other.id,targetId:helpId,commandId:'wrong-help'})).toBe(true);expect(r.deliveryPending).not.toBeNull();expect(r.confirmDelivery()).toBe(true);
-  expect(r.helpState).toMatchObject({outcome:'failed',giftCost:21});expect(r.customerProgress.relationship).toBe(0);expect(r.progression.xp).toBe(xp);r.closeDay();
-  expect(r.daySummary).toMatchObject({cost:21,revenue:0,delivered:0,accounts:{giftCost:21}});expect(r.daySummary!.reviews.some(review=>review.name==='Linh')).toBe(false);
+  expect(r.helpState).toMatchObject({outcome:'failed',giftCost:25});expect(r.customerProgress.relationship).toBe(0);expect(r.progression.xp).toBe(xp);r.closeDay();
+  expect(r.daySummary).toMatchObject({cost:25,revenue:0,delivered:0,accounts:{giftCost:25}});expect(r.daySummary!.reviews.some(review=>review.name==='Linh')).toBe(false);
 });
 it('permits help before stocking ingredients and a relationship already at zero cannot go negative',()=>{
   const schedule:ScheduleFactory=day=>({day,duration:180,grace:120,slots:day===1?[{id:'regular',at:0,kind:'regular',opportunity:'commercial',commercialOrdinal:1,takeaway:false}]:[{id:'other',at:0,kind:'picky',opportunity:'commercial',commercialOrdinal:1,takeaway:false},{id:'help',at:1,kind:'regular',opportunity:'help',commercialOrdinal:null,takeaway:false}]});
@@ -91,7 +91,7 @@ it('a help pizza sold to a commercial ticket is consumed cost but no longer gift
   const r=new CozyRuntime(false,true,{schedule,resolveRecipe:()=> 'cheese'});buy(r,3);r.openShop();serve(r);r.closeDay();r.openNextDay();r.resolveHelp(true);const help=r.selectedTicketId;time(r,1);r.selectTicket(help);
   for(const ingredient of recipeIngredients('cheese'))r.dispatch({type:'ingredient',ingredient});r.dispatch({type:'bake'});time(r,r.bakeTiming.perfectStart);r.dispatch({type:'extract'});
   const commercial=r.tickets.find(t=>!t.help)!;expect(r.dispatch({type:'deliver',sourceId:help,targetId:commercial.id,commandId:'sold-help-pizza'})).toBe(true);if(r.deliveryPending)r.confirmDelivery();
-  r.closeDay();expect(r.daySummary).toMatchObject({delivered:1,cost:15,accounts:{giftCost:0}});expect(r.helpState.giftCost).toBe(0);
+  r.closeDay();expect(r.daySummary).toMatchObject({delivered:1,cost:18,accounts:{giftCost:0}});expect(r.helpState.giftCost).toBe(0);
 });
 it('validates detached checkpoint choices and active views rather than accepting incoherent narrative state',()=>{
   const valid={decision:'accepted',outcome:'succeeded',claims:['regular.thanks-day-3']};const copy=validateHelpCheckpoint(valid)!;copy.claims.length=0;expect(valid.claims).toHaveLength(1);

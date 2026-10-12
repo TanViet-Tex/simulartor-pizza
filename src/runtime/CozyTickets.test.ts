@@ -94,6 +94,6 @@ describe('Story 1.5 automatic tickets and shared oven', () => {
     const r=shop(); prepare(r); r.dispatch({type:'bake'}); r.dispatch({type:'extract'}); r.requestDiscard(); r.confirmDiscard();
     const first=r.selectedTicketId; r.prepareAgain(); r.selectRecipe('mushroom'); advance(r,40);
     expect(r.tickets[0]!.remaining).toBe(120); expect(r.tickets[0]!.recipe).toBe('cheese'); r.returnToOrders(); expect(r.selectedTicketId).toBe(first); expect(r.selectedRecipe).toBe('cheese');
-    r.remake(); prepare(r); r.dispatch({type:'bake'}); advance(r,r.bakeTiming.perfectStart); r.dispatch({type:'extract'}); r.dispatch({type:'box'}); r.dispatch({type:'deliver'}); expect(r.lastDelivery).toMatchObject({recipe:'cheese',price:50});
+    r.remake(); prepare(r); r.dispatch({type:'bake'}); advance(r,r.bakeTiming.perfectStart); r.dispatch({type:'extract'}); r.dispatch({type:'box'}); r.dispatch({type:'deliver'}); expect(r.lastDelivery).toMatchObject({recipe:'cheese',price:60});
   });
 });

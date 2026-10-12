@@ -46,15 +46,15 @@ describe('free pizza assembly and real ingredient cost', () => {
   it('charges premium once and receives paid stock once, preserving the cost in saves', () => {
     const stock = new CozyStock();
     const price = expressIngredientPrice('cheese',1);
-    expect(price).toBe(12);
-    expect(stock.orderExpress('rush','cheese',2,1)?.total).toBe(24);
-    expect(stock.orderExpress('rush','cheese',2,1)?.total).toBe(24);
-    expect(stock.cash).toBe(476);
+    expect(price).toBe(13);
+    expect(stock.orderExpress('rush','cheese',2,1)?.total).toBe(26);
+    expect(stock.orderExpress('rush','cheese',2,1)?.total).toBe(26);
+    expect(stock.cash).toBe(474);
     expect(stock.owned('cheese')).toBe(0);
     expect(stock.receiveExpress('rush')).toBe(true);
     expect(stock.receiveExpress('rush')).toBe(false);
     expect(stock.owned('cheese')).toBe(2);
-    expect(stock.ledger(1).purchases).toBe(24);
-    expect(CozyStock.restore(stock.exportCheckpoint())?.lots[0].unitCost).toBe(12);
+    expect(stock.ledger(1).purchases).toBe(26);
+    expect(CozyStock.restore(stock.exportCheckpoint())?.lots[0].unitCost).toBe(13);
   });
 });

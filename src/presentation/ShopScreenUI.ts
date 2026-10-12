@@ -6,10 +6,6 @@ let serial=0;
 /** Shared screen components retain true labels and isolated reference artwork. */
 export class ShopScreenUI extends HubCanvasUI {
   constructor(private owner:Phaser.Scene,ctx:CanvasRenderingContext2D,hit:HubHit){super(owner,ctx,hit);}
-  override button(x:number,y:number,w:number,h:number,title:string,enabled=true,size=13):void {
-    this.panel(x,y,w,h,enabled?'#24221e':'#66615a','#b78945',Math.min(12,h/2));
-    this.text(x+w/2,y+(h-size)/2-1,title,size,enabled?'#fff0d1':'#d5c7b7',true,w-10);
-  }
   art(id:string,key:string,crop:ShopArtCrop,x:number,y:number,w:number,h:number):void{shopScreenArt(this.owner,this.context,id,key,crop,x,y,w,h);}
   money(x:number,y:number,value:number,size=13):void{this.art('coin','reference-shop-menu',[263,252,40,42],x,y,18,19);this.text(x+23,y+2,`${value.toLocaleString('vi-VN')} xu`,size);}
   static shell(scene:Phaser.Scene,layer:Phaser.GameObjects.Container,hit:HubHit,back:()=>void):void{

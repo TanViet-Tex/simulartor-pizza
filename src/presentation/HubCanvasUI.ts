@@ -61,10 +61,16 @@ export class HubCanvasUI {
   }
 
   button(x:number,y:number,w:number,h:number,title:string,enabled=true,size=13):void {
-    const radius=Math.min(h/2,w/2);
-    this.panel(x,y,w,h,enabled?HUB_THEME.colors.action:HUB_THEME.colors.disabled,HUB_THEME.colors.actionEdge,radius);
-    const ctx=this.ctx;ctx.save();ctx.beginPath();ctx.roundRect(x+1.5,y+1.5,w-3,h-4,Math.max(2,radius-1));ctx.strokeStyle=HUB_THEME.colors.actionEdge;ctx.lineWidth=2;ctx.stroke();ctx.beginPath();ctx.roundRect(x+3.5,y+3.5,w-7,h-8,Math.max(2,radius-3));ctx.strokeStyle=HUB_THEME.colors.cream;ctx.globalAlpha=enabled?.8:.4;ctx.lineWidth=1;ctx.stroke();ctx.restore();
-    this.text(x+w/2,y+(h-size)/2-1,title,size,HUB_THEME.colors.cream,true,w-8);
+    const radius=Math.min(11,h/2,w/2),ctx=this.ctx;
+    ctx.save();ctx.globalAlpha=1;
+    ctx.beginPath();ctx.roundRect(x+.5,y+2,w-1,h-2,radius);
+    ctx.fillStyle='#42240f';ctx.fill();
+    ctx.beginPath();ctx.roundRect(x+.8,y+.8,w-1.6,h-3,radius);
+    const fill=ctx.createLinearGradient(x,y,x+w,y);
+    fill.addColorStop(0,enabled?'#292927':'#353431');fill.addColorStop(.5,enabled?'#171817':'#2c2b29');fill.addColorStop(1,enabled?'#242523':'#353431');
+    ctx.fillStyle=fill;ctx.fill();ctx.strokeStyle=enabled?'#efa943':'#947343';ctx.lineWidth=1.6;ctx.stroke();
+    ctx.restore();
+    this.text(x+w/2,y+(h-size)/2-1,title,size,enabled?'#fff9ef':'#bfb8ab',true,w-8);
   }
 
   header(input:{title:string;subtitle:string;cash:number;pause:()=>void}):void {paintHubHeader(this.scene,this.ctx,this.hit,input);}

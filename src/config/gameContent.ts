@@ -1,4 +1,6 @@
-import { ingredients as supportedIngredients, recipes as supportedRecipes } from '../domain/demo';
+import {INGREDIENT_CATALOG} from './ingredientCatalog';
+import {RECIPE_CATALOG} from './recipeCatalog';
+const supportedIngredients=INGREDIENT_CATALOG.slice(0,5),supportedRecipes=RECIPE_CATALOG.slice(0,3);
 
 interface IngredientConfig { readonly id: string; readonly name: string; readonly basePrice: number; readonly color: number }
 interface RecipeConfig { readonly id: string; readonly name: string; readonly price: number; readonly ingredients: readonly string[] }

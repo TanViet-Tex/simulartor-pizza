@@ -16,18 +16,18 @@ function identities(r:CozyRuntime){
 it('separates cash purchases from business cost, spoilage and retained historical valuation',()=>{
   const r=new CozyRuntime(false,true,ORDER_TEST_SCHEDULE);provision(r);r.buy('mushroom',2);r.openShop();bake(r);
   for(let i=0;i<120;i++)r.advance(50);r.dispatch({type:'extract'});r.dispatch({type:'box'});r.dispatch({type:'deliver'});r.closeDay();
-  const a=identities(r);expect(a).toMatchObject({startingCash:500,sales:50,rewards:0,purchases:40,consumed:15,expired:10,rent:20,wages:0,repairs:0,other:0,endingCash:490,profit:5,openingInventoryValue:0,inventory:{units:3,value:15},cumulativeProfit:5});
+  const a=identities(r);expect(a).toMatchObject({startingCash:500,sales:60,rewards:0,purchases:48,consumed:18,expired:12,rent:20,wages:0,repairs:0,other:0,endingCash:492,profit:10,openingInventoryValue:0,inventory:{units:3,value:18},cumulativeProfit:10});
   expect(a.zeroReasons.wages).toContain('nhân viên');expect(a.zeroReasons.repairs).toContain('hỏng');
   const snapshot=r.daySummary;r.buy('dough',1);r.buy('mushroom',1);expect(r.state.cash).toBe(478);expect(r.daySummary).toEqual(snapshot);
   a.inventory.lots[0]!.quantity=999;expect(r.daySummary!.accounts.inventory.units).toBe(3);
   expect(r.openNextDay()).toBe(true);r.closeDay();const b=identities(r);
-  expect(b).toMatchObject({startingCash:490,openingInventoryValue:15,purchases:12,consumed:0,expired:18,rent:20,endingCash:458,profit:-38,cumulativeProfit:-33,inventory:{units:2,value:9}});
+  expect(b).toMatchObject({startingCash:492,openingInventoryValue:18,purchases:14,consumed:0,expired:21,rent:20,endingCash:458,profit:-41,cumulativeProfit:-31,inventory:{units:2,value:11}});
   const cash=r.state.cash;expect(r.closeDay()).toBe(false);expect(r.state.cash).toBe(cash);
 });
 it('counts discarded and remade stock once with no stock refund',()=>{
   const r=new CozyRuntime(false,true,ORDER_TEST_SCHEDULE);provision(r);r.openShop();bake(r);
   r.dispatch({type:'extract'});expect(r.requestDiscard()).toBe(true);expect(r.confirmDiscard()).toBe(true);expect(r.remake()).toBe(true);bake(r);r.closeDay();
-  expect(identities(r)).toMatchObject({sales:0,purchases:30,consumed:30,expired:0,profit:-50,endingCash:450,inventory:{value:0,units:0}});
+  expect(identities(r)).toMatchObject({sales:0,purchases:36,consumed:36,expired:0,profit:-56,endingCash:444,inventory:{value:0,units:0}});
 });
 it('keeps terminal selectors on day thirty and refuses further economic commands',()=>{
   const r=CozyRuntime.restoreCheckpoint(fundedShopCheckpoint(8000),false,{eventRoll:()=>1,vipRoll:()=>1,schedule:day=>({day,duration:180,grace:120,slots:[]})})!;

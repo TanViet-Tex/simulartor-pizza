@@ -13,6 +13,24 @@ const settle=()=>new Promise<void>(resolve=>setTimeout(resolve,0));
 async function setup(funded=false){let id=0;const port=new MemoryPort(),session=new CozyCampaignSession(port,()=>`id-${++id}`);await session.load();const r=(await session.start(false))!;if(funded){port.value!.payload=fundedShopCheckpoint();port.value!.checksum=checkpointChecksum(port.value!.payload);const loaded=(await session.load())!;return {port,session,r:loaded};}return {port,session,r};}
 function open(r:CozyRuntime){for(const id of ['dough','sauce','cheese'] as const)r.buy(id,1);expect(r.openShop()).toBe(true);}
 describe('Cozy prepare/commit/confirm session',()=>{
+  it('marks delayed menu saves as silent, preserves guards and exposes failed saves for exact retry',async()=>{
+    const {session,port,r}=await setup();port.defer=true;
+    expect(session.configureMenu('cheese',105,true)).toBe(true);
+    const visibility=r.acquirePause('visibility');
+    expect(session.savingMenu).toBe(true);expect(session.savingTutorial).toBe(false);
+    expect(r.customerProgress.pricePercents.cheese).toBe(105);
+    expect(r.pauses).toEqual(expect.arrayContaining(['visibility','save']));
+    expect(session.configureMenu('cheese',110,true)).toBe(false);expect(r.openShop()).toBe(false);
+    expect(CozyRuntime.restoreCheckpoint(port.value!.payload)!.customerProgress.pricePercents.cheese).toBe(100);
+    port.fail=true;port.release!();await settle();
+    expect(session.savingMenu).toBe(false);expect(session.view).toMatchObject({state:'error',canRetry:true,canReload:true});
+    const request=port.calls[port.calls.length-1];port.fail=false;const retry=session.retry();
+    expect(session.savingMenu).toBe(true);port.release!();await retry;
+    expect(port.calls[port.calls.length-1]).toEqual(request);expect(session.savingMenu).toBe(false);
+    expect(r.pauses).toContain('visibility');expect(r.pauses).not.toContain('save');visibility.release();
+    port.defer=false;expect((await session.load())!.customerProgress.pricePercents.cheese).toBe(105);
+    session.destroy();
+  });
   it('identifies only an in-flight tutorial save and exposes failures for normal recovery UI',async()=>{
     const port=new MemoryPort(),session=new CozyCampaignSession(port);await session.load();const r=(await session.start(true))!;port.defer=true;r.nextTutorial();await settle();expect(session.savingTutorial).toBe(true);expect(r.nextTutorial()).toBe(false);port.fail=true;port.release!();await settle();expect(session.savingTutorial).toBe(false);expect(session.view.state).toBe('error');port.defer=false;port.fail=false;await session.retry();expect(session.savingTutorial).toBe(false);expect(session.view.state).toBe('ready');session.destroy();
   });

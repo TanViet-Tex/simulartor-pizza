@@ -9,7 +9,7 @@ function time(r:CozyRuntime,seconds:number){for(let i=0;i<seconds*20;i++)r.advan
 it('buys before opening, consumes actual lots once and buys for the next day without rewriting the report',()=>{
   const r=runtime();
   for(const id of ['dough','sauce','cheese'] as const)expect(buy(r,id,2,'day1-'+id)).toBe(true);
-  expect(r.state.cash).toBe(470);expect(r.stockLots).toHaveLength(3);
+  expect(r.state.cash).toBe(464);expect(r.stockLots).toHaveLength(3);
   expect(r.stockLots.every(l=>l.day===1&&l.expiry===ingredientExpiry(l.ingredient,1)&&l.quantity===2)).toBe(true);
   const lots=r.stockLots;expect(r.openShop()).toBe(true);expect(r.stockLots).toEqual(lots);
   for(const ingredient of ['dough','sauce','cheese'] as const)expect(r.dispatch({type:'ingredient',ingredient})).toBe(true);
@@ -17,16 +17,16 @@ it('buys before opening, consumes actual lots once and buys for the next day wit
   for(const id of ['dough','sauce','cheese'] as const)expect(r.owned(id)).toBe(1);
   time(r,7);for(const type of ['extract','box','deliver'] as const)expect(r.dispatch({type})).toBe(true);
   expect(r.closeDay()).toBe(true);const report=r.daySummary!;
-  expect(report).toMatchObject({purchases:30,cost:15,revenue:50,profit:15,cash:500});
+  expect(report).toMatchObject({purchases:36,cost:18,revenue:60,profit:22,cash:504});
   expect(r.preparationDay).toBe(2);
   expect(buy(r,'dough',2,'day2-dough')).toBe(true);
-  expect(r.daySummary).toEqual(report);expect(r.state.cash).toBe(488);
+  expect(r.daySummary).toEqual(report);expect(r.state.cash).toBe(490);
   expect(r.stockLots[r.stockLots.length-1]).toMatchObject({ingredient:'dough',quantity:2,day:2,expiry:ingredientExpiry('dough',2),unitCost:datedIngredientPrice('dough',2)});
   expect(r.openNextDay()).toBe(true);expect(r.day).toBe(2);
   for(const ingredient of ['dough','sauce','cheese'] as const)expect(r.dispatch({type:'ingredient',ingredient})).toBe(true);
   expect(r.dispatch({type:'bake'})).toBe(true);expect(r.owned('dough')).toBe(2);
   expect(r.stockLots.filter(l=>l.ingredient==='dough').every(l=>l.day===2)).toBe(true);
-  expect(r.closeDay()).toBe(true);expect(r.daySummary!.cost).toBe(15);
+  expect(r.closeDay()).toBe(true);expect(r.daySummary!.cost).toBe(18);
   expect(r.completedReports[0]).toEqual(report);
 });
 
@@ -35,14 +35,14 @@ it('rejects invalid and unaffordable quantities atomically and deduplicates acce
   for(const quantity of [0,-1,1.5,101,100])expect(buy(r,'cheese',quantity,'bad-'+quantity)).toBe(false);
   expect(r.state.cash).toBe(500);expect(r.stockLots).toEqual(initial);
   expect(buy(r,'dough',2,'same')).toBe(true);expect(buy(r,'dough',2,'same')).toBe(false);
-  expect(buy(r,'cheese',1,'same')).toBe(false);expect(r.state.cash).toBe(490);expect(r.owned('dough')).toBe(2);expect(r.owned('cheese')).toBe(0);
-  r.openShop();expect(buy(r,'dough',1,'in-shift')).toBe(false);expect(r.state.cash).toBe(490);
+  expect(buy(r,'cheese',1,'same')).toBe(false);expect(r.state.cash).toBe(488);expect(r.owned('dough')).toBe(2);expect(r.owned('cheese')).toBe(0);
+  r.openShop();expect(buy(r,'dough',1,'in-shift')).toBe(false);expect(r.state.cash).toBe(488);
 });
 
 it('keeps independent pauses blocking purchases after a confirmation lease closes',()=>{
   const r=runtime(),modal=r.acquirePause('order'),hidden=r.acquirePause('visibility');
   expect(buy(r,'dough',1,'pending')).toBe(false);modal.release();expect(buy(r,'dough',1,'pending')).toBe(false);
-  expect(r.state.cash).toBe(500);hidden.release();expect(buy(r,'dough',1,'pending')).toBe(true);expect(r.state.cash).toBe(495);
+  expect(r.state.cash).toBe(500);hidden.release();expect(buy(r,'dough',1,'pending')).toBe(true);expect(r.state.cash).toBe(494);
 });
 
 it('preserves legacy checkpoint stock and cash while buying at its current preparation day',()=>{

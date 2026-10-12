@@ -484,3 +484,11 @@ Sprint đã cập nhật3.4–3.9/7.2–7.3→review theo bằng chứng impleme
 ### Quán / Chợ / Kho — 2026-10-12
 
 Theo yêu cầu làm đẹp sát ảnh references: ba body dùng ManagementTabArt (crop art/no sample labels) và thẻ kem scoped; Quán sáu thẻ/chevron/chip dữ liệu thật/nhãn Minh họa và app status; Chợ icon filter/xu/kho, art nguyên liệu; Kho icon stats và badge tồn/hạn thật. Không đổi shell0.88/header/nav/nền/hit/viewport/row53, sáu subpage hay gameplay/save. Build/typecheck,3focusedChromium360×640 đạt; review hai P2 hiển thị đã sửa. Xem spec-management-market-stock-polish.md và gallery management-market-stock-polish-2026-10-12.
+
+Theo yêu cầu 2026-10-12: nút hành động hub và6màn Quán đồng bộ qua HubCanvasUI.button (ShopScreenUI bỏ override): đen đậm/viền vàng cam/chữ trắng/bo11px, không dùng panel sáng hoặc viền kem gây bạc màu. Disabled vẫn khóa và chữ/viền tối hơn. Bounds/input/rules không đổi; filter/toggle/bếp/nút xanh không bị đổi. Build và2focusedChromium360×640 đạt; ảnh ui-baseline/black-gold-buttons-2026-10-12.
+
+### Giá mới và sốt đồng bộ — 2026-10-12
+
+User chốt cả8pizza sale-reference và19ingredient base +20%, làm tròn xu; giữ unlock/furniture/equipment/wages. Recipe50/65/75/85/80/90/100/95→60/78/90/102/96/108/120/114. Giá ingredient5→6,3→4,7→8,4→5,10→12,12→14. Relative menu percentages giữ nguyên, savecash/oldlotcost/report không rewrite. PRE_BALANCE_INGREDIENT_PRICES dùng validate old/current actuallotcost và historicalviability; checksum/accounting vẫn kiểm. Boot config khớp catalogcurrent; LegacyDemoGame riêng vẫn3pizza50/65/75.
+
+Menu configure save pending.menu/savingMenu không hiện saveDialog/overlay; guard/pause giữ để tránh ghi đồng thời, lỗi/retry vẫn hiện và đúng ngữ cảnh. Nhãn5sốt dùng shared market-sauces-labeled atlas trong Chợ/Kho và label frames tại tiệm; giữ original14food sprites, shelfgeometry/hit/background. Build/typecheck,521unit0skip và4focusedE2E360×640 đạt; gallery menu-economy-sauces-2026-10-12. Xem spec-menu-economy-sauce-refresh.md (review coverage limitation recorded honestly).

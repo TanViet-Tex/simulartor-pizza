@@ -9,7 +9,7 @@ describe('refrigerated stock',()=>{
     const restored=CozyStock.restore(old)!;
     expect(restored.exportCheckpoint().refrigeration).toBeUndefined();
     expect(restored.lots.map(l=>l.expiry)).toEqual([1,2,NON_EXPIRING_DAY]);
-    expect(restored.settle(1).expired).toBe(10);
+    expect(restored.settle(1).expired).toBe(12);
   });
   it('extends inclusive shelf life of usable existing lots once without changing value or reservations',()=>{
     const stock=new CozyStock();stock.buy('mushroom',2);stock.buy('dough',2);stock.buy('sauce',2);
@@ -19,7 +19,7 @@ describe('refrigerated stock',()=>{
     expect(stock.lots.map(l=>l.expiry)).toEqual([4,8,NON_EXPIRING_DAY]);
     expect(stock.inventorySnapshot().units).toBe(before.units);expect(stock.inventorySnapshot().value).toBe(before.value);
     expect(stock.cash).toBe(cash);expect(stock.reserved('dough')).toBe(1);
-    expect(stock.commit('held',['dough','sauce'],1)).toBe(true);expect(stock.ledger(1).consumed).toBe(8);
+    expect(stock.commit('held',['dough','sauce'],1)).toBe(true);expect(stock.ledger(1).consumed).toBe(10);
     expect(stock.enableRefrigeration(1)).toBe(false);
     const restored=CozyStock.restore(stock.exportCheckpoint())!;
     expect(restored.lots.map(l=>l.expiry)).toEqual([4,8,NON_EXPIRING_DAY]);

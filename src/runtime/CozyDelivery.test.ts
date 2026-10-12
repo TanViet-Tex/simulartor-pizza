@@ -12,12 +12,12 @@ it('confirms unboxed delivery, cancel preserves state, and duplicate commands ca
   expect(r.cancelDelivery()).toBe(true);expect(r.state.stage).toBe('ready');expect(r.tickets).toHaveLength(2);
   r.dispatch({type:'box'});
   expect(r.dispatch({type:'deliver',sourceId:source,targetId:source,commandId:'delivery-1'})).toBe(true);
-  expect(r.lastResult).toMatchObject({stars:5,price:50,targetId:source});
+  expect(r.lastResult).toMatchObject({stars:5,price:60,targetId:source});
   expect(r.dispatch({type:'deliver',sourceId:source,targetId:target,commandId:'delivery-1'})).toBe(false);
-  expect(r.state.cash).toBe(cash+50);expect(r.events.filter(e=>e.includes('delivered:'))).toHaveLength(1);
+  expect(r.state.cash).toBe(cash+60);expect(r.events.filter(e=>e.includes('delivered:'))).toHaveLength(1);
   r.selectTicket(target);cook(r);r.dispatch({type:'box'});
   expect(r.dispatch({type:'deliver',sourceId:target,targetId:target,commandId:'delivery-1'})).toBe(false);
-  expect(r.state.stage).toBe('boxed');expect(r.state.cash).toBe(cash+50);
+  expect(r.state.stage).toBe('boxed');expect(r.state.cash).toBe(cash+60);
 });
 it('confirms a wrong target recipe and preserves both tickets on cancellation',()=>{
   const r=shop(),source=r.selectedTicketId; cook(r);r.dispatch({type:'box'});
@@ -26,7 +26,7 @@ it('confirms a wrong target recipe and preserves both tickets on cancellation',(
   r.dispatch({type:'deliver',sourceId:source,targetId:target,commandId:'wrong-1'});
   expect(r.deliveryPending?.reasons).toContain('Sai công thức');r.cancelDelivery();expect(r.tickets).toHaveLength(2);expect(r.state.cash).toBe(cash);
   r.dispatch({type:'deliver',sourceId:source,targetId:target,commandId:'wrong-2'});expect(r.confirmDelivery()).toBe(true);
-  expect(r.lastResult).toMatchObject({targetId:target,stars:3,price:65});expect(r.tickets.map(t=>t.id)).toEqual([source]);
+  expect(r.lastResult).toMatchObject({targetId:target,stars:3,price:78});expect(r.tickets.map(t=>t.id)).toEqual([source]);
   expect(r.confirmDelivery()).toBe(false);
 });
 it('closes a committed ticket at zero once, retains pizza for discard, and rejects stale delivery without consumption',()=>{

@@ -18,7 +18,7 @@ describe('production preparation and bake-time consumption', () => {
     expect(runtime.missingReason).toBe('Còn thiếu: Đế bánh ×1, Sốt cà chua ×1, Phô mai ×1.');
     expect(runtime.canOpen).toBe(true); // Opening is allowed without stock; assembly still needs real ingredients.
     expect(runtime.dispatch({ type: 'ingredient', ingredient: 'dough' })).toBe(false);
-    provision(runtime); expect(runtime.state.cash).toBe(480);
+    provision(runtime); expect(runtime.state.cash).toBe(476);
     expect(runtime.selectRecipe('mushroom')).toBe(true);
     expect(runtime.openShop()).toBe(true); expect(runtime.dispatch({ type: 'bake' })).toBe(false);
 
@@ -37,7 +37,7 @@ describe('production preparation and bake-time consumption', () => {
     expect(runtime.dispatch({ type: 'bake' })).toBe(false);
     advance(runtime, runtime.bakeTiming.perfectStart); runtime.dispatch({ type: 'extract' }); runtime.dispatch({ type: 'box' });
     expect(runtime.dispatch({ type: 'deliver' })).toBe(true); expect(runtime.dispatch({ type: 'deliver' })).toBe(false);
-    expect(runtime.state.cash).toBe(545); expect(runtime.shopPhase).toBe('delivered');
+    expect(runtime.state.cash).toBe(554); expect(runtime.shopPhase).toBe('delivered');
     expect(runtime.state).toMatchObject({ reputation: 51, energy: 75 });
   });
   it('burns consumed stock without refunds and permits an empty remake that cannot assemble', () => {
@@ -45,11 +45,11 @@ describe('production preparation and bake-time consumption', () => {
     runtime.openShop(); cook(runtime, 'cheese'); advance(runtime, 12);
     expect(runtime.state.stage).toBe('burnt'); expect(runtime.dispatch({ type: 'discard' })).toBe(true);
     expect(runtime.discardPending).toBe(true); expect(runtime.confirmDiscard()).toBe(true); expect(runtime.needsRemake).toBe(true); expect(runtime.remake()).toBe(true); expect(runtime.remake()).toBe(false);
-    expect(runtime.state.cash).toBe(480); expect(runtime.owned('dough')).toBe(0);
+    expect(runtime.state.cash).toBe(476); expect(runtime.owned('dough')).toBe(0);
     expect(runtime.prepareAgain()).toBe(true); expect(runtime.prepareAgain()).toBe(false);
-    expect(runtime.state.cash).toBe(480); expect(runtime.owned('mushroom')).toBe(1);
+    expect(runtime.state.cash).toBe(476); expect(runtime.owned('mushroom')).toBe(1);
     for (const id of recipeIngredients('cheese')) expect(runtime.buy(id, 1)).toBe(false);
-    expect(runtime.returnToOrders()).toBe(true); expect(runtime.remake()).toBe(false); expect(runtime.state.cash).toBe(480);
+    expect(runtime.returnToOrders()).toBe(true); expect(runtime.remake()).toBe(false); expect(runtime.state.cash).toBe(476);
     expect(runtime.reserved('dough')).toBe(0); expect(runtime.state.ingredients).toEqual([]);
   });
   it('remakes from stock purchased before opening without buying during the shift',()=>{
@@ -71,7 +71,7 @@ describe('production preparation and bake-time consumption', () => {
     // Arrivals do not reserve stock; timeout clears the unpaid assembly.
     expect(runtime.tickets).toHaveLength(4); expect(runtime.reserved('dough')).toBe(0);
     expect(runtime.owned('dough')).toBe(1); expect(runtime.state.ingredients).toEqual([]);
-    expect(runtime.state.cash).toBe(480); advance(runtime, 20); expect(runtime.tickets).toHaveLength(4);
+    expect(runtime.state.cash).toBe(476); advance(runtime, 20); expect(runtime.tickets).toHaveLength(4);
   });
   it('keeps tutorial economics and inventory isolated before entering preparation', () => {
     const runtime = new CozyRuntime(true, true);

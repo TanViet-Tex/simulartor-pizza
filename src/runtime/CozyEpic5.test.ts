@@ -16,7 +16,7 @@ describe('Epic 5 catalog, purchases and ongoing campaign',()=>{
  });
  it('purchases immediately once, rejects insufficient funds and restores cash and ownership together',()=>{
   const r=new CozyRuntime(false,true);expect(r.availableRecipes).toEqual(['cheese','mushroom']);expect(r.buyRecipe('sausage','buy')).toBe(true);expect(r.state.cash).toBe(350);expect(r.buy('mushroom',40)).toBe(true);expect(r.buyRecipe('sausage','again')).toBe(false);expect(r.buyRecipe('pepperoni','poor')).toBe(false);
-  expect(r.configureMenu('sausage',110,true)).toBe(true);const save=r.exportCheckpoint(),loaded=CozyRuntime.restoreCheckpoint(save)!;expect(loaded.state.cash).toBe(150);expect(loaded.availableRecipes).toContain('sausage');expect(loaded.customerProgress.pricePercents.sausage).toBe(110);expect(loaded.recipePurchases.pendingSpent).toBe(150);
+  expect(r.configureMenu('sausage',110,true)).toBe(true);const save=r.exportCheckpoint(),loaded=CozyRuntime.restoreCheckpoint(save)!;expect(loaded.state.cash).toBe(110);expect(loaded.availableRecipes).toContain('sausage');expect(loaded.customerProgress.pricePercents.sausage).toBe(110);expect(loaded.recipePurchases.pendingSpent).toBe(150);
  });
  it('save failure blocks opening, retry reuses the same payload and cannot charge twice',async()=>{
   let value:CozySaveEnvelope|undefined,fail=false;const calls:CozyWriteRequest[]=[];
@@ -28,9 +28,9 @@ describe('Epic 5 catalog, purchases and ongoing campaign',()=>{
   for(let day=1;day<=5;day++){for(const id of ['dough','sauce','cheese'] as const)expect(r.buy(id,1)).toBe(true);expect(day===1?r.openShop():r.openNextDay()).toBe(true);if(r.lotteryPending)expect(r.resolveLottery(0)).toBe(true);if(r.thanksPending)expect(r.dismissThanks()).toBe(true);expect(r.shiftClock.duration).toBe(day===1?180:210);expect(r.closeDay()).toBe(true);expect(r.daySummary!.ending).toBeNull();expect(validateCozyCheckpoint(r.exportCheckpoint())).not.toBeNull();}
   
  });
- it('day continuation preserves insolvency and never permits terminal reopening',()=>{const r=new CozyRuntime(false,true);expect(r.buy('mushroom',99)).toBe(true);expect(r.openShop()).toBe(true);expect(r.closeDay()).toBe(true);expect(r.daySummary!.ending).toBe('insolvent');expect(r.openNextDay()).toBe(false);});
+ it('day continuation preserves insolvency and never permits terminal reopening',()=>{const r=new CozyRuntime(false,true);expect(r.buy('mushroom',80)).toBe(true);expect(r.openShop()).toBe(true);expect(r.closeDay()).toBe(true);expect(r.daySummary!.ending).toBe('insolvent');expect(r.openNextDay()).toBe(false);});
  it('supplier rewards ordinary purchases next day, never discounts express or reprices old lots',()=>{
-  const s=new CozyStock();s.receive(1000);expect(s.buy('dough',100,1)).toBe(true);expect(s.purchasePrice('cheese',1)).toBe(7);const old=s.lots[0];s.settle(1);expect(s.supplier(2).familiar).toBe(true);expect(s.purchasePrice('cheese',2)).toBe(7);expect(s.buy('shrimp',1,2)).toBe(true);expect(s.lots.find(l=>l.ingredient==='shrimp')!.unitCost).toBe(12);expect(s.lots.find(l=>l.id===old.id)!.unitCost).toBe(5);expect(s.orderExpress('express','shrimp',1,2)!.unitCost).toBe(Math.ceil(datedIngredientPrice('shrimp',2)*1.6));expect(CozyStock.restore(s.exportCheckpoint())).not.toBeNull();
+  const s=new CozyStock();s.receive(1000);expect(s.buy('dough',100,1)).toBe(true);expect(s.purchasePrice('cheese',1)).toBe(8);const old=s.lots[0];s.settle(1);expect(s.supplier(2).familiar).toBe(true);expect(s.purchasePrice('cheese',2)).toBe(8);expect(s.buy('shrimp',1,2)).toBe(true);expect(s.lots.find(l=>l.ingredient==='shrimp')!.unitCost).toBe(14);expect(s.lots.find(l=>l.id===old.id)!.unitCost).toBe(6);expect(s.orderExpress('express','shrimp',1,2)!.unitCost).toBe(Math.ceil(datedIngredientPrice('shrimp',2)*1.6));expect(CozyStock.restore(s.exportCheckpoint())).not.toBeNull();
  });
  it('full-menu forecast combines shared needs once, excludes expired and reserved stock, and zero targets need nothing',()=>{
   const s=new CozyStock();for(const id of ['dough','sauce','cheese'] as const)s.buy(id,3,1);expect(s.reserve('held','cheese',100,1)).toBe(true);
@@ -43,6 +43,6 @@ describe('Epic 5 catalog, purchases and ongoing campaign',()=>{
  });
  it('rejects forged ownership without payment and keeps supplier prices valid through day statements',()=>{
   const r=new CozyRuntime(false,true),save=r.exportCheckpoint();save.ownedRecipes.push('pepperoni');save.menu.push('pepperoni');expect(validateCozyCheckpoint(save)).toBeNull();
-  const stock=new CozyStock();stock.receive(1000);stock.buy('dough',100,1);stock.settle(1);stock.buy('shrimp',1,2);const stored=stock.exportCheckpoint();expect(stored.lots.find(l=>l.ingredient==='shrimp')!.unitCost).toBe(12);expect(CozyStock.restore(stored)).not.toBeNull();
+  const stock=new CozyStock();stock.receive(1000);stock.buy('dough',100,1);stock.settle(1);stock.buy('shrimp',1,2);const stored=stock.exportCheckpoint();expect(stored.lots.find(l=>l.ingredient==='shrimp')!.unitCost).toBe(14);expect(CozyStock.restore(stored)).not.toBeNull();
  });
 });

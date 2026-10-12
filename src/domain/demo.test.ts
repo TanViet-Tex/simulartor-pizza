@@ -27,9 +27,9 @@ describe('three day pizza domain', () => {
     expect(g.available('dough')).toBe(9);
     expect(g.dispatch({ type: 'accept' }).ok).toBe(false);
     serve(g);
-    expect(g.stock('dough')).toBe(9); expect(g.state.cash).toBe(150);
+    expect(g.stock('dough')).toBe(9); expect(g.state.cash).toBe(110);
     expect(g.state.xp).toBe(15); expect(g.state.relationship).toBe(1);
-    expect(g.dispatch({ type: 'deliver' }).ok).toBe(false); expect(g.state.cash).toBe(150);
+    expect(g.dispatch({ type: 'deliver' }).ok).toBe(false); expect(g.state.cash).toBe(110);
   });
   it('releases reservation on timeout without awarding revenue or XP', () => {
     const g = new DemoGame(); supply(g); g.dispatch({ type: 'open' }); g.tick(10);
