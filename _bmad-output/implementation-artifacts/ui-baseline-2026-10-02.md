@@ -542,3 +542,7 @@ Theo yêu cầu thiết kế lại rõ ràng, sáu màn con dùng riêng header 
 Theo chỉnh tiếp của người dùng: sáu màn con thu gọn bằng tab Quản lý quán, giữ nav5tab và header chung. Body/footer cùng scale0.88/offset21.6; viewporty180 hoặc222, backtoolbar dưới nav. Mốc này thay phần fullscreen/header riêng của sáu màn ngay phía trên; không đổi artwork hoặc chức năng.
 
 Ảnh thu gọn: [Trang trí](ui-baseline/compact-shop-screens-2026-10-08/shop-decoration.png), [Menu](ui-baseline/compact-shop-screens-2026-10-08/shop-menu.png). Build và6hồi quy360×640 đạt, gồm giao dịch và toàn bộ tutorial.
+
+### Quán / Chợ / Kho — refinement requested 2026-10-12
+
+Chỉnh riêng body ba tab theo Quán.png/chợ.png/kho.png: thẻ kem viền nâu mềm, hình nguyên liệu lớn hơn, icon minh họa cho bộ lọc/xu/kho, thống kê Kho và badge xanh/cam/đỏ theo tồn/hạn dùng thật. Quán giữ sáu thẻ với chevron, chip lò/ô chờ và ảnh quán ghi Minh họa, trạng thái app giao hàng, ghi chú Đặt/Cất xanh. ManagementTabArt dùng crop art riêng từ references, không lấy chữ/số mẫu. Giữ header/cash/pause/nav5tab, transform0.88, nền fixed và toàn bộ hit/viewport/row53, các màn con/bếp/Tổng kết không đổi. Build/typecheck và3kiểm tra Chromium360×640 đạt; hai lỗi thông tin hiển thị qua review đã sửa. Ảnh: ui-baseline/management-market-stock-polish-2026-10-12. Đây là bản chỉnh theo yêu cầu để người dùng xem.

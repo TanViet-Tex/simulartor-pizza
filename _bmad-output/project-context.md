@@ -480,3 +480,7 @@ Theo chỉnh tiếp 2026-10-08: cả sáu màn con Quán thu gọn bằng tab Qu
 Đã cập nhật fixture/assertion lịch sử theo luật đã duyệt; không đổi production runtime/domain/scene/art/UI. Baseline75file/518test:401đạt,117lỗi; cuối75file/518test:518đạt,0lỗi,0skip và sốcase từngfile giữ nguyên. New500/legacy300, presale5s chỉ với lịch thật, oven6–8/4–6/2–4, stocktạibake, mộtworkbench, lottery/thanks qua publicAPI,30ngày giữ report/accounting thật. LegacyDemoGame riêng vẫn3ngày/300xu; không dùng để suy ra luật CozyRuntime hiện tại. Build/typecheck và2E2EChromium360×640 giao dịch/reload/lỗi-lưu–retry đạt. Xem implementation-artifacts/regression-refresh-summary-2026-10-12.md.
 
 Sprint đã cập nhật3.4–3.9/7.2–7.3→review theo bằng chứng implementation, không tựmarkdonehumanacceptance. Playtest5người vẫn0phiên, điện thoại thật/slow-network/releasebrowsermatrix chưa kiểm chứng. Deferredregressionlịch sử đã đóng theo báo cáo518/518.
+
+### Quán / Chợ / Kho — 2026-10-12
+
+Theo yêu cầu làm đẹp sát ảnh references: ba body dùng ManagementTabArt (crop art/no sample labels) và thẻ kem scoped; Quán sáu thẻ/chevron/chip dữ liệu thật/nhãn Minh họa và app status; Chợ icon filter/xu/kho, art nguyên liệu; Kho icon stats và badge tồn/hạn thật. Không đổi shell0.88/header/nav/nền/hit/viewport/row53, sáu subpage hay gameplay/save. Build/typecheck,3focusedChromium360×640 đạt; review hai P2 hiển thị đã sửa. Xem spec-management-market-stock-polish.md và gallery management-market-stock-polish-2026-10-12.

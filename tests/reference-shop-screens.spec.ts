@@ -40,6 +40,43 @@ async function fixture(page:Page,funded=true){
 async function open(page:Page,section:string){await tap(page,'shop-section-'+section);await expect(page.locator('canvas')).toHaveAttribute('data-shop-page',section);}
 async function restoreProduction(page:Page){await page.unroute('**/assets/index-*.js');await page.goto('/?mode=shop');await ready(page);}
 
+test('polished management market and stock keep real purchases filters and fixed shell',async({page},info)=>{
+  const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));await fixture(page);
+  const canvas=page.locator('canvas');
+  await canvas.screenshot({path:info.outputPath('polished-management.png')});
+  const shell=(await data(page,'controls')).filter((c:Control)=>c.id.startsWith('summary-tab-')||c.id==='pause');
+  expect((await data(page,'controls')).filter((c:Control)=>c.id.startsWith('shop-section-'))).toHaveLength(6);
+  await tap(page,'summary-tab-market');
+  await canvas.screenshot({path:info.outputPath('polished-market.png')});
+  await tap(page,'market-filter-base');
+  expect((await data(page,'market-rows')).map((r:any)=>r.id).sort()).toEqual(['cheese','dough']);
+  const beforeCash=Number(await canvas.getAttribute('data-cash'));
+  const before=(await data(page,'market-rows')).find((r:any)=>r.id==='dough');
+  await tap(page,'market-plus-dough');
+  const purchase=(await data(page,'market-rows')).find((r:any)=>r.id==='dough');
+  await tap(page,'market-buy-dough');await ready(page);
+  await expect(canvas).toHaveAttribute('data-cash',String(beforeCash-purchase.total));
+  expect((await data(page,'market-rows')).find((r:any)=>r.id==='dough').available).toBe(before.available+purchase.quantity);
+  await tap(page,'market-filter-all');await scroll(page,10000);
+  await expect.poll(async()=>(await data(page,'market-scroll')).offset).toBeGreaterThan(0);
+  await tap(page,'summary-tab-stock');
+  await canvas.screenshot({path:info.outputPath('polished-stock.png')});
+  const cash=await canvas.getAttribute('data-cash');
+  const stock=(await data(page,'stock-rows')).find((r:any)=>r.id==='dough');
+  expect(stock.usable).toBe(before.available+purchase.quantity);
+  await tap(page,'stock-item-dough');expect(await data(page,'hub-detail')).not.toBeNull();await tap(page,'hub-detail-close');
+  await tap(page,'stock-filter-low');
+  const threshold=page.getByRole('textbox',{name:'Ngưỡng sắp hết'});
+  await threshold.fill('1');await threshold.press('Enter');
+  expect((await data(page,'stock-rows')).every((r:any)=>r.usable<=1)).toBe(true);
+  await tap(page,'stock-filter-all');await scroll(page,10000);
+  await expect.poll(async()=>(await data(page,'stock-scroll')).offset).toBeGreaterThan(0);
+  expect((await data(page,'controls')).filter((c:Control)=>c.id.startsWith('summary-tab-')||c.id==='pause')).toEqual(shell);
+  await expect(canvas).toHaveAttribute('data-cash',cash!);
+  await tap(page,'summary-stock-market');await expect(canvas).toHaveAttribute('data-summary-tab','market');
+  expect(page.context().pages()).toHaveLength(1);expect(errors).toEqual([]);
+});
+
 test('all six illustrated pages have fixed shell, scroll and independent navigation',async({page},info)=>{
   const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));await fixture(page);
   const liveResources=()=>page.evaluate(()=>{const f=(window as any).shopFixture;return {textures:Object.keys(f.game.textures.list).filter(key=>key.startsWith('shop-')).length,handlers:['pointerdown','pointermove','pointerup','wheel'].map(name=>f.scene.input.listenerCount(name))};});

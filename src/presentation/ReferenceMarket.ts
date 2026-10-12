@@ -9,12 +9,13 @@ import {HUB_ART,HubCanvasUI} from './HubCanvasUI';
 import {MARKET_INGREDIENT_ART,drawMarketIngredient} from './MarketIngredientArt';
 import {recipeDefinition} from '../config/recipeCatalog';
 import type {StockRecipe} from '../domain/CozyStock';
+import {STOCK_REFERENCE_ART,drawManagementDetail,managementCard} from './ManagementTabArt';
 
 export type MarketFilter='all'|'sauce'|'topping'|'base';
 export type MarketDrag=HubDrag;
 type Hit=(id:string,x:number,y:number,w:number,h:number,enabled:boolean,action:()=>void)=>void;
 export const MARKET_ART=HUB_ART;
-export function preloadMarketArt(scene:Phaser.Scene):void{for(const art of [MARKET_ART,MARKET_INGREDIENT_ART,HUB_HEADER_ART])if(!scene.textures.exists(art.key))scene.load.image(art.key,`${import.meta.env.BASE_URL}${art.url}`);}
+export function preloadMarketArt(scene:Phaser.Scene):void{for(const art of [MARKET_ART,MARKET_INGREDIENT_ART,HUB_HEADER_ART,STOCK_REFERENCE_ART])if(!scene.textures.exists(art.key))scene.load.image(art.key,`${import.meta.env.BASE_URL}${art.url}`);}
 let serial=0;
 /** A bounded canvas window keeps native borders and row artwork clipped in WebGL. */
 export class ReferenceMarket{
@@ -27,9 +28,9 @@ export class ReferenceMarket{
     if(input.shell!==false)ui.navigation('market',input.tab);
     frame({x:8,y:133,width:344,height:40});
     const filters=[['all','Tất cả'],['sauce','Sốt'],['topping','Topping'],['base','Đế & phô mai']] as const;
-    filters.forEach(([id,title],i)=>{const x=15+i*84;panel(x,139,78,28,id===input.filter?colors.active:colors.inset);text(x+39,148,title,i===3?10:12,id===input.filter?colors.cream:colors.ink,true);this.hit(`market-filter-${id}`,x,136,78,34,true,()=>input.setFilter(id));});
-    frame({x:8,y:180,width:344,height:399});text(24,190,`Tổng: ${input.basketTotal} xu`,17);text(306,194,'Giá món ›',11,colors.muted,true);this.hit('market-price-open',269,184,67,29,input.canBuy,input.price);
-    text(24,208,`Dự phòng ${input.reservePercent}% · ${input.supplier.familiar?'Ưu đãi 10%':'Giá ngày '+input.day}`,10,colors.muted,false,308);
+    filters.forEach(([id,title],i)=>{const x=15+i*84,active=id===input.filter;managementCard(ctx,x,139,78,28,active?'#b74d27':'#f7e5c9',active?'#9c3d1c':'#d8b891',9);if(i)drawMarketIngredient(this.scene,ctx,i===1?'sauce':i===2?'mushroom':'cheese',x+3,143,18,19);text(x+(i?47:39),148,title,i===3?9:12,active?colors.cream:colors.ink,true,i?57:70);this.hit(`market-filter-${id}`,x,136,78,34,true,()=>input.setFilter(id));});
+    frame({x:8,y:180,width:344,height:399});drawManagementDetail(this.scene,ctx,'leaf',21,187,18,24);text(43,188,`Mua cho ngày ${input.day}`,16);text(306,194,'Giá món ›',11,colors.muted,true);this.hit('market-price-open',269,184,67,29,input.canBuy,input.price);
+    text(24,208,`${input.basketTotal} xu · Dự phòng ${input.reservePercent}% · ${input.supplier.familiar?'Ưu đãi 10%':'Giá ngày '+input.day}`,10,colors.muted,false,308);
     const viewport={x:17,y:219,width:321,height:318},rowHeight=53;
     const ids=[...STOCK_INGREDIENTS].sort((a,b)=>{const order:StockIngredient[]=['dough','cheese','sauce','mushroom','sausage','chicken'];return (order.includes(a)?order.indexOf(a):6+STOCK_INGREDIENTS.indexOf(a))-(order.includes(b)?order.indexOf(b):6+STOCK_INGREDIENTS.indexOf(b));}).filter(id=>input.filter==='all'||input.filter==='sauce'&&id.startsWith('sauce')||input.filter==='base'&&['dough','cheese'].includes(id)||input.filter==='topping'&&!id.startsWith('sauce')&&!['dough','cheese'].includes(id));
     const max=Math.max(0,ids.length*rowHeight-viewport.height),offset=Phaser.Math.Clamp(input.offset,0,max);
@@ -45,7 +46,7 @@ export class ReferenceMarket{
     hubListWindow(this.scene,this.layer,{key:listKey,viewport,height:rows.length*rowHeight,offset,drag:input.drag,allowed:input.canScroll,
       paint:(listUI,ctx)=>{const panel=listUI.panel.bind(listUI),text=listUI.text.bind(listUI),ui=listUI;
     rows.forEach((row,i)=>{const {id}=row,y=i*rowHeight;
-      panel(17,y,321,50,colors.paper);drawMarketIngredient(this.scene,ctx,id,23,y+6,42,38);
+      managementCard(ctx,17,y,321,50);drawMarketIngredient(this.scene,ctx,id,20,y+3,50,44);
       if(!row.unlocked){
         text(73,y+6,row.name,HUB_THEME.typography.body,colors.muted,false,120);
         const required=row.recipes.map(recipe=>recipeDefinition(recipe).name).join(' / ');
@@ -56,7 +57,10 @@ export class ReferenceMarket{
       }
       const permanent=isNonExpiring(id);
       text(73,y+(permanent?4:6),row.name,HUB_THEME.typography.body,colors.ink,false,120);
-      text(73,y+(permanent?20:24),`${row.unitPrice} xu · Kho: ${row.available}`,permanent?10:HUB_THEME.typography.meta,colors.muted,false,120);
+      drawManagementDetail(this.scene,ctx,'coin',73,y+(permanent?18:23),12);
+      text(87,y+(permanent?20:24),String(row.unitPrice),10,colors.ink,false,32);
+      drawManagementDetail(this.scene,ctx,'crate',117,y+(permanent?18:23),12);
+      text(132,y+(permanent?20:24),`Kho: ${row.available}`,10,colors.muted,false,60);
       if(permanent)text(73,y+30,'Không hết hạn',9,colors.muted,false,120);
       text(73,y+(permanent?40:37),`${row.total} xu · ${row.remainingCash>=0?'Còn '+row.remainingCash:'Thiếu '+(-row.remainingCash)}`,permanent?9:HUB_THEME.typography.meta,row.remainingCash<0?colors.danger:colors.muted,false,120);
       panel(196,y+10,80,30,colors.quantity,colors.quantity,6);text(209,y+16,'−',18,colors.stepperInk,true);panel(222,y+11,27,28,colors.field,colors.field,3);text(235,y+17,String(row.quantity),14,colors.ink,true);text(262,y+16,'+',18,colors.stepperInk,true);

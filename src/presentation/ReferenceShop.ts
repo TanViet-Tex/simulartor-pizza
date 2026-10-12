@@ -12,6 +12,7 @@ import type {StaffRole} from '../config/staffCatalog';
 import type {StaffAcquisition} from '../domain/StaffCheckpoint';
 import type {HubDrag} from './HubListWindow';
 import {drawShopScreen} from './ShopScreens';
+import {drawManagementDetail,managementCard} from './ManagementTabArt';
 
 export type ShopPage='home'|'menu'|'decoration'|'equipment'|'amenities'|'expansion'|'staff';
 export const SHOP_ART=[
@@ -30,7 +31,7 @@ const sections=[
   {id:'menu',title:'Menu & giá bán',subtitle:'Chọn món · Chỉnh giá',crop:[95,752,270,143]},
   {id:'decoration',title:'Trang trí',subtitle:'Mua đồ · Đặt / Cất',crop:[513,750,323,145]},
   {id:'equipment',title:'Thiết bị',subtitle:'Nâng cấp lò hiện có',crop:[60,1000,339,150]},
-  {id:'amenities',title:'Tiện nghi',subtitle:'Mua & đặt chưa mở',crop:[534,1007,326,143]},
+  {id:'amenities',title:'Tiện nghi',subtitle:'Mua đồ · Đặt / Cất',crop:[534,1007,326,143]},
   {id:'expansion',title:'Mở rộng quán',subtitle:'Nâng ô hàng chờ',crop:[58,1260,345,145]},
   {id:'staff',title:'Nhân viên',subtitle:'Thuê theo nghề · Xem lương',crop:[571,1259,239,145]},
 ] as const;
@@ -55,13 +56,21 @@ export class ReferenceShop {
       art('reference-shop',[40,354,865,308],15,140,330,117);
       const placed=input.shop?.acquired.filter(item=>item.placedSlot!==null)??[];
       placed.forEach(entry=>{const item=SHOP_CATALOG.find(item=>item.id===entry.id)!,slot=SHOP_INSTALL_LOCATIONS[item.id],x=15+330*slot.x,y=140+117*slot.y;ui.panel(x-15,y-slot.height/2-2,30,slot.height+4,c.inset);art(item.artKey,item.crop,x-13,y-slot.height/2,26,slot.height);});
-      ui.text(180,263,input.shop?`Minh họa · Đang đặt ${placed.length} · Khách +${Math.round(input.shop.effects.visitors*100)}% · Chờ +${Math.round(input.shop.effects.patience*100)}%`:`Minh họa · Lò cấp ${input.ovenLevel} · ${input.queueCapacity} ô chờ`,10,c.muted,true,323);
+      managementCard(ctx,83,254,194,27,'#fff2d5','#d8b48a',12);
+      drawManagementDetail(this.scene,ctx,'leaf',90,259,15,18);drawManagementDetail(this.scene,ctx,'leaf',256,259,15,18);
+      ui.text(180,258,`Lò cấp ${input.ovenLevel} · ${input.queueCapacity} ô chờ`,12,c.ink,true,144);
+      ui.text(180,273,input.shop?`Minh họa · Đặt ${placed.length} · Khách +${Math.round(input.shop.effects.visitors*100)}% · Chờ +${Math.round(input.shop.effects.patience*100)}%`:'Quán hiện tại · Minh họa',8,c.muted,true,188);
       sections.forEach((section,i)=>{
         const x=8+i%2*176,y=292+Math.floor(i/2)*95;
-        ui.panel(x,y,168,89);art('reference-shop',section.crop,x+15,y+4,137,48);
-        ui.text(x+84,y+54,section.title,14,c.ink,true,155);ui.text(x+84,y+72,section.id==='amenities'&&input.deliveryApp?'App giao hàng · '+(input.deliveryApp.available?(input.deliveryApp.enabled?'Bật':'Tắt'):'Từ ngày 5'):section.subtitle,10,c.muted,true,155);
+        managementCard(ctx,x,y,168,89,'#fff3db','#87562d',12);
+        ctx.save();ctx.beginPath();ctx.ellipse(x+79,y+49,53,6,0,0,Math.PI*2);ctx.fillStyle='#f0d2a5';ctx.fill();ctx.restore();
+        art('reference-shop',section.crop,x+10,y+3,137,52);
+        ui.text(x+153,y+28,'›',25,'#7b563a',true);
+        const subtitle=section.id==='amenities'&&input.deliveryApp?'App giao hàng · '+(input.deliveryApp.available?(input.deliveryApp.enabled?'Bật':'Tắt'):'Từ ngày 5'):section.subtitle;
+        ui.text(x+84,y+57,section.title,14,c.ink,true,155);ui.text(x+84,y+75,subtitle,9,c.muted,true,155);
         this.hit(`shop-section-${section.id}`,x,y,168,89,true,()=>input.open(section.id));
       });
+      managementCard(ctx,12,575,336,13,'#e8eed4','#bbc995',6);drawManagementDetail(this.scene,ctx,'crate',48,575,12);drawManagementDetail(this.scene,ctx,'leaf',28,575,12);ui.text(196,577,'Đồ đã mua có thể đặt vào quán hoặc cất đi',9,'#355b2d',true,278);
     }
     ui.footer(input.footer);texture.refresh();const image=this.scene.add.image(0,0,key).setOrigin(0).setDisplaySize(360,640);this.layer.add(image);illustrations.forEach(draw=>draw());
     image.once('destroy',()=>this.scene.textures.remove(key));
