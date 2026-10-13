@@ -520,3 +520,9 @@ Theo yêu cầu mới, ngày 1–3 chỉ bán pizza. DRINK_UNLOCK_DAY=4 khóa mu
 Màu chọn của cả năm tab Tổng kết/Chợ/Kho/Quán/Nhiệm vụ chỉ phủ vùng tên phía dưới (y105–129), chừa icon gốc phía trên. Giữ navigation22/80/316×49, năm vùng chạm và artwork hiện có. Nguồn vẽ chung: paintHubNavigation trong HubHeader.ts.
 
 Build/typecheck và 1 E2E Chromium 360×640 kiểm tra cả năm tab, chuyển màn/cuộn/vùng chạm đạt; ảnh Tổng kết xác nhận icon không bị phủ màu chọn.
+
+### Animation toàn ô tab quản lý — chỉnh tiếp 2026-10-13
+
+Yêu cầu mới “cả ô” thay giới hạn chỉ tô vùng tên: toàn ô chọn có nền vàng nhạt/viền vàng nhẹ, icon gốc không đổi màu/độ sáng. Timeline chọn 150ms, nhấn về96% ở60ms rồi trở lại100% tại120ms; active giữ nền, không tự lặp. Giảm chuyển động chốt ngay cả khi đang chạy. HubNavigationMotion giữ trạng thái qua redraw; chỉ refresh navbar, không vẽ lại toàn bộ màn mỗi frame và không dùng flash phủ icon cho tab. Geometry/vùng chạm22/80/316×49 giữ nguyên. Xem implementation-artifacts/spec-hub-tab-animation.md.
+
+Build/typecheck, 9 unit và 1 E2E Chromium360×640 kiểm tra cả năm tab đạt. Icon dùng cache trên lưới raster2× với mask bỏ nền kem nối mép, giữ chi tiết icon; không để crop vuông kem đè nền vàng.

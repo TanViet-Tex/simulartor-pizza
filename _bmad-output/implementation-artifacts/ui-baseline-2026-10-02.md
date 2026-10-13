@@ -7,6 +7,10 @@ date: '2026-10-02'
 
 # Giao diện hiện tại là mốc cho các lần triển khai sau
 
+### Animation toàn ô tab — chỉnh tiếp 2026-10-13
+
+Theo yêu cầu “cả ô”, nền vàng nhạt và viền vàng nhẹ phủ toàn bộ tab đang chọn, thay phạm vi chỉ vùng tên bên dưới. Icon được giữ màu và độ sáng gốc. Chuyển nền/viền 150ms, nhấn co quanh tâm 96% rồi trở lại trong tổng 120ms; vùng chạm và bố cục không đổi. Trạng thái chọn giữ nền, không lặp animation; giảm chuyển động chuyển ngay. Xem [spec](spec-hub-tab-animation.md).
+
 ### Màu chọn tab quản lý — yêu cầu 2026-10-13
 
 Tab được chọn chỉ tô màu vùng tên phía dưới, chừa icon phía trên; áp dụng chung Tổng kết/Chợ/Kho/Quán/Nhiệm vụ. Giữ artwork, màu chọn, geometry và vùng chạm hiện có.

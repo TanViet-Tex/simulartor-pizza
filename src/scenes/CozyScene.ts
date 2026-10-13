@@ -38,6 +38,7 @@ import {CashFeedback} from '../presentation/CashFeedback';
 import {ManagementBackground,preloadManagementBackground} from '../presentation/ManagementBackground';
 import {HUB_WALL_LAYOUT,HUB_SHELL_LAYOUT,SHOP_SCREEN_LAYOUT,hubWallPoint,hubWallRect} from '../presentation/HubWallLayout';
 import {drawHubShell} from '../presentation/HubHeader';
+import {HubNavigationMotion} from '../presentation/HubNavigationMotion';
 import {SUMMARY_MODAL_LAYOUT} from '../presentation/SummaryModalLayout';
 import {CASH_HEADER_BOUNDS,drawCashHeader} from '../presentation/CashHeader';
 import { PLAY_BANDS, timerText } from '../presentation/PlayHud';
@@ -72,6 +73,9 @@ export class CozyScene extends Phaser.Scene {
   private art!:CozyArt;
   private controls:Control[]=[];
   private dirty=true;
+  private hubNavigationMotion=new HubNavigationMotion();
+  private hubNavigationRefresh?:()=>void;
+  private hubNavigationSignature='';
   private signature='';
   private motion?:MediaQueryList;
   private heatBar?:Phaser.GameObjects.Graphics;
@@ -277,6 +281,10 @@ export class CozyScene extends Phaser.Scene {
     const sig=[this.runtime.productionOwnerId,board?.stage,board?.ingredients.join(','),board?.finishingSauces.join(','),s.stage,s.ingredients.join(','),s.finishingSauces.join(','),s.extracted,!this.runtime.productionActive&&s.ovenSeconds>=this.runtime.bakeTiming.perfectStart,this.runtime.ovenState?.stage,this.runtime.ovenOwner,this.frameExpress.map(o=>o.id).join(','),this.frameTickets.map(t=>`${t.id}:${t.packed}:${t.riderState}:${t.stage}`).join(','),this.runtime.selectedTicketId,this.runtime.tutorialActive,this.runtime.tutorialProgress?.index,this.runtime.tutorialProgress?.status,this.runtime.pauseRevision,this.runtime.shopRevision,this.runtime.shiftClock.phase,this.runtime.deliveryStatus.phase].join('|');
     const presentationSig=`${sig}|${this.runtime.specialWelcome?.ticketId??''}|${this.runtime.specialBubble?.id??''}`;
     if(this.dirty||presentationSig!==this.signature){this.signature=presentationSig;this.draw();}
+    if(this.hubNavigationRefresh){
+      const motionSignature=JSON.stringify(this.hubNavigationMotion.sample(performance.now(),this.reducedMotion));
+      if(motionSignature!==this.hubNavigationSignature){this.hubNavigationSignature=motionSignature;this.hubNavigationRefresh();}
+    }
     const oven=this.runtime.productionActive?this.runtime.ovenState:s;
     const heatSignature=`${oven?.stage}:${oven?.ovenSeconds??0}`;
     if(this.heatBar&&heatSignature!==this.heatSignature){this.heatSignature=heatSignature;const seconds=oven?.ovenSeconds??0,timing=this.runtime.bakeTiming;this.heatBar.clear().fillStyle(0x49372d,1).fillRoundedRect(243,357,100,6,3);if(seconds>0)this.heatBar.fillStyle(seconds>timing.perfectEnd?0xe54b3c:seconds>=timing.perfectStart?0x68bd58:0xfff1dc,1).fillRoundedRect(243,357,Math.max(6,100*Math.min(1,seconds/timing.gaugeEnd)),6,3);}
@@ -397,11 +405,13 @@ export class CozyScene extends Phaser.Scene {
         const allowed=targetId.startsWith('tutorial-')?{x:rect.x,y:rect.y,width:rect.w,height:rect.h}:this.tutorialInputFocus;
         if(!allowed||!tutorialContains(allowed,pointer.x,pointer.y))return;
       }
-      const flash=this.add.rectangle(rect.x+rect.w/2,rect.y+rect.h/2,rect.w-4,rect.h-4,0xfff3dc,.23).setDepth(60);
-      const effect:{object:Phaser.GameObjects.Rectangle;tween?:Phaser.Tweens.Tween;timer?:Phaser.Time.TimerEvent}={object:flash};this.feedback.add(effect);
-      const dispose=()=>{this.feedback.delete(effect);flash.destroy();};
-      if(this.reducedMotion)effect.timer=this.time.delayedCall(140,dispose);
-      else effect.tween=this.tweens.add({targets:flash,alpha:0,scaleX:.96,scaleY:.96,duration:190,onComplete:dispose,onStop:dispose});
+      if(!targetId.startsWith('summary-tab-')){
+        const flash=this.add.rectangle(rect.x+rect.w/2,rect.y+rect.h/2,rect.w-4,rect.h-4,0xfff3dc,.23).setDepth(60);
+        const effect:{object:Phaser.GameObjects.Rectangle;tween?:Phaser.Tweens.Tween;timer?:Phaser.Time.TimerEvent}={object:flash};this.feedback.add(effect);
+        const dispose=()=>{this.feedback.delete(effect);flash.destroy();};
+        if(this.reducedMotion)effect.timer=this.time.delayedCall(140,dispose);
+        else effect.tween=this.tweens.add({targets:flash,alpha:0,scaleX:.96,scaleY:.96,duration:190,onComplete:dispose,onStop:dispose});
+      }
       const visible=this.visibleActions.find(c=>c.id===targetId);
       const settings=this.pauseSettings||targetId==='pause-settings';
       if(visible)visible.action();const audioStatus=this.audio.status;void this.audio.interact().then(()=>{if(!settings)this.audio.cue();if(this.audio.status!==audioStatus)this.dirty=true;});this.dirty=true;
@@ -455,6 +465,7 @@ export class CozyScene extends Phaser.Scene {
     this.button(id,0,0,0,0,buttonTitle,enabled,action);
   }
   private draw():void{
+    this.hubNavigationRefresh=undefined;
     this.managementBackground?.hide();this.hubLayer=undefined;
     this.routeTutorial();this.tutorialInputFocus=null;
     const feedbackState=`${this.runtime.shopPhase}:${this.runtime.pauseRevision}`;
@@ -902,11 +913,12 @@ export class CozyScene extends Phaser.Scene {
         summary!.ending?{id:'summary-final-result',title:'Kết quả chiến dịch',enabled:!this.campaignSession||['ready','temporary'].includes(this.campaignSession.view.state),action:()=>this.openFinalResults()}:
         {id:'summary-open-next-day',title:`Mở quán — Ngày ${summary!.day+1}`,enabled:this.runtime.canOpenNextDay,action:()=>{this.runtime.openNextDay();this.inspectedOrderId=null;}};
       const reports=this.runtime.completedReports,previous=summary?reports.find(r=>r.day===summary.day-1):undefined;
-      const tab=(id:'summary'|'market'|'stock'|'shop'|'missions')=>{if(id==='shop')this.setShopPage('home');this.summaryTab=id;this.stockDrag.active=false;this.marketDrag.active=false;this.dirty=true;};
+      const tab=(id:'summary'|'market'|'stock'|'shop'|'missions')=>{this.hubNavigationMotion.select(id,performance.now(),this.reducedMotion);if(id==='shop')this.setShopPage('home');this.summaryTab=id;this.stockDrag.active=false;this.marketDrag.active=false;this.dirty=true;};
       const shopTitles={home:'Quản lý quán',menu:'Menu & giá bán',decoration:'Trang trí',equipment:'Thiết bị',amenities:'Tiện nghi',expansion:'Mở rộng quán',staff:'Nhân viên'};
       const title=this.summaryTab==='summary'?(summary?`Kết thúc ngày ${summary.day}`:'Chuẩn bị mở cửa'):this.summaryTab==='market'?'Chợ nguyên liệu':this.summaryTab==='stock'?'Kho nguyên liệu':this.summaryTab==='shop'?shopTitles[this.shopPage]:'Nhiệm vụ';
       const subtitle=this.summaryTab==='missions'?`Ngày ${this.runtime.preparationDay} · Cấp ${this.runtime.progression.level}`:this.summaryTab==='summary'?(summary?`Ngày ${this.runtime.day} · Cấp ${this.runtime.progression.level}`:`Ngày ${this.runtime.day} chưa bắt đầu`):`Chuẩn bị ngày ${this.runtime.preparationDay}`;
-      drawHubShell(this,this.layer,(...args)=>this.hit(...args),{title,subtitle,cash:this.runtime.state.cash,pause:()=>this.hold('user'),active:this.summaryTab,tab});
+      if(this.hubNavigationMotion.sample(performance.now(),this.reducedMotion).active!==this.summaryTab)this.hubNavigationMotion.select(this.summaryTab,performance.now(),true);
+      this.hubNavigationRefresh=drawHubShell(this,this.layer,(...args)=>this.hit(...args),{title,subtitle,cash:this.runtime.state.cash,pause:()=>this.hold('user'),active:this.summaryTab,tab,motion:()=>this.hubNavigationMotion.sample(performance.now(),this.reducedMotion)});
       this.game.canvas.dataset.hubShellLayout=JSON.stringify(HUB_SHELL_LAYOUT);
       if(this.summaryTab==='stock'){
         new ReferenceStock(this,this.hubLayer,(...args)=>this.hubHit(...args),render=>this.syncListHits(render)).draw({shell:false,day:this.runtime.preparationDay,cash:this.runtime.state.cash,rows:stockRows(this.runtime.stockLots,this.runtime.preparationDay,id=>this.runtime.reserved(id)),filter:this.stockFilter,low:this.stockLow,expiryDays:this.stockExpiry,offset:this.stockOffset,drag:this.stockDrag,canScroll:()=>this.runtime.pauses.length===0,scroll:n=>{this.stockOffset=n;},setFilter:f=>this.setStockFilter(f),detail:id=>this.openStockLot(id),suggestions:()=>this.openStockPlanner(),market:()=>tab('market'),tab,pause:()=>this.hold('user')});return;
