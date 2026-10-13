@@ -47,9 +47,9 @@ describe('direct kitchen gameplay',()=>{
     expect(r.owned('dough')).toBe(2);expect(r.expressOrders).toEqual([]);time(r,1);expect(r.owned('dough')).toBe(2);expect(r.closeDay()).toBe(true);
     expect(r.daySummary!.purchases).toBe(2*price);expect(r.daySummary!.cost).toBe(0);
   });
-  it('uses inclusive six to eight seconds and burns immediately after eight',()=>{
-    const r=new CozyRuntime(false,true,schedule());for(const id of ['dough','sauce','cheese'] as const)r.buy(id,2);r.openShop();oven(r);time(r,8);expect(r.state.stage).toBe('baking');time(r,.05);expect(r.state.stage).toBe('burnt');
-    expect(r.bakeTiming).toMatchObject({perfectStart:6,perfectEnd:8});
+  it('uses inclusive four to seven seconds and burns immediately after seven',()=>{
+    const r=new CozyRuntime(false,true,schedule());for(const id of ['dough','sauce','cheese'] as const)r.buy(id,2);r.openShop();oven(r);time(r,7);expect(r.state.stage).toBe('baking');time(r,.05);expect(r.state.stage).toBe('burnt');
+    expect(r.bakeTiming).toMatchObject({perfectStart:4,perfectEnd:7});
   });
   it.each([true,false])('asks bargain only after cooking and delivery, decision=%s settles exactly once',accept=>{
     const r=new CozyRuntime(false,true,schedule('bargain'));for(const id of ['dough','sauce','cheese'] as const)r.buy(id,1);r.openShop();expect(r.bargainPending).toBeNull();oven(r);time(r,6);r.dispatch({type:'extract'});
@@ -62,10 +62,10 @@ describe('direct kitchen gameplay',()=>{
     expect(r.dispatch({type:'shop.upgrade',kind:'queue',commandId:'seats'})).toBe(false);expect(r.state.cash).toBe(cash);r.openShop();time(r,6);expect(r.tickets).toHaveLength(5);expect(r.queueCapacity).toBe(5);
     expect(r.dispatch({type:'shop.upgrade',kind:'oven',commandId:'hot'})).toBe(false);
   });
-  it('persists an oven upgrade, then uses four to six seconds without charging it twice',()=>{
+  it('persists an oven upgrade, then uses three to six seconds without charging it twice',()=>{
     const r=CozyRuntime.restoreCheckpoint(fundedShopCheckpoint(),false,schedule())!;const cash=r.state.cash;expect(r.upgradeShop('oven','oven-1')).toBe(true);
     const saved=r.exportCheckpoint(),loaded=CozyRuntime.restoreCheckpoint(saved)!;expect(loaded).not.toBeNull();expect(loaded.ovenLevel).toBe(1);expect(loaded.state.cash).toBe(cash-2000);
-    for(const id of ['dough','sauce','cheese'] as const)loaded.buy(id,1);loaded.openShop();time(loaded,10);oven(loaded);time(loaded,4);expect(loaded.dispatch({type:'extract'})).toBe(true);expect(loaded.state.stage).toBe('ready');
+    for(const id of ['dough','sauce','cheese'] as const)loaded.buy(id,1);loaded.openShop();time(loaded,10);oven(loaded);time(loaded,3);expect(loaded.dispatch({type:'extract'})).toBe(true);expect(loaded.state.stage).toBe('ready');
     loaded.closeDay();expect(loaded.daySummary!.accounts.capitalPurchases).toBe(2000);expect(loaded.daySummary!.accounts.endingCash).toBe(loaded.state.cash);
     const restored=CozyRuntime.restoreCheckpoint(loaded.exportCheckpoint())!;expect(restored.ovenLevel).toBe(1);expect(restored.state.cash).toBe(loaded.state.cash);
   });

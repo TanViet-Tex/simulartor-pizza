@@ -54,6 +54,13 @@ async function unlock(f:ReturnType<typeof mediaFixture>){
   if(first)for(const [name,media] of f.streams)if(name!=='nhạc nèn bán pizza 2.mp3'){media.play.mockClear();media.pause.mockClear();}
 }
 describe('file audio playback',()=>{
+  it('reduces payment by another 30 percent in native fallback without changing other mixes',async()=>{
+    const f=mediaFixture();await unlock(f);f.audio.setEffectsVolume(.5);f.audio.effect('payment');await flush();
+    expect(f.streams.get('thanh toán.mp3')!.volume).toBeCloseTo(.5*.6*.7);
+    expect(f.streams.get('sốt.mp3')!.volume).toBe(.5);
+    expect(f.streams.get('tiếng khách đến.wav')!.volume).toBeCloseTo(.45);
+    expect(f.streams.get('nhạc nèn bán pizza 2.mp3')!.volume).toBe(.2);
+  });
   it('preloads payment and restarts the same single voice for successive transactions',async()=>{
     const f=mediaFixture();await unlock(f);const payment=f.streams.get('thanh toán.mp3')!;
     expect(payment.preload).toBe('auto');expect(payment.loop).toBe(false);
@@ -67,7 +74,7 @@ describe('file audio playback',()=>{
   it('payment follows effects volume and cancels pending playback on mute or disposal',async()=>{
     const f=mediaFixture(true);await unlock(f);f.audio.setEffectsVolume(.35);f.audio.effect('payment');await flush();
     const payment=f.streams.get('thanh toán.mp3')!;
-    expect(f.audio.snapshot.streams.find(stream=>stream.name==='payment')!.effectiveGain).toBeCloseTo(.35*.60);
+    expect(f.audio.snapshot.streams.find(stream=>stream.name==='payment')!.effectiveGain).toBeCloseTo(.35*.42);
     f.audio.toggleMute();expect(payment.paused).toBe(true);expect(payment.currentTime).toBe(0);
     expect(f.audio.snapshot.streams.find(stream=>stream.name==='payment')!.effectiveGain).toBe(0);
     f.audio.effect('payment');expect(payment.play).toHaveBeenCalledOnce();
@@ -170,7 +177,7 @@ describe('file audio playback',()=>{
     expect(plays.filter(play=>play.src.startsWith('data:audio/wav'))).toHaveLength(6);
     for(const play of plays.filter(play=>play.src.startsWith('data:')))expect(play).toMatchObject({muted:true,volume:0});
     await interaction;await flush();
-    for(const [name,media] of f.streams){expect(media.src).toContain(encodeURIComponent(name));expect(media.preload).toBe(name==='cài đặt.mp3'||name==='thanh toán.mp3'?'auto':'metadata');expect(media.muted).toBe(false);expect(media.volume).toBe(name.includes('nền')||name.includes('nèn')?.20:name==='thanh toán.mp3'?.60:name==='oven-baking.wav'||name==='tiếng khách đến.wav'?.90:1);expect(media.paused).toBe(name!=='nhạc nèn bán pizza 2.mp3');}
+    for(const [name,media] of f.streams){expect(media.src).toContain(encodeURIComponent(name));expect(media.preload).toBe(name==='cài đặt.mp3'||name==='thanh toán.mp3'?'auto':'metadata');expect(media.muted).toBe(false);expect(media.volume).toBe(name.includes('nền')||name.includes('nèn')?.20:name==='thanh toán.mp3'?.42:name==='oven-baking.wav'||name==='tiếng khách đến.wav'?.90:1);expect(media.paused).toBe(name!=='nhạc nèn bán pizza 2.mp3');}
   });
   it('recovers music and oven after native audio interruption on the next gesture',async()=>{
     const f=mediaFixture();await unlock(f);f.audio.syncOven(true,false);await flush();

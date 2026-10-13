@@ -118,7 +118,7 @@ export class PlayAudio {
   }
   private mix(name:Sound,stream:Stream):void{
     const music=name.startsWith('music');
-    const level=stream.priming?0:music?MUSIC_VOLUME:this.muted?0:this.volume*(name==='payment'?.60:name==='oven'||name==='arrival'?.90:1);
+    const level=stream.priming?0:music?MUSIC_VOLUME:this.muted?0:this.volume*(name==='payment'?.42:name==='oven'||name==='arrival'?.90:1);
     if(stream.gain){stream.media.volume=1;stream.gain.gain.value=level*(name==='oven'&&!this.ovenDing?OVEN_GAIN:1);}
     else stream.media.volume=level;
   }

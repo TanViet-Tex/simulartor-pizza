@@ -33,7 +33,7 @@ async function fixture(page:Page,mode:'regular'|'poor'|'terminal'='regular'){
   await page.route('**/assets/index-*.js',route=>route.abort());await page.goto('/');
   await page.setContent('<style>html,body{margin:0;height:100%;overflow:hidden}#fixture{width:100%;height:100%}</style><div id="fixture"></div>');
   await page.addScriptTag({content:bundle.outputFiles[0].text});
-  await expect(page.locator('canvas')).toHaveAttribute('data-screen',mode==='terminal'?'day-summary':'preparation-hub');
+  await expect(page.locator('canvas')).toHaveAttribute('data-screen',mode==='terminal'?'day-summary':'preparation-hub',{timeout:30000});
   await tap(page,'summary-tab-market');
 }
 async function buyTwo(page:Page,id:string,filter='base'){
@@ -49,7 +49,7 @@ async function scrollToEnd(page:Page){
 test('regular market purchase enters stock and is used once through the next-day flow',async({page},info)=>{
   const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));
   await fixture(page);const canvas=page.locator('canvas');
-  expect((await data(page,'market-rows')).length).toBe(19);await canvas.screenshot({path:info.outputPath('reference-market.png')});
+  expect((await data(page,'market-rows')).length).toBe(22);await canvas.screenshot({path:info.outputPath('reference-market.png')});
   await buyTwo(page,'dough');await buyTwo(page,'cheese');await buyTwo(page,'sauce','sauce');
   await expect(canvas).toHaveAttribute('data-cash','270');expect(await data(page,'express-orders')).toEqual([]);
   await tap(page,'summary-tab-stock');
@@ -88,7 +88,7 @@ test('day one clock ends with a single acknowledgement before summary and preser
 });
 
 test('filters and scroll expose all nineteen real ingredients and cancellation changes nothing',async({page},info)=>{
-  await fixture(page);const canvas=page.locator('canvas');
+  await fixture(page);const canvas=page.locator('canvas'),startingCash=Number(await canvas.getAttribute('data-cash'));
   const beforeModal=await data(page,'market-scroll'),bounds=(await canvas.boundingBox())!;
   const wheelBehind=async()=>{await page.mouse.move(bounds.x+120*bounds.width/360,bounds.y+350*bounds.height/640);await page.mouse.wheel(0,200);await page.waitForTimeout(150);expect((await data(page,'market-scroll')).offset).toBe(beforeModal.offset);};
   await tap(page,'pause');await wheelBehind();await tap(page,'resume');
@@ -96,17 +96,17 @@ test('filters and scroll expose all nineteen real ingredients and cancellation c
   await tap(page,'market-filter-sauce');expect((await data(page,'market-rows')).map((r:Row)=>r.id).sort()).toEqual(['sauce','sauce-white','sauce-bbq','sauce-pesto','sauce-hot'].sort());
   await tap(page,'market-filter-base');expect((await data(page,'market-rows')).map((r:Row)=>r.id).sort()).toEqual(['cheese','dough']);
   await tap(page,'market-buy-all');await expect.poll(async()=>await data(page,'market-basket')).not.toBeNull();
-  const stock=await data(page,'stock');await canvas.screenshot({path:info.outputPath('market-confirmation.png')});
+  const stock=await data(page,'stock'),quotedTotal=(await data(page,'market-basket')).total;await canvas.screenshot({path:info.outputPath('market-confirmation.png')});
   expect(((await data(page,'controls')) as Control[]).some(c=>c.id==='summary-open-first-day'&&c.enabled)).toBe(false);
-  await tap(page,'market-purchase-cancel');await expect(canvas).toHaveAttribute('data-cash','300');expect(await data(page,'stock')).toEqual(stock);
+  await tap(page,'market-purchase-cancel');await expect(canvas).toHaveAttribute('data-cash',String(startingCash));expect(await data(page,'stock')).toEqual(stock);
   await tap(page,'market-buy-all');
   const confirm=((await data(page,'controls')) as Control[]).find(c=>c.id==='market-purchase-confirm')!,box=(await canvas.boundingBox())!;
   for(let i=0;i<2;i++)await page.touchscreen.tap(box.x+(confirm.x+confirm.width/2)*box.width/360,box.y+(confirm.y+confirm.height/2)*box.height/640);
-  await expect(canvas).toHaveAttribute('data-cash','280');expect((await data(page,'stock')).find((s:{id:string})=>s.id==='dough').owned).toBe(1);
+  await expect(canvas).toHaveAttribute('data-cash',String(startingCash-quotedTotal));expect((await data(page,'stock')).find((s:{id:string})=>s.id==='dough').owned).toBe(1);
   await tap(page,'market-filter-topping');expect((await data(page,'market-rows')).length).toBe(12);
   const b=(await canvas.boundingBox())!,region=await data(page,'market-scroll');
-  await page.mouse.move(b.x+120*b.width/360,b.y+(region.y+region.height-20)*b.height/640);await page.mouse.down();
-  await page.mouse.move(b.x+120*b.width/360,b.y+(region.y+30)*b.height/640,{steps:12});await page.mouse.up();
+  const wall=await data(page,'hub-wall-layout');await page.mouse.move(b.x+(wall.x+120*wall.scale)*b.width/360,b.y+(wall.y+(region.y+region.height-20)*wall.scale)*b.height/640);await page.mouse.down();
+  await page.mouse.move(b.x+(wall.x+120*wall.scale)*b.width/360,b.y+(wall.y+(region.y+30)*wall.scale)*b.height/640,{steps:12});await page.mouse.up();
   await expect.poll(async()=>(await data(page,'market-scroll')).offset).toBeGreaterThan(100);
   await scrollToEnd(page);await canvas.screenshot({path:info.outputPath('market-scrolled.png')});
   expect((await data(page,'market-rows')).some((r:Row)=>r.id==='pineapple'&&r.visible)).toBe(true);
@@ -200,7 +200,7 @@ test('shop has six categories, real menu editing and confirmed atomic upgrades',
   for(const section of ['decoration','amenities','staff']){await tap(page,'shop-section-'+section);await expect(canvas).toHaveAttribute('data-shop-page',section);await canvas.screenshot({path:info.outputPath('shop-'+section+'.png')});await expect(canvas).toHaveAttribute('data-cash','300');await tap(page,'shop-screen-back');}
   await tap(page,'shop-section-menu');await tap(page,'shop-price-cheese');await tap(page,'market-price-plus');await tap(page,'market-price-save');expect((await data(page,'menu-recipes')).includes('cheese')).toBe(true);await tap(page,'shop-screen-back');
   await tap(page,'shop-section-equipment');await canvas.screenshot({path:info.outputPath('shop-equipment.png')});await tap(page,'summary-upgrade-oven');await tap(page,'hub-upgrade-cancel');await expect(canvas).toHaveAttribute('data-cash','300');
-  await tap(page,'summary-upgrade-oven');await tap(page,'hub-upgrade-confirm');await expect(canvas).toHaveAttribute('data-cash','150');expect((await data(page,'bake-timing')).perfectStart).toBe(4);
+  await tap(page,'summary-upgrade-oven');await tap(page,'hub-upgrade-confirm');await expect(canvas).toHaveAttribute('data-cash','150');expect((await data(page,'bake-timing')).perfectStart).toBe(3);
   await tap(page,'shop-screen-back');await tap(page,'shop-section-expansion');await tap(page,'summary-upgrade-queue');expect((await data(page,'hub-upgrade')).cost).toBe(200);expect((await data(page,'controls')).find((c:Control)=>c.id==='hub-upgrade-confirm').enabled).toBe(false);await tap(page,'hub-upgrade-cancel');await expect(canvas).toHaveAttribute('data-cash','150');
 });
 

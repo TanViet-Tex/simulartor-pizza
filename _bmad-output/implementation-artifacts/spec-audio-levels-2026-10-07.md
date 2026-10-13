@@ -4,6 +4,8 @@ status: done
 date: '2026-10-07'
 ---
 
+> Cập nhật 2026-10-13: thanh toán giảm thêm30% từ mức60%, nay còn42%effectsVolume. Các mức còn lại trong tài liệu giữ nguyên. Xem [spec-market-drinks-and-bake-refresh.md](spec-market-drinks-and-bake-refresh.md).
+
 Nhạc nền đặt20%. Tiếng tiền giảm20% so với mức75% trước đó, còn60% effectsVolume. Tiếng lò chạy và tiếng tinh giảm10%; tiếng khách đến giảm10%. Các hiệu ứng khác giữ nguyên. Cụm “tiếng khác đến” được hiểu là tiếng khách đến theo ngữ cảnh và đã thông báo trong lượt triển khai.
 
 Giữ voice duy nhất, mức điều chỉnh effectsVolume, mute/pause và fallback native media. Không đổi UI hoặc asset.

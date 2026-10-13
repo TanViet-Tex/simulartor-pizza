@@ -33,6 +33,7 @@ import { MenuPreferences } from '../presentation/MenuPreferences';
 import { PlayLifecycle, type PauseLease } from '../runtime/PlayLifecycle';
 import { BrowserPlayLifecycle } from '../infrastructure/BrowserPlayLifecycle';
 import { PlayAudio } from '../presentation/PlayAudio';
+import {drawDrinkKitchenCells} from '../presentation/DrinkKitchenCells';
 import {CashFeedback} from '../presentation/CashFeedback';
 import {ManagementBackground,preloadManagementBackground} from '../presentation/ManagementBackground';
 import {HUB_WALL_LAYOUT,HUB_SHELL_LAYOUT,SHOP_SCREEN_LAYOUT,hubWallPoint,hubWallRect} from '../presentation/HubWallLayout';
@@ -53,7 +54,8 @@ import {ReferenceSummary,preloadSummaryArt} from '../presentation/ReferenceSumma
 import {MarketQuantityInput} from '../presentation/MarketQuantityInput';
 import {drawExpressOrderDialog} from '../presentation/ExpressOrderDialog';
 import {EXPRESS_DELIVERY_SECONDS,EXPRESS_PRICE_MULTIPLIER} from '../config/kitchenEconomy';
-import {ReferenceMarket,preloadMarketArt,type MarketFilter} from '../presentation/ReferenceMarket';
+import {DRINK_CATALOG,drinkDefinition,type DrinkId} from '../config/drinkCatalog';
+import {ReferenceMarket,preloadMarketArt,type MarketFilter,type MarketItem} from '../presentation/ReferenceMarket';
 import {INTERACTIVE_TUTORIAL_STEPS,VISIBLE_TUTORIAL_INDICES} from '../config/interactiveTutorial';
 import {drawTutorialSpotlight,tutorialContains,type TutorialRect} from '../presentation/TutorialSpotlight';
 
@@ -118,7 +120,6 @@ export class CozyScene extends Phaser.Scene {
   private plannerInput?:{recipe:StockRecipe;input:MarketQuantityInput};
   private recipePurchase?:{recipe:StockRecipe;commandId:string;lease:PauseLease};
   private shopItemDialog?:{id:ShopItemId;mode:'detail'|'place'|'store';commandId:string;lease:PauseLease};
-  private drinksDialog?:{lease:PauseLease};
   private advertisingDialog?:{lease:PauseLease};
   private fridgeDialog?:{commandId:string;lease:PauseLease};
   private staffHireDialog?:{role:StaffRole;commandId:string;automatic:boolean;lease:PauseLease};
@@ -140,8 +141,8 @@ export class CozyScene extends Phaser.Scene {
   private marketFilter:MarketFilter='all';
   private marketOffset=0;
   private marketDrag:HubDrag={active:false,startY:0,offset:0};
-  private marketQuantities:Partial<Record<StockIngredient,number>>={};
-  private marketLastPurchase=new Map<StockIngredient,number>();
+  private marketQuantities:Partial<Record<MarketItem,number>>={};
+  private marketLastPurchase=new Map<MarketItem,number>();
   private marketQuantityEditor?:{id:StockIngredient;input:MarketQuantityInput;lease:PauseLease};
   private marketBasket:(NonNullable<ReturnType<CozyRuntime['quoteMarketBasket']>> & {commandId:string})|null=null;
   private marketLease?:PauseLease;
@@ -336,10 +337,10 @@ export class CozyScene extends Phaser.Scene {
   }
   private hubTap?:{id:string;pointerId:number};
   private listHit(id:string):boolean{
-    if(this.dedicatedShop&&(id.startsWith('shop-menu-')||id.startsWith('shop-price-')||id.startsWith('shop-recipe-buy-')||SHOP_CATALOG_IDS.has(id)||['shop-fridge-buy','shop-drinks-stock','shop-advertising','shop-delivery-app','summary-upgrade-oven','summary-upgrade-queue'].includes(id)||id.startsWith('shop-expansion-tier-')||STAFF_CATALOG.some(staff=>id==='shop-staff-'+staff.role)))return true;
+    if(this.dedicatedShop&&(id.startsWith('shop-menu-')||id.startsWith('shop-price-')||id.startsWith('shop-recipe-buy-')||SHOP_CATALOG_IDS.has(id)||['shop-fridge-buy','shop-advertising','shop-delivery-app','summary-upgrade-oven','summary-upgrade-queue'].includes(id)||id.startsWith('shop-expansion-tier-')||STAFF_CATALOG.some(staff=>id==='shop-staff-'+staff.role)))return true;
     if(id.startsWith('stock-item-'))return true;
     const row=/^market-(quantity|minus|plus|buy)-(.+)$/.exec(id);
-    return !!row&&STOCK_INGREDIENTS.includes(row[2] as StockIngredient);
+    return !!row&&(STOCK_INGREDIENTS.includes(row[2] as StockIngredient)||this.isMarketDrink(row[2] as MarketItem));
   }
   private syncListHits(render:()=>void):void{
     this.controls=this.controls.filter(c=>!this.listHit(c.id));this.visibleActions=this.visibleActions.filter(c=>!this.listHit(c.id));
@@ -532,7 +533,7 @@ export class CozyScene extends Phaser.Scene {
       else if(this.appDialog)this.deliveryAppDialog();
       else if(this.shopItemDialog)this.shopInvestmentDialog();
       else if(this.advertisingDialog)this.drawAdvertisingDialog();
-      else if(this.drinksDialog)this.drawDrinksDialog();
+
       else if(this.fridgeDialog)this.drawFridgeDialog();
       else if(this.staffHireDialog)this.staffDialog();
       else if(this.recipePurchase)this.recipePurchaseDialog();
@@ -669,13 +670,7 @@ export class CozyScene extends Phaser.Scene {
   }
   private drinkCells():void {
     const ticket=this.runtime.selectedTicket;
-    this.runtime.drinkStock.forEach((drink,i)=>{
-      const x=238+i*37,y=376,w=35,h=63;const enabled=!!ticket&&ticket.drink===drink.id&&!ticket.drinkAttached&&drink.quantity>0;
-      this.graphics();this.art.g.fillStyle(0x39251b,1).fillRoundedRect(x,y,w,h,5).lineStyle(1,enabled?0xffd45e:0x9f7951).strokeRoundedRect(x,y,w,h,5);
-      this.art.g.fillStyle(drink.color,1).fillRoundedRect(x+11,y+9,14,25,3).fillRect(x+15,y+4,6,7);
-      this.label(x+w/2,y+38,['Suối','Coca','Cam'][i],9,cream);this.label(x+w/2,y+50,String(drink.quantity),9,cream);
-      this.hit('drink-'+drink.id,x,y,w,h,enabled,()=>{this.runtime.attachDrink(drink.id);this.dirty=true;});
-    });
+    drawDrinkKitchenCells(this,this.layer,(...args)=>this.hit(...args),this.runtime.drinkStock,ticket?.drink,!!ticket?.drinkAttached,id=>{this.runtime.attachDrink(id);this.dirty=true;});
   }
   private queueInputs():readonly OrderQueueInput[]{
     if(this.runtime.productionActive)return this.runtime.tickets.filter(t=>t.id!==this.runtime.specialWelcome?.ticketId).map(t=>({...t,finalPrice:t.totalPrice,deliveryStatus:t.riderState==='waiting'?`Tới sau ${Math.ceil(t.riderRemaining)}s`:t.riderState==='arrived'?'Shipper đã tới':t.riderState==='staff'?'Nhân viên giao':'Chưa book shipper'}));
@@ -917,13 +912,13 @@ export class CozyScene extends Phaser.Scene {
         new ReferenceStock(this,this.hubLayer,(...args)=>this.hubHit(...args),render=>this.syncListHits(render)).draw({shell:false,day:this.runtime.preparationDay,cash:this.runtime.state.cash,rows:stockRows(this.runtime.stockLots,this.runtime.preparationDay,id=>this.runtime.reserved(id)),filter:this.stockFilter,low:this.stockLow,expiryDays:this.stockExpiry,offset:this.stockOffset,drag:this.stockDrag,canScroll:()=>this.runtime.pauses.length===0,scroll:n=>{this.stockOffset=n;},setFilter:f=>this.setStockFilter(f),detail:id=>this.openStockLot(id),suggestions:()=>this.openStockPlanner(),market:()=>tab('market'),tab,pause:()=>this.hold('user')});return;
       }
       if(this.summaryTab==='shop'){
-        new ReferenceShop(this,this.hubLayer,(...args)=>this.hubHit(...args)).draw({shell:false,offset:this.shopOffset,drag:this.shopDrag,canScroll:()=>this.runtime.pauses.length===0,scroll:offset=>{this.shopOffset=offset;},sync:render=>this.syncListHits(render),filter:this.shopFilter,setFilter:filter=>{this.shopFilter=filter;this.shopOffset=0;this.dirty=true;},selectedRecipe:this.shopSelectedRecipe,selectRecipe:recipe=>{this.shopSelectedRecipe=recipe;this.dirty=true;},advertising:this.runtime.advertisingState,advertise:()=>this.openAdvertisingDialog(),drinks:()=>this.openDrinksDialog(),fridge:this.runtime.fridgeState,buyFridge:()=>this.openFridgeDialog(),staff:this.runtime.staffState,staffPreviews:STAFF_CATALOG.map(entry=>this.runtime.staffPreview(entry.role)),employee:role=>this.openStaffHire(role),shop:this.runtime.shopState,item:id=>this.openShopItem(id),app:()=>this.openDeliveryApp('settings'),deliveryApp:{...this.runtime.deliveryApp,eventName:this.runtime.deliveryApp.nextEvent.name},day:this.runtime.preparationDay,cash:this.runtime.state.cash,page:this.shopPage,canAct:this.runtime.canSetPrices,ovenLevel:this.runtime.ovenLevel,queueCapacity:this.runtime.queueCapacity,queueLevel:this.runtime.queueLevel,queueVisitorBonus:this.runtime.queueVisitorBonus,nextQueueCapacity:this.runtime.nextQueueCapacity,ovenPrice:this.runtime.upgradePrice('oven'),queuePrice:this.runtime.upgradePrice('queue'),menuPage:this.shopMenuPage,pageMenu:page=>{this.shopMenuPage=page;this.dirty=true;},buy:id=>this.openRecipePurchase(id),configure:(id,percent,enabled)=>{this.applyMenu(id,percent,enabled);},recipes:RECIPE_CATALOG.map(r=>r.id).map(id=>({id,name:recipeName(id),price:this.runtime.customerProgress.prices[id],percent:this.runtime.customerProgress.pricePercents[id],cost:recipeIngredients(id).reduce((n,item)=>n+this.runtime.price(item),0),enabled:this.runtime.menuRecipes.includes(id),owned:this.runtime.ownedRecipes.includes(id),purchasePrice:recipeDefinition(id).purchasePrice})),open:page=>this.setShopPage(page),price:id=>this.choosePrice(id),upgrade:kind=>this.openHubUpgrade(kind),tab,pause:()=>this.hold('user'),footer});return;
+        new ReferenceShop(this,this.hubLayer,(...args)=>this.hubHit(...args)).draw({shell:false,offset:this.shopOffset,drag:this.shopDrag,canScroll:()=>this.runtime.pauses.length===0,scroll:offset=>{this.shopOffset=offset;},sync:render=>this.syncListHits(render),filter:this.shopFilter,setFilter:filter=>{this.shopFilter=filter;this.shopOffset=0;this.dirty=true;},selectedRecipe:this.shopSelectedRecipe,selectRecipe:recipe=>{this.shopSelectedRecipe=recipe;this.dirty=true;},advertising:this.runtime.advertisingState,advertise:()=>this.openAdvertisingDialog(),fridge:this.runtime.fridgeState,buyFridge:()=>this.openFridgeDialog(),staff:this.runtime.staffState,staffPreviews:STAFF_CATALOG.map(entry=>this.runtime.staffPreview(entry.role)),employee:role=>this.openStaffHire(role),shop:this.runtime.shopState,item:id=>this.openShopItem(id),app:()=>this.openDeliveryApp('settings'),deliveryApp:{...this.runtime.deliveryApp,eventName:this.runtime.deliveryApp.nextEvent.name},day:this.runtime.preparationDay,cash:this.runtime.state.cash,page:this.shopPage,canAct:this.runtime.canSetPrices,ovenLevel:this.runtime.ovenLevel,queueCapacity:this.runtime.queueCapacity,queueLevel:this.runtime.queueLevel,queueVisitorBonus:this.runtime.queueVisitorBonus,nextQueueCapacity:this.runtime.nextQueueCapacity,ovenPrice:this.runtime.upgradePrice('oven'),queuePrice:this.runtime.upgradePrice('queue'),menuPage:this.shopMenuPage,pageMenu:page=>{this.shopMenuPage=page;this.dirty=true;},buy:id=>this.openRecipePurchase(id),configure:(id,percent,enabled)=>{this.applyMenu(id,percent,enabled);},recipes:RECIPE_CATALOG.map(r=>r.id).map(id=>({id,name:recipeName(id),price:this.runtime.customerProgress.prices[id],percent:this.runtime.customerProgress.pricePercents[id],cost:recipeIngredients(id).reduce((n,item)=>n+this.runtime.price(item),0),enabled:this.runtime.menuRecipes.includes(id),owned:this.runtime.ownedRecipes.includes(id),purchasePrice:recipeDefinition(id).purchasePrice})),open:page=>this.setShopPage(page),price:id=>this.choosePrice(id),upgrade:kind=>this.openHubUpgrade(kind),tab,pause:()=>this.hold('user'),footer});return;
       }
       if(this.summaryTab==='missions'){
         new ReferenceMissions(this,this.hubLayer,(...args)=>this.hubHit(...args)).draw({shell:false,day:this.runtime.preparationDay,cash:this.runtime.state.cash,progress:this.runtime.progression,ending:!!summary?.ending,tab,pause:()=>this.hold('user'),footer});return;
       }
       if(this.summaryTab==='market'){
-        new ReferenceMarket(this,this.hubLayer,(...args)=>this.hubHit(...args),render=>this.syncListHits(render)).draw({shell:false,access:id=>this.runtime.ingredientAccess(id),basketTotal:this.marketBasketTotal,reservePercent:this.runtime.marketForecast.reservePercent,suggest:()=>this.suggestMarket(),buyAll:()=>this.openMarketBasket(),unitPrice:id=>this.runtime.price(id),supplier:this.runtime.supplier,day:this.runtime.preparationDay,cash:this.runtime.state.cash,canBuy,readOnlyReason:summary?.ending?'Chặng bán hàng đã kết thúc · Chợ chỉ để xem':'Mua đang bị khóa · Hãy xử lý lưu tiến độ',canScroll:()=>this.runtime.pauses.length===0,filter:this.marketFilter,offset:this.marketOffset,drag:this.marketDrag,quantities:this.marketQuantities,available:id=>this.runtime.available(id),quantity:(id,delta)=>{if(this.runtime.ingredientAccess(id).unlocked)this.marketQuantities[id]=Phaser.Math.Clamp((this.marketQuantities[id]??1)+delta,0,100);this.dirty=true;},buy:id=>this.buyMarketItem(id),editQuantity:id=>this.openMarketQuantity(id),scroll:offset=>{this.marketOffset=offset;},setFilter:filter=>{this.marketFilter=filter;this.marketOffset=0;this.dirty=true;},tab:id=>{this.summaryTab=id;this.dirty=true;},pause:()=>this.hold('user'),price:()=>this.choosePrice(this.runtime.selectedRecipe),footer});
+        new ReferenceMarket(this,this.hubLayer,(...args)=>this.hubHit(...args),render=>this.syncListHits(render)).draw({shell:false,access:id=>this.runtime.ingredientAccess(id),basketTotal:this.marketBasketTotal,reservePercent:this.runtime.marketForecast.reservePercent,suggest:()=>this.suggestMarket(),buyAll:()=>this.openMarketBasket(),unitPrice:id=>this.isMarketDrink(id)?drinkDefinition(id).purchasePrice:this.runtime.price(id),supplier:this.runtime.supplier,day:this.runtime.preparationDay,cash:this.runtime.state.cash,canBuy,readOnlyReason:summary?.ending?'Chặng bán hàng đã kết thúc · Chợ chỉ để xem':'Mua đang bị khóa · Hãy xử lý lưu tiến độ',canScroll:()=>this.runtime.pauses.length===0,filter:this.marketFilter,offset:this.marketOffset,drag:this.marketDrag,quantities:this.marketQuantities,available:id=>this.isMarketDrink(id)?this.runtime.drinkStock.find(drink=>drink.id===id)!.quantity:this.runtime.available(id),quantity:(id,delta)=>{if(this.isMarketDrink(id)||this.runtime.ingredientAccess(id).unlocked)this.marketQuantities[id]=Phaser.Math.Clamp((this.marketQuantities[id]??1)+delta,0,100);this.dirty=true;},buy:id=>this.buyMarketItem(id),editQuantity:id=>{if(!this.isMarketDrink(id))this.openMarketQuantity(id);},scroll:offset=>{this.marketOffset=offset;},setFilter:filter=>{this.marketFilter=filter;this.marketOffset=0;this.dirty=true;},tab:id=>{this.summaryTab=id;this.dirty=true;},pause:()=>this.hold('user'),price:()=>this.choosePrice(this.runtime.selectedRecipe),footer});
         return;
       }
       this.referenceSummary(true).summary({shell:false,report:summary,day:this.runtime.day,cash:this.runtime.state.cash,xp:summary?.progression.xp??this.runtime.progression.xp,previousXp:summary?(previous?.progression.xp??0):this.runtime.progression.xp,stockUnits:this.runtime.stockLots.reduce((n,lot)=>n+lot.quantity,0),ending:!!summary?.ending,paused:this.runtime.pauses.length>0,footer,tab:id=>{this.summaryTab=id;this.dirty=true;},pause:()=>this.hold('user'),finance:()=>this.openStatement(),reviews:()=>this.openReviews()});
@@ -934,7 +929,7 @@ export class CozyScene extends Phaser.Scene {
   private resetModalControls(){this.controls=[];this.visibleActions=[];for(const zone of this.hitZones.values())zone.disableInteractive();}
   private closeHubPanels():void{
     this.advertisingDialog?.lease.release();this.advertisingDialog=undefined;
-    this.drinksDialog?.lease.release();this.drinksDialog=undefined;
+
     this.fridgeDialog?.lease.release();this.fridgeDialog=undefined;
     this.staffHireDialog?.lease.release();this.staffHireDialog=undefined;
     this.shopItemDialog?.lease.release();this.shopItemDialog=undefined;
@@ -983,9 +978,6 @@ export class CozyScene extends Phaser.Scene {
     if(!this.runtime.canSetPrices||this.staffHireDialog||!STAFF_CATALOG.some(entry=>entry.role===role))return;
     this.closeHubPanels();this.staffHireDialog={role,automatic,commandId:`staff:${this.purchaseScope}:${role}:${this.runtime.preparationDay}:${++this.purchaseSerial}`,lease:this.runtime.acquirePause('order')};this.dirty=true;
   }
-  private openDrinksDialog():void{
-    if(!this.runtime.canSetPrices)return;this.closeHubPanels();this.drinksDialog={lease:this.runtime.acquirePause('order')};this.dirty=true;
-  }
   private openAdvertisingDialog():void{
     if(!this.runtime.canSetPrices)return;this.closeHubPanels();this.advertisingDialog={lease:this.runtime.acquirePause('order')};this.dirty=true;
   }
@@ -1005,13 +997,6 @@ export class CozyScene extends Phaser.Scene {
     this.label(180,265,'Một người vô gia cư nhờ bạn mua vé số.\n30 xu / tờ · Cuối ngày mỗi tờ nhận 300 xu.\nCơ hội này chỉ một lần trong chiến dịch 30 ngày.\nBạn có thể từ chối.',14,ink,286);
     pending.counts.forEach((count,i)=>{this.button('lottery-'+count,42,340+i*43,276,38,`${count} tờ · ${count*pending.ticketPrice} xu`,pending.cash>=count*pending.ticketPrice&&!this.runtime.pauses.some(p=>p!=='lottery'),()=>{this.runtime.resolveLottery(count);this.dirty=true;});});
     this.button('lottery-decline',76,475,208,40,'Từ chối',!this.runtime.pauses.some(p=>p!=='lottery'),()=>{this.runtime.resolveLottery(0);this.dirty=true;},UI.dark);
-  }
-  private drawDrinksDialog():void{
-    this.summaryModalVeil();this.notificationFrame(['drinks-close'],245,475,415);this.label(180,207,'Kho nước',23,ink);
-    this.runtime.drinkStock.forEach((drink,i)=>{const y=266+i*58;this.label(104,y,drink.name+' · '+drink.quantity+' chai',13,ink,130);this.label(104,y+19,'Nhập '+drink.purchasePrice+' / bán '+drink.salePrice+' xu',10,muted,130);
-      const buy=(quantity:number)=>{const command='drink-buy:'+this.purchaseScope+':'+(++this.purchaseSerial);this.closeHubPanels();if(this.campaignSession)this.campaignSession.buyDrink(drink.id,quantity,command);else this.runtime.buyDrink(drink.id,quantity,command);this.dirty=true;};
-      this.button('drink-buy-'+drink.id,184,y-4,58,40,'+1',this.runtime.state.cash>=drink.purchasePrice,()=>buy(1));this.button('drink-buy-five-'+drink.id,250,y-4,64,40,'+5',this.runtime.state.cash>=drink.purchasePrice*5,()=>buy(5));
-    });this.button('drinks-close',80,445,200,48,'Quay lại',true,()=>this.closeHubPanels(),UI.dark);
   }
   private openFridgeDialog():void{
     if(!this.runtime.canSetPrices||this.runtime.fridgeState.owned)return;
@@ -1139,7 +1124,7 @@ export class CozyScene extends Phaser.Scene {
   private suggestMarket():void{
     if(this.runtime.pauses.length||!(this.preparationHub?this.runtime.canOpen:this.runtime.canPrepareNextDay))return;
     const forecast=this.runtime.marketForecast;
-    this.marketQuantities=Object.fromEntries(STOCK_INGREDIENTS.map(id=>[id,0]));
+    this.marketQuantities={...this.marketQuantities,...Object.fromEntries(STOCK_INGREDIENTS.map(id=>[id,0]))};
     for(const row of forecast.rows)if(this.runtime.ingredientAccess(row.ingredient).unlocked)this.marketQuantities[row.ingredient]=Math.min(100,row.missing);
     this.game.canvas.dataset.marketForecast=JSON.stringify(forecast);this.dirty=true;
   }
@@ -1166,13 +1151,16 @@ export class CozyScene extends Phaser.Scene {
     });
     this.game.canvas.dataset.marketBasket=JSON.stringify(purchase);
   }
-  private buyMarketItem(id:StockIngredient):void{
-    if(!this.runtime.ingredientAccess(id).unlocked||this.marketBasket||this.runtime.pauses.length||!(this.preparationHub||this.runtime.canPrepareNextDay))return;
+  private isMarketDrink(id:MarketItem):id is DrinkId{return DRINK_CATALOG.some(drink=>drink.id===id);}
+  private buyMarketItem(id:MarketItem):void{
+    if((!this.isMarketDrink(id)&&!this.runtime.ingredientAccess(id).unlocked)||this.marketBasket||this.runtime.pauses.length||!(this.preparationHub||this.runtime.canPrepareNextDay))return;
     this.marketDrag.active=false;
     const quantity=this.marketQuantities[id]??1;
     if(quantity<1)return;
     const now=performance.now();if(now-(this.marketLastPurchase.get(id)??-Infinity)<300)return;
-    if(this.runtime.dispatch({type:'market.buy',ingredient:id,quantity,commandId:`market:${this.purchaseScope}:${++this.purchaseSerial}`}))this.marketLastPurchase.set(id,now);
+    const commandId=`market:${this.purchaseScope}:${++this.purchaseSerial}`;
+    const bought=this.isMarketDrink(id)?(this.campaignSession?this.campaignSession.buyDrink(id,quantity,commandId):this.runtime.buyDrink(id,quantity,commandId)):this.runtime.dispatch({type:'market.buy',ingredient:id,quantity,commandId});
+    if(bought)this.marketLastPurchase.set(id,now);
     this.dirty=true;
   }
   private closeMarketBasket():void{this.marketBasket=null;this.marketLease?.release();this.marketLease=undefined;this.marketError='';this.dirty=true;}

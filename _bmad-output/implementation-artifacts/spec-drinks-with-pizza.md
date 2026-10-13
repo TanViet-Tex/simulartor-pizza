@@ -6,6 +6,8 @@ status: done
 
 # Ba ô nước cùng đơn pizza
 
+> Cập nhật 2026-10-13: mua nước chuyển sang Chợ, tách ba dòng có tên/nhãn và bộ lọc Đồ uống; bỏ mua trong Thiết bị. Ba ô bếp được làm đẹp theo bảng màu Quản lý, giữ bounds và luồng gọi một chai kèm pizza. Timing lò mới và kiểm chứng theo [spec-market-drinks-and-bake-refresh.md](spec-market-drinks-and-bake-refresh.md). Các ghi chú địa điểm mua/ảnh bếp cũ bên dưới là lịch sử.
+
 Người dùng duyệt nước suối/Coca/nước cam, giá nhập 8/10/12 xu và giá bán 20/25/30 xu. Ba ô thay đúng khu lò thứ hai; giữ lò thứ nhất và các phần UI khác. Khách quầy gọi kèm tối đa một chai, bấm ô nước để thêm vào đơn, giao cùng pizza; app không gọi nước. Nước độc lập quảng bá quán.
 
 ## Thực hiện

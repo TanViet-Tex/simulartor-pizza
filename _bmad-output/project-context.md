@@ -498,3 +498,11 @@ Menu configure save pending.menu/savingMenu không hiện saveDialog/overlay; gu
 ### Mục con Quán gọn và nhãn sở hữu góc phải — 2026-10-13
 
 Theo chỉnh tiếp rõ của người dùng: bỏ khoảng trống toolbar bằng cách kéo body50px logic lên, viewport8/130/344/450, có lọc8/174/344/406 và tabsY130; đáy580/footer/header/nav giữ nguyên. Hit/clip/cuộn/tutorial theo SHOP_SCREEN_LAYOUT chung. Đã sở hữu xanh đặt gọn góc trên bên phải của thẻ công thức/đồ/cấp nâng đã mua, không còn nhãn sở hữu giữa/dưới thẻ. Thay giới hạn không reflow trong yêu cầu cùng ngày trước đó riêng cho vùng này. Nhân viên giữ hạn thuê. Xem spec-shop-compact-top-right-ownership.md.
+
+### Nước uống ở Chợ và lò chín nhanh — yêu cầu 2026-10-13
+
+Thanh toán giảm thêm30% từ60%→42%effectsVolume; nhạc/hiệuứng khác/mute không đổi. bakeTiming chung chín4/3/2giây theo cấp0/1/2, perfectEnd7/6/5, cháy khi vượt mốc đó; HUD/lò/tinh/staff/tutorial/theo cấu hình chung, pause giữ clock.
+
+Mua Nước suối/Coca/Nước cam chuyển từ Thiết bị sang Chợ, ba dòng tên/nhãn riêng và bộlọc Đồ uống. Tất cả có22dòng (19nguyênliệu+3nước); kho chai/giá8/10/12 và bán20/25/30 giữ riêng, mua qua giao dịch sessionbuyDrink, không thêm DrinkId vào StockIngredient. Giỏ/gợi ý Mua tất cả chỉ nguyênliệu và giữ lượng nước đang chỉnh. Drinkrows dùng listHit chung để clip/cuộn/kéo không tựmua.
+
+Baô nước bếp giữ238/376 và3×35×63, raster2× hìnhchai có nhãn/tên đầyđủ/quantity, màu kem/nâu đồngbộ Quản lý, viền theo nước đượcgọi. Kháchquầy25%gọi mộtchai kèm pizza sau lầnmua đầu, sai/thiếu/lặp khôngthanhtoán thêm, báo cáo/lưu thật; app/help khônggọi nước. Xem spec-market-drinks-and-bake-refresh.md. Các timing/địa điểm mua nước/mức payment cũ được thay riêng theo yêu cầu này.

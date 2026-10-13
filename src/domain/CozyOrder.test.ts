@@ -26,7 +26,7 @@ describe('cozy day-one interaction fixture', () => {
     expect(game.dispatch({ type: 'bake' })).toBe(false);
     expect(game.dispatch({ type: 'deliver' })).toBe(false);
     prepare(game); expect(game.dispatch({ type: 'bake' })).toBe(true);
-    game.tick(5.9); expect(game.dispatch({ type: 'box' })).toBe(false);
+    game.tick(3.9); expect(game.dispatch({ type: 'box' })).toBe(false);
     expect(game.dispatch({ type: 'extract' })).toBe(false);
     game.tick(.1); expect(game.state.stage).toBe('baking');
     expect(game.dispatch({ type: 'extract' })).toBe(true);
@@ -39,14 +39,14 @@ describe('cozy day-one interaction fixture', () => {
   });
   it('keeps the green window inclusive and burns only after its end', () => {
     const game = new CozyOrder(); prepare(game); game.dispatch({ type: 'bake' });
-    game.tick(8);
+    game.tick(7);
     expect(game.state.stage).toBe('baking');
     expect(game.dispatch({ type: 'extract' })).toBe(true);
     expect(game.dispatch({ type: 'extract' })).toBe(false);
   });
   it('cannot box or deliver burnt pizza and discards it without resetting money', () => {
     const game = new CozyOrder(); prepare(game); game.dispatch({ type: 'bake' });
-    game.tick(8.05);
+    game.tick(7.05);
     expect(game.state.stage).toBe('burnt');
     expect(game.dispatch({type:'extract'})).toBe(true);
     for(const type of ['box','deliver','bake'] as const)expect(game.dispatch({type})).toBe(false);

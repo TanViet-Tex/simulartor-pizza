@@ -18,6 +18,14 @@ describe('free pizza assembly and real ingredient cost', () => {
   });
   it.each([0,1,2] as OvenLevel[])('uses exact upgrade %i boundaries', level => {
     const timing = bakeTiming(level);
+    expect(timing).toEqual({perfectStart:4-level,perfectEnd:7-level,gaugeEnd:9-level});
+    const early = new CozyOrder(false, 'cheese', false, level);
+    early.dispatch({type:'ingredient',ingredient:'dough'});early.dispatch({type:'bake'});
+    early.tick(timing.perfectStart-.05);
+    expect(early.dispatch({type:'extract'})).toBe(false);
+    early.tick(.05);
+    expect(early.dispatch({type:'extract'})).toBe(true);
+    expect(early.state.stage).toBe('ready');
     const ready = new CozyOrder(false, 'cheese', true, level);
     ready.dispatch({type:'ingredient',ingredient:'dough'});ready.dispatch({type:'bake'});
     ready.tick(timing.perfectEnd);
@@ -28,7 +36,6 @@ describe('free pizza assembly and real ingredient cost', () => {
     burnt.dispatch({type:'ingredient',ingredient:'dough'});burnt.dispatch({type:'bake'});
     burnt.tick(timing.perfectEnd + .05);
     expect(burnt.state.stage).toBe('burnt');
-    expect(timing.perfectStart).toBe(6-level*2);
   });
   it('reserves the actual eight ingredients atomically and consumes once', () => {
     const stock = new CozyStock();

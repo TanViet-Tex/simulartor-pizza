@@ -560,3 +560,7 @@ Theo ảnh nút Về quản lý quán người dùng gửi: các nút hành đ�
 ### Mục con Quán gọn và nhãn sở hữu góc phải — 2026-10-13
 
 Theo chỉnh tiếp rõ của người dùng: bỏ khoảng trống toolbar bằng cách kéo body50px logic lên, viewport8/130/344/450, có lọc8/174/344/406 và tabsY130; đáy580/footer/header/nav giữ nguyên. Hit/clip/cuộn/tutorial theo SHOP_SCREEN_LAYOUT chung. Đã sở hữu xanh đặt gọn góc trên bên phải của thẻ công thức/đồ/cấp nâng đã mua, không còn nhãn sở hữu giữa/dưới thẻ. Thay giới hạn không reflow trong yêu cầu cùng ngày trước đó riêng cho vùng này. Nhân viên giữ hạn thuê. Xem spec-shop-compact-top-right-ownership.md.
+
+### Chợ nước và ba ô phục vụ — yêu cầu 2026-10-13
+
+Theo yêu cầu rõ: ba nước Nước suối/Coca/Nước cam có dòng riêng trong Chợ và bộlọc Đồ uống; bỏ thẻ Kho nước/popup mua tại Thiết bị. Baô phục vụ ởbếp làm đẹp bảng màu kem/nâu giống Quản lý, hìnhchai có nhãn riêng và tên/chai còn lại thật; giữ bounds238/376,3ô35×63 và nút/khung bếp khác. Timinglò4/3/2 và ngưỡngcháy7/6/5, chữ Thiết bị đồngbộ cấu hình. Xem spec-market-drinks-and-bake-refresh.md; không đổi ảnh mốc cũ.
