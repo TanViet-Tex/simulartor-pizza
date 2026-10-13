@@ -7,6 +7,10 @@ date: '2026-10-02'
 
 # Giao diện hiện tại là mốc cho các lần triển khai sau
 
+### Màu chọn tab quản lý — yêu cầu 2026-10-13
+
+Tab được chọn chỉ tô màu vùng tên phía dưới, chừa icon phía trên; áp dụng chung Tổng kết/Chợ/Kho/Quán/Nhiệm vụ. Giữ artwork, màu chọn, geometry và vùng chạm hiện có.
+
 ### Mở khóa nước ngày 4 — yêu cầu 2026-10-13
 
 Ngày 1–3 chưa bán nước. Giữ ba dòng nước ở Chợ với nhãn “Mở từ ngày 4”, khóa stepper/Mua; giữ ba ô nước trên bếp và ghi “Ngày 4” thay số chai trước mốc mở. Từ chuẩn bị ngày 4 mới mua được; khách từ ngày 4 mới gọi nước. Không đổi geometry, số ô, artwork, giá hoặc bảng màu. Mốc này thay luật bán nước ngay ngày đầu trong các ghi chú trước. Xem [spec](spec-drinks-unlock-day-four.md).

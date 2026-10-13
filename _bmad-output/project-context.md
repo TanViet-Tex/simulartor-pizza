@@ -514,3 +514,9 @@ Staff handoff tự gắn đúng nước của chính đơn đang giao qua shared
 ### Nước uống mở từ ngày 4 — 2026-10-13
 
 Theo yêu cầu mới, ngày 1–3 chỉ bán pizza. DRINK_UNLOCK_DAY=4 khóa mua theo preparationDay, gọi/gắn chai theo currentDay; kết thúc ngày 3 đã mua được cho ngày 4. Chợ giữ ba dòng nhưng ghi “Mở từ ngày 4” và khóa thao tác; bếp giữ ba ô, ghi “Ngày 4” trước mốc mở. Save cũ giữ chai/tiền nhưng không phát sinh đơn nước sớm. Giá và tỷ lệ gọi nước sau lần mua đầu giữ nguyên. Fixture kiểm tra nước/nhân viên dùng ngày 4. Xem implementation-artifacts/spec-drinks-unlock-day-four.md.
+
+### Tab quản lý chừa icon khi được chọn — 2026-10-13
+
+Màu chọn của cả năm tab Tổng kết/Chợ/Kho/Quán/Nhiệm vụ chỉ phủ vùng tên phía dưới (y105–129), chừa icon gốc phía trên. Giữ navigation22/80/316×49, năm vùng chạm và artwork hiện có. Nguồn vẽ chung: paintHubNavigation trong HubHeader.ts.
+
+Build/typecheck và 1 E2E Chromium 360×640 kiểm tra cả năm tab, chuyển màn/cuộn/vùng chạm đạt; ảnh Tổng kết xác nhận icon không bị phủ màu chọn.

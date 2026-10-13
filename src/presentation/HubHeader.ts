@@ -35,7 +35,7 @@ export function paintHubNavigation(scene:Phaser.Scene,ctx:CanvasRenderingContext
   crop(scene,ctx,[17,407,2058,319],[nav.x,nav.y,nav.width,nav.height],12);
   const tabs=[['summary','Tổng kết'],['market','Chợ'],['stock','Kho'],['shop','Quán'],['missions','Nhiệm vụ']] as const;
   tabs.forEach(([id,title],i)=>{const width=nav.width/5,x=nav.x+i*width;
-    if(id===active){ctx.save();ctx.fillStyle=HUB_THEME.colors.active;ctx.globalAlpha=.24;ctx.beginPath();ctx.roundRect(x,nav.y,width,nav.height,10);ctx.fill();ctx.restore();}
+    if(id===active){ctx.save();ctx.fillStyle=HUB_THEME.colors.active;ctx.globalAlpha=.24;ctx.beginPath();ctx.roundRect(x+2,105,width-4,nav.y+nav.height-105,6);ctx.fill();ctx.restore();}
     text(ctx,x+width/2,108,title,11,width-4);hit(`summary-tab-${id}`,x,nav.y,width,nav.height,true,()=>tab(id));
   });
 }
