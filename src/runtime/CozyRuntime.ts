@@ -157,9 +157,12 @@ export class CozyRuntime {
   });}
   attachDrink(id:DrinkId):boolean{return this.clockAction(()=>{
     const t=this.active.get(this.ticket);
+    return !!t&&this.attachTicketDrink(t,id);
+  });}
+  private attachTicketDrink(t:Ticket,id:DrinkId):boolean{
     if(!this.saveGuard()||this.reasons.size||this.phase!=='making'||!t||t.source!=='shop'||t.deadline<=this.elapsed||t.drink!==id||t.drinkAttached||!this.stock.consumeDrink(id,this.currentDay))return false;
     t.drinkAttached=true;this.revision++;return true;
-  });}
+  }
   get fridgeState(){const receipt=this.stock.exportCheckpoint().refrigeration;return {owned:!!receipt,price:FRIDGE_PRICE,acquiredDay:receipt?.acquiredDay??null,missing:Math.max(0,FRIDGE_PRICE-this.stock.cash)};}
   buyFridge(commandId:string):boolean{return this.cashTransaction(()=>{
     if(!this.canSetPrices||this.fridgeState.owned||typeof commandId!=='string'||!commandId.trim()||this.shopCommandUsed(commandId)||this.stock.cash<FRIDGE_PRICE)return false;
@@ -417,7 +420,7 @@ export class CozyRuntime {
     const other=accept?'declined':'accepted';this.customerDecisions[other]=this.customerDecisions[other].filter(index=>index!==target.avatarIndex);
     if(!list.includes(target.avatarIndex))list.push(target.avatarIndex);
     this.bargain=null;this.bargainLease?.release();this.bargainLease=null;
-    const accepted=this.deliver(pending.sourceId,pending.targetId,pending.commandId,true);
+    const accepted=pending.commandId.startsWith('staff-deliver:')?this.deliverStaff(pending.sourceId,pending.targetId,pending.commandId,true):this.deliver(pending.sourceId,pending.targetId,pending.commandId,true);
     this.revision++;return accepted;
   }
   private energy = 80;
@@ -1059,6 +1062,12 @@ export class CozyRuntime {
     if(intent.type==='box')this.message=`Pizza đã đóng hộp cho ${t.name}.`;
     this.event(`${intent.type}:${t.id}`);this.revision++;this.notifyIntentAudio(intent,addingSauce);return true;
   }
+  private deliverStaff(sourceId:string,targetId:string,commandId:string,confirmed:boolean):boolean{
+    const selected=this.ticket,source=this.sourceId;
+    const result=this.deliver(sourceId,targetId,commandId,confirmed),stillSelected=this.active.get(selected);
+    if(selected!==targetId&&stillSelected){this.ticket=selected;this.order=stillSelected.order;this.sourceId=this.active.has(source)?source:'';}
+    return result;
+  }
   private tickStaff(seconds:number):void{
     if(!this.saveGuard()||this.reasons.size||!this.shiftOpen||this.phase!=='making'||this.elapsed>=this.schedule!.duration+this.schedule!.grace)return;
     for(const role of this.shiftRoles){
@@ -1084,7 +1093,7 @@ export class CozyRuntime {
           t=tickets.find(t=>t.order.state.stage==='ready'&&correct(t)||t.source==='app'&&t.order.state.stage==='boxed'&&t.packed.length<t.quantity&&correct(t));
           if(t){action=t.order.state.stage==='ready'?'box':'pack';duration=STAFF_RULES.boxSeconds;}
         }else if(!this.courier){
-          t=tickets.find(t=>t.order.state.stage==='boxed'&&correct(t)&&t.kind!=='bargain'&&(t.source!=='app'||t.packed.length===t.quantity));
+          t=tickets.find(t=>t.order.state.stage==='boxed'&&correct(t)&&(t.source!=='app'||t.packed.length===t.quantity));
           if(t){action='handoff';duration=STAFF_RULES.deliverySeconds;}
         }
         if(t&&action){job={ticketId:t.id,order:t.order,stage:t.order.state.stage,ingredients:JSON.stringify(t.order.state.ingredients),action,ingredient,remaining:duration};this.staffJobs.set(role,job);}
@@ -1094,7 +1103,8 @@ export class CozyRuntime {
       this.staffJobs.delete(role);
       if(job.action==='pack')this.packApp(t,`staff-pack:${t.id}:${t.packed.length}`,false,true);
       else if(job.action==='handoff'){
-        if(!this.courier){const selected=this.ticket,source=this.sourceId;this.deliver(t.id,t.id,`staff-deliver:${t.id}`,false);const stillSelected=this.active.get(selected);if(selected!==t.id&&stillSelected){this.ticket=selected;this.order=stillSelected.order;this.sourceId=this.active.has(source)?source:'';}}
+        if(t.drink&&!t.drinkAttached)this.attachTicketDrink(t,t.drink);
+        if(!this.courier)this.deliverStaff(t.id,t.id,`staff-deliver:${t.id}`,false);
       }else this.applyTicketIntent(t,job.action==='ingredient'?{type:'ingredient',ingredient:job.ingredient!}:{type:job.action} as CozyIntent);
       if(this.reasons.size)break;
     }

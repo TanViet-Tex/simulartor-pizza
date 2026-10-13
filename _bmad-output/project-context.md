@@ -506,3 +506,7 @@ Thanh toán giảm thêm30% từ60%→42%effectsVolume; nhạc/hiệuứng khác
 Mua Nước suối/Coca/Nước cam chuyển từ Thiết bị sang Chợ, ba dòng tên/nhãn riêng và bộlọc Đồ uống. Tất cả có22dòng (19nguyênliệu+3nước); kho chai/giá8/10/12 và bán20/25/30 giữ riêng, mua qua giao dịch sessionbuyDrink, không thêm DrinkId vào StockIngredient. Giỏ/gợi ý Mua tất cả chỉ nguyênliệu và giữ lượng nước đang chỉnh. Drinkrows dùng listHit chung để clip/cuộn/kéo không tựmua.
 
 Baô nước bếp giữ238/376 và3×35×63, raster2× hìnhchai có nhãn/tên đầyđủ/quantity, màu kem/nâu đồngbộ Quản lý, viền theo nước đượcgọi. Kháchquầy25%gọi mộtchai kèm pizza sau lầnmua đầu, sai/thiếu/lặp khôngthanhtoán thêm, báo cáo/lưu thật; app/help khônggọi nước. Xem spec-market-drinks-and-bake-refresh.md. Các timing/địa điểm mua nước/mức payment cũ được thay riêng theo yêu cầu này.
+
+### Sửa nhân viên kẹt hộp pizza — 2026-10-13
+
+Staff handoff tự gắn đúng nước của chính đơn đang giao qua shared drink owner, tiêu hao tối đa một chai; giữ đơn khác đang được chọn và không tự mua/đổi loại khi thiếu. Scheduler phục vụ khách mặc cả qua deliver chuẩn để mở lựa chọn cho người chơi, không tự quyết định giá. Build/typecheck, 63 unit tập trung và 3 E2E Chromium 360×640 đạt; chuỗi 12 đơn unit và 8 đơn canvas không kẹt. Xem implementation-artifacts/spec-staff-boxed-handoff-fix.md và investigations/staff-boxed-handoff-investigation.md.
