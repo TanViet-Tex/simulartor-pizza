@@ -6,8 +6,11 @@ import {requestedDrink} from '../domain/DrinkStock';
 import {validateCozyCheckpoint} from '../domain/CozyCheckpoint';
 
 function runtime(drinks:readonly (DrinkId|null)[],kind:'regular'|'bargain'='regular',quantity=2,spacing=0){
-  const ids=drinks.map((drink,index)=>{let n=0;while(requestedDrink(321,1,`handoff-${index}-${n}`)!==drink)n++;return `handoff-${index}-${n}`;});
-  const r=new CozyRuntime(false,true,{eventSeed:321,resolveRecipe:()=> 'cheese',schedule:day=>({day,duration:180,grace:120,slots:ids.map((id,index)=>({id,at:index*spacing,kind,opportunity:'commercial',commercialOrdinal:index+1,takeaway:true}))})});
+  const ids=drinks.map((drink,index)=>{let n=0;while(requestedDrink(321,4,`handoff-${index}-${n}`)!==drink)n++;return `handoff-${index}-${n}`;});
+  const dependencies={eventSeed:321,resolveRecipe:()=> 'cheese' as const,schedule:(day:number)=>({day,duration:180,grace:120,slots:day<4?[]:ids.map((id,index)=>({id,at:index*spacing,kind,opportunity:'commercial' as const,commercialOrdinal:index+1,takeaway:true}))})};
+  let r=new CozyRuntime(false,true,dependencies);
+  for(let day=1;day<=3;day++){expect(day===1?r.openShop():r.openNextDay()).toBe(true);r.resolveLottery(0);expect(r.closeDay()).toBe(true);}
+  r=CozyRuntime.restoreCheckpoint(r.exportCheckpoint(),false,dependencies)!;
   expect(r.claimTestCode('VIETVUIVE')).toBe(true);
   for(const role of STAFF_ROLES)expect(r.hireStaff(role,'hire-'+role)).toBe(true);
   for(const id of ['dough','sauce','cheese'] as const)expect(r.buy(id,Math.max(10,drinks.length))).toBe(true);

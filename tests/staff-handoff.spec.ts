@@ -14,8 +14,9 @@ async function fixture(page:Page,bargain=false){
     import Phaser from 'phaser';import {CozyScene} from './src/scenes/CozyScene';import {CozyRuntime} from './src/runtime/CozyRuntime';
     import {requestedDrink} from './src/domain/DrinkStock';import {STAFF_ROLES} from './src/config/staffCatalog';import {PlayLifecycle} from './src/runtime/PlayLifecycle';
     const requests=${bargain?"['water',null,null]":"[null,'water','cola','orange',null,'water','cola','orange']"};
-    const slots=requests.map((drink,i)=>{let n=0;while(requestedDrink(321,1,'staff-canvas-'+i+'-'+n)!==drink)n++;return {id:'staff-canvas-'+i+'-'+n,at:${bargain?'i*2':'i*12'},kind:${bargain?"i===0?'bargain':'regular'":"'regular'"},opportunity:'commercial',commercialOrdinal:i+1,takeaway:true};});
-    const r=new CozyRuntime(false,true,{eventSeed:321,vipRoll:()=>1,resolveRecipe:()=> 'cheese',schedule:day=>({day,duration:240,grace:120,slots})});
+    const slots=requests.map((drink,i)=>{let n=0;while(requestedDrink(321,4,'staff-canvas-'+i+'-'+n)!==drink)n++;return {id:'staff-canvas-'+i+'-'+n,at:${bargain?'i*2':'i*12'},kind:${bargain?"i===0?'bargain':'regular'":"'regular'"},opportunity:'commercial',commercialOrdinal:i+1,takeaway:true};});
+    const deps={eventSeed:321,eventRoll:()=>1,vipRoll:()=>1,resolveRecipe:()=> 'cheese',schedule:day=>({day,duration:240,grace:120,slots:day<4?[]:slots})};
+    let r=new CozyRuntime(false,true,deps);for(let day=1;day<=3;day++){if(!(day===1?r.openShop():r.openNextDay()))throw Error('Cannot open fixture day '+day);r.resolveLottery(0);if(!r.closeDay())throw Error('Cannot close fixture day '+day);}r=CozyRuntime.restoreCheckpoint(r.exportCheckpoint(),false,deps);
     r.claimTestCode('VIETVUIVE');r.configureMenu('mushroom',100,false);for(const role of STAFF_ROLES)if(!r.hireStaff(role,'fixture-hire-'+role))throw Error('Hire failed');
     for(const id of ['dough','sauce','cheese'])r.buy(id,20);for(const id of ['water','cola','orange'])r.buyDrink(id,5,'fixture-drink-'+id);
     const lifecycle=new PlayLifecycle(r,()=>0);lifecycle.frame=()=>lifecycle.reconcile();const scene=new CozyScene(r,undefined,undefined,undefined,lifecycle);

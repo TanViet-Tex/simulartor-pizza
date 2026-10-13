@@ -4,8 +4,11 @@ import {requestedDrink} from '../domain/DrinkStock';
 import {DRINK_CATALOG,type DrinkId,drinkDefinition} from '../config/drinkCatalog';
 import {validateCozyCheckpoint} from '../domain/CozyCheckpoint';
 function fixture(drink:DrinkId='cola'){
-  let n=0;while(requestedDrink(321,1,'drink-'+n)!==drink)n++;
-  const r=new CozyRuntime(false,true,{eventSeed:321,schedule:day=>({day,duration:180,grace:120,slots:[{id:'drink-'+n,at:0,kind:'regular',opportunity:'commercial',commercialOrdinal:1,takeaway:false}]})});
+  let n=0;while(requestedDrink(321,4,'drink-'+n)!==drink)n++;
+  const dependencies={eventSeed:321,resolveRecipe:()=> 'cheese' as const,schedule:(day:number)=>({day,duration:180,grace:120,slots:day<4?[]:[{id:'drink-'+n,at:0,kind:'regular' as const,opportunity:'commercial' as const,commercialOrdinal:1,takeaway:false}]})};
+  let r=new CozyRuntime(false,true,dependencies);
+  for(let day=1;day<=3;day++){expect(day===1?r.openShop():r.openNextDay()).toBe(true);r.resolveLottery(0);expect(r.closeDay()).toBe(true);}
+  r=CozyRuntime.restoreCheckpoint(r.exportCheckpoint(),false,dependencies)!;
   for(const id of ['dough','sauce','cheese'] as const)r.buy(id,2);
   r.buyDrink(drink,2,'buy-'+drink);return r;
 }

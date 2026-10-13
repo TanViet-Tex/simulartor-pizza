@@ -1,3 +1,4 @@
+export const DRINK_UNLOCK_DAY=4;
 export const DRINK_CATALOG=Object.freeze([
  {id:'water',name:'Nước suối',purchasePrice:8,salePrice:20,color:0x70bce0},
  {id:'cola',name:'Coca',purchasePrice:10,salePrice:25,color:0xbb2c2f},

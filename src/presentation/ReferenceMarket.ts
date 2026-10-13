@@ -1,4 +1,4 @@
-import {DRINK_CATALOG,drinkDefinition,type DrinkId} from '../config/drinkCatalog';
+import {DRINK_CATALOG,DRINK_UNLOCK_DAY,drinkDefinition,type DrinkId} from '../config/drinkCatalog';
 import {drawDrinkBottle} from './DrinkArt';
 import {uiCanvas} from './UiRaster';
 import {isNonExpiring} from '../config/ingredientCatalog';
@@ -39,7 +39,7 @@ export class ReferenceMarket{
     const foodIds=[...STOCK_INGREDIENTS].sort((a,b)=>{const order:StockIngredient[]=['dough','cheese','sauce','mushroom','sausage','chicken'];return (order.includes(a)?order.indexOf(a):6+STOCK_INGREDIENTS.indexOf(a))-(order.includes(b)?order.indexOf(b):6+STOCK_INGREDIENTS.indexOf(b));}).filter(id=>input.filter==='all'||input.filter==='sauce'&&id.startsWith('sauce')||input.filter==='base'&&['dough','cheese'].includes(id)||input.filter==='topping'&&!id.startsWith('sauce')&&!['dough','cheese'].includes(id));
     const ids:MarketItem[]=[...foodIds,...(input.filter==='all'||input.filter==='drink'?DRINK_CATALOG.map(drink=>drink.id as DrinkId):[])];
     const max=Math.max(0,ids.length*rowHeight-viewport.height),offset=Phaser.Math.Clamp(input.offset,0,max);
-    const rows=ids.map((id,i)=>{const access=isDrink(id)?{unlocked:true,recipes:[]}:input.access(id),quantity=access.unlocked?input.quantities[id]??1:0,unitPrice=input.unitPrice(id),total=quantity*unitPrice,y=viewport.y+i*rowHeight-offset;return {id,name:isDrink(id)?drinkDefinition(id).name:ingredientName(id),...access,quantity,unitPrice,total,available:input.available(id),remainingCash:input.cash-total,y,visible:y>=viewport.y&&y+rowHeight<=viewport.y+viewport.height};});
+    const rows=ids.map((id,i)=>{const access=isDrink(id)?{unlocked:input.day>=DRINK_UNLOCK_DAY,recipes:[]}:input.access(id),quantity=access.unlocked?input.quantities[id]??1:0,unitPrice=input.unitPrice(id),total=quantity*unitPrice,y=viewport.y+i*rowHeight-offset;return {id,name:isDrink(id)?drinkDefinition(id).name:ingredientName(id),...access,quantity,unitPrice,total,available:input.available(id),remainingCash:input.cash-total,y,visible:y>=viewport.y&&y+rowHeight<=viewport.y+viewport.height};});
     const listKey=key+'-list';
     if(max)panel(342,viewport.y,3,viewport.height,colors.track,colors.track,1);
     if(input.filter!=='drink'){ui.button(20,543,176,34,'Gợi ý mua hôm nay',input.canBuy,13);this.hit('market-suggest',20,543,176,34,input.canBuy,input.suggest);
@@ -55,7 +55,7 @@ export class ReferenceMarket{
       if(!row.unlocked){
         text(73,y+6,row.name,HUB_THEME.typography.body,colors.muted,false,120);
         const required=row.recipes.map(recipe=>recipeDefinition(recipe).name).join(' / ');
-        text(73,y+25,required?'Mua: '+required:'Chưa có công thức phù hợp',10,colors.muted,false,242);
+        text(73,y+25,isDrink(id)?`Mở từ ngày ${DRINK_UNLOCK_DAY}`:required?'Mua: '+required:'Chưa có công thức phù hợp',10,colors.muted,false,242);
         if((!isDrink(id)&&isNonExpiring(id)))text(73,y+37,'Không hết hạn',9,colors.muted,false,120);
         ctx.save();ctx.strokeStyle=colors.muted;ctx.lineWidth=2;ctx.beginPath();ctx.arc(307,y+17,6,Math.PI,0);ctx.stroke();ctx.fillStyle=colors.muted;ctx.fillRect(298,y+17,18,15);ctx.restore();
         return;

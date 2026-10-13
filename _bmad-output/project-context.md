@@ -510,3 +510,7 @@ Baô nước bếp giữ238/376 và3×35×63, raster2× hìnhchai có nhãn/tên
 ### Sửa nhân viên kẹt hộp pizza — 2026-10-13
 
 Staff handoff tự gắn đúng nước của chính đơn đang giao qua shared drink owner, tiêu hao tối đa một chai; giữ đơn khác đang được chọn và không tự mua/đổi loại khi thiếu. Scheduler phục vụ khách mặc cả qua deliver chuẩn để mở lựa chọn cho người chơi, không tự quyết định giá. Build/typecheck, 63 unit tập trung và 3 E2E Chromium 360×640 đạt; chuỗi 12 đơn unit và 8 đơn canvas không kẹt. Xem implementation-artifacts/spec-staff-boxed-handoff-fix.md và investigations/staff-boxed-handoff-investigation.md.
+
+### Nước uống mở từ ngày 4 — 2026-10-13
+
+Theo yêu cầu mới, ngày 1–3 chỉ bán pizza. DRINK_UNLOCK_DAY=4 khóa mua theo preparationDay, gọi/gắn chai theo currentDay; kết thúc ngày 3 đã mua được cho ngày 4. Chợ giữ ba dòng nhưng ghi “Mở từ ngày 4” và khóa thao tác; bếp giữ ba ô, ghi “Ngày 4” trước mốc mở. Save cũ giữ chai/tiền nhưng không phát sinh đơn nước sớm. Giá và tỷ lệ gọi nước sau lần mua đầu giữ nguyên. Fixture kiểm tra nước/nhân viên dùng ngày 4. Xem implementation-artifacts/spec-drinks-unlock-day-four.md.

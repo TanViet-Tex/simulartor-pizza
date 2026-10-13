@@ -6,7 +6,7 @@ import {LOTTERY_MISSION} from '../config/lotteryMission';
 import {advertisedVisitors} from '../domain/Advertising';
 import {lotteryMissionDay,lotteryDecision} from '../domain/LotteryMission';
 import {emptyServices,serviceCostForDay,servicePrizeForDay,type ServiceCheckpoint} from '../domain/ServiceCheckpoint';
-import {DRINK_CATALOG,drinkDefinition,type DrinkId} from '../config/drinkCatalog';
+import {DRINK_CATALOG,DRINK_UNLOCK_DAY,drinkDefinition,type DrinkId} from '../config/drinkCatalog';
 import {requestedDrink,isDrinkId} from '../domain/DrinkStock';
 import {customerPizzaRequests,type CustomerPizzaRequest} from '../config/customerPizzaRequests';
 import {isFinishingSauce} from '../config/ingredientCatalog';
@@ -151,8 +151,9 @@ export class CozyRuntime {
   get staffState(){const day=this.shiftOpen?this.currentDay:this.preparationDay,activeRoles=staffContractRoles(this.staff,day),roles=this.shiftOpen?this.shiftRoles:this.workingRoles(day),expiredRoles=this.staff.acquired.filter(a=>!activeRoles.includes(a.role)).map(a=>a.role);return {...structuredClone(this.staff),dailyWages:0,activeRoles,expiredRoles,renewalPendingRoles:expiredRoles.filter(role=>!this.staff.contracts?.declined.includes(role)),absentRoles:activeRoles.filter(role=>!roles.includes(role)),warning:this.payrollWarning||(this.staff.arrears?`Khoản lương cũ chưa trả: ${this.staff.arrears} xu.`:''),jobs:[...this.staffJobs].map(([role,job])=>({role,ticketId:job.ticketId,action:job.action,remaining:job.remaining})),frozenRoles:[...this.shiftRoles]};}
   staffPreview(role:StaffRole){const owned=staffContractRoles(this.staff,this.preparationDay).includes(role),expired=!owned&&this.staff.acquired.some(a=>a.role===role),absent=owned&&!this.workingRoles(this.preparationDay).includes(role),term=staffTerm(this.staff,role,this.preparationDay);return {role,price:STAFF_RULES.hirePrice,hireDays:STAFF_RULES.hireDays,missing:Math.max(0,STAFF_RULES.hirePrice-this.stock.cash),owned,expired,remainingDays:owned&&term?Math.max(0,term.startDay+STAFF_RULES.hireDays-this.preparationDay):0,renewalPending:expired&&!this.staff.contracts?.declined.includes(role),absent,available:STAFF_ROLES.includes(role)&&this.preparationDay>=STAFF_RULES.unlockDay,dailyWage:0};}
   get drinkStock(){return DRINK_CATALOG.map(d=>({...d,id:d.id as DrinkId,quantity:this.stock.drinkOwned(d.id as DrinkId)}));}
+  get drinksUnlocked(){return this.preparationDay>=DRINK_UNLOCK_DAY;}
   buyDrink(id:DrinkId,quantity:number,commandId:string):boolean{return this.cashTransaction(()=>{
-    if(!this.canSetPrices||!isDrinkId(id)||!commandId.trim()||this.shopCommandUsed(commandId)||!this.stock.buyDrink(id,quantity,this.preparationDay))return false;
+    if(!this.drinksUnlocked||!this.canSetPrices||!isDrinkId(id)||!commandId.trim()||this.shopCommandUsed(commandId)||!this.stock.buyDrink(id,quantity,this.preparationDay))return false;
     this.shopCommands.add(commandId);this.revision++;return true;
   });}
   attachDrink(id:DrinkId):boolean{return this.clockAction(()=>{
@@ -160,7 +161,7 @@ export class CozyRuntime {
     return !!t&&this.attachTicketDrink(t,id);
   });}
   private attachTicketDrink(t:Ticket,id:DrinkId):boolean{
-    if(!this.saveGuard()||this.reasons.size||this.phase!=='making'||!t||t.source!=='shop'||t.deadline<=this.elapsed||t.drink!==id||t.drinkAttached||!this.stock.consumeDrink(id,this.currentDay))return false;
+    if(this.currentDay<DRINK_UNLOCK_DAY||!this.saveGuard()||this.reasons.size||this.phase!=='making'||!t||t.source!=='shop'||t.deadline<=this.elapsed||t.drink!==id||t.drinkAttached||!this.stock.consumeDrink(id,this.currentDay))return false;
     t.drinkAttached=true;this.revision++;return true;
   }
   get fridgeState(){const receipt=this.stock.exportCheckpoint().refrigeration;return {owned:!!receipt,price:FRIDGE_PRICE,acquiredDay:receipt?.acquiredDay??null,missing:Math.max(0,FRIDGE_PRICE-this.stock.cash)};}
@@ -401,7 +402,7 @@ export class CozyRuntime {
     if(!help)name=customerProfile(avatarIndex).name;
     this.serial++;
     const patience=vip?VIP_RULES.patience:profile.patience*(help||!commercial?1:1+this.frozenShopEffects.patience);
-    const t:Ticket={...(!help&&this.stock.drinksEnabled?{drink:requestedDrink(this.eventSeed,this.currentDay,arrivalId)??undefined}:{}),...(vip?{vip:true}:{}),source:'shop',quantity:1,packed:[],avatarIndex,id,name,recipe,kind:vip?'picky':kind,help,takeaway,finalPrice,patience,extraPenalty:profile.extraPenalty,deadline:this.elapsed+patience,committed:false,order:new CozyOrder(false,recipe,true,this.ovenUpgrade)};
+    const t:Ticket={...(!help&&this.currentDay>=DRINK_UNLOCK_DAY&&this.stock.drinksEnabled?{drink:requestedDrink(this.eventSeed,this.currentDay,arrivalId)??undefined}:{}),...(vip?{vip:true}:{}),source:'shop',quantity:1,packed:[],avatarIndex,id,name,recipe,kind:vip?'picky':kind,help,takeaway,finalPrice,patience,extraPenalty:profile.extraPenalty,deadline:this.elapsed+patience,committed:false,order:new CozyOrder(false,recipe,true,this.ovenUpgrade)};
     this.active.set(id,t);
     if(!this.active.has(this.ticket)){this.ticket=id;this.order=t.order;}
     if(this.phase==='delivered')this.phase='making';

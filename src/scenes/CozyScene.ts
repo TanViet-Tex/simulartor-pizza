@@ -670,7 +670,7 @@ export class CozyScene extends Phaser.Scene {
   }
   private drinkCells():void {
     const ticket=this.runtime.selectedTicket;
-    drawDrinkKitchenCells(this,this.layer,(...args)=>this.hit(...args),this.runtime.drinkStock,ticket?.drink,!!ticket?.drinkAttached,id=>{this.runtime.attachDrink(id);this.dirty=true;});
+    drawDrinkKitchenCells(this,this.layer,(...args)=>this.hit(...args),this.runtime.drinkStock,ticket?.drink,!!ticket?.drinkAttached,id=>{this.runtime.attachDrink(id);this.dirty=true;},this.runtime.drinksUnlocked);
   }
   private queueInputs():readonly OrderQueueInput[]{
     if(this.runtime.productionActive)return this.runtime.tickets.filter(t=>t.id!==this.runtime.specialWelcome?.ticketId).map(t=>({...t,finalPrice:t.totalPrice,deliveryStatus:t.riderState==='waiting'?`Tới sau ${Math.ceil(t.riderRemaining)}s`:t.riderState==='arrived'?'Shipper đã tới':t.riderState==='staff'?'Nhân viên giao':'Chưa book shipper'}));
@@ -1153,7 +1153,7 @@ export class CozyScene extends Phaser.Scene {
   }
   private isMarketDrink(id:MarketItem):id is DrinkId{return DRINK_CATALOG.some(drink=>drink.id===id);}
   private buyMarketItem(id:MarketItem):void{
-    if((!this.isMarketDrink(id)&&!this.runtime.ingredientAccess(id).unlocked)||this.marketBasket||this.runtime.pauses.length||!(this.preparationHub||this.runtime.canPrepareNextDay))return;
+    if((this.isMarketDrink(id)?!this.runtime.drinksUnlocked:!this.runtime.ingredientAccess(id).unlocked)||this.marketBasket||this.runtime.pauses.length||!(this.preparationHub||this.runtime.canPrepareNextDay))return;
     this.marketDrag.active=false;
     const quantity=this.marketQuantities[id]??1;
     if(quantity<1)return;
