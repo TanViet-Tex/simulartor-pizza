@@ -70,6 +70,8 @@ Given thuê ngày 1, when hết ngày 10, then ngày 11 nhân viên dừng, ngư
 
 ## Implementation & Results
 
+Hoàn thành 2026-10-13: commit triển khai `a59fd1b`. Thuê từ ngày1 khi đủ tiền, phí2000xu/10ngày, không lương hằng ngày; hết hạn hỏi người chơi, chỉ gia hạn khi xác nhận. Build cuối đạt,29unit và5E2E tập trung đạt; giữ giao diện và dữ liệu lịch sử. Báo cáo kết quả cho người dùng trong3–5dòng theo yêu cầu.
+
 - `staff.contracts` version2 giữ mốc chuyển đổi, kỳ thuê và lựa chọn từ chối; biên nhận thuê gốc bất biến, gia hạn cộng chi phí đầu tư đúng ngày. Ngày thuê..ngày thuê+9 có hiệu lực; sau đó chỉ hợp đồng mới khi xác nhận.
 - Save cũ đối soát lương200xu/ngày trước khi chuẩn hóa hợp đồng. Giữ nguyên cash/reports/arrears và không tự thu nợ cũ ở ngày mới. Kỳ chuyển đổi10ngày bắt đầu tại chuẩn bị đang khôi phục, không mất người đã trả phí.
 - Build/typecheck đạt. 29unit/4file đạt: Epic8, Contracts, FridgeAndAbsence, Epic9. Năm E2E tập trung Chromium360×640 đạt qua các lượt cuối: thuê ngày1/lỗi–retry–reload, bốn nghề/phí trả trước/no-wage, hết hạn/từ chối/gia hạn, gia hạn lỗi–retry–reload và thiếu tiền.
