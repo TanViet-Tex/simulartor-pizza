@@ -556,3 +556,7 @@ Theo ảnh nút Về quản lý quán người dùng gửi: các nút hành đ�
 ### Lưu giá ngầm và nhãn sốt — yêu cầu 2026-10-12
 
 +/−giá pizza và bật/tắt bán giữ save tức thời nhưng không hiện bảng Đang lưu ngày hoặc lớp pause trong lúc menu save; guard chặn ghi đồng thời giữ nguyên. Lỗi/retry/recovery vẫn hiện và thông báo menu chưa lưu ghi đúng ngữ cảnh. Năm chai sốt trong Chợ/Kho dùng atlas có nhãn tomato/cream/flame/basil/chili; tiệm dùng đúng5label crop trên chai có sẵn. Không đổi bố cục/hit/nền bếp hoặc14ingredient art còn lại. Asset public/assets/market-sauces-labeled.png tải bằng preloadMarketArt, frames đăng ký khi CozyScene create. Ảnh kiểm chứng ui-baseline/menu-economy-sauces-2026-10-12; build,521unit và4focusedE2E360×640 đạt.
+
+### Mục con Quán gọn và nhãn sở hữu góc phải — 2026-10-13
+
+Theo chỉnh tiếp rõ của người dùng: bỏ khoảng trống toolbar bằng cách kéo body50px logic lên, viewport8/130/344/450, có lọc8/174/344/406 và tabsY130; đáy580/footer/header/nav giữ nguyên. Hit/clip/cuộn/tutorial theo SHOP_SCREEN_LAYOUT chung. Đã sở hữu xanh đặt gọn góc trên bên phải của thẻ công thức/đồ/cấp nâng đã mua, không còn nhãn sở hữu giữa/dưới thẻ. Thay giới hạn không reflow trong yêu cầu cùng ngày trước đó riêng cho vùng này. Nhân viên giữ hạn thuê. Xem spec-shop-compact-top-right-ownership.md.

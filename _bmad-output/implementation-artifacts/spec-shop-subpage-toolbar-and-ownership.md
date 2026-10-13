@@ -10,6 +10,8 @@ route: one-shot
 
 ## Intent
 
+> Chỉnh tiếp cùng ngày: người dùng yêu cầu dồn body lên để bỏ khoảng trống và chuyển nhãn sở hữu lên góc trên bên phải. Geometry/vị trí nhãn hiện hành theo [spec-shop-compact-top-right-ownership.md](spec-shop-compact-top-right-ownership.md); phần giữ khoảng trống bên dưới chỉ ghi nhận lượt triển khai trước.
+
 **Problem:** Người dùng yêu cầu bỏ phần Quay lại/Quản lý quán phía trên các mục con theo ảnh, và ghi Đã sở hữu màu xanh khi sản phẩm đã mua.
 
 **Approach:** Xóa toolbar và hit shop-back tại ShopScreenUI; footer Về quản lý quán tiếp tục điều hướng. Giữ toàn bộ geometry thẻ/viewport/tabs/header/nav. Nhãn sở hữu xanh từ dữ liệu thật cho công thức, trang trí/tiện nghi (cả đang đặt), tủ lạnh và cấp nâng đã mua. Lò đã nâng giữ hành động nâng tiếp; nhân viên giữ trạng thái thuê10ngày thay vì sở hữu vĩnh viễn. Đồ nhập kho và dịch vụ mua lặp lại giữ thao tác hiện có.

@@ -104,6 +104,7 @@ test('all six illustrated pages have fixed shell, scroll and independent navigat
     await open(page,section);
     expect((await data(page,'controls')).filter((c:Control)=>c.id.startsWith('summary-tab-'))).toHaveLength(5);
     expect(await page.evaluate(()=>{const layer=(window as any).shopFixture.scene.hubLayer;return {x:layer.x,y:layer.y,scale:layer.scaleX};})).toEqual({x:21.6,y:21.6,scale:.88});
+    expect((await data(page,'shop-screen')).viewport.y).toBe(['decoration','staff'].includes(section)?174:130);
     const art=(await data(page,'shop-screen-art'))||[];
     if(section==='menu'){
       const pizzas=art.filter((entry:any)=>entry.id.startsWith('recipe-'));
@@ -152,7 +153,7 @@ test('item purchase place store, upgrades and hiring retain real accounting acro
   expect((await data(page,'controls')).filter((c:Control)=>c.id.startsWith('shop-item-'))).toHaveLength(0);
   await tap(page,'shop-decoration-tab-store');await tap(page,'shop-item-table-plant');await tap(page,'shop-item-confirm');await ready(page);
   expect(Number(await page.locator('canvas').getAttribute('data-cash'))).toBe(starting-500);
-  expect(await page.evaluate(()=>(window as any).ownedLabelColors)).toContain('#245020');
+  expect(await page.evaluate(()=>(window as any).ownedLabelColors)).toContain('#247339');
   await page.locator('canvas').screenshot({path:info.outputPath('shop-decoration-owned-green.png')});
   await tap(page,'shop-item-table-plant');await tap(page,'shop-item-confirm');await tap(page,'shop-item-confirm');await ready(page);
   expect((await data(page,'shop-items')).effects.visitors).toBe(.03);
@@ -162,7 +163,6 @@ test('item purchase place store, upgrades and hiring retain real accounting acro
   await tap(page,'summary-upgrade-oven');await tap(page,'hub-upgrade-confirm');await ready(page);
   await tap(page,'shop-fridge-buy');await tap(page,'fridge-confirm');await ready(page);
   expect(await page.evaluate(()=>(window as any).ownedLabelColors)).toContain('#247339');
-  expect(await page.evaluate(()=>(window as any).ownedLabelColors)).toContain('#72dc83');
   await page.locator('canvas').screenshot({path:info.outputPath('shop-equipment-owned-green.png')});
   await tap(page,'shop-screen-back');await open(page,'expansion');
   await tap(page,'summary-upgrade-queue');await tap(page,'hub-upgrade-confirm');await ready(page);expect(await data(page,'queue-capacity')).toBe(5);

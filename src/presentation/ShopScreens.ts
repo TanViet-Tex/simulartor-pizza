@@ -16,10 +16,11 @@ export function drawShopScreen(scene:Phaser.Scene,layer:Phaser.GameObjects.Conta
   scene.game.canvas.dataset.shopScreenArt='[]';
   ShopScreenUI.shell(scene,layer,hit,()=>input.open('home'));
   const draw=(ui:ShopScreenUI)=>{
-    const action=(id:string,x:number,y:number,w:number,h:number,title:string,enabled:boolean,run:()=>void,owned=false)=>{
+    const ownedLabel=(x:number,y:number,width:number)=>{ui.panel(x+width-89,y+7,80,18,'#fff8e7','#c9d4a8',5);ui.text(x+width-49,y+10,'Đã sở hữu',10,'#247339',true,76);};
+    const action=(id:string,x:number,y:number,w:number,h:number,title:string,enabled:boolean,run:()=>void)=>{
       const cost=id==='summary-upgrade-oven'?input.ovenPrice:id==='shop-fridge-buy'&&!input.fridge?.owned?(input.fridge?.price??3000):id==='summary-upgrade-queue'?input.queuePrice:null;
       const caption=cost!==null&&cost!==undefined&&input.cash<cost?`Thiếu ${cost-input.cash} xu`:title;
-      ui.button(x,y,w,h,owned?"":caption,enabled,12);if(owned)ui.text(x+w/2,y+(h-12)/2-1,caption,12,"#72dc83",true,w-8);actions.push({id,title:caption,x,y,width:w,height:h,enabled,run});
+      ui.button(x,y,w,h,caption,enabled,12);actions.push({id,title:caption,x,y,width:w,height:h,enabled,run});
     };
     const room=(id:keyof typeof SHOP_SCREEN_ART,y:number,h=120)=>{ui.frame({x:8,y,width:344,height:h+12});const art=SHOP_SCREEN_ART[id];ui.art(id,art.key,art.crop,14,y+6,332,h);};
     if(page==='menu'){
@@ -27,9 +28,9 @@ export function drawShopScreen(scene:Phaser.Scene,layer:Phaser.GameObjects.Conta
       for(const recipe of input.recipes){
         const selected=input.selectedRecipe===recipe.id,rowHeight=selected?133:108;
         ui.frame({x:8,y,width:344,height:rowHeight-6});ui.art('recipe-'+recipe.id,'reference-shop-menu',SHOP_PIZZA_CROPS[recipe.id],15,y+9,77,76);
-        ui.text(101,y+10,recipe.name,16,'#2a160b',false,231);ui.icon('coin',100,y+34,15);ui.text(120,y+36,`Vốn ${recipe.cost} xu`,10,'#623619');
+        ui.text(101,y+10,recipe.name,16,'#2a160b',false,recipe.owned?155:231);ui.icon('coin',100,y+34,15);ui.text(120,y+36,`Vốn ${recipe.cost} xu`,10,'#623619');
         actions.push({id:'shop-menu-select-'+recipe.id,x:15,y:y+8,width:78,height:82,enabled:true,run:()=>input.selectRecipe?.(recipe.id)});
-        if(recipe.owned){ui.text(53,y+86,'Đã sở hữu',9,'#247339',true,84);
+        if(recipe.owned){ownedLabel(8,y,344);
           ui.text(177,y+36,'Giá bán',10,'#623619');ui.text(287,y+36,'Bán món',10,'#623619');
           action('shop-menu-minus-'+recipe.id,132,y+55,35,32,'−',input.canAct&&recipe.percent>80,()=>input.configure(recipe.id,recipe.percent-5,recipe.enabled));
           ui.panel(170,y+55,68,32,'#fff8e7');ui.text(204,y+61,String(recipe.price),17,'#2a160b',true);
@@ -48,7 +49,7 @@ export function drawShopScreen(scene:Phaser.Scene,layer:Phaser.GameObjects.Conta
       const items=SHOP_CATALOG.filter(item=>item.group===page&&(page!=='decoration'||input.filter!=='owned'||input.shop?.acquired.some(entry=>entry.id===item.id)));
       if(!items.length){ui.frame({x:8,y,width:344,height:100});ui.text(180,y+35,'Chưa sở hữu vật phẩm nào',16,'#623619',true,320);y+=110;}
       items.forEach((item,i)=>{const x=8+i%2*176,top=y+Math.floor(i/2)*224,owned=input.shop?.acquired.find(entry=>entry.id===item.id);ui.frame({x,y:top,width:168,height:216});ui.art(item.id,item.artKey,item.crop,x+9,top+9,150,102);ui.text(x+84,top+118,item.name,14,'#2a160b',true,152);
-        if(owned)ui.text(x+84,top+140,'Đã sở hữu',12,'#245020',true,150);else ui.money(x+18,top+137,item.price??0,12);
+        if(owned)ownedLabel(x,top,168);else ui.money(x+18,top+137,item.price??0,12);
         const effect='visitors' in item.effect?`+${Math.round(item.effect.visitors*100)}% khách`:`+${Math.round(('patience' in item.effect?item.effect.patience:item.effect.cooling)*100)}% thời gian chờ`;ui.panel(x+8,top+160,152,17,'#e0ebbd');ui.text(x+84,top+163,effect,10,'#245020',true,148);
         action('shop-item-'+item.id,x+8,top+180,152,32,'Xem chi tiết ›',!!input.item,()=>input.item?.(item.id));cards.push({id:item.id,y:top,height:216,owned:!!owned,placed:!!owned&&owned.placedSlot!==null,price:item.price});});
       y+=Math.ceil(items.length/2)*224;ui.panel(8,y,344,45,'#e0ebbd');ui.text(180,y+9,page==='decoration'?'Đặt vào quán mới có hiệu quả':'Quạt và điều hòa lấy mức cao hơn',12,'#245020',true,328);ui.text(180,y+27,`Khách +${Math.round((input.shop?.effects.visitors??0)*100)}% · Chờ +${Math.round((input.shop?.effects.patience??0)*100)}%`,10,'#245020',true,328);height=y+54;
@@ -60,13 +61,13 @@ export function drawShopScreen(scene:Phaser.Scene,layer:Phaser.GameObjects.Conta
       height=Math.max(height,Math.ceil(staff.length/2)*276);ui.panel(8,height,344,46,'#e0ebbd');ui.text(180,height+8,`${STAFF_CATALOG.filter(employee=>active(employee.role)).length} người · Không lương ngày`,12,'#245020',true,325);ui.text(180,height+27,'Hết hạn: hỏi gia hạn, không tự trừ xu',11,'#623619',true,325);height+=54;
     }else if(page==='equipment'){
       const entries=[{id:'oven',name:'Lò nướng',art:SHOP_SCREEN_ART.oven},{id:'fridge',name:'Tủ lạnh',art:SHOP_SCREEN_ART.fridge},{id:'drinks',name:'Kho nước',art:null}];
-      entries.forEach((entry,i)=>{const x=8+i%2*176,y=Math.floor(i/2)*256;ui.frame({x,y,width:168,height:248});ui.text(x+84,y+12,entry.name,18,'#2a160b',true,150);if(entry.art)ui.art(entry.id,entry.art.key,entry.art.crop,x+8,y+41,152,101);else ui.art('drink-tray','reference-drink-tray',[170,80,890,660],x+8,y+41,152,101);
-        if(entry.id==='oven'){ui.panel(x+8,y+150,152,25,'#e0ebbd');ui.text(x+84,y+157,`${input.ovenLevel>0?'Đã sở hữu':'Đang dùng'} · Cấp ${input.ovenLevel+1}`,12,'#245020',true,148);ui.text(x+84,y+185,`Chín vừa ${['6–8','4–6','2–4'][input.ovenLevel]} giây`,11,'#623619',true,152);action('summary-upgrade-oven',x+8,y+211,152,32,input.ovenPrice===null?'Đã sở hữu':`Nâng cấp · ${input.ovenPrice} xu`,input.canAct&&input.ovenPrice!==null&&input.cash>=input.ovenPrice,()=>input.upgrade('oven'),input.ovenPrice===null);}
-        else if(entry.id==='fridge'){ui.text(x+84,y+159,'Bảo quản lâu gấp 4',12,'#245020',true,150);ui.text(x+84,y+184,input.fridge?.owned?'Đã sở hữu':`${input.fridge?.price??3000} xu`,12,input.fridge?.owned?'#247339':'#623619',true);action('shop-fridge-buy',x+8,y+211,152,29,input.fridge?.owned?'Đã sở hữu':'Xem công dụng ›',input.canAct&&!input.fridge?.owned&&input.cash>=(input.fridge?.price??3000),()=>input.buyFridge?.(),!!input.fridge?.owned);}
+      entries.forEach((entry,i)=>{const x=8+i%2*176,y=Math.floor(i/2)*256;ui.frame({x,y,width:168,height:248});ui.text(x+12,y+12,entry.name,14,'#2a160b',false,(entry.id==='oven'&&input.ovenLevel>0||entry.id==='fridge'&&input.fridge?.owned)?66:150);if(entry.art)ui.art(entry.id,entry.art.key,entry.art.crop,x+8,y+41,152,101);else ui.art('drink-tray','reference-drink-tray',[170,80,890,660],x+8,y+41,152,101);
+        if(entry.id==='oven'){if(input.ovenLevel>0)ownedLabel(x,y,168);ui.panel(x+8,y+150,152,25,'#e0ebbd');ui.text(x+84,y+157,`Đang dùng · Cấp ${input.ovenLevel+1}`,12,'#245020',true,148);ui.text(x+84,y+185,`Chín vừa ${['6–8','4–6','2–4'][input.ovenLevel]} giây`,11,'#623619',true,152);action('summary-upgrade-oven',x+8,y+211,152,32,input.ovenPrice===null?'Đã nâng tối đa':`Nâng cấp · ${input.ovenPrice} xu`,input.canAct&&input.ovenPrice!==null&&input.cash>=input.ovenPrice,()=>input.upgrade('oven'));}
+        else if(entry.id==='fridge'){if(input.fridge?.owned)ownedLabel(x,y,168);ui.text(x+84,y+159,'Bảo quản lâu gấp 4',12,'#245020',true,150);ui.text(x+84,y+184,input.fridge?.owned?'Đã mua':`${input.fridge?.price??3000} xu`,12,input.fridge?.owned?'#247339':'#623619',true);action('shop-fridge-buy',x+8,y+211,152,29,input.fridge?.owned?'Đã mua':'Xem công dụng ›',input.canAct&&!input.fridge?.owned&&input.cash>=(input.fridge?.price??3000),()=>input.buyFridge?.());}
         else{ui.text(x+84,y+159,'Suối · Coca · Cam',12,'#623619',true,150);ui.text(x+84,y+184,'Bán 20 / 25 / 30 xu',11,'#245020',true,150);action('shop-drinks-stock',x+8,y+211,152,29,'Nhập kho nước ›',input.canAct,()=>input.drinks?.());}cards.push({id:entry.id,y,height:248});});height=520;
     }else{
       room('expansionRoom',0,138);ui.text(180,157,`Hiện có ${input.queueCapacity} ô · Khách +${Math.round(input.queueVisitorBonus*100)}%`,13,'#245020',true,324);
-      for(let tier=0;tier<2;tier++){const y=188+tier*192,owned=input.queueLevel>tier,current=input.queueLevel===tier,price=tier===0?6000:10000;ui.frame({x:8,y,width:344,height:184});ui.text(180,y+9,`Mở rộng ${tier+1} · ${5+tier} ô khách`,17,'#2a160b',true,320);const before=tier===0?SHOP_SCREEN_ART.before1:SHOP_SCREEN_ART.before2,after=tier===0?SHOP_SCREEN_ART.after1:SHOP_SCREEN_ART.after2;ui.art('expansion-before-'+tier,before.key,before.crop,17,y+39,144,87);ui.art('expansion-after-'+tier,after.key,after.crop,199,y+39,144,87);ui.text(180,y+74,'→',24,'#623619',true);ui.text(180,y+132,`Khách quán +${tier===0?10:30}% · ${price.toLocaleString('vi-VN')} xu`,12,'#245020',true,320);action(current?'summary-upgrade-queue':'shop-expansion-tier-'+tier,20,y+154,320,24,owned?'Đã sở hữu':current?'Xem nâng cấp ›':'Mở sau nâng cấp trước',input.canAct&&current&&input.queuePrice!==null&&input.cash>=price,()=>input.upgrade('queue'),owned);cards.push({id:'queue-'+tier,y,height:184,owned,current,price});}
+      for(let tier=0;tier<2;tier++){const y=188+tier*192,owned=input.queueLevel>tier,current=input.queueLevel===tier,price=tier===0?6000:10000;ui.frame({x:8,y,width:344,height:184});if(owned)ownedLabel(8,y,344);ui.text(20,y+9,`Mở rộng ${tier+1} · ${5+tier} ô khách`,17,'#2a160b',false,230);const before=tier===0?SHOP_SCREEN_ART.before1:SHOP_SCREEN_ART.before2,after=tier===0?SHOP_SCREEN_ART.after1:SHOP_SCREEN_ART.after2;ui.art('expansion-before-'+tier,before.key,before.crop,17,y+39,144,87);ui.art('expansion-after-'+tier,after.key,after.crop,199,y+39,144,87);ui.text(180,y+74,'→',24,'#623619',true);ui.text(180,y+132,`Khách quán +${tier===0?10:30}% · ${price.toLocaleString('vi-VN')} xu`,12,'#245020',true,320);action(current?'summary-upgrade-queue':'shop-expansion-tier-'+tier,20,y+154,320,24,owned?'Đã mở':current?'Xem nâng cấp ›':'Mở sau nâng cấp trước',input.canAct&&current&&input.queuePrice!==null&&input.cash>=price,()=>input.upgrade('queue'));cards.push({id:'queue-'+tier,y,height:184,owned,current,price});}
       action('shop-advertising',12,578,336,42,input.advertising?.bought?'Xem lịch khách hôm nay':'Quảng bá · 100 xu / ngày',input.canAct,()=>input.advertise?.());height=632;
     }
   };
