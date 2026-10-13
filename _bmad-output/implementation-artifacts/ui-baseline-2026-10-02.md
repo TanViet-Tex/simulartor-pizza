@@ -541,6 +541,8 @@ Theo yêu cầu thiết kế lại rõ ràng, sáu màn con dùng riêng header 
 
 Theo chỉnh tiếp của người dùng: sáu màn con thu gọn bằng tab Quản lý quán, giữ nav5tab và header chung. Body/footer cùng scale0.88/offset21.6; viewporty180 hoặc222, backtoolbar dưới nav. Mốc này thay phần fullscreen/header riêng của sáu màn ngay phía trên; không đổi artwork hoặc chức năng.
 
+Theo yêu cầu rõ ngày2026-10-13: bỏ toolbar Quay lại/Quản lý quán dưới nav ở cả6mục con; giữ footer Về quản lý quán để quay về. Không kéo thẻ/tab/viewport lên hoặc đổi các phần khác. Sản phẩm đã mua dùng Đã sở hữu màu xanh (đồ đang đặt vẫn là sở hữu); các cấp nâng còn mua được giữ hành động nâng tiếp. Nhân viên giữ trạng thái hợp đồng thuê/ngày còn lại. Xem spec-shop-subpage-toolbar-and-ownership.md.
+
 Ảnh thu gọn: [Trang trí](ui-baseline/compact-shop-screens-2026-10-08/shop-decoration.png), [Menu](ui-baseline/compact-shop-screens-2026-10-08/shop-menu.png). Build và6hồi quy360×640 đạt, gồm giao dịch và toàn bộ tutorial.
 
 ### Quán / Chợ / Kho — refinement requested 2026-10-12

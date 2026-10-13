@@ -197,11 +197,11 @@ test('stock filters, lot detail, row drag and menu plan are read-only',async({pa
 
 test('shop has six categories, real menu editing and confirmed atomic upgrades',async({page},info)=>{
   await fixture(page);await tap(page,'summary-tab-shop');const canvas=page.locator('canvas');await canvas.screenshot({path:info.outputPath('shop-reference.png')});
-  for(const section of ['decoration','amenities','staff']){await tap(page,'shop-section-'+section);await expect(canvas).toHaveAttribute('data-shop-page',section);await canvas.screenshot({path:info.outputPath('shop-'+section+'.png')});await expect(canvas).toHaveAttribute('data-cash','300');await tap(page,'shop-back');}
-  await tap(page,'shop-section-menu');await tap(page,'shop-price-cheese');await tap(page,'market-price-plus');await tap(page,'market-price-save');expect((await data(page,'menu-recipes')).includes('cheese')).toBe(true);await tap(page,'shop-back');
+  for(const section of ['decoration','amenities','staff']){await tap(page,'shop-section-'+section);await expect(canvas).toHaveAttribute('data-shop-page',section);await canvas.screenshot({path:info.outputPath('shop-'+section+'.png')});await expect(canvas).toHaveAttribute('data-cash','300');await tap(page,'shop-screen-back');}
+  await tap(page,'shop-section-menu');await tap(page,'shop-price-cheese');await tap(page,'market-price-plus');await tap(page,'market-price-save');expect((await data(page,'menu-recipes')).includes('cheese')).toBe(true);await tap(page,'shop-screen-back');
   await tap(page,'shop-section-equipment');await canvas.screenshot({path:info.outputPath('shop-equipment.png')});await tap(page,'summary-upgrade-oven');await tap(page,'hub-upgrade-cancel');await expect(canvas).toHaveAttribute('data-cash','300');
   await tap(page,'summary-upgrade-oven');await tap(page,'hub-upgrade-confirm');await expect(canvas).toHaveAttribute('data-cash','150');expect((await data(page,'bake-timing')).perfectStart).toBe(4);
-  await tap(page,'shop-back');await tap(page,'shop-section-expansion');await tap(page,'summary-upgrade-queue');expect((await data(page,'hub-upgrade')).cost).toBe(200);expect((await data(page,'controls')).find((c:Control)=>c.id==='hub-upgrade-confirm').enabled).toBe(false);await tap(page,'hub-upgrade-cancel');await expect(canvas).toHaveAttribute('data-cash','150');
+  await tap(page,'shop-screen-back');await tap(page,'shop-section-expansion');await tap(page,'summary-upgrade-queue');expect((await data(page,'hub-upgrade')).cost).toBe(200);expect((await data(page,'controls')).find((c:Control)=>c.id==='hub-upgrade-confirm').enabled).toBe(false);await tap(page,'hub-upgrade-cancel');await expect(canvas).toHaveAttribute('data-cash','150');
 });
 
 test('missions shows real preparation and terminal goals without claiming rewards',async({page},info)=>{

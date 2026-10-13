@@ -7,7 +7,7 @@ type Control={id:string;x:number;y:number;width:number;height:number;enabled:boo
 let bundleCode:string;
 async function data(page:Page,key:string){return JSON.parse(await page.locator('canvas').getAttribute('data-'+key)||'null');}
 async function settle(page:Page){await page.evaluate(()=>new Promise<void>(resolve=>requestAnimationFrame(()=>requestAnimationFrame(()=>resolve()))));}
-async function ready(page:Page){await expect(page.locator('canvas')).toHaveAttribute('data-booted','true');await expect.poll(async()=>(await data(page,'save-state'))?.state).toBe('ready');await settle(page);}
+async function ready(page:Page){await expect(page.locator('canvas')).toHaveAttribute('data-screen',/^(preparation-hub|day-summary|day-ended-notice|game)$/,{timeout:30000});await expect.poll(async()=>(await data(page,'save-state'))?.state).toBe('ready');await settle(page);}
 async function tap(page:Page,id:string){
   await expect.poll(async()=>((await data(page,'controls'))||[]).some((c:Control)=>c.id===id&&c.enabled)).toBe(true);
   const c:Control=(await data(page,'controls')).find((c:Control)=>c.id===id),b=(await page.locator('canvas').boundingBox())!;
@@ -111,15 +111,17 @@ test('all six illustrated pages have fixed shell, scroll and independent navigat
     }
     if(section==='staff')expect(art.filter((entry:any)=>entry.key==='reference-shop-staff')).toHaveLength(4);
     await page.locator('canvas').screenshot({path:info.outputPath('shop-'+section+'.png')});
-    const before=(await data(page,'controls')).find((c:Control)=>c.id==='shop-back');
+    expect((await data(page,'controls')).some((c:Control)=>c.id==='shop-back')).toBe(false);
+    const before=(await data(page,'controls')).find((c:Control)=>c.id==='shop-screen-back');
+    expect(before?.enabled).toBe(true);
     await scroll(page,200);
-    expect((await data(page,'controls')).find((c:Control)=>c.id==='shop-back')).toEqual(before);
+    expect((await data(page,'controls')).find((c:Control)=>c.id==='shop-screen-back')).toEqual(before);
     await page.locator('canvas').screenshot({path:info.outputPath('shop-'+section+'-scrolled.png')});
     if(section==='menu'){
       await tap(page,'summary-tab-shop');await expect(page.locator('canvas')).toHaveAttribute('data-shop-page','home');
       await open(page,section);
     }
-    await tap(page,'shop-back');await expect(page.locator('canvas')).toHaveAttribute('data-shop-page','home');
+    await tap(page,'shop-screen-back');await expect(page.locator('canvas')).toHaveAttribute('data-shop-page','home');
   }
   expect(await liveResources()).toEqual(initial);
   expect(page.context().pages()).toHaveLength(1);expect(errors).toEqual([]);
@@ -144,23 +146,29 @@ test('menu price and selling changes persist with actual profit and recipe owner
 });
 
 test('item purchase place store, upgrades and hiring retain real accounting across reload',async({page},info)=>{
+  await page.addInitScript(()=>{const paint=CanvasRenderingContext2D.prototype.fillText;const labels:string[]=[];Object.assign(window,{ownedLabelColors:labels});CanvasRenderingContext2D.prototype.fillText=function(text,x,y,maxWidth){if(text==='Đã sở hữu')labels.push(String(this.fillStyle));if(maxWidth===undefined)paint.call(this,text,x,y);else paint.call(this,text,x,y,maxWidth);};});
   await fixture(page);const starting=Number(await page.locator('canvas').getAttribute('data-cash'));
   await open(page,'decoration');await tap(page,'shop-decoration-tab-owned');
   expect((await data(page,'controls')).filter((c:Control)=>c.id.startsWith('shop-item-'))).toHaveLength(0);
   await tap(page,'shop-decoration-tab-store');await tap(page,'shop-item-table-plant');await tap(page,'shop-item-confirm');await ready(page);
   expect(Number(await page.locator('canvas').getAttribute('data-cash'))).toBe(starting-500);
+  expect(await page.evaluate(()=>(window as any).ownedLabelColors)).toContain('#245020');
+  await page.locator('canvas').screenshot({path:info.outputPath('shop-decoration-owned-green.png')});
   await tap(page,'shop-item-table-plant');await tap(page,'shop-item-confirm');await tap(page,'shop-item-confirm');await ready(page);
   expect((await data(page,'shop-items')).effects.visitors).toBe(.03);
   await tap(page,'shop-item-table-plant');await tap(page,'shop-item-confirm');await tap(page,'shop-item-confirm');await ready(page);
   expect((await data(page,'shop-items')).effects.visitors).toBe(0);
-  await tap(page,'shop-back');await open(page,'equipment');
+  await tap(page,'shop-screen-back');await open(page,'equipment');
   await tap(page,'summary-upgrade-oven');await tap(page,'hub-upgrade-confirm');await ready(page);
   await tap(page,'shop-fridge-buy');await tap(page,'fridge-confirm');await ready(page);
-  await tap(page,'shop-back');await open(page,'expansion');
+  expect(await page.evaluate(()=>(window as any).ownedLabelColors)).toContain('#247339');
+  expect(await page.evaluate(()=>(window as any).ownedLabelColors)).toContain('#72dc83');
+  await page.locator('canvas').screenshot({path:info.outputPath('shop-equipment-owned-green.png')});
+  await tap(page,'shop-screen-back');await open(page,'expansion');
   await tap(page,'summary-upgrade-queue');await tap(page,'hub-upgrade-confirm');await ready(page);expect(await data(page,'queue-capacity')).toBe(5);
   await scroll(page,250);
   await tap(page,'summary-upgrade-queue');await tap(page,'hub-upgrade-confirm');await ready(page);expect(await data(page,'queue-capacity')).toBe(6);
-  await tap(page,'shop-back');await open(page,'staff');await tap(page,'shop-staff-prep');await tap(page,'staff-hire-confirm');await ready(page);
+  await tap(page,'shop-screen-back');await open(page,'staff');await tap(page,'shop-staff-prep');await tap(page,'staff-hire-confirm');await ready(page);
   await expect.poll(async()=>(await data(page,'staff-state'))?.acquired.length).toBe(1);
   await tap(page,'shop-staff-prep');expect(await data(page,'staff-hire')).toMatchObject({owned:true,remainingDays:10,dailyWage:0});await tap(page,'staff-hire-cancel');
   await tap(page,'shop-staff-tab-working');
@@ -178,13 +186,13 @@ test('unaffordable staff and equipment remain honest; drag does not open a card'
   expect((await data(page,'controls')).find((c:Control)=>c.id==='staff-hire-confirm').enabled).toBe(false);
   await tap(page,'staff-hire-cancel');await tap(page,'shop-staff-tab-working');
   expect((await data(page,'controls')).filter((c:Control)=>c.id.startsWith('shop-staff-')&&!c.id.startsWith('shop-staff-tab-'))).toHaveLength(0);
-  await tap(page,'shop-back');await open(page,'equipment');
+  await tap(page,'shop-screen-back');await open(page,'equipment');
   expect((await data(page,'controls')).find((c:Control)=>c.id==='summary-upgrade-oven').enabled).toBe(false);
   const actions=await data(page,'shop-screen-actions');
   expect(actions.find((action:any)=>action.id==='summary-upgrade-oven').title).toBe('Thiếu 1500 xu');
   expect(actions.find((action:any)=>action.id==='shop-fridge-buy').title).toBe('Thiếu 2500 xu');
   await page.locator('canvas').screenshot({path:info.outputPath('shop-equipment-poor.png')});
-  await tap(page,'shop-back');await open(page,'decoration');
+  await tap(page,'shop-screen-back');await open(page,'decoration');
   const cash=await page.locator('canvas').getAttribute('data-cash'),b=(await page.locator('canvas').boundingBox())!;
   await page.mouse.move(b.x+90*b.width/360,b.y+390*b.height/640);await page.mouse.down();
   await page.mouse.move(b.x+90*b.width/360,b.y+230*b.height/640,{steps:8});await page.mouse.up();await settle(page);

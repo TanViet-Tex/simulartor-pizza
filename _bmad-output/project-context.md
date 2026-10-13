@@ -475,6 +475,8 @@ Menu/giá, Mở rộng, Thiết bị, Tiện nghi, Trang trí và Nhân viên na
 
 Theo chỉnh tiếp 2026-10-08: cả sáu màn con Quán thu gọn bằng tab Quản lý quán: dùng hubLayer0.88 offset21.6, shell/title/pause/cash/nav5tab chung. Backtoolbar y133, viewport8/180/344/400 hoặc8/222/344/358 có tabs y178, footer cùng khung hub. SHOP_SCREEN_LAYOUT trong HubWallLayout là nguồn geometry; hit/list clip/tutorial map qua hubWallRect, không dùng identity/fullscreen nữa. Artwork, nội dung và giao dịch giữ nguyên.
 
+Theo yêu cầu 2026-10-13: bỏ riêng toolbar phía trên gồm Quay lại/Quản lý quán khỏi cả6mục con, xóa vùng chạm shop-back; dùng footer Về quản lý quán để quay lại. Không dồn/reflow thẻ, viewport/tabs/header/nav giữ nguyên. Công thức/đồ trang trí/tiện nghi/tủ lạnh/cấp mở rộng đã mua ghi Đã sở hữu xanh theo ownership thật; lò đã nâng hiển thị sở hữu/cấp thật và vẫn nâng tiếp khi còn cấp. Nhân viên là hợp đồng thuê10ngày, giữ ngày còn lại/hết hạn. Xem spec-shop-subpage-toolbar-and-ownership.md.
+
 ### Regression và tiến độ — 2026-10-12
 
 Đã cập nhật fixture/assertion lịch sử theo luật đã duyệt; không đổi production runtime/domain/scene/art/UI. Baseline75file/518test:401đạt,117lỗi; cuối75file/518test:518đạt,0lỗi,0skip và sốcase từngfile giữ nguyên. New500/legacy300, presale5s chỉ với lịch thật, oven6–8/4–6/2–4, stocktạibake, mộtworkbench, lottery/thanks qua publicAPI,30ngày giữ report/accounting thật. LegacyDemoGame riêng vẫn3ngày/300xu; không dùng để suy ra luật CozyRuntime hiện tại. Build/typecheck và2E2EChromium360×640 giao dịch/reload/lỗi-lưu–retry đạt. Xem implementation-artifacts/regression-refresh-summary-2026-10-12.md.
