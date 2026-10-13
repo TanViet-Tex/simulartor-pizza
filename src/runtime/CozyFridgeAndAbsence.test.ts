@@ -10,7 +10,7 @@ function fresh(){const r=new CozyRuntime(false,true,schedule);r.claimTestCode('V
 function provision(r:CozyRuntime,q=2){for(const id of ['dough','sauce','cheese'] as const)expect(r.buy(id,q)).toBe(true);}
 
 describe('fridge and unpaid prep absence integration',()=>{
-  it('preserves a legacy terminal payroll on the first seeded absence day',()=>{
+  it('preserves terminal staff receipts on the first seeded absence day',()=>{
     const r=CozyRuntime.restoreCheckpoint(fundedShopCheckpoint(18000),false,schedule)!;
     expect(r.hireStaff('prep','legacy-hire')).toBe(true);
     const hired=r.preparationDay,seed=r.exportCheckpoint().campaignEventSeed!;
@@ -26,7 +26,7 @@ describe('fridge and unpaid prep absence integration',()=>{
       r.dispatch({type:'bake'});
       expect(r.closeDay()).toBe(true);
     }
-    expect(r.daySummary!.ending).toBe('insolvent');expect(r.daySummary!.accounts.wages).toBe(200);
+    expect(r.daySummary!.ending).toBe('insolvent');expect(r.daySummary!.accounts.wages).toBe(0);
     const old=r.exportCheckpoint();delete old.staffAbsenceFromDay;
     expect(old.terminal).toBe(true);expect(validateCozyCheckpoint(old)).not.toBeNull();
     expect(CozyRuntime.restoreCheckpoint(old)!.exportCheckpoint().staffAbsenceFromDay).toBe(finalDay+1);
@@ -80,13 +80,13 @@ describe('fridge and unpaid prep absence integration',()=>{
     expect(absentDay-hiredDay).toBeGreaterThanOrEqual(5);expect(absentDay-hiredDay).toBeLessThanOrEqual(7);
     for(let day=hiredDay;day<=absentDay;day++){
       provision(r,1);
-      if(day===absentDay){expect(r.staffState.absentRoles).toEqual(['prep']);expect(r.staffState.dailyWages).toBe(200);expect(r.staffPreview('prep').dailyWage).toBe(0);}
+      if(day===absentDay){expect(r.staffState.absentRoles).toEqual(['prep']);expect(r.staffState.dailyWages).toBe(0);expect(r.staffPreview('prep').dailyWage).toBe(0);}
       expect(day===hiredDay?r.openShop():r.openNextDay()).toBe(true);
       if(day===absentDay){r.advanceElapsed(2000);expect(r.state.ingredients).toEqual([]);expect(r.staffState.jobs).toEqual([]);expect(r.dispatch({type:'ingredient',ingredient:'dough'})).toBe(true);expect(r.staffState.frozenRoles).toEqual(['box']);}
-      expect(r.closeDay()).toBe(true);expect(r.daySummary!.accounts.wages).toBe(day===absentDay?200:400);
+      expect(r.closeDay()).toBe(true);expect(r.daySummary!.accounts.wages).toBe(0);
       expect(validateCozyCheckpoint(r.exportCheckpoint())).not.toBeNull();
     }
     const restored=CozyRuntime.restoreCheckpoint(r.exportCheckpoint(),false,schedule)!;
-    expect(restored.staffState.absentRoles).toEqual([]);expect(restored.staffState.dailyWages).toBe(400);
+    expect(restored.staffState.absentRoles).toEqual([]);expect(restored.staffState.dailyWages).toBe(0);
   });
 });

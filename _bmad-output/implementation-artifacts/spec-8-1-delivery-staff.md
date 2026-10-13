@@ -9,6 +9,8 @@ context:
   - _bmad-output/implementation-artifacts/ui-baseline-2026-10-02.md
 ---
 
+> Cập nhật 2026-10-13: người dùng bỏ khóa ngày 8, cho thuê từ ngày 1 khi đủ tiền trong chuẩn bị. Phí 2000 xu/người trả trước cho 10 ngày, không thu lương hằng ngày. Hết hạn hỏi người chơi gia hạn, chỉ trả phí khi đồng ý. Quy định mở ngày 8 và lương/nợ hằng ngày bên dưới là lịch sử, được thay bởi [spec-staff-hire-any-day.md](spec-staff-hire-any-day.md); vai trò và bằng chứng kiểm chứng cũ được giữ nguyên.
+
 <frozen-after-approval reason="user supplied and confirmed staffing rules">
 
 ## Intent

@@ -8,7 +8,7 @@ import {RECIPE_CATALOG,recipeDefinition} from '../config/recipeCatalog';
 import {DELIVERY_RULES} from '../config/deliveryEvents';
 import {shopItem,SHOP_CATALOG} from '../config/shopCatalog';
 import type {ShopItemId} from '../domain/ShopEffects';
-import {STAFF_CATALOG,STAFF_RULES,type StaffRole} from '../config/staffCatalog';
+import {STAFF_CATALOG,type StaffRole} from '../config/staffCatalog';
 import {SHOP_INSTALL_LOCATIONS} from '../presentation/ShopPlacement';
 import {ReferenceStock,type StockFilter} from '../presentation/ReferenceStock';
 import {ReferenceShop,SHOP_ART,type ShopPage} from '../presentation/ReferenceShop';
@@ -121,7 +121,7 @@ export class CozyScene extends Phaser.Scene {
   private drinksDialog?:{lease:PauseLease};
   private advertisingDialog?:{lease:PauseLease};
   private fridgeDialog?:{commandId:string;lease:PauseLease};
-  private staffHireDialog?:{role:StaffRole;commandId:string;lease:PauseLease};
+  private staffHireDialog?:{role:StaffRole;commandId:string;automatic:boolean;lease:PauseLease};
   private warnedPayrollDays=new Set<number>();
   private appDialog?:{kind:'settings'|'book';ticketId?:string;lease:PauseLease;commandId:string};
   private shopPage:ShopPage='home';
@@ -264,9 +264,12 @@ export class CozyScene extends Phaser.Scene {
     if(this.runtime.day===1&&this.runtime.shopOpen&&this.runtime.shiftClock.phase==='awaiting-close'&&!this.runtime.pauses.length&&this.runtime.canCloseDay)this.finishDay();
     if(this.runtime.shopPhase==='summary'&&!this.warnedPayrollDays.has(this.runtime.day)&&!this.runtime.pauses.length&&!this.campaignSession?.view.pending){
       this.warnedPayrollDays.add(this.runtime.day);this.summaryTab='summary';
-      if(this.runtime.daySummary?.payroll?.endingArrears){this.hubDetail={title:'Chưa đủ tiền trả lương',body:this.runtime.staffState.warning+'\nKhoản chưa trả được giữ để trả cùng lương vào cuối ngày sau.',lease:this.runtime.acquirePause('order')};this.dirty=true;}
+      if((this.runtime.daySummary?.accounts.wages??0)>0&&this.runtime.staffState.warning){this.hubDetail={title:'Chưa đủ tiền trả lương',body:this.runtime.staffState.warning,lease:this.runtime.acquirePause('order')};this.dirty=true;}
     }
     if(this.pendingFinalResults&&!this.runtime.pauses.length&&!this.campaignSession?.view.pending){this.pendingFinalResults=false;this.openFinalResults();}
+    if((this.preparationHub||this.runtime.shopPhase==='summary')&&!this.runtime.daySummary?.ending&&this.runtime.canSetPrices&&!this.runtime.pauses.length&&!this.campaignSession?.view.pending&&!this.finalOpen&&(!this.campaignSession||['ready','temporary'].includes(this.campaignSession.view.state))){
+      const role=this.runtime.staffState.renewalPendingRoles[0];if(role)this.openStaffHire(role,true);
+    }
     const s=this.runtime.state;
     this.frameTickets=this.runtime.tickets;this.frameExpress=this.runtime.expressOrders;
     const board=this.runtime.workbenchState;
@@ -914,7 +917,7 @@ export class CozyScene extends Phaser.Scene {
         new ReferenceStock(this,this.hubLayer,(...args)=>this.hubHit(...args),render=>this.syncListHits(render)).draw({shell:false,day:this.runtime.preparationDay,cash:this.runtime.state.cash,rows:stockRows(this.runtime.stockLots,this.runtime.preparationDay,id=>this.runtime.reserved(id)),filter:this.stockFilter,low:this.stockLow,expiryDays:this.stockExpiry,offset:this.stockOffset,drag:this.stockDrag,canScroll:()=>this.runtime.pauses.length===0,scroll:n=>{this.stockOffset=n;},setFilter:f=>this.setStockFilter(f),detail:id=>this.openStockLot(id),suggestions:()=>this.openStockPlanner(),market:()=>tab('market'),tab,pause:()=>this.hold('user')});return;
       }
       if(this.summaryTab==='shop'){
-        new ReferenceShop(this,this.hubLayer,(...args)=>this.hubHit(...args)).draw({shell:false,offset:this.shopOffset,drag:this.shopDrag,canScroll:()=>this.runtime.pauses.length===0,scroll:offset=>{this.shopOffset=offset;},sync:render=>this.syncListHits(render),filter:this.shopFilter,setFilter:filter=>{this.shopFilter=filter;this.shopOffset=0;this.dirty=true;},selectedRecipe:this.shopSelectedRecipe,selectRecipe:recipe=>{this.shopSelectedRecipe=recipe;this.dirty=true;},advertising:this.runtime.advertisingState,advertise:()=>this.openAdvertisingDialog(),drinks:()=>this.openDrinksDialog(),fridge:this.runtime.fridgeState,buyFridge:()=>this.openFridgeDialog(),staff:this.runtime.staffState,employee:role=>this.openStaffHire(role),shop:this.runtime.shopState,item:id=>this.openShopItem(id),app:()=>this.openDeliveryApp('settings'),deliveryApp:{...this.runtime.deliveryApp,eventName:this.runtime.deliveryApp.nextEvent.name},day:this.runtime.preparationDay,cash:this.runtime.state.cash,page:this.shopPage,canAct:this.runtime.canSetPrices,ovenLevel:this.runtime.ovenLevel,queueCapacity:this.runtime.queueCapacity,queueLevel:this.runtime.queueLevel,queueVisitorBonus:this.runtime.queueVisitorBonus,nextQueueCapacity:this.runtime.nextQueueCapacity,ovenPrice:this.runtime.upgradePrice('oven'),queuePrice:this.runtime.upgradePrice('queue'),menuPage:this.shopMenuPage,pageMenu:page=>{this.shopMenuPage=page;this.dirty=true;},buy:id=>this.openRecipePurchase(id),configure:(id,percent,enabled)=>{this.applyMenu(id,percent,enabled);},recipes:RECIPE_CATALOG.map(r=>r.id).map(id=>({id,name:recipeName(id),price:this.runtime.customerProgress.prices[id],percent:this.runtime.customerProgress.pricePercents[id],cost:recipeIngredients(id).reduce((n,item)=>n+this.runtime.price(item),0),enabled:this.runtime.menuRecipes.includes(id),owned:this.runtime.ownedRecipes.includes(id),purchasePrice:recipeDefinition(id).purchasePrice})),open:page=>this.setShopPage(page),price:id=>this.choosePrice(id),upgrade:kind=>this.openHubUpgrade(kind),tab,pause:()=>this.hold('user'),footer});return;
+        new ReferenceShop(this,this.hubLayer,(...args)=>this.hubHit(...args)).draw({shell:false,offset:this.shopOffset,drag:this.shopDrag,canScroll:()=>this.runtime.pauses.length===0,scroll:offset=>{this.shopOffset=offset;},sync:render=>this.syncListHits(render),filter:this.shopFilter,setFilter:filter=>{this.shopFilter=filter;this.shopOffset=0;this.dirty=true;},selectedRecipe:this.shopSelectedRecipe,selectRecipe:recipe=>{this.shopSelectedRecipe=recipe;this.dirty=true;},advertising:this.runtime.advertisingState,advertise:()=>this.openAdvertisingDialog(),drinks:()=>this.openDrinksDialog(),fridge:this.runtime.fridgeState,buyFridge:()=>this.openFridgeDialog(),staff:this.runtime.staffState,staffPreviews:STAFF_CATALOG.map(entry=>this.runtime.staffPreview(entry.role)),employee:role=>this.openStaffHire(role),shop:this.runtime.shopState,item:id=>this.openShopItem(id),app:()=>this.openDeliveryApp('settings'),deliveryApp:{...this.runtime.deliveryApp,eventName:this.runtime.deliveryApp.nextEvent.name},day:this.runtime.preparationDay,cash:this.runtime.state.cash,page:this.shopPage,canAct:this.runtime.canSetPrices,ovenLevel:this.runtime.ovenLevel,queueCapacity:this.runtime.queueCapacity,queueLevel:this.runtime.queueLevel,queueVisitorBonus:this.runtime.queueVisitorBonus,nextQueueCapacity:this.runtime.nextQueueCapacity,ovenPrice:this.runtime.upgradePrice('oven'),queuePrice:this.runtime.upgradePrice('queue'),menuPage:this.shopMenuPage,pageMenu:page=>{this.shopMenuPage=page;this.dirty=true;},buy:id=>this.openRecipePurchase(id),configure:(id,percent,enabled)=>{this.applyMenu(id,percent,enabled);},recipes:RECIPE_CATALOG.map(r=>r.id).map(id=>({id,name:recipeName(id),price:this.runtime.customerProgress.prices[id],percent:this.runtime.customerProgress.pricePercents[id],cost:recipeIngredients(id).reduce((n,item)=>n+this.runtime.price(item),0),enabled:this.runtime.menuRecipes.includes(id),owned:this.runtime.ownedRecipes.includes(id),purchasePrice:recipeDefinition(id).purchasePrice})),open:page=>this.setShopPage(page),price:id=>this.choosePrice(id),upgrade:kind=>this.openHubUpgrade(kind),tab,pause:()=>this.hold('user'),footer});return;
       }
       if(this.summaryTab==='missions'){
         new ReferenceMissions(this,this.hubLayer,(...args)=>this.hubHit(...args)).draw({shell:false,day:this.runtime.preparationDay,cash:this.runtime.state.cash,progress:this.runtime.progression,ending:!!summary?.ending,tab,pause:()=>this.hold('user'),footer});return;
@@ -976,9 +979,9 @@ export class CozyScene extends Phaser.Scene {
     if(!this.runtime.canSetPrices)return;const cost=this.runtime.upgradePrice(kind);if(cost===null)return;
     this.hubUpgrade={kind,cost,commandId:`upgrade:${this.purchaseScope}:${kind}:${kind==='oven'?this.runtime.ovenLevel:this.runtime.queueLevel}`,lease:this.runtime.acquirePause('order')};this.dirty=true;
   }
-  private openStaffHire(role:StaffRole):void{
+  private openStaffHire(role:StaffRole,automatic=false):void{
     if(!this.runtime.canSetPrices||this.staffHireDialog||!STAFF_CATALOG.some(entry=>entry.role===role))return;
-    this.closeHubPanels();this.staffHireDialog={role,commandId:`staff:${this.purchaseScope}:${role}`,lease:this.runtime.acquirePause('order')};this.dirty=true;
+    this.closeHubPanels();this.staffHireDialog={role,automatic,commandId:`staff:${this.purchaseScope}:${role}:${this.runtime.preparationDay}:${++this.purchaseSerial}`,lease:this.runtime.acquirePause('order')};this.dirty=true;
   }
   private openDrinksDialog():void{
     if(!this.runtime.canSetPrices)return;this.closeHubPanels();this.drinksDialog={lease:this.runtime.acquirePause('order')};this.dirty=true;
@@ -1029,10 +1032,10 @@ export class CozyScene extends Phaser.Scene {
     const duties={prep:'Thêm nguyên liệu đúng món; không tự mua hàng.',oven:'Nướng và lấy bánh đúng lúc, theo cấp lò hiện có.',box:'Đóng hộp và tích đủ bánh cho đơn app.',delivery:'Giao đủ hộp; 1 đơn/chuyến, trở về mới nhận tiếp.'};
     this.summaryModalVeil();this.notificationFrame(['staff-hire-cancel','staff-hire-confirm'],250,420,430);
     this.label(180,207,employee.name,23,ink);
-    const body=`${preview.owned?'Đã thuê · Vai trò cố định':`Thuê: ${employee.price.toLocaleString('vi-VN')} xu`}\nLương hôm nay: ${preview.dailyWage} xu/người\n${duties[dialog.role]}\n${preview.owned?(preview.absent?'Bận một ngày · Miễn lương hôm nay.':'Tự làm đúng nghề khi mở ca.'):!preview.available?`Mở thuê từ ngày ${STAFF_RULES.unlockDay}.`:preview.missing?`Còn thiếu ${preview.missing.toLocaleString('vi-VN')} xu.`:'Đủ tiền thuê. Mỗi loại tối đa 1 người.'}\nThu lương cuối ngày; thiếu giữ khoản chưa trả.`;
+    const body=`${employee.price.toLocaleString('vi-VN')} xu / 10 ngày · Không lương ngày\n${preview.owned?`Còn ${preview.remainingDays} ngày · Vai trò cố định`:preview.expired?'Đã hết hạn · Bạn có muốn gia hạn?':'Thuê theo nghề · Mỗi loại tối đa 1 người'}\n${duties[dialog.role]}\n${preview.owned?(preview.absent?'Bận hôm nay · Hợp đồng vẫn tính ngày.':'Tự làm đúng nghề khi mở ca.'):preview.missing?`Còn thiếu ${preview.missing.toLocaleString('vi-VN')} xu.`:'Đủ tiền thuê.'}\nHết hạn sẽ hỏi lại; chỉ trừ xu khi bạn đồng ý.`;
     this.label(180,265,body,15,ink,286);this.game.canvas.dataset.staffHire=JSON.stringify(preview);
-    this.button('staff-hire-cancel',40,430,132,48,'Quay lại',true,()=>this.closeHubPanels(),UI.dark);
-    this.button('staff-hire-confirm',188,430,132,48,preview.owned?'Đã thuê':'Thuê',!preview.owned&&preview.available&&preview.missing===0&&!this.runtime.pauses.some(reason=>reason!=='order'),()=>{
+    this.button('staff-hire-cancel',40,430,132,48,dialog.automatic?'Để sau':'Quay lại',true,()=>{this.closeHubPanels();if(dialog.automatic){if(this.campaignSession)this.campaignSession.declineStaffRenewal(dialog.role,dialog.commandId+':decline');else this.runtime.declineStaffRenewal(dialog.role,dialog.commandId+':decline');}this.dirty=true;},UI.dark);
+    this.button('staff-hire-confirm',188,430,132,48,preview.owned?'Đã thuê':preview.expired?'Gia hạn':'Thuê',!preview.owned&&preview.available&&preview.missing===0&&!this.runtime.pauses.some(reason=>reason!=='order'),()=>{
       this.closeHubPanels();if(this.campaignSession)this.campaignSession.hireStaff(dialog.role,dialog.commandId);else this.runtime.hireStaff(dialog.role,dialog.commandId);this.dirty=true;
     });
   }

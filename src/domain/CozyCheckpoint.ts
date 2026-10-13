@@ -1,4 +1,4 @@
-﻿import {INITIAL_CASH,LEGACY_INITIAL_CASH} from '../config/campaignRules';
+import {INITIAL_CASH,LEGACY_INITIAL_CASH} from '../config/campaignRules';
 import {validateTutorialProgress,type TutorialProgress} from './TutorialProgress';
 import {PRE_BALANCE_INGREDIENT_PRICES} from '../config/ingredientCatalog';
 import {supplierPrice} from '../config/cozyContinuity';
@@ -11,8 +11,8 @@ import {VIP_RULES} from '../config/vipCustomers';
 import {vipQualifies,type VipReceipt} from './VipCustomers';
 import {CAMPAIGN_LAST_DAY} from '../config/campaignRules';
 import {validateShopCheckpoint,type ShopCheckpoint,type UpgradeReceipt} from './ShopCheckpoint';
-import {validateStaffCheckpoint,type StaffCheckpoint,type StaffPayroll} from './StaffCheckpoint';
-import {STAFF_RULES} from '../config/staffCatalog';
+import {validateStaffCheckpoint,migrateStaffContracts,staffContractRoles,staffPurchasesForDay,type StaffCheckpoint,type StaffPayroll} from './StaffCheckpoint';
+import {LEGACY_STAFF_DAILY_WAGE} from '../config/staffCatalog';
 import {LEGACY_EVENT_SEED} from '../config/campaignEvents';
 import {FRIDGE_PRICE} from '../config/fridgeRules';
 import {prepStaffAbsent} from './StaffAbsence';
@@ -137,7 +137,7 @@ function validatedCheckpoint(value:unknown):CozyCheckpoint|null {
   const receipts=upgrades.receipts??[...Array.from({length:upgrades.ovenLevel},(_,i)=>({kind:'oven' as const,level:i+1,actualPrice:[150,250][i]})),...(upgrades.queueLevel?[{kind:'queue' as const,level:1,actualPrice:200}]:[])];
   if(!Array.isArray(receipts)||receipts.length!==upgrades.ovenLevel+upgrades.queueLevel||receipts.some(r=>!r||!['oven','queue'].includes(r.kind)||!integer(r.level,1,r.kind==='oven'?upgrades.ovenLevel:upgrades.queueLevel)||!(r.kind==='oven'?[OVEN_UPGRADE_PRICES[r.level-1],[150,250][r.level-1]]:[QUEUE_UPGRADE_PRICES[r.level-1],...(r.level===1?[200]:[])]).includes(r.actualPrice))||new Set(receipts.map(r=>r.kind+':'+r.level)).size!==receipts.length||receipts.reduce((n,r)=>n+r.actualPrice,0)!==upgrades.spent)return null;
   upgrades.receipts=receipts;upgrades.rulesVersion=2;if(legacyCapacity)upgrades.legacyCapacity=legacyCapacity;
-  const shop=validateShopCheckpoint(s.shop),staff=validateStaffCheckpoint(s.staff,s.day);if(!shop||!staff)return null;
+  const shop=validateShopCheckpoint(s.shop),staff=validateStaffCheckpoint(s.staff,s.day,s.terminal);if(!shop||!staff)return null;
   if(!memory||![memory.accepted,memory.declined].every(ids=>Array.isArray(ids)&&ids.length<=150&&ids.every(id=>integer(id,0,149))&&new Set(ids).size===ids.length)||memory.accepted.some(id=>memory.declined.includes(id)))return null;
   if(JSON.stringify(value).length>16777216||!s.progression||!Array.isArray(s.progression.outcomes)||s.progression.outcomes.length>1000000||s.progression.outcomes.some(id=>typeof id!=='string'||!/^cozy-\d{1,9}$/.test(id))||!Array.isArray(s.progression.claims)||s.progression.claims.length>1000000)return null;
   const stock=validateStockSnapshot(s.stock),progress=CozyProgression.restore(s.progression),help=validateHelpCheckpoint(s.help);
@@ -158,10 +158,10 @@ function validatedCheckpoint(value:unknown):CozyCheckpoint|null {
   let cash:number=initialCash,inventoryValue=0,profit=0,outcomes=0,claims=0,xp=0,cheeseSales=0,arrears=0;
   const claimPosition=new Map(master.claims.map((id,index)=>[id,index]));
   for(const report of s.reports){
-    const roles=staff.acquired.filter(a=>a.hiredDay<=report.day&&(a.role!=='prep'||report.day<staffAbsenceFromDay||!prepStaffAbsent(s.campaignEventSeed??LEGACY_EVENT_SEED,a.hiredDay,report.day))).map(a=>a.role),wages=roles.length*STAFF_RULES.dailyWage;
-    const due=arrears+wages,a=report.accounts,available=a.startingCash+(a.supportFunds??0)+report.revenue+report.rewards-report.purchases-20-(report.deliveryFees??0)-(report.campaignEvent?.loss??0)-(a.capitalPurchases??0)-serviceCostForDay(services,report.day),paid=available>=due?due:0;
+    const modern=!!staff.contracts&&report.day>=staff.contracts.fromDay,roles=staffContractRoles(staff,report.day).filter(role=>role!=='prep'||report.day<staffAbsenceFromDay||!prepStaffAbsent(s.campaignEventSeed??LEGACY_EVENT_SEED,staff.acquired.find(a=>a.role===role)!.hiredDay,report.day)),wages=modern?0:roles.length*LEGACY_STAFF_DAILY_WAGE;
+    const due=arrears+wages,a=report.accounts,available=a.startingCash+(a.supportFunds??0)+report.revenue+report.rewards-report.purchases-20-(report.deliveryFees??0)-(report.campaignEvent?.loss??0)-(a.capitalPurchases??0)-serviceCostForDay(services,report.day),paid=modern?0:available>=due?due:0;
     const payroll=report.payroll;
-    if((a.capitalPurchases??0)<staff.acquired.filter(a=>a.hiredDay===report.day).length*STAFF_RULES.hirePrice+(stock.refrigeration?.acquiredDay===report.day?FRIDGE_PRICE:0))return null;
+    if((a.capitalPurchases??0)<staffPurchasesForDay(staff,report.day)+(stock.refrigeration?.acquiredDay===report.day?FRIDGE_PRICE:0))return null;
     if(a.wages!==wages||(a.wagesPaid??a.wages)!==paid||roles.length&&!payroll||payroll&&(!Array.isArray(payroll.roles)||JSON.stringify([...payroll.roles].sort())!==JSON.stringify([...roles].sort())||payroll.openingArrears!==arrears||payroll.wagesPaid!==paid||payroll.endingArrears!==due-paid))return null;
     if((a.supportFunds??0)!==(s.testCodeReceipt?.day===report.day?TEST_CODE_COINS:0))return null;
     arrears=due-paid;
@@ -184,7 +184,7 @@ function validatedCheckpoint(value:unknown):CozyCheckpoint|null {
     if(report.day===3&&JSON.stringify(report.referral)!==JSON.stringify(s.reports[1].referral))return null;
   }
   const prepBook=stock.books.find(b=>b.day===s.day&&!s.terminal),prepPurchases=prepBook?.purchases??0;
-  if(staff.arrears!==arrears||staff.pendingSpent!==(s.terminal?0:staff.acquired.filter(a=>a.hiredDay===s.day).length*STAFF_RULES.hirePrice))return null;
+  if(staff.arrears!==arrears||staff.pendingSpent!==(s.terminal?0:staffPurchasesForDay(staff,s.day)))return null;
   if(prepBook?.consumed||stock.lots.filter(l=>l.day===s.day&&!s.terminal).reduce((sum,l)=>sum+l.quantity*l.unitCost,0)+(s.terminal?0:drinkInventoryValue(validateDrinkInventory(stock.drinks)!)-drinkInventoryValue(validateDrinkInventory(last?.accounts.inventory.drinks)!))!==prepPurchases)return null;
   const expectedCarried=last?.accounts.inventory.lots.map(l=>({...l,expiry:fridgePending&&l.expiry>=s.day?ingredientExpiry(l.ingredient,l.day,4):l.expiry}));
   if(last&&JSON.stringify(stock.lots.filter(l=>l.day<=closed))!==JSON.stringify(expectedCarried))return null;
@@ -222,6 +222,6 @@ function validatedCheckpoint(value:unknown):CozyCheckpoint|null {
   // Normalize legacy sauce sentinels only; food expiry and historical reports retain their real dates.
   stock.lots=stock.lots.map(l=>({...l,expiry:l.ingredient.startsWith('sauce')?ingredientExpiry(l.ingredient,l.day):l.expiry}));
   for(const report of reports)report.accounts.inventory.lots=report.accounts.inventory.lots.map(l=>({...l,expiry:l.ingredient.startsWith('sauce')?ingredientExpiry(l.ingredient,l.day):l.expiry}));
-  return structuredClone({...(s.initialCash!==undefined?{initialCash:s.initialCash}:{}),...(tutorialProgress?{tutorialProgress}:{}),...(s.testCodeReceipt?{testCodeReceipt:{...s.testCodeReceipt}}:{}),... (s.campaignEventSeed!==undefined?{campaignEventSeed:s.campaignEventSeed}:{}),campaignEndDay,staffAbsenceFromDay,services,staff,shop,deliveryAppEnabled:s.deliveryAppEnabled??false,ownedRecipes:ownership,recipePurchases,upgrades:{...upgrades},customerMemory:{accepted:[...memory.accepted],declined:[...memory.declined]},contentId:COZY_CONTENT_VERSION,day:s.day,terminal:s.terminal,stock,progression:master,help,menu:s.menu.filter(id=>ownership.includes(id)),prices:{...s.prices},recipe:s.recipe,reports:reports.map(compactCozyReport),cumulativeProfit:s.cumulativeProfit,reputation:s.reputation,relationship:s.relationship,relationshipDays:[...s.relationshipDays],regularDay1Stars:s.regularDay1Stars,regularLatestStars:s.regularLatestStars,referral:s.referral?{...s.referral}:null});
+  return structuredClone({...(s.initialCash!==undefined?{initialCash:s.initialCash}:{}),...(tutorialProgress?{tutorialProgress}:{}),...(s.testCodeReceipt?{testCodeReceipt:{...s.testCodeReceipt}}:{}),... (s.campaignEventSeed!==undefined?{campaignEventSeed:s.campaignEventSeed}:{}),campaignEndDay,staffAbsenceFromDay,services,staff:migrateStaffContracts(staff,s.day+(s.terminal?1:0)),shop,deliveryAppEnabled:s.deliveryAppEnabled??false,ownedRecipes:ownership,recipePurchases,upgrades:{...upgrades},customerMemory:{accepted:[...memory.accepted],declined:[...memory.declined]},contentId:COZY_CONTENT_VERSION,day:s.day,terminal:s.terminal,stock,progression:master,help,menu:s.menu.filter(id=>ownership.includes(id)),prices:{...s.prices},recipe:s.recipe,reports:reports.map(compactCozyReport),cumulativeProfit:s.cumulativeProfit,reputation:s.reputation,relationship:s.relationship,relationshipDays:[...s.relationshipDays],regularDay1Stars:s.regularDay1Stars,regularLatestStars:s.regularLatestStars,referral:s.referral?{...s.referral}:null});
 }
 export function validateCozyCheckpoint(value:unknown):CozyCheckpoint|null {try{return validatedCheckpoint(value);}catch{return null;}}

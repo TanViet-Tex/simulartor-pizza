@@ -118,6 +118,7 @@ export class CozyCampaignSession {
     return this.stageShop(r=>r.claimTestCode(value),'test-code:VIETVUIVE',true);
   }
   hireStaff(role:import('../config/staffCatalog').StaffRole,commandId:string):boolean {return this.stageShop(r=>r.hireStaff(role,commandId),commandId);}
+  declineStaffRenewal(role:import('../config/staffCatalog').StaffRole,commandId:string):boolean {return this.stageShop(r=>r.declineStaffRenewal(role,commandId),commandId);}
   buyDrink(id:DrinkId,quantity:number,commandId:string):boolean {return this.stageShop(r=>r.buyDrink(id,quantity,commandId),commandId);}
   buyFridge(commandId:string):boolean {return this.stageShop(r=>r.buyFridge(commandId),commandId);}
   buyAdvertising(commandId:string):boolean {return this.stageShop(r=>r.buyAdvertising(commandId),commandId);}

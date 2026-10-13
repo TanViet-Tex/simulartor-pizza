@@ -71,10 +71,10 @@ describe('Epic9 finite campaign',()=>{
  it('earns the richest existing shop fixture before the final day',()=>{
   const checkpoint=fundedShopCheckpoint(30000);expect(checkpoint.day).toBeLessThanOrEqual(30);expect(checkpoint.stock.cash).toBeGreaterThanOrEqual(30000);expect(validateCozyCheckpoint(checkpoint)).not.toBeNull();
  });
- it('settles final-day payroll once and keeps the paid amount through reload',()=>{
+ it('settles the final day without daily wages and preserves contract receipts through reload',()=>{
   let r=CozyRuntime.restoreCheckpoint(fundedShopCheckpoint(22000),false,{schedule})!;expect(r.hireStaff('prep','hire')).toBe(true);
   while(r.day<30){expect(r.openShop()).toBe(true);expect(r.closeDay()).toBe(true);const loaded=CozyRuntime.restoreCheckpoint(r.exportCheckpoint(),false,{schedule})!;r=loaded;}
-  expect(r.openShop()).toBe(true);const cash=r.state.cash;expect(r.closeDay()).toBe(true);expect(r.daySummary).toMatchObject({ending:'complete',cash:cash-220,payroll:{wagesPaid:200,endingArrears:0}});
+  expect(r.openShop()).toBe(true);const cash=r.state.cash;expect(r.closeDay()).toBe(true);expect(r.daySummary).toMatchObject({ending:'complete',cash:cash-20,payroll:{wagesPaid:0,endingArrears:0}});
   const final=r.exportCheckpoint(),loaded=CozyRuntime.restoreCheckpoint(final)!;expect(loaded.closeDay()).toBe(false);expect(loaded.exportCheckpoint()).toEqual(final);expect(loaded.staffState.arrears).toBe(0);
  });
 });

@@ -7,7 +7,7 @@ type Control={id:string;x:number;y:number;width:number;height:number;enabled:boo
 let bundleCode:string;
 async function data(page:Page,key:string){return JSON.parse(await page.locator('canvas').getAttribute('data-'+key)||'null');}
 async function settle(page:Page){await page.evaluate(()=>new Promise<void>(resolve=>requestAnimationFrame(()=>requestAnimationFrame(()=>resolve()))));}
-async function ready(page:Page){await expect.poll(async()=>(await data(page,'save-state'))?.state).toBe('ready');await settle(page);}
+async function ready(page:Page){await expect(page.locator('canvas')).toHaveAttribute('data-booted','true');await expect.poll(async()=>(await data(page,'save-state'))?.state).toBe('ready');await settle(page);}
 async function tap(page:Page,id:string){
   await expect.poll(async()=>((await data(page,'controls'))||[]).some((c:Control)=>c.id===id&&c.enabled)).toBe(true);
   const c:Control=(await data(page,'controls')).find((c:Control)=>c.id===id),b=(await page.locator('canvas').boundingBox())!;
@@ -161,19 +161,20 @@ test('item purchase place store, upgrades and hiring retain real accounting acro
   await scroll(page,250);
   await tap(page,'summary-upgrade-queue');await tap(page,'hub-upgrade-confirm');await ready(page);expect(await data(page,'queue-capacity')).toBe(6);
   await tap(page,'shop-back');await open(page,'staff');await tap(page,'shop-staff-prep');await tap(page,'staff-hire-confirm');await ready(page);
-  expect((await data(page,'staff-state')).acquired).toHaveLength(1);
+  await expect.poll(async()=>(await data(page,'staff-state'))?.acquired.length).toBe(1);
+  await tap(page,'shop-staff-prep');expect(await data(page,'staff-hire')).toMatchObject({owned:true,remainingDays:10,dailyWage:0});await tap(page,'staff-hire-cancel');
   await tap(page,'shop-staff-tab-working');
   expect((await data(page,'controls')).filter((c:Control)=>c.id.startsWith('shop-staff-')&&!c.id.startsWith('shop-staff-tab-')).map((c:Control)=>c.id)).toEqual(['shop-staff-prep']);
   await page.locator('canvas').screenshot({path:info.outputPath('shop-staff-working.png')});
   expect(Number(await page.locator('canvas').getAttribute('data-cash'))).toBe(starting-23500);
-  await restoreProduction(page);expect(await data(page,'queue-capacity')).toBe(6);expect((await data(page,'staff-state')).acquired).toHaveLength(1);
+  await restoreProduction(page);await tap(page,'summary-tab-shop');await open(page,'staff');expect(await data(page,'queue-capacity')).toBe(6);expect((await data(page,'staff-state')).acquired).toHaveLength(1);
   expect((await data(page,'shop-items')).acquired[0].placedSlot).toBeNull();
-  await tap(page,'summary-tab-shop');await open(page,'staff');await page.locator('canvas').screenshot({path:info.outputPath('shop-staff-hired.png')});
+  await tap(page,'shop-staff-prep');expect(await data(page,'staff-hire')).toMatchObject({owned:true,remainingDays:10,dailyWage:0});await tap(page,'staff-hire-cancel');await page.locator('canvas').screenshot({path:info.outputPath('shop-staff-hired.png')});
 });
 
-test('locked staff and unaffordable equipment remain honest; drag does not open a card',async({page},info)=>{
+test('unaffordable staff and equipment remain honest; drag does not open a card',async({page},info)=>{
   await fixture(page,false);await open(page,'staff');await tap(page,'shop-staff-prep');
-  expect((await data(page,'staff-hire')).available).toBe(false);
+  expect((await data(page,'staff-hire')).available).toBe(true);expect((await data(page,'staff-hire')).missing).toBe(1500);
   expect((await data(page,'controls')).find((c:Control)=>c.id==='staff-hire-confirm').enabled).toBe(false);
   await tap(page,'staff-hire-cancel');await tap(page,'shop-staff-tab-working');
   expect((await data(page,'controls')).filter((c:Control)=>c.id.startsWith('shop-staff-')&&!c.id.startsWith('shop-staff-tab-'))).toHaveLength(0);

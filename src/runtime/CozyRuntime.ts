@@ -26,7 +26,7 @@ import {STAFF_RULES,STAFF_ROLES,type StaffRole} from '../config/staffCatalog';
 import {FRIDGE_PRICE} from '../config/fridgeRules';
 import {prepStaffAbsent} from '../domain/StaffAbsence';
 import {TEST_CODE,TEST_CODE_COINS,normalizeTestCode,type TestCodeReceipt} from '../domain/TestCode';
-import {emptyStaff,type StaffCheckpoint} from '../domain/StaffCheckpoint';
+import {emptyStaff,staffContractRoles,staffTerm,type StaffCheckpoint} from '../domain/StaffCheckpoint';
 import {shopEffects,type ShopItemId,type ShopEffects} from '../domain/ShopEffects';
 import {shopSchedule} from '../domain/ShopSchedule';
 import type {ShopCheckpoint,UpgradeReceipt} from '../domain/ShopCheckpoint';
@@ -99,7 +99,7 @@ export class CozyRuntime {
   private pizzasSold=0;
   private deliveryTime=0;
   private courier:{mode:'shipper'|'staff';phase:'waiting'|'arrived'|'travel'|'return';ticketId:string;remaining:number;ticket?:Ticket;launchedAt?:number}|null=null;
-  get deliveryApp(){return {available:this.preparationDay>=DELIVERY_RULES.unlockDay,enabled:this.appEnabled,nextEvent:deliveryEvent(this.preparationDay),event:this.shiftEvent,staffAvailable:this.shiftOpen?this.shiftStaff:this.staff.acquired.some(a=>a.role==='delivery')||!!this.scheduleDependencies.deliveryStaffAvailable?.(),...deliveryTiming((this.shiftOpen?this.shiftEvent!:deliveryEvent(this.preparationDay)).id)};}
+  get deliveryApp(){return {available:this.preparationDay>=DELIVERY_RULES.unlockDay,enabled:this.appEnabled,nextEvent:deliveryEvent(this.preparationDay),event:this.shiftEvent,staffAvailable:this.shiftOpen?this.shiftStaff:this.workingRoles(this.preparationDay).includes('delivery')||!this.staff.acquired.some(a=>a.role==='delivery')&&!!this.scheduleDependencies.deliveryStaffAvailable?.(),...deliveryTiming((this.shiftOpen?this.shiftEvent!:deliveryEvent(this.preparationDay)).id)};}
   get deliveryStatus(){const c=this.courier;return {busy:!!c,mode:c?.mode??null,phase:c?.phase??'idle' as const,remaining:c?.remaining??0,ticketId:c?.ticketId??null,shipments:c?.phase==='travel'?1:0};}
   configureDeliveryApp(enabled:boolean,commandId:string):boolean {
     if(!this.canSetPrices||this.preparationDay<5||typeof enabled!=='boolean'||typeof commandId!=='string'||!commandId.trim()||this.appCommands.has(commandId)||enabled===this.appEnabled)return false;
@@ -147,9 +147,9 @@ export class CozyRuntime {
   private staffJobs=new Map<StaffRole,{ticketId:string;order:CozyOrder;stage:string;ingredients:string;action:CozyIntent['type']|'pack'|'handoff';ingredient?:StockIngredient;remaining:number}>();
   private payrollWarning='';
   private staffAbsenceFromDay=1;
-  private workingRoles(day:number){return this.staff.acquired.filter(a=>a.hiredDay<=day&&(a.role!=='prep'||day<this.staffAbsenceFromDay||!prepStaffAbsent(this.eventSeed,a.hiredDay,day))).map(a=>a.role);}
-  get staffState(){const day=this.shiftOpen?this.currentDay:this.preparationDay,roles=this.shiftOpen?this.shiftRoles:this.workingRoles(day);return {...structuredClone(this.staff),dailyWages:roles.length*STAFF_RULES.dailyWage,absentRoles:this.staff.acquired.filter(a=>!roles.includes(a.role)).map(a=>a.role),warning:this.payrollWarning||(this.staff.arrears?`Không đủ tiền trả lương. Còn thiếu ${Math.max(0,this.staff.arrears-this.stock.cash)} xu; lương chưa trả ${this.staff.arrears} xu.`:''),jobs:[...this.staffJobs].map(([role,job])=>({role,ticketId:job.ticketId,action:job.action,remaining:job.remaining})),frozenRoles:[...this.shiftRoles]};}
-  staffPreview(role:StaffRole){const owned=this.staff.acquired.some(a=>a.role===role),absent=owned&&!this.workingRoles(this.preparationDay).includes(role);return {role,price:STAFF_RULES.hirePrice,missing:Math.max(0,STAFF_RULES.hirePrice-this.stock.cash),owned,absent,available:STAFF_ROLES.includes(role)&&this.preparationDay>=STAFF_RULES.unlockDay,dailyWage:absent?0:STAFF_RULES.dailyWage};}
+  private workingRoles(day:number){return staffContractRoles(this.staff,day).filter(role=>role!=='prep'||day<this.staffAbsenceFromDay||!prepStaffAbsent(this.eventSeed,this.staff.acquired.find(a=>a.role===role)!.hiredDay,day));}
+  get staffState(){const day=this.shiftOpen?this.currentDay:this.preparationDay,activeRoles=staffContractRoles(this.staff,day),roles=this.shiftOpen?this.shiftRoles:this.workingRoles(day),expiredRoles=this.staff.acquired.filter(a=>!activeRoles.includes(a.role)).map(a=>a.role);return {...structuredClone(this.staff),dailyWages:0,activeRoles,expiredRoles,renewalPendingRoles:expiredRoles.filter(role=>!this.staff.contracts?.declined.includes(role)),absentRoles:activeRoles.filter(role=>!roles.includes(role)),warning:this.payrollWarning||(this.staff.arrears?`Khoản lương cũ chưa trả: ${this.staff.arrears} xu.`:''),jobs:[...this.staffJobs].map(([role,job])=>({role,ticketId:job.ticketId,action:job.action,remaining:job.remaining})),frozenRoles:[...this.shiftRoles]};}
+  staffPreview(role:StaffRole){const owned=staffContractRoles(this.staff,this.preparationDay).includes(role),expired=!owned&&this.staff.acquired.some(a=>a.role===role),absent=owned&&!this.workingRoles(this.preparationDay).includes(role),term=staffTerm(this.staff,role,this.preparationDay);return {role,price:STAFF_RULES.hirePrice,hireDays:STAFF_RULES.hireDays,missing:Math.max(0,STAFF_RULES.hirePrice-this.stock.cash),owned,expired,remainingDays:owned&&term?Math.max(0,term.startDay+STAFF_RULES.hireDays-this.preparationDay):0,renewalPending:expired&&!this.staff.contracts?.declined.includes(role),absent,available:STAFF_ROLES.includes(role)&&this.preparationDay>=STAFF_RULES.unlockDay,dailyWage:0};}
   get drinkStock(){return DRINK_CATALOG.map(d=>({...d,id:d.id as DrinkId,quantity:this.stock.drinkOwned(d.id as DrinkId)}));}
   buyDrink(id:DrinkId,quantity:number,commandId:string):boolean{return this.cashTransaction(()=>{
     if(!this.canSetPrices||!isDrinkId(id)||!commandId.trim()||this.shopCommandUsed(commandId)||!this.stock.buyDrink(id,quantity,this.preparationDay))return false;
@@ -170,7 +170,13 @@ export class CozyRuntime {
   private hireStaffNow(role:StaffRole,commandId:string):boolean{
     const preview=this.staffPreview(role);
     if(!this.canSetPrices||!preview.available||preview.owned||typeof commandId!=='string'||!commandId.trim()||this.shopCommandUsed(commandId)||!this.stock.debit(preview.price))return false;
-    this.staff.acquired.push({role,hiredDay:this.preparationDay,actualPrice:preview.price});this.staff.spent+=preview.price;this.staff.pendingSpent+=preview.price;this.staffCommands.add(commandId);this.revision++;return true;
+    if(!preview.expired)this.staff.acquired.push({role,hiredDay:this.preparationDay,actualPrice:preview.price});
+    this.staff.contracts!.terms.push({role,startDay:this.preparationDay,actualPrice:preview.price});this.staff.contracts!.declined=this.staff.contracts!.declined.filter(value=>value!==role);
+    this.staff.spent+=preview.price;this.staff.pendingSpent+=preview.price;this.staffCommands.add(commandId);this.revision++;return true;
+  }
+  declineStaffRenewal(role:StaffRole,commandId:string):boolean{
+    if(!this.canSetPrices||!this.staffPreview(role).renewalPending||typeof commandId!=='string'||!commandId.trim()||this.shopCommandUsed(commandId))return false;
+    this.staff.contracts!.declined.push(role);this.staffCommands.add(commandId);this.revision++;return true;
   }
   shopCommandUsed(commandId:string){return this.shopCommands.has(commandId)||this.upgradeCommands.has(commandId)||this.staffCommands.has(commandId);}
   get shopState(){return {...structuredClone(this.shop),effects:shopEffects(this.shop.acquired.filter(i=>i.placedSlot!==null).map(i=>i.id)),frozenEffects:this.frozenShopEffects};}
@@ -468,9 +474,8 @@ export class CozyRuntime {
     this.applyProgress(this.progress.closeDay(this.currentDay,this.goalStats()));
     if(this.services.lottery?.day===this.currentDay&&this.services.lottery.count&&!this.services.lotteryPrizeClaimed){this.stock.receive(this.services.lottery.prize);this.rewardCash+=this.services.lottery.prize;this.services.lotteryPrizeClaimed=true;}
     const ledger=this.stock.ledger(this.currentDay),settled=this.stock.settle(this.currentDay);
-    const wages=this.shiftRoles.length*STAFF_RULES.dailyWage,openingArrears=this.staff.arrears,due=openingArrears+wages,wagesPaid=this.stock.cash>=due?due:0;
-    if(wagesPaid)this.stock.debit(wagesPaid);this.staff.arrears=due-wagesPaid;
-    this.payrollWarning=this.staff.arrears?`Không đủ tiền trả lương. Còn thiếu ${Math.max(0,due-this.stock.cash)} xu; lương chưa trả ${this.staff.arrears} xu.`:'';
+    const wages=0,openingArrears=this.staff.arrears,wagesPaid=0;
+    this.payrollWarning=this.staff.arrears?`Khoản lương cũ chưa trả: ${this.staff.arrears} xu.`:'';
     const payroll={roles:[...this.shiftRoles],openingArrears,wagesPaid,endingArrears:this.staff.arrears};
     const accounts=closeAccounts({serviceCosts:serviceCostForDay(this.services,this.currentDay),...(this.supportForDay(this.currentDay)?{supportFunds:this.supportForDay(this.currentDay)}:{}),... (this.appliedCampaignEvent?{eventLoss:this.appliedCampaignEvent.loss}:{}),wages,wagesPaid,startingCash:this.startingCash,openingInventoryValue:this.openingInventoryValue,sales:this.revenue,rewards:this.rewardCash,purchases:ledger.purchases,consumed:ledger.consumed,giftCost:this.dailyGiftCost,capitalPurchases:this.capitalPurchases,deliveryFees:this.deliveryFees,...settled,inventory:this.stock.inventorySnapshot(),previousProfit:this.cumulativeProfit});
     this.cumulativeProfit=accounts.cumulativeProfit;
@@ -611,7 +616,7 @@ export class CozyRuntime {
     this.specialIdentities.clear();this.bubble=null;
     if (!this.canOpen) return this.shopFeedback(this.missingReason);
     this.schedule=this.buildSchedule(this.currentDay);this.preparationElapsed=0;this.accumulator=0;
-    this.shiftEvent=deliveryEvent(this.currentDay);this.shiftRoles=this.workingRoles(this.currentDay);this.shiftStaff=this.shiftRoles.includes('delivery')||!!this.scheduleDependencies.deliveryStaffAvailable?.();this.staffJobs.clear();this.payrollWarning='';this.shiftApp=this.appEnabled&&this.currentDay>=DELIVERY_RULES.unlockDay;
+    this.shiftEvent=deliveryEvent(this.currentDay);this.shiftRoles=this.workingRoles(this.currentDay);this.shiftStaff=this.shiftRoles.includes('delivery')||!this.staff.acquired.some(a=>a.role==='delivery')&&!!this.scheduleDependencies.deliveryStaffAvailable?.();this.staffJobs.clear();this.payrollWarning='';this.shiftApp=this.appEnabled&&this.currentDay>=DELIVERY_RULES.unlockDay;
     this.frozenShopEffects=this.shopState.effects;
     const history=this.reports.flatMap(report=>report.campaignEvent?[{...report.campaignEvent,day:report.day}]:[]);
     this.appliedCampaignEvent=chooseCampaignEvent(this.eventSeed,this.currentDay,history,this.scheduleDependencies.eventRoll);
