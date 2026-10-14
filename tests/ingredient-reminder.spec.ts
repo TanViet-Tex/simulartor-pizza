@@ -28,33 +28,33 @@ async function fixture(page:Page,mode:'empty'|'carryover'|'purchased'|'poor'='em
 }
 async function snapshot(page:Page){return page.evaluate(()=>{const r=(window as any).ingredientReminder.r;return {day:r.day,preparationDay:r.preparationDay,open:r.shopOpen,cash:r.state.cash,elapsed:r.shiftClock.elapsed,pauses:r.pauses};});}
 async function reminder(page:Page,day:number){
-  await expect.poll(async()=>((await data(page,'controls'))??[]).some((c:Control)=>c.id==='hub-detail-close'&&c.enabled)).toBe(true);
-  await expect(page.locator('canvas')).toHaveAttribute('data-summary-tab','market');await expect(page.locator('canvas')).toHaveAttribute('data-paused','order');
+  await expect(page.locator('canvas')).toHaveAttribute('data-summary-tab','market');await expect(page.locator('canvas')).toHaveAttribute('data-paused','');
+  await expect(page.locator('canvas')).toHaveAttribute('data-market-needs-ingredients','true');
+  expect((await data(page,'controls')).some((c:Control)=>c.id==='hub-detail-close')).toBe(false);
   await expect(page.locator('canvas')).toHaveAttribute('data-market-filter','all');
-  const texts=await page.evaluate(()=>{const values:string[]=[];const visit=(o:any)=>{if(typeof o.text==='string')values.push(o.text);if(Array.isArray(o.list))o.list.forEach(visit);};(window as any).ingredientReminder.scene.children.list.forEach(visit);return values.join('\n');});
-  expect(texts).toContain('Mua nguyên liệu trước khi mở quán');expect(texts).toContain('Bạn chưa mua nguyên liệu cho ngày '+day);
+  expect((await snapshot(page)).preparationDay).toBe(day);expect(await data(page,'hub-detail')).toBeNull();
   expect((await data(page,'market-scroll')).offset).toBe(0);
 }
 async function closeDay(page:Page){expect(await page.evaluate(()=>{const r=(window as any).ingredientReminder.r;r.resolveLottery(0);return r.closeDay();})).toBe(true);await expect(page.locator('canvas')).toHaveAttribute('data-screen','day-summary');}
 
-test('first opening redirects to market, pauses without changing cash/day, then food purchase opens the day',async({page},info)=>{
+test('first opening redirects to a red market border without popup or changing cash/day, then purchase clears it',async({page},info)=>{
   await fixture(page);const before=await snapshot(page);await tap(page,'summary-open-first-day');await reminder(page,1);
-  expect(await snapshot(page)).toEqual({...before,pauses:['order']});
-  await page.evaluate(()=>(window as any).ingredientReminder.r.advanceElapsed(60000));expect(await snapshot(page)).toEqual({...before,pauses:['order']});
+  expect(await snapshot(page)).toEqual(before);
+  await page.evaluate(()=>(window as any).ingredientReminder.r.advanceElapsed(60000));expect(await snapshot(page)).toEqual(before);
   await page.locator('canvas').screenshot({path:info.outputPath('ingredient-reminder-day-one.png')});
-  await tap(page,'hub-detail-close');await expect(page.locator('canvas')).toHaveAttribute('data-paused','');
   await tap(page,'market-buy-dough');expect((await snapshot(page)).cash).toBeLessThan(before.cash);
+  await expect(page.locator('canvas')).toHaveAttribute('data-market-needs-ingredients','false');
   await tap(page,'summary-open-first-day');await expect(page.locator('canvas')).toHaveAttribute('data-screen','game');expect((await snapshot(page)).day).toBe(1);
 });
 
 test('old food stock allows opening after one reminder and a later day receives its own reminder',async({page})=>{
   await fixture(page,'carryover');const before=await snapshot(page);expect(before.preparationDay).toBe(2);
   await tap(page,'summary-tab-market');await tap(page,'market-filter-sauce');await tap(page,'summary-open-next-day');await reminder(page,2);
-  expect(await snapshot(page)).toEqual({...before,pauses:['order']});
-  await tap(page,'hub-detail-close');await tap(page,'summary-open-next-day');await expect(page.locator('canvas')).toHaveAttribute('data-screen','game');
+  expect(await snapshot(page)).toEqual(before);
+  await tap(page,'summary-open-next-day');await expect(page.locator('canvas')).toHaveAttribute('data-screen','game');
   expect(await snapshot(page)).toMatchObject({day:2,cash:before.cash,open:true,pauses:[]});
   await closeDay(page);await tap(page,'summary-open-next-day');await reminder(page,3);
-  await tap(page,'hub-detail-close');await tap(page,'summary-open-next-day');await expect(page.locator('canvas')).toHaveAttribute('data-screen','game');expect((await snapshot(page)).day).toBe(3);
+  await tap(page,'summary-open-next-day');await expect(page.locator('canvas')).toHaveAttribute('data-screen','game');expect((await snapshot(page)).day).toBe(3);
 });
 
 test('food purchased before opening skips the reminder',async({page})=>{
@@ -64,6 +64,6 @@ test('food purchased before opening skips the reminder',async({page})=>{
 
 test('low funds do not trap a player with usable carryover stock in repeated reminders',async({page})=>{
   await fixture(page,'poor');const before=await snapshot(page);expect(before.cash).toBeGreaterThanOrEqual(20);expect(before.cash).toBeLessThan(24);
-  await tap(page,'summary-open-next-day');await reminder(page,2);await tap(page,'hub-detail-close');await tap(page,'summary-open-next-day');
+  await tap(page,'summary-open-next-day');await reminder(page,2);await tap(page,'summary-open-next-day');
   await expect(page.locator('canvas')).toHaveAttribute('data-screen','game');expect(await snapshot(page)).toMatchObject({day:2,cash:before.cash,open:true,pauses:[]});
 });

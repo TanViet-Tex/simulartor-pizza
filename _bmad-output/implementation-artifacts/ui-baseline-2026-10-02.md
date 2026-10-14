@@ -7,6 +7,10 @@ date: '2026-10-02'
 
 # Giao diện hiện tại là mốc cho các lần triển khai sau
 
+### Viền đỏ thay popup mua nguyên liệu — chỉnh tiếp 2026-10-14
+
+Không hiện bảng thông báo/Đã hiểu khi chưa mua nguyên liệu. Chợ chỉ có viền đỏ tĩnh quanh khung nguyên liệu (x10/y182/340×395), mua food cho ngày chuẩn bị thì tắt. Giữ chuyển Chợ khi bấm mở ngày lần đầu, không khóa thao tác bằng pause/modal; các khung, nút và vị trí khác giữ nguyên. Thay phần popup trong yêu cầu trước.
+
 ### Bỏ gợi ý menu/số phần trong Kho — 2026-10-14
 
 Xóa thanh cam “Gợi ý mua theo menu & số phần” và vùng chạm tương ứng trong Kho. Giữ danh sách, khung, lọc, cuộn, dòng ưu tiên hạn dùng và nút Đi chợ mua thêm. Các phần gợi ý ở Chợ và lời nhắc mở ngày mới giữ nguyên.

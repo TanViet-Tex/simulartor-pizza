@@ -550,3 +550,9 @@ Build/typecheck, 7 unit và 5 case E2E tập trung đạt (4 lời nhắc +1 Ti�
 Bỏ riêng thanh cam “Gợi ý mua theo menu & số phần” và vùng bấm stock-suggestions theo ảnh người dùng. Giữ khung Kho, danh sách/lọc/cuộn, dòng ưu tiên lô gần hết hạn và nút Đi chợ mua thêm; không reflow bố cục. Các test UI dùng nút gợi ý cũ chuyển sang kiểm tra nút đã bỏ; không đổi tính toán dự báo ở Chợ.
 
 Build và 1 E2E Chromium360×640 đạt; ảnh Kho xác nhận thanh gợi ý đã biến mất, tiền và danh sách công thức không đổi.
+
+### Nhắc nguyên liệu bằng viền đỏ, không popup — 2026-10-14
+
+Thay popup nhắc mua bằng viền đỏ tĩnh quanh khu vực nguyên liệu của Chợ khi chưa có food mua cho preparationDay. Bấm Mở quán lần đầu vẫn chuyển Chợ; không tạo hubDetail/pause lease/lớp che, không cần bấm Đã hiểu. Mua food cho đúng ngày thì viền tắt; nước không thay food. Giữ hành vi mở tiếp dùng kho cũ, geometry và các thông báo khác. Thay yêu cầu popup trong spec-new-day-ingredient-reminder.md.
+
+Build/typecheck và 2 E2E Chromium360×640 đạt: không popup/pause, ngày/tiền chưa đổi, mua tắt viền và kho cũ vẫn mở được; ngày sau nhắc lại bằng viền.

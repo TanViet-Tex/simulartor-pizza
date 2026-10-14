@@ -23,6 +23,12 @@ Kiểm tra getter qua ngày/restore/nước; canvas chuyển Chợ/nhắc trư�
 
 ## Kết quả
 
+### Chỉnh tiếp: chỉ viền đỏ, bỏ popup — 2026-10-14
+
+Theo yêu cầu mới, bỏ hubDetail và pause lease của lời nhắc. Chuyển Chợ như trước nhưng chỉ vẽ viền đỏ tĩnh quanh khung nguyên liệu khi boughtIngredientsForPreparation=false. Mua food làm viền tắt; không lớp che, không nút Đã hiểu, không chặn mua/scroll. Phần popup/đóng nhắc trong mô tả và bằng chứng cũ được thay bởi hành vi này; các thông báo khác giữ nguyên.
+
+Kiểm chứng bản chỉnh: build/typecheck và 2 E2E Chromium360×640 đạt, gồm viền đỏ không popup/pause, mua tắt viền, dùng kho cũ và ngày sau có cảnh báo riêng.
+
 Build/typecheck đạt; 2 file unit tập trung, 7 test đạt. Chromium360×640: 5 case đã đạt qua các lượt chạy tập trung (4 case lời nhắc và 1 regression Tiếp tục/lợi nhuận). Kiểm chứng chuyển Chợ, đúng ngày, pause/tiền/clock không đổi, mua rồi mở, nhắc ngày sau và dùng kho cũ sau nhắc.
 
 Fixture vốn thấp ban đầu không đủ tiền thuê theo luật cạn vốn cũ; đã chỉnh fixture còn20–23 xu sau chốt ngày và chạy lại đạt. Không đổi luật tiền thuê/cạn vốn. Không chạy full browser matrix.
