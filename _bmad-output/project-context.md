@@ -560,3 +560,11 @@ Build/typecheck và 2 E2E Chromium360×640 đạt: không popup/pause, ngày/ti�
 ### Nước trên thớt sau khi chọn — yêu cầu 2026-10-14
 
 Bấm đúng nước khách gọi hiện chai có nhãn ở bên phải thớt (176/304,44×72), giữ cạnh pizza/hộp và mất khi giao hoặc đơn rời hàng. Hình theo đơn sở hữu bàn; chọn xem khách khác không đổi sang chai của họ. Trước khi có bánh dùng đơn đang chọn. Không thêm vùng bấm, không tiêu kho/lấy tiền khi vẽ, giữ bố cục bếp và luật mở nước ngày4. Build/typecheck,11unit và6E2E Chromium360×640 đạt; đã xem ảnh chai nước cạnh hộp pizza. Ba review không có lỗi code; đã bổ sung E2E đổi khách theo góp ý. Xem implementation-artifacts/spec-drink-on-workbench.md.
+
+### Tên người chơi và bảng xếp hạng online — yêu cầu 2026-10-14
+
+Bắt đầu từ menu hỏi tên2–20ký tự trước tạo chiến dịch, giữ xác nhận ghi đè; Tiếp tục/reload giữ tên. Một nút Bảng xếp hạng thêm phía trên3nút cũ, không dịch chúng; popup cùng art kem/nâu, top10chia2trang, hạng/tên/tiền/ngày và dòngmình vàng. Tính tiền hiệncó gồm mãVIETVUIVE theo người dùng, bằngtiền xétngày rồiID ổnđịnh; lượt mới thay kếtquảcũ. Bếp/hub giữmốc.
+
+Theo yêu cầu online, thay riêng giới hạn demo khôngbackend: VercelFunction api/leaderboard.ts gọi SupabaseRPC bằng2biến môi trường serveronly, không package mới. Nativefetch/WebCrypto; tên/ID/token/sequence/campaign/revision/hàngđợi cuối ởlocalStorage, campaign vẫnIndexedDB. Chỉpublish snapshot đãcommit thật, mạngkhôngpause game hoặcghi local; refreshretry pending, guardnhiềutab/campaign/revision vàtokenhashSQL. RLS/REVOKE cấm client gọiDB trực tiếp. Đây chưa phải máy chủ môphỏng chốngmọi gianlận, không thêm tài khoản/khôi phục khác thiết bị.
+
+Build/typecheck frontend+API,43unit và4E2E Chromium360×640 đạt; hai browsercontext có API dùngchung giảlập, nhậnmãthật vàđọcrank. Review3luồng độc lập sửa acknowledgementxóaqueue, lưufailedkhôngretry vàIMEEnter; re-review edge sạch. Ảnh ui-baseline/online-leaderboard-2026-10-14. Chưa có Supabase thực: SQL chưa chạy/live deployment chưa kiểm chứng, cần người dùng cấu hình theo implementation-artifacts/leaderboard-vercel-setup.md; không báo online đã hoạt động. Spec implementation-artifacts/spec-online-leaderboard.md.

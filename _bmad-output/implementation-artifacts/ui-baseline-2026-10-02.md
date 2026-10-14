@@ -600,3 +600,7 @@ Theo yêu cầu rõ: ba nước Nước suối/Coca/Nước cam có dòng riêng
 ### Nước trên thớt sau khi chọn — yêu cầu 2026-10-14
 
 Bấm đúng nước khách gọi hiện chai có nhãn ở bên phải thớt (176/304,44×72), giữ cạnh pizza/hộp và mất khi giao hoặc đơn rời hàng. Hình theo đơn sở hữu bàn; chọn xem khách khác không đổi sang chai của họ. Trước khi có bánh dùng đơn đang chọn. Không thêm vùng bấm, không tiêu kho/lấy tiền khi vẽ, giữ bố cục bếp và luật mở nước ngày4. Build/typecheck,11unit và6E2E Chromium360×640 đạt; đã xem ảnh chai nước cạnh hộp pizza. Ba review không có lỗi code; đã bổ sung E2E đổi khách theo góp ý. Xem spec-drink-on-workbench.md.
+
+### Đặt tên và Bảng xếp hạng — yêu cầu 2026-10-14
+
+Thêm nút Bảng xếp hạng phía trên cụm3nút menu, giữ geometry/art các nút cũ và giao diện bếp/hub. Bắt đầu mở native input tên trong popupkem/nâu, có Quay lại/Vào chơi; keyboarddịch toànkhung/input/hit đồngnhất, EnterkhiIMEchưa chốt khôngsubmit. Bảng hạng4cột Hạng/Tên/Tiền/Ngày, top10chia2trang, dòng mình nềnvàng, ngoài trang vẫn hiệnhạngmình, Làm mới/Quay lại vàlỗikết nối rõ. Không hiện đối thủgiả tronggame. Hình từ kiểmtra với API giảlập để đánh giá triển khai, không coi là Supabaseđãdeploy: [bảng](ui-baseline/online-leaderboard-2026-10-14/leaderboard-first-page.png), [dòng mình](ui-baseline/online-leaderboard-2026-10-14/leaderboard-own-row.png), [tên và bàn phím](ui-baseline/online-leaderboard-2026-10-14/player-name-keyboard.png). Xem spec-online-leaderboard.md và leaderboard-vercel-setup.md.

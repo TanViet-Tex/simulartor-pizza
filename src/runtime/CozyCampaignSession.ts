@@ -27,6 +27,8 @@ export class CozyCampaignSession {
   private confirmedRecovery=false;
   constructor(private readonly repository:CozySavePort,private readonly id:()=>string=()=>crypto.randomUUID()){}
   get runtime(){return this.current;}
+  /** Only confirmed storage data may be submitted to the shared scoreboard. */
+  get leaderboardSnapshot(){return this.saved?{campaignId:this.saved.campaignId,revision:this.saved.revision,payload:structuredClone(this.saved.payload)}:null;}
   get lifecycle(){return this.interruption;}
   get hasSession(){return this.current!==null||this.saved!==null;}
   get busy(){return this.status==='loading'||this.status==='saving';}

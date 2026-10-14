@@ -13,6 +13,15 @@ const settle=()=>new Promise<void>(resolve=>setTimeout(resolve,0));
 async function setup(funded=false){let id=0;const port=new MemoryPort(),session=new CozyCampaignSession(port,()=>`id-${++id}`);await session.load();const r=(await session.start(false))!;if(funded){port.value!.payload=fundedShopCheckpoint();port.value!.checksum=checkpointChecksum(port.value!.payload);const loaded=(await session.load())!;return {port,session,r:loaded};}return {port,session,r};}
 function open(r:CozyRuntime){for(const id of ['dough','sauce','cheese'] as const)r.buy(id,1);expect(r.openShop()).toBe(true);}
 describe('Cozy prepare/commit/confirm session',()=>{
+  it('exposes only cloned committed leaderboard data, including test funds after successful retry',async()=>{
+    const {session,port}=await setup();
+    const before=session.leaderboardSnapshot!;expect(before.payload.stock.cash).toBe(500);
+    before.payload.stock.cash=999999;expect(session.leaderboardSnapshot!.payload.stock.cash).toBe(500);
+    port.fail=true;expect(session.claimTestCode('VIETVUIVE')).toBe(true);await settle();
+    expect(session.leaderboardSnapshot!.payload.stock.cash).toBe(500);
+    port.fail=false;await session.retry();expect(session.leaderboardSnapshot!.payload.stock.cash).toBe(100500);
+    session.destroy();
+  });
   it('marks delayed menu saves as silent, preserves guards and exposes failed saves for exact retry',async()=>{
     const {session,port,r}=await setup();port.defer=true;
     expect(session.configureMenu('cheese',105,true)).toBe(true);

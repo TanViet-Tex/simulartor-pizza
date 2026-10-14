@@ -1,3 +1,6 @@
+import type {LeaderboardMenuActions} from '../domain/Leaderboard';
+import {PlayerNamePanel} from '../presentation/PlayerNamePanel';
+import {LeaderboardPanel} from '../presentation/LeaderboardPanel';
 import {TestCodePanel,type TestCodeActions} from '../presentation/TestCodePanel';
 import {PlayAudio} from '../presentation/PlayAudio';
 import {drawModalBackdrop} from '../presentation/ModalBackdrop';
@@ -15,9 +18,9 @@ import {modalText} from '../presentation/ModalText';
 import {UI_RASTER_SCALE,uiCanvas,strengthenIllustrations} from '../presentation/UiRaster';
 
 export const MAIN_MENU_BACKGROUND = { key: 'main-menu-background', url: 'assets/main-menu-background.png', type: 'image' as const };
-type MenuActions = {testCode?:TestCodeActions;hasSession:()=>boolean;start:()=>void;continue:()=>void;initialize?:()=>void;save?:()=>CozySaveView;subscribe?:(listener:()=>void)=>()=>void;retryRead?:()=>void;retrySave?:()=>void;recover?:()=>void;temporary?:()=>void};
+type MenuActions = {leaderboard?:LeaderboardMenuActions;testCode?:TestCodeActions;hasSession:()=>boolean;start:()=>void;continue:()=>void;initialize?:()=>void;save?:()=>CozySaveView;subscribe?:(listener:()=>void)=>()=>void;retryRead?:()=>void;retrySave?:()=>void;recover?:()=>void;temporary?:()=>void};
 type MenuTarget = { id: string; x: number; y: number; width: number; height: number; disabled: boolean; visible:Phaser.Geom.Rectangle; action: () => void };
-type Dialog = 'none' | 'settings' | 'new-session'|'loading'|'save-error'|'recovery';
+type Dialog = 'none' | 'settings' | 'new-session'|'loading'|'save-error'|'recovery'|'player-name'|'leaderboard';
 const PAPER = 0xfff0d5, BROWN = 0x985025, SAGE = 0x738d50;
 
 
@@ -30,6 +33,9 @@ export class MainMenuScene extends Phaser.Scene {
   private targets: MenuTarget[] = [];
   private dialog: Dialog = 'none';
   private testCodePanel?:TestCodePanel;
+  private playerNamePanel?:PlayerNamePanel;
+  private leaderboardPanel?:LeaderboardPanel;
+  private unsubscribeLeaderboard?:()=>void;
   private focusId = '';
   private keyboardFocus = false;
   private elapsed = 0;
@@ -83,6 +89,7 @@ export class MainMenuScene extends Phaser.Scene {
     canvas.dataset.booted = 'true';
     this.draw(true); this.refreshMotion();
     this.unsubscribeSave=this.actions.subscribe?.(()=>this.draw());
+    this.unsubscribeLeaderboard=this.actions.leaderboard?.subscribe(()=>this.draw());
     this.actions.initialize?.();
     this.events.once('shutdown', this.cleanup);
     this.events.once('destroy', this.cleanup);
@@ -99,6 +106,7 @@ export class MainMenuScene extends Phaser.Scene {
 
   private cleanup = (): void => {
     this.testCodePanel?.destroy();this.testCodePanel=undefined;
+    this.playerNamePanel?.destroy();this.playerNamePanel=undefined;this.leaderboardPanel=undefined;this.unsubscribeLeaderboard?.();this.unsubscribeLeaderboard=undefined;delete this.game.canvas.dataset.leaderboard;
     this.events.off('shutdown', this.cleanup);
     this.events.off('destroy', this.cleanup);
     this.unsubscribe?.(); this.unsubscribe = undefined;
@@ -142,7 +150,7 @@ export class MainMenuScene extends Phaser.Scene {
   private draw(entrance = false): void {
     const save=this.actions.save?.();
     if(this.entryProgress!==null)this.dialog='loading';
-    else if(this.dialog!=='settings'&&this.dialog!=='new-session')this.dialog=save?.state==='loading'||save?.state==='saving'?'loading':save?.state==='error'?'save-error':save?.state==='recovery'?'recovery':'none';
+    else if(!['settings','new-session','player-name','leaderboard'].includes(this.dialog))this.dialog=save?.state==='loading'||save?.state==='saving'?'loading':save?.state==='error'?'save-error':save?.state==='recovery'?'recovery':'none';
     this.loadingBar=undefined;this.loadingPercent=undefined;this.loadingBounds=undefined;delete this.game.canvas.dataset.menuLoadingProgress;
     this.notification=undefined;this.game.canvas.dataset.settingsPanel='';this.game.canvas.dataset.modalBackdrop='';this.game.canvas.dataset.notificationFrame='';this.game.canvas.dataset.modalScroll='[]';
     this.tweens.killAll(); this.interfaceLayer.removeAll(true); this.targets = [];
@@ -169,10 +177,11 @@ export class MainMenuScene extends Phaser.Scene {
     // Six pixels of visible breathing room; enlarge the artwork only when a
     // short viewport needs extra logical space for separate 48 CSS px targets.
     const gap=6,height=Math.max(44,48.3/scale-gap),step=height+gap,top=625-3*height-2*gap;
+    if(this.actions.leaderboard)this.button('menu-leaderboard',76,top-step,208,height,'Bảng xếp hạng','none',PAPER,'#985025',mainEnabled,()=>{this.dialog='leaderboard';this.focusId='';this.leaderboardPanel=new LeaderboardPanel(this.actions.leaderboard!,()=>this.draw(),()=>this.closeLeaderboard());this.draw();this.actions.leaderboard!.refresh();},entrance,undefined,19);
     this.button('menu-start', 76, top, 208, height, 'Bắt đầu', 'play', SAGE, '#fff6df', mainEnabled,
-      () => { if (this.actions.hasSession()) { this.dialog = 'new-session'; this.focusId = ''; this.draw(); } else this.actions.start(); }, entrance);
+      () => { if (this.actions.hasSession()) { this.dialog = 'new-session'; this.focusId = ''; this.draw(); } else this.requestPlayerName(()=>this.actions.start()); }, entrance);
     this.button('menu-continue', 76, top+step, 208, height, 'Tiếp tục', 'continue', PAPER, '#985025', mainEnabled && hasSession,
-      () => this.actions.continue(), entrance, hasSession ? save?.day?`Ngày ${save.day}`:undefined : 'Chưa có phiên đang chơi');
+      () => {if(this.actions.leaderboard&&!this.actions.leaderboard.view().name)this.requestPlayerName(()=>this.actions.continue());else this.actions.continue();}, entrance, hasSession ? save?.day?`Ngày ${save.day}`:undefined : 'Chưa có phiên đang chơi');
     this.button('menu-settings', 76, top+2*step, 208, height, 'Cài đặt', 'settings', 0xf5c6a5, '#985025', mainEnabled,
       () => { void this.audio.interact();this.audio.effect('settings');this.dialog = 'settings'; this.focusId = ''; this.draw(); }, entrance);
     if (this.dialog !== 'none') this.drawDialog();
@@ -249,6 +258,8 @@ export class MainMenuScene extends Phaser.Scene {
     for(const object of this.interfaceLayer.list)if(object instanceof Phaser.GameObjects.Zone)object.disableInteractive();
     // Remove all old targets before registering dialog controls, including disabled menu targets.
     this.targets=[];
+    if(this.playerNamePanel){this.playerNamePanel.draw(this,this.interfaceLayer,(id,rect,enabled,action)=>this.settingsTarget(id,rect,enabled,action));return;}
+    if(this.dialog==='leaderboard'&&this.leaderboardPanel){this.leaderboardPanel.draw(this,this.interfaceLayer,(id,rect,enabled,action)=>this.settingsTarget(id,rect,enabled,action));return;}
     if(this.testCodePanel){this.testCodePanel.draw(this,this.interfaceLayer,(id,rect,enabled,action)=>this.settingsTarget(id,rect,enabled,action));return;}
     drawModalBackdrop(this,this.interfaceLayer);
     if(this.dialog==='settings'){
@@ -283,9 +294,19 @@ export class MainMenuScene extends Phaser.Scene {
       else if(save.canReload)this.button('menu-load-latest',48,418,264,48,'Tải bản mới nhất','none',0xf5c6a5,'#985025',true,()=>this.actions.retryRead?.(),false,undefined,18);
       return;
     }
-    this.button('menu-new-confirm',48,321,264,48,'Bắt đầu mới','none',SAGE,'#fff6df',true,()=>{this.dialog='none';this.actions.start();});
+    this.button('menu-new-confirm',48,321,264,48,'Bắt đầu mới','none',SAGE,'#fff6df',true,()=>{this.dialog='none';this.requestPlayerName(()=>this.actions.start());});
     this.button('menu-new-cancel',84,383,192,48,'Hủy','none',0xf5c6a5,'#985025',true,()=>{this.dialog='none';this.focusId='menu-start';this.draw();});
   }
+  private requestPlayerName(play:()=>void):void{
+    const leaderboard=this.actions.leaderboard;if(!leaderboard){play();return;}
+    this.dialog='player-name';this.focusId='';
+    this.playerNamePanel=new PlayerNamePanel(this.game.canvas,leaderboard.view().name,value=>{
+      const error=leaderboard.setName(value);if(error)return error;
+      this.playerNamePanel?.destroy();this.playerNamePanel=undefined;this.dialog='none';play();return '';
+    },()=>this.draw(),()=>{this.playerNamePanel?.destroy();this.playerNamePanel=undefined;this.dialog='none';this.focusId='menu-start';this.draw();});
+    this.draw();
+  }
+  private closeLeaderboard():void{this.leaderboardPanel=undefined;delete this.game.canvas.dataset.leaderboard;this.dialog='none';this.focusId='menu-leaderboard';this.draw();}
   private settingsTarget(id:string,rect:{x:number;y:number;width:number;height:number},enabled:boolean,action:()=>void):void{
     const bounds=this.game.canvas.getBoundingClientRect(),scale=Math.min((bounds.width||360)/360,(bounds.height||640)/640);
     const width=Math.max(rect.width,Math.ceil(48/scale)),height=Math.max(rect.height,Math.ceil(48/scale));
@@ -307,8 +328,8 @@ export class MainMenuScene extends Phaser.Scene {
 
   private keyDown = (event: KeyboardEvent): void => {
     if(document.activeElement!==this.game.canvas)return;
-    if(this.testCodePanel)return;
-    if (event.key === 'Escape' && this.dialog !== 'none') { event.preventDefault();if(this.dialog==='loading')return; this.dialog = 'none'; this.focusId = ''; this.draw(); return; }
+    if(this.testCodePanel||this.playerNamePanel)return;
+    if (event.key === 'Escape' && this.dialog !== 'none') { event.preventDefault();if(this.dialog==='loading')return;if(this.dialog==='leaderboard'){this.closeLeaderboard();return;} this.dialog = 'none'; this.focusId = ''; this.draw(); return; }
     const enabled = this.targets.filter(target => !target.disabled);
     if (!enabled.length) return;
     if (event.key === 'Tab' || event.key === 'ArrowDown' || event.key === 'ArrowUp') {
@@ -352,6 +373,8 @@ export class MainMenuScene extends Phaser.Scene {
       return { text: text.text, x: bounds.x, y: bounds.y, width: bounds.width, height: bounds.height,
         font: text.style.fontFamily, size: text.style.fontSize, spacing: text.letterSpacing, color: text.style.color };
     }));
+    if(this.dialog==='player-name'){canvas.setAttribute('aria-label','Đặt tên người chơi từ 2 đến 20 ký tự. Vào chơi hoặc Quay lại.');return;}
+    if(this.dialog==='leaderboard'){canvas.setAttribute('aria-label','Bảng xếp hạng theo tiền nhiều nhất. Hiển thị hạng, tên, tiền và ngày chơi. Làm mới hoặc Quay lại.');return;}
     canvas.setAttribute('aria-label',this.dialog==='loading'?`Đang tải dữ liệu. ${this.entryProgress??0} phần trăm.`: `Tiệm Pizza Ấm Áp. ${this.dialog === 'settings' ? `Cài đặt. Giảm chuyển động ${this.preferences.reducedMotion ? 'bật' : 'tắt'}.` : this.dialog === 'new-session' ? 'Xác nhận bắt đầu phiên mới. Phiên đang chơi sẽ được thay thế.' : `Bắt đầu. ${this.actions.hasSession() ? 'Tiếp tục phiên đang chơi.' : 'Tiếp tục chưa khả dụng vì chưa có phiên đang chơi.'} Cài đặt.`}`);
   }
 }

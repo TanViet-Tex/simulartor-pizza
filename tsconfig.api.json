@@ -1,0 +1,6 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {"types": [], "noEmit": true},
+  "include": ["api/leaderboard.ts"],
+  "exclude": ["node_modules"]
+}

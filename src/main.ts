@@ -9,6 +9,7 @@ import { MainMenuScene } from './scenes/MainMenuScene';
 import { MenuPreferences } from './presentation/MenuPreferences';
 import {CozyCampaignSession} from './runtime/CozyCampaignSession';
 import {CozySaveRepository} from './infrastructure/CozySaveRepository';
+import {LeaderboardSession} from './runtime/LeaderboardSession';
 import { PlayAudio } from './presentation/PlayAudio';
 import {installRuntimeDiagnostics} from './presentation/RuntimeDiagnostics';
 import {PlayLifecycle,type PauseLease} from './runtime/PlayLifecycle';
@@ -47,6 +48,19 @@ function directPlay():Phaser.Scene {
 function mainMenu(): Phaser.Scene {
   const preferences = new MenuPreferences();
   const session = new CozyCampaignSession(new CozySaveRepository());
+  let playerStorage:Storage|null=null;try{playerStorage=window.localStorage;}catch{/* Local campaign play remains available. */}
+  const leaderboard=new LeaderboardSession(playerStorage);
+  let scoreStamp='';
+  let replaceScoreAfter:string|null|undefined;
+  const syncLeaderboard=()=>{
+    if(session.view.state!=='ready'||!leaderboard.view().name)return;
+    const stamp=`${session.view.campaignId}:${session.view.revision}:${leaderboard.view().name}`;
+    if(stamp===scoreStamp)return;
+    const snapshot=session.leaderboardSnapshot;if(!snapshot)return;
+    const replaceCampaign=replaceScoreAfter!==undefined&&snapshot.campaignId!==replaceScoreAfter;
+    scoreStamp=stamp;leaderboard.capture(snapshot,replaceCampaign);if(replaceCampaign)replaceScoreAfter=undefined;
+  };
+  const unsubscribeScore=session.subscribe(syncLeaderboard);
   let initialized=false;
   let menu:MainMenuScene,opening=false;
   const launch=async(operation:()=>CozyRuntime|null|Promise<CozyRuntime|null>)=>{
@@ -77,10 +91,12 @@ function mainMenu(): Phaser.Scene {
   };
   game.events.once(Phaser.Core.Events.DESTROY,() => preferences.destroy());
   game.events.once(Phaser.Core.Events.DESTROY,() => session.destroy());
+  game.events.once(Phaser.Core.Events.DESTROY,()=>{unsubscribeScore();leaderboard.destroy();});
   return menu=new MainMenuScene(preferences,{
     hasSession:() => session.hasSession,
-    start:() => {void launch(()=>session.start(mode!=='shop'));},
-    continue:() => {void launch(()=>session.continue());},
+    leaderboard:{view:leaderboard.view,subscribe:leaderboard.subscribe,refresh:()=>{syncLeaderboard();leaderboard.refresh();},setName:value=>leaderboard.setName(value)},
+    start:() => {replaceScoreAfter=session.view.campaignId;void launch(()=>session.start(mode!=='shop'));},
+    continue:() => {syncLeaderboard();void launch(()=>session.continue());},
     testCode:{message:value=>session.testCodeMessage(value),claim:value=>session.claimTestCode(value),claimed:()=>!!session.runtime?.testCodeClaimed,save:()=>session.view,retry:()=>{void session.retry();}},
     save:()=>session.view,
     subscribe:listener=>session.subscribe(listener),
