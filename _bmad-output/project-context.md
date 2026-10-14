@@ -602,3 +602,7 @@ Theo người dùng báo chữ bị lệch xuống: riêng heading Bảng xếp 
 ### Căn thanh tab quản lý — 2026-10-14
 
 Người dùng yêu cầu sửa riêng tab quản lý lệch, đặc biệt Tổng kết. Icon gốc đã tách nền được căn theo bounds alpha về tâm từng ô và y96 chung; giữ pixel/màu, không căn theo tâm crop ảnh vốn không đều. Khung trung tính/chọn dùng chung geometry, nền kem và viền nâu/vàng, không chồng viền ảnh gốc lệch. Giữ năm ô22/80/316×49, nhãn, hit, animation150ms/96%120ms và giảm chuyển động. Build/typecheck,1E2E kiểm cả năm tab và review độc lập đạt; đã xem ảnh Tổng kết. Xem implementation-artifacts/spec-management-tab-alignment.md.
+
+### Giảm khách quán 20% ngày1–30 — 2026-10-14
+
+Lịch chuẩn sau phân bổ app và cộng bonus trang trí/mở rộng giảm tổng khách quán còn round(N×0.8). Giữ khách giúp đỡ/giới thiệu và đơn app, giữ lượt thường đầu, rải các lượt được giữ theo ca; không đổi ID/time/loại khách/metadata/giờ mở/đóng. Dự báo nguyên liệu/quảng bá và mở ca dùng chung buildSchedule, save cũ không cần migrate; áp dụng khi mở ca tiếp theo. Ngày31+ và lịch tùy chỉnh của fixture giữ nguyên. Build/typecheck,37unit tập trung và review độc lập đạt; kiểm360tổ hợp ngày/seed/app/bonus. Xem implementation-artifacts/spec-shop-traffic-minus-twenty-percent.md.

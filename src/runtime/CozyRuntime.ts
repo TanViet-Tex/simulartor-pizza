@@ -29,6 +29,7 @@ import {TEST_CODE,TEST_CODE_COINS,normalizeTestCode,type TestCodeReceipt} from '
 import {emptyStaff,staffContractRoles,staffTerm,type StaffCheckpoint} from '../domain/StaffCheckpoint';
 import {shopEffects,type ShopItemId,type ShopEffects} from '../domain/ShopEffects';
 import {shopSchedule} from '../domain/ShopSchedule';
+import {reduceShopTraffic} from '../domain/ShopTraffic';
 import type {ShopCheckpoint,UpgradeReceipt} from '../domain/ShopCheckpoint';
 import {recipeDefinition,defaultRecipePercents} from '../config/recipeCatalog';
 import {DELIVERY_RULES,deliveryEvent,deliveryTiming,deliverySchedule,type DeliveryEvent,type DeliveryScheduleSlot} from '../config/deliveryEvents';
@@ -570,7 +571,8 @@ export class CozyRuntime {
   private buildSchedule(day:number):CozySchedule {
     let schedule=validateCozySchedule((this.scheduleDependencies.schedule??threeDaySchedule)(day,{queueCapacity:this.queueCapacity,customerSeed:String(this.eventSeed),regularDay1Stars:this.regularDay1Stars,regularLatestStars:this.regularLatestStars,helpSucceeded:this.help.outcome==='succeeded',helpOfferEligible:helpOfferEligible(this.eventSeed),referral:day>=4?this.reputation>=55:!!this.referral?.eligible}));
     if(!this.scheduleDependencies.schedule)schedule=deliverySchedule(schedule,this.appEnabled&&day>=DELIVERY_RULES.unlockDay);
-    return shopSchedule(schedule,this.shopVisitorBonus);
+    schedule=shopSchedule(schedule,this.shopVisitorBonus);
+    return this.scheduleDependencies.schedule?schedule:reduceShopTraffic(schedule);
   }
   quoteMarketBasket(entries:readonly {ingredient:StockIngredient;quantity:number}[]){
     if(!entries.length||entries.length>19||new Set(entries.map(e=>e.ingredient)).size!==entries.length||entries.some(e=>!this.ingredientAccess(e.ingredient).unlocked||!Number.isSafeInteger(e.quantity)||e.quantity<1||e.quantity>100))return null;

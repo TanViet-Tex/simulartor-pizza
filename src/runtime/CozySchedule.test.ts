@@ -2,6 +2,7 @@ import {describe,expect,it} from 'vitest';
 import {CozyRuntime} from './CozyRuntime';
 import {threeDaySchedule} from '../config/cozySchedule';
 import {deliverySchedule} from '../config/deliveryEvents';
+import {reduceShopTraffic} from '../domain/ShopTraffic';
 import {recipeIngredients,recipePrice} from '../domain/CozyStock';
 
 const eligibility={regularDay1Stars:null,regularLatestStars:null,helpSucceeded:false,referral:false};
@@ -29,7 +30,7 @@ describe('opening hours and seeded customer budget',()=>{
   });
 
   it.each([1,2,5,6,10,11,20,21,30])('maps day %i selling duration to 09:00–21:00 and stops all new opportunities at closing',day=>{
-    const r=dayRuntime(day,day>=5),schedule=deliverySchedule(threeDaySchedule(day,{...eligibility,customerSeed:2718}),day>=5);
+    const r=dayRuntime(day,day>=5),schedule=reduceShopTraffic(deliverySchedule(threeDaySchedule(day,{...eligibility,customerSeed:2718}),day>=5));
     expect(r.shiftClock.duration).toBe(schedule.duration);expect(r.tickets).toEqual([]);time(r,5);
     expect(r.shiftClock).toMatchObject({displayTime:'09:00',elapsed:0,attempted:1});
     time(r,schedule.duration/2);expect(r.shiftClock.displayTime).toBe('15:00');
@@ -45,7 +46,7 @@ describe('opening hours and seeded customer budget',()=>{
   });
 
   it('consumes full-queue misses once without spending stock or keeping an arrival backlog',()=>{
-    const r=shop(),schedule=threeDaySchedule(1,{...eligibility,customerSeed:2718});time(r,5);
+    const r=shop(),schedule=reduceShopTraffic(threeDaySchedule(1,{...eligibility,customerSeed:2718}));time(r,5);
     while(r.shiftClock.attempted<6)r.advance(50);
     const attempted=r.shiftClock.attempted;expect(r.tickets.length).toBeLessThanOrEqual(4);expect(r.available('dough')).toBe(4);expect(r.reserved('dough')).toBe(0);
     expect(r.processArrival(schedule.slots[attempted-1].id)).toBe(false);expect(r.shiftClock.attempted).toBe(attempted);expect(r.available('dough')).toBe(4);
