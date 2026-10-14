@@ -12,7 +12,7 @@ async function fixture(page:Page){
   const bundle=await build({stdin:{resolveDir:paths.resolve('.'),loader:'ts',contents:`
     import Phaser from 'phaser';import {CozyScene} from './src/scenes/CozyScene';import {CozyRuntime} from './src/runtime/CozyRuntime';import {CozyCampaignSession} from './src/runtime/CozyCampaignSession';import {CozySaveRepository} from './src/infrastructure/CozySaveRepository';import {campaignEventRoll} from './src/domain/CampaignEvents';
     (async()=>{let seed=0;while(campaignEventRoll(seed,1)>=.1)seed++;
-    const initial=new CozyRuntime(false,true,{eventSeed:seed});initial.buy('dough',50);
+    const initial=new CozyRuntime(false,true,{eventSeed:seed});initial.buy('dough',75);
     const repository=new CozySaveRepository(),loaded=await repository.load();const result=await repository.commit({campaignId:'event-e2e',commitId:'create',sourceRevision:0,replacementToken:loaded.replacementToken,payload:initial.exportCheckpoint()});if(!result.ok)throw Error(result.message);
     const session=new CozyCampaignSession(repository);let runtime=await session.load();
     const game=new Phaser.Game({type:Phaser.AUTO,parent:'fixture',width:360,height:640,scale:{mode:Phaser.Scale.FIT,autoCenter:Phaser.Scale.CENTER_BOTH},scene:[new CozyScene(runtime,undefined,undefined,undefined,session.lifecycle,session,enter)]});
@@ -36,7 +36,7 @@ test('event A subtracts the full amount into negative cash; acknowledgement bloc
   await tap(page,'summary-open-first-day');await expect(canvas).toHaveAttribute('data-cash','-150');await tap(page,'campaign-event-understood');
   await tap(page,'end-day');await tap(page,'confirm-end-day');await expect.poll(async()=>(await data(page,'save-state'))?.state).toBe('ready');await tap(page,'day-ended-understood');
   const saved=await active(page),report=saved.payload.reports.at(-1);expect(report.campaignEvent).toEqual({id:'A',loss:200});expect(report.accounts.eventLoss).toBe(200);expect(report.cash).toBe(-170);expect(report.profit).toBe(-220);
-  await tap(page,'summary-figure-0');await expect.poll(async()=>await data(page,'summary-modal-text')).toContain('Sự kiện A: 200 xu');await canvas.screenshot({path:info.outputPath('event-finance.png')});
+  await tap(page,'summary-figure-0');await expect.poll(async()=>await data(page,'summary-modal-text')).toContain('Thay bảng hiệu bị phá');await canvas.screenshot({path:info.outputPath('event-finance.png')});
 });
 
 test('failed day save keeps the prior boundary; retry and restore do not charge event loss twice',async({page})=>{

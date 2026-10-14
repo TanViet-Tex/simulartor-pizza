@@ -535,7 +535,7 @@ export class CozyScene extends Phaser.Scene {
     if(this.campaignEventLease){
       this.resetModalControls();
       const event=this.runtime.campaignEvent;
-      this.notice('Sự kiện A',`Cửa hàng mất ${event.loss} xu.\nSố dư hiện tại: ${this.runtime.state.cash} xu.${this.runtime.state.cash<0?'\nTiền đang âm; bạn vẫn có thể phục vụ trong ca để bù lại.':''}`,'campaign-event-understood','Đã hiểu',()=>{
+      this.notice('Bảng hiệu bị phá',`Mấy đứa trẻ ngoài phố nghịch phá bảng hiệu của quán.\nChi ${event.loss} xu để thay bảng hiệu mới.\nSố dư hiện tại: ${this.runtime.state.cash} xu.${this.runtime.state.cash<0?'\nTiền đang âm; bạn vẫn có thể phục vụ trong ca để bù lại.':''}`,'campaign-event-understood','Đã hiểu',()=>{
         this.runtime.acknowledgeCampaignEvent();this.campaignEventLease?.release();this.campaignEventLease=undefined;this.dirty=true;
       });
     }
