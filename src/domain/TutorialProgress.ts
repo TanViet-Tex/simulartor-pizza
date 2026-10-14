@@ -1,4 +1,4 @@
-import {INTERACTIVE_TUTORIAL_IDS} from '../config/interactiveTutorial';
+import {INTERACTIVE_TUTORIAL_IDS} from '../config/interactiveTutorial.js';
 export type TutorialProgress=Readonly<{version:1;index:number;status:'active'|'completed'|'skipped'}>;
 export function validateTutorialProgress(value:unknown):TutorialProgress|null {
   if(!value||typeof value!=='object')return null;

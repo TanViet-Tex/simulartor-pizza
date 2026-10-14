@@ -1,4 +1,4 @@
-﻿import type {IngredientId} from './ingredientCatalog';
+﻿import type {IngredientId} from './ingredientCatalog.js';
 /** Provisional Epic 5 balance; each component consumes one portion. */
 export const RECIPE_CATALOG = [
  {id:'cheese',name:'Phô mai',price:60,purchasePrice:0,ingredients:['dough','sauce','cheese']},

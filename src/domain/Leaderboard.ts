@@ -1,4 +1,4 @@
-import type {CozyCheckpoint} from './CozyCheckpoint';
+import type {CozyCheckpoint} from './CozyCheckpoint.js';
 
 export interface LeaderboardEntry {id:string;name:string;cash:number;day:number;rank:number}
 export interface LeaderboardView {

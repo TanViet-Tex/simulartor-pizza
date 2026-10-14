@@ -1,5 +1,5 @@
-import {validateCozyCheckpoint} from '../src/domain/CozyCheckpoint';
-import {isLeaderboardEntry,normalizePlayerName,playerNameError} from '../src/domain/Leaderboard';
+import {validateCozyCheckpoint} from '../src/domain/CozyCheckpoint.js';
+import {isLeaderboardEntry,normalizePlayerName,playerNameError} from '../src/domain/Leaderboard.js';
 
 declare const process:{env:Record<string,string|undefined>};
 export interface ApiRequest {method?:string;headers:Record<string,string|string[]|undefined>;body?:unknown}

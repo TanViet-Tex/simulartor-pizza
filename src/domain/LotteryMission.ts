@@ -1,5 +1,5 @@
-import {LOTTERY_MISSION,type LotteryCount} from '../config/lotteryMission';
-import {campaignEventRoll,campaignEventSeed,validCampaignEventSeed} from './CampaignEvents';
+import {LOTTERY_MISSION,type LotteryCount} from '../config/lotteryMission.js';
+import {campaignEventRoll,campaignEventSeed,validCampaignEventSeed} from './CampaignEvents.js';
 export type LotteryDecision=Readonly<{day:number;count:0|LotteryCount;cost:number;prize:number}>;
 /** One invitation per campaign; purchased tickets all win as specified by the user. */
 export function lotteryMissionDay(seed:number):number {

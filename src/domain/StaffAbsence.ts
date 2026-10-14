@@ -1,4 +1,4 @@
-import {campaignEventRoll,campaignEventSeed,validCampaignEventSeed} from './CampaignEvents';
+import {campaignEventRoll,campaignEventSeed,validCampaignEventSeed} from './CampaignEvents.js';
 
 /** Each full 5–7 working-day block is followed by one day unavailable; reload never rerolls. */
 export function prepStaffAbsent(seed:number,hiredDay:number,day:number):boolean {

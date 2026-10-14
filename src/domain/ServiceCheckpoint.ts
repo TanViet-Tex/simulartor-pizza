@@ -1,5 +1,5 @@
-import {ADVERTISING} from '../config/advertising';
-import {validateLotteryDecision,type LotteryDecision} from './LotteryMission';
+import {ADVERTISING} from '../config/advertising.js';
+import {validateLotteryDecision,type LotteryDecision} from './LotteryMission.js';
 
 export type ServiceCheckpoint={advertisingDays:number[];lottery:LotteryDecision|null;lotteryPrizeClaimed:boolean};
 export function emptyServices():ServiceCheckpoint{return {advertisingDays:[],lottery:null,lotteryPrizeClaimed:false};}

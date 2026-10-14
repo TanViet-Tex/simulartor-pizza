@@ -1,4 +1,4 @@
-import {DRINK_CATALOG,drinkDefinition,type DrinkId} from '../config/drinkCatalog';
+import {DRINK_CATALOG,drinkDefinition,type DrinkId} from '../config/drinkCatalog.js';
 
 export type DrinkInventory=Record<DrinkId,number>;
 export const emptyDrinkInventory=():DrinkInventory=>({water:0,cola:0,orange:0});

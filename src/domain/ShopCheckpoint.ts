@@ -1,5 +1,5 @@
-import {shopItem} from '../config/shopCatalog';
-import type {ShopItemId} from './ShopEffects';
+import {shopItem} from '../config/shopCatalog.js';
+import type {ShopItemId} from './ShopEffects.js';
 export type ShopAcquisition={id:ShopItemId;actualPrice:number;placedSlot:ShopItemId|null};
 export type ShopCheckpoint={acquired:ShopAcquisition[];spent:number;pendingSpent:number};
 export type UpgradeReceipt={kind:'oven'|'queue';level:number;actualPrice:number};

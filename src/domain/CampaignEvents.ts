@@ -1,4 +1,4 @@
-import {CAMPAIGN_EVENT_A,MAX_EVENT_SEED} from '../config/campaignEvents';
+import {CAMPAIGN_EVENT_A,MAX_EVENT_SEED} from '../config/campaignEvents.js';
 
 export type CampaignLossEvent={id:'A';day:number;loss:200};
 export type CampaignEventRoll=(seed:number,day:number)=>number;

@@ -1,4 +1,4 @@
-import {validateCozySchedule,type CozySchedule,type ScheduleSlot} from './cozySchedule';
+import {validateCozySchedule,type CozySchedule,type ScheduleSlot} from './cozySchedule.js';
 
 /** Provisional playtest values, independent of future hiring and wages. */
 export const DELIVERY_RULES=Object.freeze({unlockDay:5,deadline:90,fee:5,waitSeconds:10,travelSeconds:0,rainWaitSeconds:15,rainTravelSeconds:0,returnSeconds:20,rainReturnSeconds:30});

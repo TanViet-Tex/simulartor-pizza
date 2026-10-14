@@ -1,4 +1,4 @@
-import {INGREDIENT_CATALOG} from './ingredientCatalog';
+import {INGREDIENT_CATALOG} from './ingredientCatalog.js';
 /** Provisional new ingredient prices. Existing five prices remain in demo.ts. */
 export const EXTRA_INGREDIENTS = INGREDIENT_CATALOG.slice(5);
 export const EXPRESS_PRICE_MULTIPLIER = 1.6;

@@ -1,4 +1,4 @@
-import {STAFF_ROLES,STAFF_RULES,type StaffRole} from '../config/staffCatalog';
+import {STAFF_ROLES,STAFF_RULES,type StaffRole} from '../config/staffCatalog.js';
 export type StaffAcquisition={role:StaffRole;hiredDay:number;actualPrice:number};
 export type StaffTerm={role:StaffRole;startDay:number;actualPrice:number};
 export type StaffContracts={version:2;fromDay:number;terms:StaffTerm[];declined:StaffRole[]};

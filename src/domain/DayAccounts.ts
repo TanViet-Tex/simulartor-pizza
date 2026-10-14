@@ -1,4 +1,4 @@
-import type {CozyInventory} from './CozyStock';
+import type {CozyInventory} from './CozyStock.js';
 
 export interface DayAccountsInput {
   startingCash:number;openingInventoryValue:number;sales:number;purchases:number;

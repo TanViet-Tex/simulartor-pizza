@@ -1,4 +1,4 @@
-import {datedIngredientPrice,ingredientName,recipeIngredients,type StockIngredient,type StockRecipe} from './CozyStock';
+import {datedIngredientPrice,ingredientName,recipeIngredients,type StockIngredient,type StockRecipe} from './CozyStock.js';
 export type CozyViability={viable:boolean;cause:'rent'|'ingredients'|null;missing:number;recipe:StockRecipe|null;ingredientCost:number;message:string};
 /** Rent and a first recipe are independent thresholds, as required by the demo. */
 export function cozyViability(cash:number,day:number,recipes:readonly StockRecipe[],available:(id:StockIngredient)=>number,price:(id:StockIngredient)=>number=id=>datedIngredientPrice(id,day)):CozyViability {

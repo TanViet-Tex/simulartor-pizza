@@ -1,6 +1,6 @@
 {
   "extends": "./tsconfig.json",
-  "compilerOptions": {"types": [], "noEmit": true},
+  "compilerOptions": {"types": [], "noEmit": true, "module": "NodeNext", "moduleResolution": "NodeNext"},
   "include": ["api/leaderboard.ts"],
   "exclude": ["node_modules"]
 }

@@ -1,5 +1,5 @@
-import type {RecipeId} from './recipeCatalog';
-import type {CustomerKind} from './ordinaryCustomers';
+import type {RecipeId} from './recipeCatalog.js';
+import type {CustomerKind} from './ordinaryCustomers.js';
 
 export type ScheduleRecipe=RecipeId;
 export type ScheduleEligibility=Readonly<{regularDay1Stars:number|null;regularLatestStars:number|null;helpSucceeded:boolean;referral:boolean;helpOfferEligible?:boolean;queueCapacity?:4|5|6;customerSeed?:number|string}>;

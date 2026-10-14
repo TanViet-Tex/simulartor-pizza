@@ -1,4 +1,4 @@
-import {SHOP_ITEM_EFFECTS,type ShopItemId} from '../domain/ShopEffects';
+import {SHOP_ITEM_EFFECTS,type ShopItemId} from '../domain/ShopEffects.js';
 type Crop=readonly [number,number,number,number];
 const definition=(id:ShopItemId,name:string,group:'decoration'|'amenities',price:number|null,crop:Crop)=>Object.freeze({id,name,group,price,slot:id,blockedReason:null,available:price!==null,effect:SHOP_ITEM_EFFECTS[id],artKey:`reference-shop-${group}`,crop});
 export const SHOP_CATALOG=Object.freeze([

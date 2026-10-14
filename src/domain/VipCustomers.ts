@@ -1,5 +1,5 @@
-import {VIP_RULES} from '../config/vipCustomers';
-import {campaignEventRoll,campaignEventSeed,validCampaignEventSeed} from './CampaignEvents';
+import {VIP_RULES} from '../config/vipCustomers.js';
+import {campaignEventRoll,campaignEventSeed,validCampaignEventSeed} from './CampaignEvents.js';
 
 export type VipRoll=(seed:number,day:number,arrivalId:string)=>number;
 export type VipReceipt={correct:boolean;quality:'good'|'raw'|'burnt';onTime:boolean;coins:number;reputation:number};
