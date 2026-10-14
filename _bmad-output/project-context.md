@@ -614,3 +614,7 @@ Quán has seven sections; the original six cards retain their geometry and only 
 ### Busy days and VIP presentation — 2026-10-14
 
 Rush/festival shifts show a static flame beside HH:mm; no clock reflow. Rewarded VIP and special-kind VIP omit selection/patience circles while retaining original portraits/frames. Their selected information deadline keeps updating even during prep-absence/customer-status notices. Ordinary rings/deadlines/gameplay remain intact. Build,14unit and2focusedChromium360x640 E2E passed. See implementation-artifacts/spec-event-flame-vip-avatar.md.
+
+### Tiếng thanh toán — chỉnh tiếp2026-10-14
+
+Hệ số payment trong PlayAudio là0.294×effectsVolume, giảm thêm30% từ0.42 theo yêu cầu mới. Native/WebAudio dùng cùng mức; music/oven/arrival và mute/voice giữ nguyên. Xem implementation-artifacts/note-payment-volume-minus30-2026-10-14.md.
