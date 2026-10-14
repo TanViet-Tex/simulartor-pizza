@@ -34,6 +34,7 @@ import { PlayLifecycle, type PauseLease } from '../runtime/PlayLifecycle';
 import { BrowserPlayLifecycle } from '../infrastructure/BrowserPlayLifecycle';
 import { PlayAudio } from '../presentation/PlayAudio';
 import {drawDrinkKitchenCells} from '../presentation/DrinkKitchenCells';
+import {drawWorkbenchDrink,selectWorkbenchDrink} from '../presentation/WorkbenchDrink';
 import {CashFeedback} from '../presentation/CashFeedback';
 import {ManagementBackground,preloadManagementBackground} from '../presentation/ManagementBackground';
 import {HUB_WALL_LAYOUT,HUB_SHELL_LAYOUT,SHOP_SCREEN_LAYOUT,hubWallPoint,hubWallRect} from '../presentation/HubWallLayout';
@@ -215,6 +216,8 @@ export class CozyScene extends Phaser.Scene {
     registerSpecialCustomerFrames(this);
     this.runtime.setSpecialPresentation(true);
     this.events.once('shutdown',()=>this.runtime.setSpecialPresentation(false));
+    const clearWorkbenchDrink=()=>{this.game.canvas.dataset.workbenchDrink='null';};
+    this.events.once('shutdown',clearWorkbenchDrink);this.events.once('destroy',clearWorkbenchDrink);
     this.specialLastFrame=performance.now();
     const unsubscribeSpecialTime=this.runtime.subscribeTimeBoundary(phase=>{if(phase==='before')this.reconcileSpecialPresentation();else this.specialLastFrame=performance.now();});
     this.events.once('shutdown',()=>{unsubscribeSpecialTime();this.specialLastFrame=undefined;});
@@ -279,7 +282,7 @@ export class CozyScene extends Phaser.Scene {
     const s=this.runtime.state;
     this.frameTickets=this.runtime.tickets;this.frameExpress=this.runtime.expressOrders;
     const board=this.runtime.workbenchState;
-    const sig=[this.runtime.productionOwnerId,board?.stage,board?.ingredients.join(','),board?.finishingSauces.join(','),s.stage,s.ingredients.join(','),s.finishingSauces.join(','),s.extracted,!this.runtime.productionActive&&s.ovenSeconds>=this.runtime.bakeTiming.perfectStart,this.runtime.ovenState?.stage,this.runtime.ovenOwner,this.frameExpress.map(o=>o.id).join(','),this.frameTickets.map(t=>`${t.id}:${t.packed}:${t.riderState}:${t.stage}`).join(','),this.runtime.selectedTicketId,this.runtime.tutorialActive,this.runtime.tutorialProgress?.index,this.runtime.tutorialProgress?.status,this.runtime.pauseRevision,this.runtime.shopRevision,this.runtime.shiftClock.phase,this.runtime.deliveryStatus.phase].join('|');
+    const sig=[this.runtime.productionOwnerId,board?.stage,board?.ingredients.join(','),board?.finishingSauces.join(','),s.stage,s.ingredients.join(','),s.finishingSauces.join(','),s.extracted,!this.runtime.productionActive&&s.ovenSeconds>=this.runtime.bakeTiming.perfectStart,this.runtime.ovenState?.stage,this.runtime.ovenOwner,this.frameExpress.map(o=>o.id).join(','),this.frameTickets.map(t=>`${t.id}:${t.packed}:${t.riderState}:${t.stage}:${t.drink??''}:${t.drinkAttached}`).join(','),this.runtime.selectedTicketId,this.runtime.tutorialActive,this.runtime.tutorialProgress?.index,this.runtime.tutorialProgress?.status,this.runtime.pauseRevision,this.runtime.shopRevision,this.runtime.shiftClock.phase,this.runtime.deliveryStatus.phase].join('|');
     const presentationSig=`${sig}|${this.runtime.specialWelcome?.ticketId??''}|${this.runtime.specialBubble?.id??''}`;
     if(this.dirty||presentationSig!==this.signature){this.signature=presentationSig;this.draw();}
     if(this.hubNavigationRefresh){
@@ -505,6 +508,7 @@ export class CozyScene extends Phaser.Scene {
       this.art.pizza(120,343,51,board.ingredients,false,{seconds:board.ovenSeconds,timing:this.runtime.bakeTiming,finishing:board.finishingSauces});
 
     }
+    drawWorkbenchDrink(this,this.layer,this.runtime.productionActive?selectWorkbenchDrink(this.runtime.tickets,this.runtime.productionOwnerId,this.runtime.selectedTicketId):null);
     if(this.runtime.needsRemake)this.hit('remake',18,298,204,80,true,()=>this.runtime.remake());
     else this.hit('dough-board',18,298,204,80,this.runtime.canUseIngredient('dough'),()=>this.useIngredient('dough'));
     this.ovens();this.drinkCells();this.sauceShelf();
@@ -899,6 +903,7 @@ export class CozyScene extends Phaser.Scene {
     const close=SUMMARY_MODAL_LAYOUT.reviews.close;this.hit('summary-reviews-close',close.x,close.y,close.width,close.height,true,()=>this.closeReviews());
   }
   private dayHub():void{
+    this.game.canvas.dataset.workbenchDrink='null';
     const summary=this.runtime.daySummary,initial=this.preparationHub;
     if(!summary&&!initial)return;
     this.managementBackground?.show();

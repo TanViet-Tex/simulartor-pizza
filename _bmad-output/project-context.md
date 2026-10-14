@@ -556,3 +556,7 @@ Build và 1 E2E Chromium360×640 đạt; ảnh Kho xác nhận thanh gợi ý đ
 Thay popup nhắc mua bằng viền đỏ tĩnh quanh khu vực nguyên liệu của Chợ khi chưa có food mua cho preparationDay. Bấm Mở quán lần đầu vẫn chuyển Chợ; không tạo hubDetail/pause lease/lớp che, không cần bấm Đã hiểu. Mua food cho đúng ngày thì viền tắt; nước không thay food. Giữ hành vi mở tiếp dùng kho cũ, geometry và các thông báo khác. Thay yêu cầu popup trong spec-new-day-ingredient-reminder.md.
 
 Build/typecheck và 2 E2E Chromium360×640 đạt: không popup/pause, ngày/tiền chưa đổi, mua tắt viền và kho cũ vẫn mở được; ngày sau nhắc lại bằng viền.
+
+### Nước trên thớt sau khi chọn — yêu cầu 2026-10-14
+
+Bấm đúng nước khách gọi hiện chai có nhãn ở bên phải thớt (176/304,44×72), giữ cạnh pizza/hộp và mất khi giao hoặc đơn rời hàng. Hình theo đơn sở hữu bàn; chọn xem khách khác không đổi sang chai của họ. Trước khi có bánh dùng đơn đang chọn. Không thêm vùng bấm, không tiêu kho/lấy tiền khi vẽ, giữ bố cục bếp và luật mở nước ngày4. Build/typecheck,11unit và6E2E Chromium360×640 đạt; đã xem ảnh chai nước cạnh hộp pizza. Ba review không có lỗi code; đã bổ sung E2E đổi khách theo góp ý. Xem implementation-artifacts/spec-drink-on-workbench.md.
