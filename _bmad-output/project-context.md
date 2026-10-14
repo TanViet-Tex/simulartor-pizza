@@ -544,3 +544,9 @@ Build/typecheck và 1 E2E Chromium360×640 màn quản lý/Menu đạt, gồm đ
 Hai nút Mở quán dùng openPreparedDay chung: chưa có lô nguyên liệu mua cho preparationDay thì chuyển Chợ/Tất cả, reset cuộn và nhắc qua hubDetail/pause lease trước khi chạy ca. Một lần mỗi ngày trong phiên màn chơi; đóng nhắc rồi có thể mua hoặc dùng kho cũ để mở, không bắt mua lại/ngăn mở mãi nếu thiếu tiền. Nước/đồ nâng cấp không tính là mua food; mua cho ngày khác không bỏ qua nhắc. Save/reload giữ nguồn lô thật, không thêm schema hoặc sửa runtime openShop/openNextDay. Xem implementation-artifacts/spec-new-day-ingredient-reminder.md.
 
 Build/typecheck, 7 unit và 5 case E2E tập trung đạt (4 lời nhắc +1 Tiếp tục/lợi nhuận). Luật cần tiền thuê/cạn vốn vẫn giữ nguyên; lời nhắc không ép mua thêm nếu kho cũ còn dùng được.
+
+### Bỏ thanh gợi ý trong Kho — 2026-10-14
+
+Bỏ riêng thanh cam “Gợi ý mua theo menu & số phần” và vùng bấm stock-suggestions theo ảnh người dùng. Giữ khung Kho, danh sách/lọc/cuộn, dòng ưu tiên lô gần hết hạn và nút Đi chợ mua thêm; không reflow bố cục. Các test UI dùng nút gợi ý cũ chuyển sang kiểm tra nút đã bỏ; không đổi tính toán dự báo ở Chợ.
+
+Build và 1 E2E Chromium360×640 đạt; ảnh Kho xác nhận thanh gợi ý đã biến mất, tiền và danh sách công thức không đổi.

@@ -181,7 +181,7 @@ test('all five hub tabs share the reference header and retain cash and stock',as
   await tap(page,'pause');await expect(canvas).toHaveAttribute('data-paused',/user/);await tap(page,'resume');await expect(canvas).toHaveAttribute('data-summary-tab','missions');
 });
 
-test('stock filters, lot detail, row drag and menu plan are read-only',async({page},info)=>{
+test('stock filters, lot detail and row drag remain read-only without the removed suggestion entry',async({page},info)=>{
   await fixture(page);await buyTwo(page,'dough');await buyTwo(page,'cheese');await buyTwo(page,'sauce','sauce');await tap(page,'summary-tab-stock');
   const canvas=page.locator('canvas'),cash=await canvas.getAttribute('data-cash'),stock=await data(page,'stock');
   expect(await data(page,'stock-rows')).toHaveLength(19);await canvas.screenshot({path:info.outputPath('stock-reference.png')});
@@ -190,9 +190,8 @@ test('stock filters, lot detail, row drag and menu plan are read-only',async({pa
   await tap(page,'stock-filter-all');const b=(await canvas.boundingBox())!,region=await data(page,'stock-scroll');
   await page.mouse.move(b.x+130*b.width/360,b.y+400*b.height/640);await page.mouse.down();await page.mouse.move(b.x+130*b.width/360,b.y+280*b.height/640,{steps:8});await page.mouse.up();await expect.poll(async()=>(await data(page,'stock-scroll')).offset).toBeGreaterThan(40);expect(await data(page,'hub-detail')).toBeNull();
   await page.mouse.move(b.x+130*b.width/360,b.y+350*b.height/640);await page.mouse.wheel(0,10000);await expect.poll(async()=>(await data(page,'stock-scroll')).offset).toBe(region.max);await tap(page,'stock-item-pineapple');expect((await data(page,'hub-detail')).title).toBe('Dứa');await tap(page,'hub-detail-close');
-  await tap(page,'stock-suggestions');await tap(page,'stock-plan-plus-cheese');await tap(page,'stock-plan-plus-cheese');await tap(page,'stock-plan-plus-mushroom');
-  expect((await data(page,'stock-forecast')).find((r:{id:string})=>r.id==='dough')).toMatchObject({need:3,available:2,missing:1});expect((await data(page,'stock-forecast')).some((r:{id:string})=>r.id==='shrimp')).toBe(false);await canvas.screenshot({path:info.outputPath('stock-planner.png')});
-  await tap(page,'stock-plan-close');await expect(canvas).toHaveAttribute('data-cash',cash!);expect(await data(page,'stock')).toEqual(stock);await tap(page,'summary-stock-market');await expect(canvas).toHaveAttribute('data-summary-tab','market');
+  expect((await data(page,'controls')).some((c:Control)=>c.id==='stock-suggestions')).toBe(false);await canvas.screenshot({path:info.outputPath('stock-without-suggestion.png')});
+  await expect(canvas).toHaveAttribute('data-cash',cash!);expect(await data(page,'stock')).toEqual(stock);await tap(page,'summary-stock-market');await expect(canvas).toHaveAttribute('data-summary-tab','market');
 });
 
 test('shop has six categories, real menu editing and confirmed atomic upgrades',async({page},info)=>{

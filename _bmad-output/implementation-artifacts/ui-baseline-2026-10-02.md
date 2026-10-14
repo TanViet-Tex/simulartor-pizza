@@ -7,6 +7,10 @@ date: '2026-10-02'
 
 # Giao diện hiện tại là mốc cho các lần triển khai sau
 
+### Bỏ gợi ý menu/số phần trong Kho — 2026-10-14
+
+Xóa thanh cam “Gợi ý mua theo menu & số phần” và vùng chạm tương ứng trong Kho. Giữ danh sách, khung, lọc, cuộn, dòng ưu tiên hạn dùng và nút Đi chợ mua thêm. Các phần gợi ý ở Chợ và lời nhắc mở ngày mới giữ nguyên.
+
 ### Nhắc mua trước khi mở ngày — yêu cầu 2026-10-14
 
 Nút Mở quán chuyển Chợ và hiện popup nhắc khi chưa mua nguyên liệu cho ngày chuẩn bị. Dùng popup hubDetail/Đã hiểu hiện có; đóng nhắc rồi mua hoặc tiếp tục dùng kho cũ. Giữ nguyên các tab, nút, khung và geometry; ca/ngày chưa chạy trong popup. Xem [spec](spec-new-day-ingredient-reminder.md).

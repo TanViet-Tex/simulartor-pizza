@@ -38,7 +38,6 @@ export class ReferenceStock{
     const rows=filtered.map((row,i)=>{const y=viewport.y+i*rowHeight-offset;return {...row,y,visible:y>=viewport.y&&y+rowHeight<=viewport.y+viewport.height};});
     const listKey=key+'-list';
     if(max)panel(342,viewport.y,3,viewport.height,colors.track,colors.track,1);
-    managementCard(ctx,17,541,321,24,'#ffe6c4','#e7ab67',8);drawManagementDetail(this.scene,ctx,'basket',22,542,26,22);text(52,548,'Gợi ý mua theo menu & số phần',12,'#9c421e',false,264);text(324,545,'›',20,'#9c421e',true);this.hit('stock-suggestions',17,539,321,31,true,input.suggestions);
     managementCard(ctx,17,567,321,11,'#e8eed4','#c2ce9e',4);drawManagementDetail(this.scene,ctx,'leaf',26,566,12);text(186,568,'Ưu tiên lô gần hết hạn · Không dùng lô hết hạn',9,'#355b2d',true,293);
     ui.footer({id:'summary-stock-market',title:'Đi chợ mua thêm →',enabled:true,action:input.market});
     texture.refresh();this.layer.add(this.scene.add.image(0,0,key).setOrigin(0).setDisplaySize(360,640));
