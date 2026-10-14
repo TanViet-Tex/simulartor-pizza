@@ -526,3 +526,9 @@ Build/typecheck và 1 E2E Chromium 360×640 kiểm tra cả năm tab, chuyển m
 Yêu cầu mới “cả ô” thay giới hạn chỉ tô vùng tên: toàn ô chọn có nền vàng nhạt/viền vàng nhẹ, icon gốc không đổi màu/độ sáng. Timeline chọn 150ms, nhấn về96% ở60ms rồi trở lại100% tại120ms; active giữ nền, không tự lặp. Giảm chuyển động chốt ngay cả khi đang chạy. HubNavigationMotion giữ trạng thái qua redraw; chỉ refresh navbar, không vẽ lại toàn bộ màn mỗi frame và không dùng flash phủ icon cho tab. Geometry/vùng chạm22/80/316×49 giữ nguyên. Xem implementation-artifacts/spec-hub-tab-animation.md.
 
 Build/typecheck, 9 unit và 1 E2E Chromium360×640 kiểm tra cả năm tab đạt. Icon dùng cache trên lưới raster2× với mask bỏ nền kem nối mép, giữ chi tiết icon; không để crop vuông kem đè nền vàng.
+
+### Đánh giá tổng hợp và lợi nhuận sau Tiếp tục — 2026-10-13
+
+Save đã lưu reports từng ngày; lỗi hiển thị cũ chỉ đọc daySummary=null khi restore sang chuẩn bị. reviewHistory tổng reports và review ca chưa chốt, loại trùng bằng closedDays; điểm sao theo từng lượt. latestDayReport mở rộng báo cáo archive cuối. Khách nói gì/popup dùng history; lợi nhuận/thu chi/thống kê/tiến độ chuẩn bị dùng báo cáo cuối, ghi ngày nguồn; header/footer/ngày chuẩn bị/tiền/kho vẫn đọc runtime thật. Không sửa schema, cộng lại tiền hoặc đổi luật lưu tại mốc chốt ca. Xem implementation-artifacts/spec-persistent-reviews-and-profit.md.
+
+Build/typecheck, 30 unit tập trung và 1 E2E Chromium360×640 đạt: Tiếp tục thật/reload hai lần, tổng review/filter/lợi nhuận và thu chi gần nhất còn giữ; mở tiếp đúng ngày kế tiếp.

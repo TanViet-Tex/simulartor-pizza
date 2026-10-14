@@ -101,11 +101,11 @@ export class ReferenceSummary {
     while(low<high){const mid=Math.ceil((low+high)/2);text.setText(value.slice(0,mid)+'…');if(text.width<=width)low=mid;else high=mid-1;}
     text.setText(value.slice(0,low)+'…');
   }
-  summary(input:{shell?:boolean;report:CozyDaySummary|null;day:number;cash:number;xp:number;previousXp:number;stockUnits:number;ending:boolean;paused:boolean;footer:{id:string;title:string;enabled:boolean;action:()=>void};tab:(id:'summary'|'market'|'stock'|'shop'|'missions')=>void;pause:()=>void;finance:()=>void;reviews:()=>void}):void{
+  summary(input:{shell?:boolean;report:CozyDaySummary|null;reviewHistory?:{reviews:readonly CozyReview[];rating:number|null;total:number};day:number;cash:number;xp:number;previousXp:number;stockUnits:number;ending:boolean;paused:boolean;footer:{id:string;title:string;enabled:boolean;action:()=>void};tab:(id:'summary'|'market'|'stock'|'shop'|'missions')=>void;pause:()=>void;finance:()=>void;reviews:()=>void}):void{
     const {report:r}=input;
     if(input.shell!==false)drawHubShell(this.scene,this.layer,this.hit,{title:r?`Kết thúc ngày ${r.day}`:'Chuẩn bị mở tiệm',subtitle:r?`Ngày ${input.day} · Cấp ${input.xp>=150?3:input.xp>=60?2:1}`:`Ngày ${input.day} chưa bắt đầu`,cash:input.cash,pause:input.pause,active:'summary',tab:input.tab});
     this.frame('reference-summary',{x:20,y:338,width:902,height:369},{x:8,y:130,width:344,height:139});
-    this.text(21,141,'Lợi nhuận hôm nay',19);
+    this.text(21,141,r&&r.day<input.day?`Lợi nhuận ngày ${r.day}`:'Lợi nhuận hôm nay',19);
     this.text(64,164,r?`${r.profit>0?'+':''}${r.profit} xu`:'Chưa mở ca',28,r&&r.profit<0?'#af4630':green,220);
     this.icon({x:571,y:352,width:270,height:154},254,141,82,49);
     this.text(292,189,'Chi tiết ›',11,wood,91,true);this.hit('summary-finance-open',247,174,92,35,!!r,input.finance);
@@ -118,14 +118,16 @@ export class ReferenceSummary {
     const served=[['đơn hoàn thành',r?.delivered??0,{x:56,y:792,width:88,height:99}],['pizza đã bán',r?.salesByRecipe?.reduce((n,row)=>n+row.quantity,0)??r?.delivered??0,{x:359,y:792,width:93,height:99}],['khách bỏ đi',r?.abandoned??0,{x:649,y:793,width:85,height:96}]] as const;
     served.forEach(([title,value,source],i)=>{const x=21+i*109;this.icon(source,x,308,26,31);this.text(x+53,303,String(value),22,i===0?green:'#b3482c',0,true);this.text(x+66,331,title,10,wood,87,true);});
     this.frame('reference-summary',{x:20,y:927,width:902,height:255},{x:8,y:356,width:344,height:97});
-    this.text(21,365,'Khách nói gì?',17);this.text(297,367,r?.rating==null?'☆ Chưa có':`★ ${r.rating.toFixed(1)} / 5`,11,green,100,true);
-    const recent=r?.reviews.slice(-2).reverse()??[];
+    const history=input.reviewHistory??{reviews:r?.reviews??[],rating:r?.rating??null,total:r?.reviews.length??0};
+    this.text(21,365,'Khách nói gì?',17);this.text(297,367,history.rating==null?'☆ Chưa có':`★ ${history.rating.toFixed(1)} / 5`,11,green,100,true);
+    const recent=history.reviews.slice(-2).reverse();
     if(!recent.length)this.text(24,394,'Chưa có đánh giá',13,wood);
     recent.forEach((review,i)=>this.reviewRow(review,21,390+i*27,315,true));
     this.text(298,437,'Xem tất cả ›',10,wood,95,true);this.hit('summary-reviews-open',252,422,93,28,true,input.reviews);
     this.scene.game.canvas.dataset.summaryRecentReviews=JSON.stringify(recent);
+    this.scene.game.canvas.dataset.summaryReviewHistory=JSON.stringify({total:history.total,rating:history.rating});
     this.frame('reference-summary',{x:20,y:1195,width:902,height:233},{x:8,y:459,width:344,height:86});
-    this.text(21,468,'Tiến độ hôm nay',16);
+    this.text(21,468,r&&r.day<input.day?`Tiến độ ngày ${r.day}`:'Tiến độ hôm nay',16);
     const xp=r?.progression.xp??input.xp,level=xp>=150?3:xp>=60?2:1,next=level===1?60:150,base=level===1?0:level===2?60:150;
     this.icon({x:54,y:1250,width:88,height:83},20,491,31,30);this.text(58,497,`Cấp ${level}`,12);this.text(124,491,`+${Math.max(0,xp-input.previousXp)} XP`,14,green);
     const bar=this.scene.add.graphics().fillStyle(0xd9c7a8).fillRoundedRect(124,510,166,8,4).fillStyle(0x608341).fillRoundedRect(124,510,Math.max(5,166*(level===3?1:Math.min(1,(xp-base)/(next-base)))),8,4);this.layer.add(bar);
@@ -138,12 +140,13 @@ export class ReferenceSummary {
     const footerImage=this.scene.add.image(0,590,footerKey).setOrigin(0).setDisplaySize(360,50);this.layer.add(footerImage);footerImage.once('destroy',()=>this.scene.textures.remove(footerKey));
     this.scene.game.canvas.dataset.referenceSummary=JSON.stringify({profit:r?.profit??null,stockUnits:input.stockUnits,xp,day:r?.day??input.day});
   }
-  modalFrame(kind:'reviews'|'finance',day:number):Rect{
+  modalFrame(kind:'reviews'|'finance',day:number,title?:string):Rect{
     const source=kind==='reviews'?{x:92,y:303,width:760,height:1094}:{x:92,y:167,width:760,height:1438};
     const layout=SUMMARY_MODAL_LAYOUT[kind],top=layout.bounds.y;
     this.frame(`reference-${kind}`,source,layout.bounds);
     this.crop(`reference-${kind}`,kind==='reviews'?{x:138,y:328,width:162,height:104}:{x:142,y:191,width:151,height:96},{x:43,y:top+12,width:35,height:24});
-    this.text(180,top+19,`${kind==='reviews'?'Đánh giá':'Thu chi'} ngày ${day}`,23,ink,202,true);
+    this.text(180,top+19,title??`${kind==='reviews'?'Đánh giá':'Thu chi'} ngày ${day}`,23,ink,202,true);
+    this.scene.game.canvas.dataset.summaryModalTitle=title??`${kind==='reviews'?'Đánh giá':'Thu chi'} ngày ${day}`;
     // Original native × roundel is decorative; the hit target belongs to the scene.
     this.crop(`reference-${kind}`,kind==='reviews'?{x:775,y:322,width:61,height:64}:{x:774,y:186,width:62,height:64},{x:292,y:top+7,width:25,height:26});
     this.scene.game.canvas.dataset.summaryModalLayout=JSON.stringify({kind,...layout});
@@ -162,8 +165,8 @@ export class ReferenceSummary {
     const icons=JSON.parse(this.scene.game.canvas.dataset.summaryModalIcons||'[]');icons.push({key:'reference-finance',sourceKey:'reference-finance',id,x,y,width:width*fit,height:height*fit});
     this.scene.game.canvas.dataset.summaryModalIcons=JSON.stringify(icons);return image;
   }
-  reviewModal(reviews:readonly CozyReview[],day:number,filter:'all'|'5'|'4'|'low',setFilter:(filter:'all'|'5'|'4'|'low')=>void):void{
-    const viewport=this.modalFrame('reviews',day),rating=reviews.length?reviews.reduce((n,r)=>n+r.stars,0)/reviews.length:null;
+  reviewModal(reviews:readonly CozyReview[],day:number,filter:'all'|'5'|'4'|'low',setFilter:(filter:'all'|'5'|'4'|'low')=>void,cumulative=false):void{
+    const viewport=this.modalFrame('reviews',day,cumulative?'Đánh giá tổng hợp':undefined),rating=reviews.length?reviews.reduce((n,r)=>n+r.stars,0)/reviews.length:null;
     const pill=this.scene.add.graphics().fillStyle(0xe9ebcf).fillRoundedRect(43,154,266,30,15).lineStyle(1,0xc4cea7).strokeRoundedRect(43,154,266,30,15);this.layer.add(pill);
     if(rating!==null){pill.fillStyle(0x608341).fillRoundedRect(47,158,117,23,12);this.text(105,161,`★ ${rating.toFixed(1)} / 5`,16,'#fff0d5',112,true);}
     else this.text(48,162,'Chưa có đánh giá',12,wood,128);
@@ -171,6 +174,7 @@ export class ReferenceSummary {
     const filters=[['all','Tất cả'],['5','5 sao'],['4','4 sao'],['low','1–3 sao']] as const;
     filters.forEach(([id,title],i)=>{const x=43+i*67;const g=this.scene.add.graphics().fillStyle(id===filter?0xb85b37:0xf4dfbd).fillRoundedRect(x,191,64,25,10);this.layer.add(g);this.text(x+32,198,title,11,id===filter?'#fff0d5':ink,63,true);this.hit(`summary-review-filter-${id}`,x,188,64,28,true,()=>setFilter(id));});
     const filtered=reviews.filter(r=>filter==='all'||filter==='low'?filter==='all'||r.stars<=3:r.stars===Number(filter));
+    this.scene.game.canvas.dataset.summaryReviews=JSON.stringify({total:reviews.length,rating,filter,filtered:filtered.length,cumulative});
     const elements:{object:Phaser.GameObjects.GameObject;y:number}[]=[];let y=viewport.y;
     if(!filtered.length){this.text(51,viewport.y+25,reviews.length?'Không có đánh giá ở mức sao này.':'Chưa có đánh giá',14,wood,250);}
     for(const review of [...filtered].reverse()){

@@ -874,14 +874,14 @@ export class CozyScene extends Phaser.Scene {
     this.button('market-price-save',188,462,132,48,'Lưu giá',true,()=>this.closePrice(true));
   }
   private openStatement():void{
-    if(this.runtime.pauses.length||!this.runtime.daySummary)return;
+    if(this.runtime.pauses.length||!(this.runtime.daySummary??this.runtime.latestDayReport))return;
     this.statementOpen=true;this.statementLease=this.runtime.acquirePause('order');this.dirty=true;
   }
   private closeStatement():void{
     this.statementOpen=false;this.statementLease?.release();this.statementLease=undefined;this.dirty=true;
   }
   private statementDialog():void{
-    const summary=this.runtime.daySummary;if(!summary)return;
+    const summary=this.runtime.daySummary??this.runtime.latestDayReport;if(!summary)return;
     this.summaryModalVeil();this.referenceSummary().financeModal(summary);
     const close=SUMMARY_MODAL_LAYOUT.finance.close;this.hit('summary-statement-close',close.x,close.y,close.width,close.height,true,()=>this.closeStatement());
   }
@@ -893,8 +893,8 @@ export class CozyScene extends Phaser.Scene {
   private openReviews():void{if(this.runtime.pauses.length)return;this.reviewsOpen=true;this.reviewFilter='all';this.reviewsLease=this.runtime.acquirePause('order');this.dirty=true;}
   private closeReviews():void{this.reviewsOpen=false;this.reviewsLease?.release();this.reviewsLease=undefined;this.dirty=true;}
   private reviewsDialog():void{
-    this.summaryModalVeil();const summary=this.runtime.daySummary;
-    this.referenceSummary().reviewModal(summary?.reviews??[],summary?.day??this.runtime.day,this.reviewFilter,filter=>{this.reviewFilter=filter;this.dirty=true;});
+    this.summaryModalVeil();const history=this.runtime.reviewHistory;
+    this.referenceSummary().reviewModal(history.reviews,this.runtime.day,this.reviewFilter,filter=>{this.reviewFilter=filter;this.dirty=true;},true);
     const close=SUMMARY_MODAL_LAYOUT.reviews.close;this.hit('summary-reviews-close',close.x,close.y,close.width,close.height,true,()=>this.closeReviews());
   }
   private dayHub():void{
@@ -912,7 +912,7 @@ export class CozyScene extends Phaser.Scene {
         initial?{id:'summary-open-first-day',title:`Mở quán — Ngày ${this.runtime.day}`,enabled:this.runtime.canOpen,action:()=>{this.runtime.openShop();this.inspectedOrderId=null;}}:
         summary!.ending?{id:'summary-final-result',title:'Kết quả chiến dịch',enabled:!this.campaignSession||['ready','temporary'].includes(this.campaignSession.view.state),action:()=>this.openFinalResults()}:
         {id:'summary-open-next-day',title:`Mở quán — Ngày ${summary!.day+1}`,enabled:this.runtime.canOpenNextDay,action:()=>{this.runtime.openNextDay();this.inspectedOrderId=null;}};
-      const reports=this.runtime.completedReports,previous=summary?reports.find(r=>r.day===summary.day-1):undefined;
+      const reports=this.runtime.completedReports;
       const tab=(id:'summary'|'market'|'stock'|'shop'|'missions')=>{this.hubNavigationMotion.select(id,performance.now(),this.reducedMotion);if(id==='shop')this.setShopPage('home');this.summaryTab=id;this.stockDrag.active=false;this.marketDrag.active=false;this.dirty=true;};
       const shopTitles={home:'Quản lý quán',menu:'Menu & giá bán',decoration:'Trang trí',equipment:'Thiết bị',amenities:'Tiện nghi',expansion:'Mở rộng quán',staff:'Nhân viên'};
       const title=this.summaryTab==='summary'?(summary?`Kết thúc ngày ${summary.day}`:'Chuẩn bị mở cửa'):this.summaryTab==='market'?'Chợ nguyên liệu':this.summaryTab==='stock'?'Kho nguyên liệu':this.summaryTab==='shop'?shopTitles[this.shopPage]:'Nhiệm vụ';
@@ -933,7 +933,9 @@ export class CozyScene extends Phaser.Scene {
         new ReferenceMarket(this,this.hubLayer,(...args)=>this.hubHit(...args),render=>this.syncListHits(render)).draw({shell:false,access:id=>this.runtime.ingredientAccess(id),basketTotal:this.marketBasketTotal,reservePercent:this.runtime.marketForecast.reservePercent,suggest:()=>this.suggestMarket(),buyAll:()=>this.openMarketBasket(),unitPrice:id=>this.isMarketDrink(id)?drinkDefinition(id).purchasePrice:this.runtime.price(id),supplier:this.runtime.supplier,day:this.runtime.preparationDay,cash:this.runtime.state.cash,canBuy,readOnlyReason:summary?.ending?'Chặng bán hàng đã kết thúc · Chợ chỉ để xem':'Mua đang bị khóa · Hãy xử lý lưu tiến độ',canScroll:()=>this.runtime.pauses.length===0,filter:this.marketFilter,offset:this.marketOffset,drag:this.marketDrag,quantities:this.marketQuantities,available:id=>this.isMarketDrink(id)?this.runtime.drinkStock.find(drink=>drink.id===id)!.quantity:this.runtime.available(id),quantity:(id,delta)=>{if(this.isMarketDrink(id)||this.runtime.ingredientAccess(id).unlocked)this.marketQuantities[id]=Phaser.Math.Clamp((this.marketQuantities[id]??1)+delta,0,100);this.dirty=true;},buy:id=>this.buyMarketItem(id),editQuantity:id=>{if(!this.isMarketDrink(id))this.openMarketQuantity(id);},scroll:offset=>{this.marketOffset=offset;},setFilter:filter=>{this.marketFilter=filter;this.marketOffset=0;this.dirty=true;},tab:id=>{this.summaryTab=id;this.dirty=true;},pause:()=>this.hold('user'),price:()=>this.choosePrice(this.runtime.selectedRecipe),footer});
         return;
       }
-      this.referenceSummary(true).summary({shell:false,report:summary,day:this.runtime.day,cash:this.runtime.state.cash,xp:summary?.progression.xp??this.runtime.progression.xp,previousXp:summary?(previous?.progression.xp??0):this.runtime.progression.xp,stockUnits:this.runtime.stockLots.reduce((n,lot)=>n+lot.quantity,0),ending:!!summary?.ending,paused:this.runtime.pauses.length>0,footer,tab:id=>{this.summaryTab=id;this.dirty=true;},pause:()=>this.hold('user'),finance:()=>this.openStatement(),reviews:()=>this.openReviews()});
+      const displayReport=summary??this.runtime.latestDayReport;
+      const previousDisplay=displayReport?reports.find(report=>report.day===displayReport.day-1):undefined;
+      this.referenceSummary(true).summary({shell:false,report:displayReport,reviewHistory:this.runtime.reviewHistory,day:this.runtime.day,cash:this.runtime.state.cash,xp:displayReport?.progression.xp??this.runtime.progression.xp,previousXp:displayReport?(previousDisplay?.progression.xp??0):this.runtime.progression.xp,stockUnits:this.runtime.stockLots.reduce((n,lot)=>n+lot.quantity,0),ending:!!summary?.ending,paused:this.runtime.pauses.length>0,footer,tab:id=>{this.summaryTab=id;this.dirty=true;},pause:()=>this.hold('user'),finance:()=>this.openStatement(),reviews:()=>this.openReviews()});
       return;
     }
   }

@@ -253,6 +253,12 @@ export class CozyRuntime {
   /** Production session injects its gate once; callers cannot release it via pause tokens. */
   attachSaveGuard(guard:()=>boolean):void {if(this.guarded)throw new Error('Save guard already attached');this.guarded=true;this.saveGuard=guard;}
   get persistentMode(){return this.guarded;}
+  get reviewHistory(){
+    const reviews=this.reports.flatMap(report=>report.reviews);
+    if(!this.closedDays.has(this.currentDay))reviews.push(...this.reviews);
+    return {reviews:structuredClone(reviews),total:reviews.length,rating:reviews.length?reviews.reduce((sum,review)=>sum+review.stars,0)/reviews.length:null};
+  }
+  get latestDayReport(){const report=this.reports[this.reports.length-1];return report?expandCozyReport(report,this.progress.snapshot):null;}
   get completedReports(){const master=this.progress.snapshot;return this.reports.map(report=>{const copy=structuredClone(report);delete copy.progressionArchive;Object.defineProperty(copy,'progression',{enumerable:true,get:()=>reportProgression(report,master)});return copy;});}
   exportCheckpoint():CozyCheckpoint {
     if(!this.production||this.shiftOpen||this.tutorialActive&&!this.interactiveProgress||!['preparation','summary'].includes(this.phase))throw new Error('Not a day boundary');

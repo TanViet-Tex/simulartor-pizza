@@ -7,6 +7,10 @@ date: '2026-10-02'
 
 # Giao diện hiện tại là mốc cho các lần triển khai sau
 
+### Tổng đánh giá và báo cáo gần nhất sau Tiếp tục — 2026-10-13
+
+Khách nói gì và popup Đánh giá tổng hợp đọc review của tất cả ngày; giữ hai dòng gần nhất, điểm sao theo tổng lượt và các bộ lọc cũ. Chuẩn bị sau reload hiển thị lợi nhuận/thu chi/thống kê ngày đã chốt gần nhất, nhãn lợi nhuận/tiến độ ghi ngày nguồn. Header/ngày mở tiếp/tiền/kho vẫn là dữ liệu hiện tại. Giữ nguyên mọi khung, vị trí nút, số tab/thẻ/ô và artwork. Xem [spec](spec-persistent-reviews-and-profit.md).
+
 ### Animation toàn ô tab — chỉnh tiếp 2026-10-13
 
 Theo yêu cầu “cả ô”, nền vàng nhạt và viền vàng nhẹ phủ toàn bộ tab đang chọn, thay phạm vi chỉ vùng tên bên dưới. Icon được giữ màu và độ sáng gốc. Chuyển nền/viền 150ms, nhấn co quanh tâm 96% rồi trở lại trong tổng 120ms; vùng chạm và bố cục không đổi. Trạng thái chọn giữ nền, không lặp animation; giảm chuyển động chuyển ngay. Xem [spec](spec-hub-tab-animation.md).
