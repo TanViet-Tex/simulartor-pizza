@@ -580,3 +580,7 @@ Hai whitelist hit() hub/save cho phép nhóm leaderboard- đọc dữ liệu; tu
 Theo người dùng chê bảng hiện tại: body gộp1thẻ kem/nâu thay3khung rời; bỏtiêu đềlặp, cúp vector nhỏ vàTOP10, mỗirowthẻgọn43px, huyhiệuvàng/bạc/đồngtop3, dòngmìnhxanhnhạt vàdảihạngcánhân riêng. Chưa kết nối/loading/empty dùngcúpminhhọavàthôngbáogọn thayôtrắng. Chưa tảirank khôngbáonhầm chưa cóhạng; chỉ ready+selfnull mới dùngnhãnđó. Giữ5dòng/trang/data/rank/cash/day/actions/hit/footer/header/nav/animation, khôngfakeđối thủhoặcthêmanimation.
 
 Build/typecheck và4E2E Chromium360×640 tập trung đạt; ảnh ready/unconfigured/noport đãxem tại ui-baseline/leaderboard-polish-2026-10-14. MộtreviewUI sửanhãnrankchưa tải; cácbounds/chứcnănggiữnguyên. BackendSupabasevẫnchờcấuhình. Xem implementation-artifacts/spec-leaderboard-visual-polish.md.
+
+### Nút xếp hạng thu gọn — chỉnh tiếp 2026-10-14
+
+Theo yêu cầu người dùng: hai nút mũi tên32×24, Làm mới100×24, gom giữa tại x84/130/244,y543 thay hàng nút trải hết bảng. Vùng chạm riêng56/100/56×48 ởx72/130/232,y531 và mở rộng theo min48CSS hiện có, không chồng nhau. Giữ chức năng/trạng thái, bảng và footer. 1E2E Chromium360×640 chuyển trang/Làm mới/rời màn đạt; ảnh compact-buttons.png đã xem.

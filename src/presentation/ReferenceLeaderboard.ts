@@ -54,8 +54,8 @@ export class ReferenceLeaderboard {
     ui.text(59,492,ownTitle,12,c.ink,false,211);
     ui.text(59,510,self?`${self.cash.toLocaleString('vi-VN')} xu · Ngày ${self.day}`:view.name||'Đặt tên khi Bắt đầu',10,c.muted,false,214);
     ui.text(314,498,self?`#${self.rank}`:'—',16,'#7c5727',true,45);
-    const buttons=[{id:'leaderboard-prev',x:18,width:54,title:'‹',enabled:view.state==='ready'&&page>0,action:()=>input.setPage(page-1)},{id:'leaderboard-refresh',x:83,width:194,title:'Làm mới',enabled:input.canRefresh&&view.state!=='loading',action:input.refresh},{id:'leaderboard-next',x:288,width:54,title:'›',enabled:view.state==='ready'&&page<pages-1,action:()=>input.setPage(page+1)}];
-    buttons.forEach(button=>{ui.button(button.x,538,button.width,32,button.title,button.enabled);this.hit(button.id,button.x,531,button.width,48,button.enabled,button.action);});
+    const buttons=[{id:'leaderboard-prev',x:84,width:32,hitX:72,hitWidth:56,title:'‹',enabled:view.state==='ready'&&page>0,action:()=>input.setPage(page-1)},{id:'leaderboard-refresh',x:130,width:100,hitX:130,hitWidth:100,title:'Làm mới',enabled:input.canRefresh&&view.state!=='loading',action:input.refresh},{id:'leaderboard-next',x:244,width:32,hitX:232,hitWidth:56,title:'›',enabled:view.state==='ready'&&page<pages-1,action:()=>input.setPage(page+1)}];
+    buttons.forEach(button=>{ui.button(button.x,543,button.width,24,button.title,button.enabled,button.id==='leaderboard-refresh'?12:18);this.hit(button.id,button.hitX,531,button.hitWidth,48,button.enabled,button.action);});
     ui.footer(input.footer);texture.refresh();const image=this.scene.add.image(0,0,key).setOrigin(0).setDisplaySize(360,640);this.layer.add(image);image.once('destroy',()=>this.scene.textures.remove(key));
     this.scene.game.canvas.dataset.hubLeaderboard=JSON.stringify({...view,page,visible:rows});
   }

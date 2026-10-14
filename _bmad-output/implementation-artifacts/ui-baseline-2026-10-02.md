@@ -612,3 +612,9 @@ Tab5 dùngnhãn Xếp hạng ngắn cho ô63px, header/body Bảng xếp hạng;
 ### Bảng xếp hạng gọn, có cúp và huy hiệu — chỉnh tiếp 2026-10-14
 
 Người dùng yêu cầu làm đẹp bảng: thayriêngbody3khung bằng1thẻkem133–579, headernhỏ Top chủquán/cúp/TOP10, bảng5hàngthẻvớihuyhiệutop3 vàng/bạc/đồng, dòngmìnhxanhnhạt vàdảihạngcánhân. Loading/chưa kết nối/chưa cóngườidùng minh họacúp tĩnh, khôngkhungtrắngrời hoặcngườichơigiả. Giữnav5tab/icon/motion/hit/button/Làmmới/pagination/footer mởngày; cácmànkhácgiữmốc. Đây làthayđổiđượcngườidùngyêucầu riêng bảngxếp hạng, thayphần3khungtrongghi chútrước. Build/typecheck và4kiểmtraChromium360×640 đạt; ảnh dùng dữliệukiểmtra: [bảng](ui-baseline/leaderboard-polish-2026-10-14/rankings.png), [chưa kết nối](ui-baseline/leaderboard-polish-2026-10-14/unconfigured.png). Xem spec-leaderboard-visual-polish.md.
+
+### Nút xếp hạng thu gọn — chỉnh tiếp 2026-10-14
+
+Theo yêu cầu người dùng: hai nút mũi tên32×24, Làm mới100×24, gom giữa tại x84/130/244,y543 thay hàng nút trải hết bảng. Vùng chạm riêng56/100/56×48 ởx72/130/232,y531 và mở rộng theo min48CSS hiện có, không chồng nhau. Giữ chức năng/trạng thái, bảng và footer. 1E2E Chromium360×640 chuyển trang/Làm mới/rời màn đạt; ảnh compact-buttons.png đã xem.
+Ảnh: [nút gọn](ui-baseline/leaderboard-polish-2026-10-14/compact-buttons.png).
+

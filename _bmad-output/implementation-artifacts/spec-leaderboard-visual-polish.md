@@ -25,3 +25,7 @@ Completed 2026-10-14. Production build/typecheck and four focused Chromium360×6
   [ReferenceLeaderboard.ts:11](../../src/presentation/ReferenceLeaderboard.ts#L11)
 - Preserve ranking interactions and capture both populated and unavailable states.
   [leaderboard-tab.spec.ts:32](../../tests/leaderboard-tab.spec.ts#L32)
+
+### Nút xếp hạng thu gọn — chỉnh tiếp 2026-10-14
+
+Theo yêu cầu người dùng: hai nút mũi tên32×24, Làm mới100×24, gom giữa tại x84/130/244,y543 thay hàng nút trải hết bảng. Vùng chạm riêng56/100/56×48 ởx72/130/232,y531 và mở rộng theo min48CSS hiện có, không chồng nhau. Giữ chức năng/trạng thái, bảng và footer. 1E2E Chromium360×640 chuyển trang/Làm mới/rời màn đạt; ảnh compact-buttons.png đã xem.
