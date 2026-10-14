@@ -45,7 +45,7 @@ test('polished management market and stock keep real purchases filters and fixed
   const canvas=page.locator('canvas');
   await canvas.screenshot({path:info.outputPath('polished-management.png')});
   const shell=(await data(page,'controls')).filter((c:Control)=>c.id.startsWith('summary-tab-')||c.id==='pause');
-  expect((await data(page,'controls')).filter((c:Control)=>c.id.startsWith('shop-section-'))).toHaveLength(6);
+  expect((await data(page,'controls')).filter((c:Control)=>c.id.startsWith('shop-section-'))).toHaveLength(7);
   await tap(page,'summary-tab-market');
   await canvas.screenshot({path:info.outputPath('polished-market.png')});
   await tap(page,'market-filter-base');

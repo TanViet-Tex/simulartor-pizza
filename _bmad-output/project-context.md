@@ -606,3 +606,7 @@ Người dùng yêu cầu sửa riêng tab quản lý lệch, đặc biệt Tổ
 ### Giảm khách quán 20% ngày1–30 — 2026-10-14
 
 Lịch chuẩn sau phân bổ app và cộng bonus trang trí/mở rộng giảm tổng khách quán còn round(N×0.8). Giữ khách giúp đỡ/giới thiệu và đơn app, giữ lượt thường đầu, rải các lượt được giữ theo ca; không đổi ID/time/loại khách/metadata/giờ mở/đóng. Dự báo nguyên liệu/quảng bá và mở ca dùng chung buildSchedule, save cũ không cần migrate; áp dụng khi mở ca tiếp theo. Ngày31+ và lịch tùy chỉnh của fixture giữ nguyên. Build/typecheck,37unit tập trung và review độc lập đạt; kiểm360tổ hợp ngày/seed/app/bonus. Xem implementation-artifacts/spec-shop-traffic-minus-twenty-percent.md.
+
+### App orders shop section — implementation 2026-10-14
+
+Quán has seven sections; the original six cards retain their geometry and only the card region scrolls to reveal Đơn app. App settings moved from Amenities. Campaigns cost100xu once per preparation day5–30 for50% more app opportunities that day (2→3; rainy3→5), without automatic renewal. Disabling app does not refund the campaign; enabling again keeps its paid-day effect. Optional services.appCampaignDays preserves legacy receipts and uses silent stageShop saves/exact retry. Forecast and actual schedule share a builder; campaign-only ordinals follow original-plus-bonus ordinals. See implementation-artifacts/spec-app-orders-shop-campaign.md.

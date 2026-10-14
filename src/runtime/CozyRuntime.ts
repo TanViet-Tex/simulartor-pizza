@@ -2,6 +2,7 @@ import {INITIAL_CASH,LEGACY_INITIAL_CASH} from '../config/campaignRules';
 import {INTERACTIVE_TUTORIAL_IDS,VISIBLE_TUTORIAL_INDICES,visibleTutorialIndex,interactiveTutorialPhase} from '../config/interactiveTutorial';
 import {type TutorialProgress} from '../domain/TutorialProgress';
 import {ADVERTISING} from '../config/advertising';
+import {APP_CAMPAIGN} from '../config/appCampaign';
 import {LOTTERY_MISSION} from '../config/lotteryMission';
 import {advertisedVisitors} from '../domain/Advertising';
 import {lotteryMissionDay,lotteryDecision} from '../domain/LotteryMission';
@@ -214,6 +215,15 @@ export class CozyRuntime {
   private services:ServiceCheckpoint=emptyServices();
   private lotteryLease:PauseLease|null=null;
   get advertisingState(){const day=this.preparationDay,bought=this.services.advertisingDays.includes(day);return {bought,price:ADVERTISING.dailyPrice,forecast:bought?advertisedVisitors(this.buildSchedule(day)):null,missing:Math.max(0,ADVERTISING.dailyPrice-this.stock.cash)};}
+  get appCampaignState(){
+    const day=this.preparationDay,bought=(this.services.appCampaignDays??[]).includes(day),available=day>=APP_CAMPAIGN.firstDay&&day<=APP_CAMPAIGN.lastDay;
+    const reason=!available?(day<APP_CAMPAIGN.firstDay?'Mở từ ngày 5':'Chỉ áp dụng ngày 5–30'):bought?'Đã chạy cho ngày này':!this.appEnabled?'Bật app để chạy chiến dịch':!this.canSetPrices?'Chỉ mua trong chuẩn bị':this.stock.cash<APP_CAMPAIGN.price?`Thiếu ${APP_CAMPAIGN.price-this.stock.cash} xu`:'';
+    return {bought,available,price:APP_CAMPAIGN.price,canBuy:!reason,reason,forecast:advertisedVisitors(this.buildSchedule(day)),multiplier:APP_CAMPAIGN.multiplier};
+  }
+  buyAppCampaign(commandId:string):boolean{return this.cashTransaction(()=>{
+    if(!this.appCampaignState.canBuy||typeof commandId!=='string'||!commandId.trim()||this.shopCommandUsed(commandId)||!this.stock.debit(APP_CAMPAIGN.price))return false;
+    (this.services.appCampaignDays??=[]).push(this.preparationDay);this.shopCommands.add(commandId);this.message='Đã chạy chiến dịch · Đơn app +50% trong ngày này.';this.revision++;return true;
+  });}
   buyAdvertising(commandId:string):boolean{return this.cashTransaction(()=>{
     if(!this.canSetPrices||this.preparationDay>30||this.advertisingState.bought||typeof commandId!=='string'||!commandId.trim()||this.shopCommandUsed(commandId)||!this.stock.debit(ADVERTISING.dailyPrice))return false;
     this.services.advertisingDays.push(this.preparationDay);this.shopCommands.add(commandId);this.message='Đã quảng bá · Dự báo lượt khách hôm nay đã mở.';this.revision++;return true;
@@ -570,7 +580,7 @@ export class CozyRuntime {
   }
   private buildSchedule(day:number):CozySchedule {
     let schedule=validateCozySchedule((this.scheduleDependencies.schedule??threeDaySchedule)(day,{queueCapacity:this.queueCapacity,customerSeed:String(this.eventSeed),regularDay1Stars:this.regularDay1Stars,regularLatestStars:this.regularLatestStars,helpSucceeded:this.help.outcome==='succeeded',helpOfferEligible:helpOfferEligible(this.eventSeed),referral:day>=4?this.reputation>=55:!!this.referral?.eligible}));
-    if(!this.scheduleDependencies.schedule)schedule=deliverySchedule(schedule,this.appEnabled&&day>=DELIVERY_RULES.unlockDay);
+    if(!this.scheduleDependencies.schedule)schedule=deliverySchedule(schedule,this.appEnabled&&day>=DELIVERY_RULES.unlockDay,(this.services.appCampaignDays??[]).includes(day));
     schedule=shopSchedule(schedule,this.shopVisitorBonus);
     return this.scheduleDependencies.schedule?schedule:reduceShopTraffic(schedule);
   }

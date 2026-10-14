@@ -126,6 +126,7 @@ export class CozyCampaignSession {
   buyDrink(id:DrinkId,quantity:number,commandId:string):boolean {return this.stageShop(r=>r.buyDrink(id,quantity,commandId),commandId);}
   buyFridge(commandId:string):boolean {return this.stageShop(r=>r.buyFridge(commandId),commandId);}
   buyAdvertising(commandId:string):boolean {return this.stageShop(r=>r.buyAdvertising(commandId),commandId);}
+  buyAppCampaign(commandId:string):boolean {return this.stageShop(r=>r.buyAppCampaign(commandId),commandId);}
   private stageShop(action:(candidate:CozyRuntime)=>boolean,commandId:string,testCode=false):boolean {
     if(!this.allowed()||!this.current||!(testCode?this.current.canClaimTestCode:this.current.canSetPrices)||this.current.shopCommandUsed(commandId))return false;
     if(this.status==='temporary'){const accepted=action(this.current);if(accepted)this.publish();return accepted;}

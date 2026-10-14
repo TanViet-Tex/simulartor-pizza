@@ -47,7 +47,6 @@ export function drawShopScreen(scene:Phaser.Scene,layer:Phaser.GameObjects.Conta
       ui.panel(8,y,344,48,'#e6edc8');ui.text(180,y+8,'Giá 80–140% · Giá cao có thể bị từ chối',11,'#623619',true,324);ui.text(180,y+27,`Áp dụng ca ngày ${input.day} · Đơn cũ giữ giá`,11,'#245020',true,324);height=y+55;
     }else if(page==='decoration'||page==='amenities'){
       room(page==='decoration'?'room':'amenitiesRoom',0);let y=142;
-      if(page==='amenities'){action('shop-delivery-app',12,y,336,38,'App giao hàng · '+(input.deliveryApp?.available?(input.deliveryApp.enabled?'Bật':'Tắt'):'Mở ngày 5'),!!input.app,()=>input.app?.());y+=48;}
       const items=SHOP_CATALOG.filter(item=>item.group===page&&(page!=='decoration'||input.filter!=='owned'||input.shop?.acquired.some(entry=>entry.id===item.id)));
       if(!items.length){ui.frame({x:8,y,width:344,height:100});ui.text(180,y+35,'Chưa sở hữu vật phẩm nào',16,'#623619',true,320);y+=110;}
       items.forEach((item,i)=>{const x=8+i%2*176,top=y+Math.floor(i/2)*224,owned=input.shop?.acquired.find(entry=>entry.id===item.id);ui.frame({x,y:top,width:168,height:216});ui.art(item.id,item.artKey,item.crop,x+9,top+9,150,102);ui.text(x+84,top+118,item.name,14,'#2a160b',true,152);
@@ -55,6 +54,26 @@ export function drawShopScreen(scene:Phaser.Scene,layer:Phaser.GameObjects.Conta
         const effect='visitors' in item.effect?`+${Math.round(item.effect.visitors*100)}% khách`:`+${Math.round(('patience' in item.effect?item.effect.patience:item.effect.cooling)*100)}% thời gian chờ`;ui.panel(x+8,top+160,152,17,'#e0ebbd');ui.text(x+84,top+163,effect,10,'#245020',true,148);
         action('shop-item-'+item.id,x+8,top+180,152,32,'Xem chi tiết ›',!!input.item,()=>input.item?.(item.id));cards.push({id:item.id,y:top,height:216,owned:!!owned,placed:!!owned&&owned.placedSlot!==null,price:item.price});});
       y+=Math.ceil(items.length/2)*224;ui.panel(8,y,344,45,'#e0ebbd');ui.text(180,y+9,page==='decoration'?'Đặt vào quán mới có hiệu quả':'Quạt và điều hòa lấy mức cao hơn',12,'#245020',true,328);ui.text(180,y+27,`Khách +${Math.round((input.shop?.effects.visitors??0)*100)}% · Chờ +${Math.round((input.shop?.effects.patience??0)*100)}%`,10,'#245020',true,328);height=y+54;
+    }else if(page==='app'){
+      const app=input.deliveryApp,campaign=input.appCampaign;
+      ui.frame({x:8,y:0,width:344,height:140});
+      ui.panel(25,20,38,61,'#314139','#b38c54',8);ui.panel(31,28,26,37,'#f1e7cf','#d3ba8f',3);ui.text(44,65,'•',17,'#fff3db',true);
+      ui.text(80,17,'App giao hàng',20,'#2a160b',false,252);
+      ui.text(80,46,app?.available?(app.enabled?'Đang bật · Nhận đơn trong ca':'Đang tắt · Chưa nhận đơn'):'Mở từ ngày 5',12,'#623619',false,250);
+      ui.text(80,69,`Ngày ${input.day} · ${app?.eventName??'Bình thường'}`,11,'#623619',false,250);
+      action('shop-delivery-app',20,99,320,32,app?.available?(app.enabled?'Cài đặt · Tắt app':'Cài đặt · Bật app'):'App mở từ ngày 5',!!input.app,()=>input.app?.());
+      ui.frame({x:8,y:151,width:344,height:167});
+      ui.text(22,165,'Chiến dịch trong ngày',18,'#2a160b',false,316);
+      ui.money(23,194,campaign?.price??100,14);ui.text(135,198,'+50% lượt đơn app',13,'#245020',false,201);
+      ui.text(22,226,'Chỉ ngày này · Không tự gia hạn',12,'#623619',false,316);
+      ui.text(22,248,campaign?.reason||'Khách quán và giá bán giữ nguyên',11,campaign?.bought?'#247339':'#623619',false,316);
+      action('shop-app-campaign',20,276,320,32,campaign?.bought?'Đã chạy chiến dịch':`Chạy chiến dịch · ${campaign?.price??100} xu`,input.canAct&&!!campaign?.canBuy,()=>input.campaign?.());
+      ui.frame({x:8,y:329,width:344,height:113});
+      ui.text(22,342,`Dự báo ngày ${input.day}`,17,'#2a160b',false,316);
+      ui.text(22,372,`${campaign?.forecast.appOrders??0} đơn app · ${campaign?.forecast.shopVisits??0} khách quán`,14,'#245020',false,316);
+      ui.text(22,401,'Lượt dự kiến · Cần kho và ô chờ để nhận đơn',11,'#623619',false,316);
+      ui.text(22,421,'Tắt app không hoàn xu; bật lại giữ chiến dịch',10,'#623619',false,316);
+      cards.push({id:'app-status',y:0,height:140,enabled:app?.enabled??false,available:app?.available??false},{id:'app-campaign',y:151,height:167,bought:campaign?.bought??false,price:campaign?.price??100},{id:'app-forecast',y:329,height:113,...campaign?.forecast});height=450;
     }else if(page==='staff'){
       const active=(role:typeof STAFF_CATALOG[number]['role'])=>input.staffPreviews?.find(preview=>preview.role===role)?.owned??!!(input.staff?.acquired.some(entry=>entry.role===role)&&!input.staff?.expiredRoles?.includes(role));
       const staff=STAFF_CATALOG.filter(employee=>input.filter!=='working'||active(employee.role));
