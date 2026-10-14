@@ -80,7 +80,8 @@ test('saved multi-day reviews and last-day profit survive Continue and repeated 
     if(reload===1)await canvas.screenshot({path:info.outputPath('restored-review-history.png')});
     await tap(page,'summary-reviews-close');await expect(canvas).toHaveAttribute('data-paused','');
   }
-  await tap(page,'summary-open-first-day');await expect(page.locator('canvas')).toHaveAttribute('data-screen','game');
+  await tap(page,'summary-open-first-day');await expect(page.locator('canvas')).toHaveAttribute('data-summary-tab','market');
+  await tap(page,'hub-detail-close');await tap(page,'summary-open-first-day');await expect(page.locator('canvas')).toHaveAttribute('data-screen','game');
   await expect(page.locator('canvas')).toHaveAttribute('data-day','3');
   expect(errors).toEqual([]);
 });

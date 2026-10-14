@@ -7,6 +7,10 @@ date: '2026-10-02'
 
 # Giao diện hiện tại là mốc cho các lần triển khai sau
 
+### Nhắc mua trước khi mở ngày — yêu cầu 2026-10-14
+
+Nút Mở quán chuyển Chợ và hiện popup nhắc khi chưa mua nguyên liệu cho ngày chuẩn bị. Dùng popup hubDetail/Đã hiểu hiện có; đóng nhắc rồi mua hoặc tiếp tục dùng kho cũ. Giữ nguyên các tab, nút, khung và geometry; ca/ngày chưa chạy trong popup. Xem [spec](spec-new-day-ingredient-reminder.md).
+
 ### Lãi công thức và gợi ý bếp nhẹ — yêu cầu 2026-10-14
 
 Mỗi thẻ pizza đã sở hữu luôn hiện lãi; thẻ chưa chọn có dòng nhỏ dưới controls trong chiều cao cũ, không chỉ hiện pizza đang chọn. Gợi ý nguyên liệu cần dùng khi khách vào giảm độ đậm nền/viền; giữ vị trí ô, icon, nhãn, số lượng và vùng bấm. Không đổi gameplay/giá hoặc bố cục phần khác.

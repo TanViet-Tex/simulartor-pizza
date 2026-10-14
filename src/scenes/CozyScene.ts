@@ -139,6 +139,7 @@ export class CozyScene extends Phaser.Scene {
   private setShopPage(page:ShopPage):void{this.shopPage=page;this.shopOffset=0;this.shopDrag.active=false;this.shopFilter=page==='staff'?'recruit':'store';this.dirty=true;}
   private stockCriteria?:{kind:'low'|'expiry';input:MarketQuantityInput;lease:PauseLease};
   private hubDetail?:{title:string;body:string;lease:PauseLease};
+  private ingredientReminderDays=new Set<number>();
   private hubUpgrade?:{kind:'oven'|'queue';cost:number;commandId:string;lease:PauseLease};
   private stockPlannerLease?:PauseLease;
   private stockPortions:Partial<Record<StockRecipe,number>>={};
@@ -909,9 +910,9 @@ export class CozyScene extends Phaser.Scene {
     {
       const saveBlocked=this.campaignSession&&['error','recovery'].includes(this.campaignSession.view.state);
       const footer=saveBlocked?{id:'save-show-status',title:'Xử lý lưu tiến độ',enabled:true,action:()=>{this.saveDismissed=false;this.dirty=true;}}:
-        initial?{id:'summary-open-first-day',title:`Mở quán — Ngày ${this.runtime.day}`,enabled:this.runtime.canOpen,action:()=>{this.runtime.openShop();this.inspectedOrderId=null;}}:
+        initial?{id:'summary-open-first-day',title:`Mở quán — Ngày ${this.runtime.day}`,enabled:this.runtime.canOpen,action:()=>this.openPreparedDay(false)}:
         summary!.ending?{id:'summary-final-result',title:'Kết quả chiến dịch',enabled:!this.campaignSession||['ready','temporary'].includes(this.campaignSession.view.state),action:()=>this.openFinalResults()}:
-        {id:'summary-open-next-day',title:`Mở quán — Ngày ${summary!.day+1}`,enabled:this.runtime.canOpenNextDay,action:()=>{this.runtime.openNextDay();this.inspectedOrderId=null;}};
+        {id:'summary-open-next-day',title:`Mở quán — Ngày ${summary!.day+1}`,enabled:this.runtime.canOpenNextDay,action:()=>this.openPreparedDay(true)};
       const reports=this.runtime.completedReports;
       const tab=(id:'summary'|'market'|'stock'|'shop'|'missions')=>{this.hubNavigationMotion.select(id,performance.now(),this.reducedMotion);if(id==='shop')this.setShopPage('home');this.summaryTab=id;this.stockDrag.active=false;this.marketDrag.active=false;this.dirty=true;};
       const shopTitles={home:'Quản lý quán',menu:'Menu & giá bán',decoration:'Trang trí',equipment:'Thiết bị',amenities:'Tiện nghi',expansion:'Mở rộng quán',staff:'Nhân viên'};
@@ -941,6 +942,15 @@ export class CozyScene extends Phaser.Scene {
   }
   private hubObjects():Phaser.GameObjects.GameObject[]{return this.hubLayer?.list??[];}
   private resetModalControls(){this.controls=[];this.visibleActions=[];for(const zone of this.hitZones.values())zone.disableInteractive();}
+  private openPreparedDay(next:boolean):void{
+    if(this.runtime.pauses.length||!(next?this.runtime.canOpenNextDay:this.runtime.canOpen))return;
+    const day=this.runtime.preparationDay;
+    if(!this.runtime.boughtIngredientsForPreparation&&!this.ingredientReminderDays.has(day)){
+      this.ingredientReminderDays.add(day);this.summaryTab='market';this.marketFilter='all';this.marketOffset=0;this.marketDrag.active=false;this.stockDrag.active=false;
+      this.hubDetail={title:'Mua nguyên liệu trước khi mở quán',body:`Bạn chưa mua nguyên liệu cho ngày ${day}.\nHãy chọn nguyên liệu cần cho menu và nhập kho tại Chợ.\nNếu dùng nguyên liệu còn lại trong kho, bạn vẫn có thể mở quán sau khi đọc nhắc nhở.`,lease:this.runtime.acquirePause('order')};this.dirty=true;return;
+    }
+    if(next?this.runtime.openNextDay():this.runtime.openShop())this.inspectedOrderId=null;
+  }
   private closeHubPanels():void{
     this.advertisingDialog?.lease.release();this.advertisingDialog=undefined;
 

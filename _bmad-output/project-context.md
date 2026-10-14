@@ -538,3 +538,9 @@ Build/typecheck, 30 unit tập trung và 1 E2E Chromium360×640 đạt: Tiếp t
 Menu & giá hiển thị Lãi = giá bán hiện tại − vốn theo giá nguyên liệu cho mọi công thức đã sở hữu, kể cả không được chọn/đang tắt bán. Thẻ chọn giữ panel cũ, thẻ khác dùng dòng nhỏ trong chiều cao108px hiện có; bánh chưa mua không hiện lãi. Không đổi giá, nút, kích thước hay vị trí thẻ. Gợi ý nguyên liệu còn thiếu: nền alpha0.06, viền1px vàng dịu alpha0.18 thay nền0.22/viền2px alpha1; khóa kho và trạng thái đã thêm giữ nguyên.
 
 Build/typecheck và 1 E2E Chromium360×640 màn quản lý/Menu đạt, gồm đổi giá và tắt/bật món; ảnh Menu kiểm tra dòng lãi ở cả thẻ chọn và thẻ đã sở hữu khác.
+
+### Nhắc nguyên liệu trước khi mở ngày — 2026-10-14
+
+Hai nút Mở quán dùng openPreparedDay chung: chưa có lô nguyên liệu mua cho preparationDay thì chuyển Chợ/Tất cả, reset cuộn và nhắc qua hubDetail/pause lease trước khi chạy ca. Một lần mỗi ngày trong phiên màn chơi; đóng nhắc rồi có thể mua hoặc dùng kho cũ để mở, không bắt mua lại/ngăn mở mãi nếu thiếu tiền. Nước/đồ nâng cấp không tính là mua food; mua cho ngày khác không bỏ qua nhắc. Save/reload giữ nguồn lô thật, không thêm schema hoặc sửa runtime openShop/openNextDay. Xem implementation-artifacts/spec-new-day-ingredient-reminder.md.
+
+Build/typecheck, 7 unit và 5 case E2E tập trung đạt (4 lời nhắc +1 Tiếp tục/lợi nhuận). Luật cần tiền thuê/cạn vốn vẫn giữ nguyên; lời nhắc không ép mua thêm nếu kho cũ còn dùng được.
