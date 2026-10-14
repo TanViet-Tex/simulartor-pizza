@@ -23,4 +23,4 @@ route: one-shot
 
 ## Verification
 
-Frontend build and API NodeNext typecheck passed. 46 focused unit tests passed. Native emitted Node ESM loaded the handler and returned the expected 503/unconfigured response without database credentials. One independent review found no actionable issues, including all 37 transitive source targets. Live deployment will be checked after push; database activation still requires Supabase login and configuration.
+Frontend build and API NodeNext typecheck passed. 46 focused unit tests passed. Native emitted Node ESM loaded the handler and returned the expected 503/unconfigured response without database credentials. One independent review found no actionable issues, including all 37 transitive source targets. Production redeployment with Supabase settings returned HTTP 200 and the real game leaderboard state=ready. See leaderboard-online-activation-2026-10-14.md for live database smoke evidence and limits.
