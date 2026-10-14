@@ -50,10 +50,12 @@ for(const mode of ['preparation','end-day'] as const)test(`${mode} fifth tab dis
   await expect.poll(()=>page.evaluate(()=>(window as any).rankFixture.unsubscribed)).toBe(1);expect(errors).toEqual([]);
 });
 
-test('missing online configuration and missing port show no fake rows and leave day opening available',async({page})=>{
+test('missing online configuration and missing port show no fake rows and leave day opening available',async({page},info)=>{
+  test.setTimeout(150000);
   for(const mode of ['unconfigured','no-port'] as const){
     await fixture(page,mode);await tap(page,'summary-tab-missions');if(mode==='unconfigured')await resolve(page);
     await expect.poll(async()=>(await data(page,'hub-leaderboard')).state).toBe('unconfigured');const view=await data(page,'hub-leaderboard');expect(view.visible).toEqual([]);expect(view.message).toContain('chưa được kết nối');
+    await page.locator('canvas').screenshot({path:info.outputPath(`leaderboard-${mode}.png`)});
     await tap(page,'summary-open-first-day');await expect(page.locator('canvas')).toHaveAttribute('data-screen','game');
   }
 });
