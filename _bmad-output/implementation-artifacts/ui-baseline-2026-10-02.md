@@ -618,6 +618,8 @@ Người dùng yêu cầu làm đẹp bảng: thayriêngbody3khung bằng1thẻk
 Theo yêu cầu người dùng: hai nút mũi tên32×24, Làm mới100×24, gom giữa tại x84/130/244,y543 thay hàng nút trải hết bảng. Vùng chạm riêng56/100/56×48 ởx72/130/232,y531 và mở rộng theo min48CSS hiện có, không chồng nhau. Giữ chức năng/trạng thái, bảng và footer. 1E2E Chromium360×640 chuyển trang/Làm mới/rời màn đạt; ảnh compact-buttons.png đã xem.
 Ảnh: [nút gọn](ui-baseline/leaderboard-polish-2026-10-14/compact-buttons.png).
 
+Theo yêu cầu sửa thanh tab quản lý lệch 2026-10-14: căn tâm icon gốc theo từng ô/chữ; khung trung tính và chọn cùng geometry, năm ô đều nhau, không chồng viền crop cũ. Giữ bounds22/80/316×49, artwork/màu icon, nhãn, vùng chạm và motion. Ảnh kiểm chứng: [Tổng kết và năm tab](ui-baseline/management-tab-alignment-2026-10-14/summary-selected.png). Build/typecheck và1E2E kiểm toàn bộ tab đạt. Xem spec-management-tab-alignment.md.
+
 Theo chỉnh tiếp 2026-10-14: tiêu đề popup Bảng xếp hạng và Tên người chơi căn giữa theo chiều dọc trong ô tiêu đề, không nằm thấp/đè viền. Giữ frame/body/editor/nút và dịch bàn phím như cũ. Ảnh: [xếp hạng](ui-baseline/ranking-popup-heading-alignment-2026-10-14/leaderboard.png), [tên](ui-baseline/ranking-popup-heading-alignment-2026-10-14/player-name-keyboard.png). Build và2E2E tập trung đạt; dữ liệu trên ảnh xếp hạng là fixture kiểm tra.
 
 

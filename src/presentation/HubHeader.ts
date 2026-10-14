@@ -38,6 +38,15 @@ function navigationIcon(source:HTMLImageElement,index:number):NavigationIcon{
     if(x>left)add(position-1);if(x<right-1)add(position+1);if(y>top)add(position-sw);if(y<bottom-1)add(position+sw);
   }
   context.putImageData(pixels,0,0);
+  // Align visible artwork, rather than the uneven tile centers in the reference.
+  let minX=right,minY=bottom,maxX=left-1,maxY=top-1;
+  for(let y=top;y<bottom;y++)for(let x=left;x<right;x++)if(pixels.data[(y*sw+x)*4+3]>0){minX=Math.min(minX,x);maxX=Math.max(maxX,x);minY=Math.min(minY,y);maxY=Math.max(maxY,y);}
+  if(maxX>=minX&&maxY>=minY){
+    const aligned=document.createElement('canvas');aligned.width=sw;aligned.height=sh;
+    const w=maxX-minX+1,h=maxY-minY+1;
+    aligned.getContext('2d')!.drawImage(canvas,minX,minY,w,h,Math.round((index+.5)*width*UI_RASTER_SCALE-w/2),Math.round(16*UI_RASTER_SCALE-h/2),w,h);
+    context.setTransform(1,0,0,1,0,0);context.clearRect(0,0,sw,sh);context.drawImage(aligned,0,0);
+  }
   const icon={canvas,x:nav.x,y:nav.y,width:nav.width,height:nav.height};
   cache.set(index,icon);return icon;
 }
@@ -72,12 +81,14 @@ export function paintHubNavigation(scene:Phaser.Scene,ctx:CanvasRenderingContext
     const {amount,scale}=motion?.tabs[id]??{amount:id===active?1:0,scale:1};
     ctx.save();ctx.translate(x+width/2,nav.y+nav.height/2);ctx.scale(scale,scale);ctx.translate(-x-width/2,-nav.y-nav.height/2);
     // Scale the entire tile together, while keeping its original input rectangle.
-    ctx.drawImage(source,17+i*2058/5,407,2058/5,319,x,nav.y,width,nav.height);
+    // Match the neutral and selected frames, so selection never changes alignment.
+    const paper=ctx.createLinearGradient(0,nav.y,0,nav.y+nav.height);paper.addColorStop(0,'#fff5de');paper.addColorStop(1,'#f5e4c3');
+    ctx.fillStyle=paper;ctx.strokeStyle='#bd9458';ctx.lineWidth=1;
+    ctx.beginPath();ctx.roundRect(x+2.5,nav.y+.5,width-5,nav.height-1,8);ctx.fill();ctx.stroke();
     if(amount>0){ctx.save();ctx.globalAlpha=amount;ctx.fillStyle='#fff0bd';ctx.strokeStyle='#d9ad58';ctx.lineWidth=1;
       ctx.beginPath();ctx.roundRect(x+2.5,nav.y+.5,width-5,nav.height-1,8);ctx.fill();ctx.stroke();ctx.restore();
-      // The cached transparent sprite restores icon colors without a cream rectangle.
-      const icon=navigationIcon(source,i);ctx.drawImage(icon.canvas,icon.x,icon.y,icon.width,icon.height);
     }
+    const icon=navigationIcon(source,i);ctx.drawImage(icon.canvas,icon.x,icon.y,icon.width,icon.height);
     text(ctx,x+width/2,108,title,11,width-4);ctx.restore();hit(`summary-tab-${id}`,x,nav.y,width,nav.height,true,()=>tab(id));
   });
   ctx.restore();

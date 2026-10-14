@@ -598,3 +598,7 @@ Build/typecheck,19unit và3E2E Chromium360×640 đạt: muađồthật+writebị
 ### Căn tiêu đề popup xếp hạng và tên — 2026-10-14
 
 Theo người dùng báo chữ bị lệch xuống: riêng heading Bảng xếp hạng/Tên người chơi đổi origin Y từ0 sang0.5 ở tâm ô tiêu đề layout.titleY+8, không dịch frame/body/input/footer/hit hoặc thay dữ liệu. Build/typecheck,2E2E Chromium360×640 và review độc lập đạt; ảnh hai popup đã kiểm tra. Xem implementation-artifacts/spec-ranking-popup-heading-alignment.md.
+
+### Căn thanh tab quản lý — 2026-10-14
+
+Người dùng yêu cầu sửa riêng tab quản lý lệch, đặc biệt Tổng kết. Icon gốc đã tách nền được căn theo bounds alpha về tâm từng ô và y96 chung; giữ pixel/màu, không căn theo tâm crop ảnh vốn không đều. Khung trung tính/chọn dùng chung geometry, nền kem và viền nâu/vàng, không chồng viền ảnh gốc lệch. Giữ năm ô22/80/316×49, nhãn, hit, animation150ms/96%120ms và giảm chuyển động. Build/typecheck,1E2E kiểm cả năm tab và review độc lập đạt; đã xem ảnh Tổng kết. Xem implementation-artifacts/spec-management-tab-alignment.md.
