@@ -44,8 +44,8 @@ export class PlayerNamePanel {
     const layout=drawNotificationFrame(scene,content,'two',170,330);
     const target=(id:string,r:NotificationRect,action:()=>void)=>register(id,{...r,y:r.y+offset},!this.submitted,action);
     const close=drawNotificationClose(scene,content,layout);if(close)target('player-name-close',close,this.close);
-    const text=(y:number,value:string,size:number)=>content.add(scene.add.text(180,y,value,{fontFamily:UI_THEME.typography.fontFamily,fontSize:`${size}px`,fontStyle:'bold',color:'#362018',align:'center',wordWrap:{width:276}}).setResolution(UI_RASTER_SCALE).setOrigin(.5,0));
-    text(layout.titleY+10,'Tên người chơi',22);text(285,'Đặt tên để vào bảng xếp hạng',15);text(378,this.feedback,14);
+    const text=(y:number,value:string,size:number)=>{const label=scene.add.text(180,y,value,{fontFamily:UI_THEME.typography.fontFamily,fontSize:`${size}px`,fontStyle:'bold',color:'#362018',align:'center',wordWrap:{width:276}}).setResolution(UI_RASTER_SCALE).setOrigin(.5,0);content.add(label);return label;};
+    text(layout.titleY+8,'Tên người chơi',22).setOrigin(.5);text(285,'Đặt tên để vào bảng xếp hạng',15);text(378,this.feedback,14);
     layout.footer.forEach((r,index)=>{drawNotificationButton(scene,content,r.x,r.y,r.width,r.height);content.add(scene.add.text(r.x+r.width/2,r.y+r.height/2,index?'Vào chơi':'Quay lại',{fontFamily:UI_THEME.typography.fontFamily,fontSize:'16px',fontStyle:'bold',color:'#fff0d5'}).setResolution(UI_RASTER_SCALE).setOrigin(.5));target(index?'player-name-submit':'player-name-cancel',r,index?()=>this.accept():this.close);});
     this.canvas.dataset.playerNameFeedback=this.feedback;this.canvas.dataset.playerNameOffset=String(offset);
   }

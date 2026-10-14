@@ -11,7 +11,7 @@ export class LeaderboardPanel {
   draw(scene:Phaser.Scene,layer:Phaser.GameObjects.Container,register:(id:string,r:NotificationRect,enabled:boolean,action:()=>void)=>void):void{
     drawModalBackdrop(scene,layer);const layout=drawNotificationFrame(scene,layer,'two',85,485),view=this.actions.view();
     const text=(x:number,y:number,value:string,size=13,width=284,color='#362018',origin=.5)=>{const label=scene.add.text(x,y,value,{fontFamily:UI_THEME.typography.fontFamily,fontSize:`${size}px`,fontStyle:'bold',color,align:origin===0?'left':'center',wordWrap:{width}}).setResolution(UI_RASTER_SCALE).setOrigin(origin,0);layer.add(label);return label;};
-    text(180,layout.titleY+8,'Bảng xếp hạng',21);text(180,185,'Tiền nhiều nhất · thêm ngày chơi',12);
+    text(180,layout.titleY+8,'Bảng xếp hạng',21).setOrigin(.5);text(180,185,'Tiền nhiều nhất · thêm ngày chơi',12);
     if(view.state==='ready'&&view.message&&view.entries.length){const warning=text(180,200,view.message,10);if(warning.height>14)warning.setScale(14/warning.height);}
     const close=drawNotificationClose(scene,layer,layout);if(close)register('leaderboard-close',close,true,this.close);
     const pages=Math.max(1,Math.ceil(view.entries.length/5));this.page=Math.min(this.page,pages-1);

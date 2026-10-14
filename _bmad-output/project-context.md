@@ -594,3 +594,7 @@ Build/typecheck,19unit và3E2E Chromium360×640 đạt: muađồthật+writebị
 ### Kích hoạt bảng xếp hạng online — 2026-10-14
 
 Đã đẩy mã lên origin/main và kết nối Vercel Production với Supabase project igqwvwxhogohixswkadq do người dùng tạo, chạy leaderboard.sql thật. Hai biến SUPABASE_URL/SUPABASE_SERVICE_ROLE_KEY lưu dạng Secret trên server; không ghi khóa vào repo. Lỗi import extensionless chỉ xuất hiện trên Node thật đã sửa bằng .js specifier trong đồ thị API và NodeNext typecheck. Build,46unit, native Node smoke và review độc lập đạt. Deployment 9ky3Byp6Sk9QAXCMp9R8nVThCy18 trả API200; game thật state=ready. SQL BEGIN/ROLLBACK kiểm tra hai người chơi, thứ tự tiền/ngày, self, token/quyền và revision đạt, không giữ dữ liệu thử. Chưa chạy hai chiến dịch browser đầy đủ trên DB thật; luồng đó đã có E2E dùng API kiểm soát. Xem implementation-artifacts/leaderboard-online-activation-2026-10-14.md. Thay trạng thái “chưa cấu hình online” trong ghi chú cũ; luật lưu campaign tại browser giữ nguyên.
+
+### Căn tiêu đề popup xếp hạng và tên — 2026-10-14
+
+Theo người dùng báo chữ bị lệch xuống: riêng heading Bảng xếp hạng/Tên người chơi đổi origin Y từ0 sang0.5 ở tâm ô tiêu đề layout.titleY+8, không dịch frame/body/input/footer/hit hoặc thay dữ liệu. Build/typecheck,2E2E Chromium360×640 và review độc lập đạt; ảnh hai popup đã kiểm tra. Xem implementation-artifacts/spec-ranking-popup-heading-alignment.md.
