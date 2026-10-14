@@ -13,6 +13,17 @@ const settle=()=>new Promise<void>(resolve=>setTimeout(resolve,0));
 async function setup(funded=false){let id=0;const port=new MemoryPort(),session=new CozyCampaignSession(port,()=>`id-${++id}`);await session.load();const r=(await session.start(false))!;if(funded){port.value!.payload=fundedShopCheckpoint();port.value!.checksum=checkpointChecksum(port.value!.payload);const loaded=(await session.load())!;return {port,session,r:loaded};}return {port,session,r};}
 function open(r:CozyRuntime){for(const id of ['dough','sauce','cheese'] as const)r.buy(id,1);expect(r.openShop()).toBe(true);}
 describe('Cozy prepare/commit/confirm session',()=>{
+  it('saves purchases silently with write guards, exact retry and other pause owners intact',async()=>{
+    const {session,port,r}=await setup(true),cash=r.state.cash;port.defer=true;
+    expect(session.buyShopItem('table-plant','silent-purchase')).toBe(true);
+    const visibility=r.acquirePause('visibility');
+    expect(session.savingPreparation).toBe(true);expect(session.savingMenu).toBe(false);expect(r.state.cash).toBe(cash);
+    expect(session.buyShopItem('table-plant','repeat')).toBe(false);expect(r.openShop()).toBe(false);
+    port.fail=true;port.release!();await settle();expect(session.savingPreparation).toBe(false);expect(session.view.canRetry).toBe(true);expect(r.state.cash).toBe(cash);
+    const request=port.calls[port.calls.length-1];port.fail=false;const retry=session.retry();expect(session.savingPreparation).toBe(true);port.release!();await retry;
+    expect(port.calls[port.calls.length-1]).toEqual(request);expect(r.state.cash).toBe(cash-500);expect(session.savingPreparation).toBe(false);
+    expect(r.pauses).toContain('visibility');expect(r.pauses).not.toContain('save');visibility.release();session.destroy();
+  });
   it('exposes only cloned committed leaderboard data, including test funds after successful retry',async()=>{
     const {session,port}=await setup();
     const before=session.leaderboardSnapshot!;expect(before.payload.stock.cash).toBe(500);

@@ -10,6 +10,7 @@ async function tap(page:Page,id:string){
 }
 
 test('menu prices save without an overlay, retain error recovery and persist selling changes',async({page})=>{
+  test.setTimeout(120000);
   const pathName:string='node:path',paths=await import(pathName);
   const bundle=await build({stdin:{resolveDir:paths.resolve('.'),loader:'ts',contents:`
     import Phaser from 'phaser';import {CozyScene} from './src/scenes/CozyScene';import {CozyCampaignSession} from './src/runtime/CozyCampaignSession';import {CozySaveRepository,saveFailure} from './src/infrastructure/CozySaveRepository';

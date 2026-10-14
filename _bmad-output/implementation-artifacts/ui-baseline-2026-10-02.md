@@ -618,3 +618,9 @@ Người dùng yêu cầu làm đẹp bảng: thayriêngbody3khung bằng1thẻk
 Theo yêu cầu người dùng: hai nút mũi tên32×24, Làm mới100×24, gom giữa tại x84/130/244,y543 thay hàng nút trải hết bảng. Vùng chạm riêng56/100/56×48 ởx72/130/232,y531 và mở rộng theo min48CSS hiện có, không chồng nhau. Giữ chức năng/trạng thái, bảng và footer. 1E2E Chromium360×640 chuyển trang/Làm mới/rời màn đạt; ảnh compact-buttons.png đã xem.
 Ảnh: [nút gọn](ui-baseline/leaderboard-polish-2026-10-14/compact-buttons.png).
 
+
+### Mua đồ lưu ngầm, không bảng Đang lưu ngày — yêu cầu 2026-10-14
+
+savingPreparation chỉ true khi sessionstate=saving vàpending.kind=upgrade, gồm mua đồ/trang trí/công thức/nângcấp/nước/thuênhânviên/cấu hìnhchuẩnbị, kếthừa lưu ngầm giá bán. CozyScene khôngvẽsaveDialog hoặcveil do riêngsavelease khi flag này bật; vẫn hiệnpause do chủkhác và lỗi/recovery/thửlại. Giữsaveguard/lease/serialization/candidateconfirm/commandid/exactretry vàcheckpoint thật; không mởquán/mualặp trongwrite, nhưng navxemtab vẫn dùngđược. Savechốtngày/tạochiếndịch vàtutorial giữhànhvihiệncó; không sửa schema/lưu giữa ca. Messagecho upgrade là Đang lưu thay đổi/thay đổi chưa lưu, khônggọi nhầm ngày.
+
+Build/typecheck,19unit và3E2E Chromium360×640 đạt: muađồthật+writebịgiữkhôngoverlay/navdùngđược, trừ500mộtlần/cònđồsau reload; lỗiwritegiữcash/ownership vàretryđúng; lưu giábanhngầm giữ. Mộtreview không cólỗimới. Ảnh ui-baseline/silent-purchase-save-2026-10-14/purchase-saving.png; xem spec-silent-purchase-save.md.

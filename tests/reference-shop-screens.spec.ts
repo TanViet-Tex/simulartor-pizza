@@ -201,6 +201,22 @@ test('unaffordable staff and equipment remain honest; drag does not open a card'
   expect((await data(page,'shop-scroll')).offset).toBeGreaterThan(0);
 });
 
+test('purchases save in background without blocking the screen and persist exactly once',async({page},info)=>{
+  await fixture(page);const canvas=page.locator('canvas'),before=Number(await canvas.getAttribute('data-cash'));
+  await open(page,'decoration');
+  await page.evaluate(()=>{const f=(window as any).shopFixture,repo=f.session.repository,commit=repo.commit.bind(repo);repo.commit=async(request:any)=>{await new Promise<void>(resolve=>{f.releasePurchase=resolve;});return commit(request);};});
+  await tap(page,'shop-item-table-plant');await tap(page,'shop-item-confirm');
+  await expect.poll(async()=>(await data(page,'save-state')).state).toBe('saving');
+  await expect(canvas).toHaveAttribute('data-modal-backdrop','');await expect(canvas).toHaveAttribute('data-notification-frame','');await expect(canvas).toHaveAttribute('data-pause-panel','');
+  expect(await page.evaluate(()=>{const f=(window as any).shopFixture;return [f.session.savingPreparation,f.session.buyShopItem('table-plant','duplicate'),f.runtime.openShop()];})).toEqual([true,false,false]);
+  expect(Number(await canvas.getAttribute('data-cash'))).toBe(before);
+  await canvas.screenshot({path:info.outputPath('silent-purchase.png')});
+  await tap(page,'summary-tab-stock');await expect(canvas).toHaveAttribute('data-summary-tab','stock');await expect(canvas).toHaveAttribute('data-modal-backdrop','');
+  await page.evaluate(()=>(window as any).shopFixture.releasePurchase());await ready(page);
+  expect(Number(await canvas.getAttribute('data-cash'))).toBe(before-500);expect((await data(page,'shop-items')).acquired).toHaveLength(1);
+  await restoreProduction(page);expect(Number(await canvas.getAttribute('data-cash'))).toBe(before-500);expect((await data(page,'shop-items')).acquired).toHaveLength(1);
+});
+
 test('failed purchase retains cash and ownership then retry applies once',async({page})=>{
   await page.addInitScript(()=>{const put=IDBObjectStore.prototype.put;let failed=false;IDBObjectStore.prototype.put=function(value:any,key?:IDBValidKey){if(key==='active'&&value.payload?.shop?.spent===500&&!failed){failed=true;this.transaction.abort();throw new DOMException('test write failure','QuotaExceededError');}return key===undefined?put.call(this,value):put.call(this,value,key);};});
   await fixture(page);const before=Number(await page.locator('canvas').getAttribute('data-cash'));

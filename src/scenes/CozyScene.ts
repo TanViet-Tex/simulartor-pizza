@@ -568,7 +568,7 @@ export class CozyScene extends Phaser.Scene {
     else if(this.appDialog)this.deliveryAppDialog();
     else if(this.priceDraft&&!this.runtime.pauses.some(p=>p!=='order'))this.priceDialog();
     else if(this.queueUpgradeNotice)this.queueUpgradeDialog();
-    else if(!this.expressIngredient&&this.runtime.pauses.some(p=>p!=='special-welcome'&&p!=='tutorial'&&p!=='discard'&&p!=='delivery'&&p!=='bargain'&&p!=='help'&&p!=='lottery'&&!(p==='save'&&(this.campaignSession?.savingTutorial||this.campaignSession?.savingMenu))))this.overlay();
+    else if(!this.expressIngredient&&this.runtime.pauses.some(p=>p!=='special-welcome'&&p!=='tutorial'&&p!=='discard'&&p!=='delivery'&&p!=='bargain'&&p!=='help'&&p!=='lottery'&&!(p==='save'&&(this.campaignSession?.savingTutorial||this.campaignSession?.savingPreparation))))this.overlay();
     else if(this.runtime.discardPending)this.discardDialog();
     else if(this.runtime.deliveryPending)this.deliveryDialog();
     else if(this.runtime.bargainPending)this.bargainDialog();
@@ -576,7 +576,7 @@ export class CozyScene extends Phaser.Scene {
     else if(this.runtime.helpPending||this.runtime.thanksPending)this.helpDialog();
     else if(s.stage==='delivered'&&!this.runtime.productionActive&&!this.runtime.tutorialPhase)this.success();
     if(this.expressIngredient)this.expressDialog();
-    if(!this.testCodePanel&&this.campaignSession&&!this.campaignSession.savingTutorial&&!this.campaignSession.savingMenu&&(['saving','error','loading','recovery'].includes(this.campaignSession.view.state)&&!this.saveDismissed||this.reloadConfirmation))this.saveDialog();
+    if(!this.testCodePanel&&this.campaignSession&&!this.campaignSession.savingTutorial&&!this.campaignSession.savingPreparation&&(['saving','error','loading','recovery'].includes(this.campaignSession.view.state)&&!this.saveDismissed||this.reloadConfirmation))this.saveDialog();
     else if(this.newCampaignConfirmation)this.newCampaignDialog();
     else if(this.finalOpen)this.finalDialog();
     if(this.guidedTutorialVisible&&!this.notification)this.tutorial();
