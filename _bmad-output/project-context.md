@@ -610,3 +610,7 @@ Lịch chuẩn sau phân bổ app và cộng bonus trang trí/mở rộng giảm
 ### App orders shop section — implementation 2026-10-14
 
 Quán has seven sections; the original six cards retain their geometry and only the card region scrolls to reveal Đơn app. App settings moved from Amenities. Campaigns cost100xu once per preparation day5–30 for50% more app opportunities that day (2→3; rainy3→5), without automatic renewal. Disabling app does not refund the campaign; enabling again keeps its paid-day effect. Optional services.appCampaignDays preserves legacy receipts and uses silent stageShop saves/exact retry. Forecast and actual schedule share a builder; campaign-only ordinals follow original-plus-bonus ordinals. See implementation-artifacts/spec-app-orders-shop-campaign.md.
+
+### Busy days and VIP presentation — 2026-10-14
+
+Rush/festival shifts show a static flame beside HH:mm; no clock reflow. Rewarded VIP and special-kind VIP omit selection/patience circles while retaining original portraits/frames. Their selected information deadline keeps updating even during prep-absence/customer-status notices. Ordinary rings/deadlines/gameplay remain intact. Build,14unit and2focusedChromium360x640 E2E passed. See implementation-artifacts/spec-event-flame-vip-avatar.md.

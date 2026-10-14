@@ -636,3 +636,7 @@ The requested extension retains the first six168×89 cards at x8/184,y292+95×ro
 ### App page visual polish — requested 2026-10-14
 
 App page retains the three card bounds and actions, with a pizza-phone illustration, compact live status pill, gold50% campaign badge, clear100xu budget and paired app/counter forecast metrics. Status distinguishes paid-but-disabled from active, and the duration/no-refund/inventory/queue explanations remain visible. Other screens keep their approved layout. Evidence: ui-baseline/app-orders-visual-polish-2026-10-14. See spec-app-orders-visual-polish.md.
+
+### Busy-day flame and VIP avatar cleanup — requested 2026-10-14
+
+Rush/festival gameplay days show a static orange/yellow flame beside the existing HH:mm clock, in the gap after Pause. VIP avatars keep their original portrait/decorative frame but omit green patience and selection circles. All deadlines remain live in the selected customer information, including when prep-absence/status notices are present. Other customer circles, input regions, simulation timers and gameplay stay unchanged. Evidence: ui-baseline/event-flame-vip-2026-10-14; see spec-event-flame-vip-avatar.md.

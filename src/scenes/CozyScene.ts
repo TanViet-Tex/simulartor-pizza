@@ -496,6 +496,14 @@ export class CozyScene extends Phaser.Scene {
     this.inspectedOrderId=this.orderQueue.inspectedId;
     this.hit('pause',18,5,32,29,true,()=>this.hold('user'));
     if(this.runtime.productionActive)this.timer(86,8,()=>this.runtime.shiftClock.displayTime,16,cream);
+    const dayEvent=this.runtime.productionActive?this.runtime.deliveryApp.event?.id:null;
+    const hotDay=dayEvent==='rush'||dayEvent==='festival';
+    this.game.canvas.dataset.shiftHeatIndicator=hotDay?dayEvent:'';
+    if(hotDay){
+      this.graphics();
+      this.art.g.fillStyle(0xef792b,1).fillPoints([[57,5],[61,10],[62,15],[60,20],[55,20],[53,16],[54,11],[55,14]].map(([x,y])=>new Phaser.Math.Vector2(x,y)),true);
+      this.art.g.fillStyle(0xffdf79,1).fillPoints([[58,12],[60,17],[58,20],[55,18]].map(([x,y])=>new Phaser.Math.Vector2(x,y)),true);
+    }
     this.label(180,0,this.runtime.productionActive?`Ngày ${this.runtime.day}/${this.runtime.campaignEndDay}`:`Ngày ${this.runtime.day}`,18);
     if(this.runtime.productionActive&&['grace','awaiting-close'].includes(this.runtime.shiftClock.phase)){
       this.layer.add(this.add.rectangle(122,30,146,14,0x4b281b));
@@ -731,6 +739,7 @@ export class CozyScene extends Phaser.Scene {
     }
   }
   private customers():void{
+    const patienceRings:string[]=[];
     if(this.runtime.productionActive&&this.runtime.queueCapacity<6)for(let i=this.runtime.queueCapacity;i<6;i++){
       const {x,y,w,h,centerX,centerY}=KITCHEN.customer(i);
       this.icon('queue-lock',centerX,centerY,26);
@@ -755,8 +764,9 @@ export class CozyScene extends Phaser.Scene {
           if(special.kind==='kol'){this.art.g.lineStyle(1.5,0xd7b8ff,1).strokeRoundedRect(centerX-6,centerY-28,12,8,2).strokeCircle(centerX,centerY-24,2).fillStyle(0xd7b8ff,1).fillRect(centerX-4,centerY-30,4,2);}
           else this.label(centerX,centerY-26,special.kind==='vip'?'♛':'★',11,'#ffe4a4');}
       }
-      if(slot.selected){this.graphics();this.art.g.lineStyle(1.5,0x548b38,1).strokeCircle(centerX,centerY,23);}
-      if(slot.patienceRatio!==null)this.dynamic(()=>{const ticket=this.frameTickets.find(t=>t.id===slot.id);return ticket?Math.max(0,Math.min(1,ticket.remaining/ticket.patience)):slot.patienceRatio!;},(g,value)=>g.lineStyle(2,0x65b74d,1).beginPath().arc(centerX,centerY,24,-Math.PI/2,-Math.PI/2+Math.PI*2*value).strokePath());
+      const vipPortrait=!!this.runtime.tickets.find(t=>t.id===slot.id)?.vip||this.runtime.specialCustomerForTicket(slot.id)?.kind==='vip';
+      if(slot.selected&&!vipPortrait){this.graphics();this.art.g.lineStyle(1.5,0x548b38,1).strokeCircle(centerX,centerY,23);}
+      if(slot.patienceRatio!==null&&!vipPortrait){patienceRings.push(slot.id);this.dynamic(()=>{const ticket=this.frameTickets.find(t=>t.id===slot.id);return ticket?Math.max(0,Math.min(1,ticket.remaining/ticket.patience)):slot.patienceRatio!;},(g,value)=>g.lineStyle(2,0x65b74d,1).beginPath().arc(centerX,centerY,24,-Math.PI/2,-Math.PI/2+Math.PI*2*value).strokePath());}
       const name=this.label(centerX,119,slot.name,9,ink);
       if(name.width>51){name.setText(slot.name);while(name.width>51&&name.text.length>2)name.setText(name.text.replace(/…$/,'').slice(0,-1)+'…');}
       this.hit(this.runtime.productionActive?'ticket-'+slot.id:'customer-linh',bounds.x,bounds.y,bounds.w,bounds.h,true,()=>{
@@ -765,6 +775,7 @@ export class CozyScene extends Phaser.Scene {
         else if(!this.runtime.pauses.some(reason=>reason!=='tutorial'))this.inspectedOrderId=slot.id;
       });
     });
+    this.game.canvas.dataset.customerPatienceRings=JSON.stringify(patienceRings);
   }
   private orderCard():void{
     const detail=this.orderQueue.detail,message=this.runtime.shopMessage;
@@ -773,14 +784,15 @@ export class CozyScene extends Phaser.Scene {
     const appTicket=this.runtime.selectedTicket,book=detail?.source==='app'&&appTicket?.riderState==='none';
     const absentPrep=this.runtime.staffState.absentRoles.includes('prep');
     const notice=absentPrep?'Phụ bếp bận hôm nay · Không tính lương':this.runtime.productionActive&&['Khách từ chối giá','Khách chưa thể đặt món.','Đã đủ 3 đơn'].some(prefix=>message.startsWith(prefix))?message:'';
+    const vipPortrait=!!appTicket&&(appTicket.vip||this.runtime.specialCustomerForTicket(appTicket.id)?.kind==='vip');
     if(detail){
       this.graphics();this.art.pizza(33,164,13,recipeIngredients(detail.recipe));
       const row=(y:number,value:string,size:number,color:string)=>{const text=this.label(53,y,value,size,color,0,'left');const width=book?180:y===144&&courierText?146:282;if(text.width>width)text.setScale(width/text.width,1);return text;};
       row(144,`#${detail.number} · ${appTicket?.vip?'VIP · ':''}${detail.name}`,9,ink);
       if(courierText&&!book){const text=this.label(268,144,courierText,9,wood,132);this.timers.push({text,read:()=>`${status} · ${Math.ceil(this.runtime.deliveryStatus.remaining)}s`});}
       row(157,detail.lines[1],9,accent);
-      const clock=row(170,notice||(appTicket?.vip?`Còn ${Math.ceil(appTicket.remaining)}s · Đúng/chín: +500 · +2 uy tín`:detail.lines[2]),9,wood);
-      if(!notice)this.timers.push({text:clock,read:()=>{const ticket=this.frameTickets.find(t=>t.id===detail.id);return !ticket?clock.text:ticket.vip?`Còn ${Math.ceil(ticket.remaining)}s · Đúng/chín: +500 · +2 uy tín`:createOrderQueue([{...ticket,deliveryStatus:ticket.riderState==='waiting'?`Tới sau ${Math.ceil(ticket.riderRemaining)}s`:ticket.riderState==='arrived'?'Shipper đã tới':ticket.riderState==='staff'?'Nhân viên giao':'Chưa book shipper'}],ticket.id,ticket.id).detail?.lines[2]??clock.text;}});
+      const clock=row(170,notice?(vipPortrait?`Còn ${Math.ceil(appTicket!.remaining)}s · ${notice}`:notice):(appTicket?.vip?`Còn ${Math.ceil(appTicket.remaining)}s · Đúng/chín: +500 · +2 uy tín`:detail.lines[2]),9,wood);
+      if(!notice||vipPortrait)this.timers.push({text:clock,read:()=>{const ticket=this.frameTickets.find(t=>t.id===detail.id);return !ticket?clock.text:notice?`Còn ${Math.ceil(ticket.remaining)}s · ${notice}`:ticket.vip?`Còn ${Math.ceil(ticket.remaining)}s · Đúng/chín: +500 · +2 uy tín`:createOrderQueue([{...ticket,deliveryStatus:ticket.riderState==='waiting'?`Tới sau ${Math.ceil(ticket.riderRemaining)}s`:ticket.riderState==='arrived'?'Shipper đã tới':ticket.riderState==='staff'?'Nhân viên giao':'Chưa book shipper'}],ticket.id,ticket.id).detail?.lines[2]??clock.text;}});
     }else {const text=this.label(180,151,courierText||ORDER_DETAIL_PROMPT,13,ink,310);if(courierText)this.timers.push({text,read:()=>`${status} · ${Math.ceil(this.runtime.deliveryStatus.remaining)}s`});if(notice)this.label(180,170,notice,8,wood,310);}
     const {x,y,w,h}=KITCHEN.order;
     this.hit('order',x,y,book?224:w,h,!!detail||this.runtime.tutorialActive||!!notice,()=>{this.inspectedRecipe=null;if(this.orderQueue.detail||this.runtime.tutorialActive||notice)this.hold('order');});
