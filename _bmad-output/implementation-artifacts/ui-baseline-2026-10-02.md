@@ -632,3 +632,7 @@ Build/typecheck,19unit và3E2E Chromium360×640 đạt: muađồthật+writebị
 ### Seventh Quán section: Đơn app — requested 2026-10-14
 
 The requested extension retains the first six168×89 cards at x8/184,y292+95×row. The hero and shell remain fixed. Only the344×279 card viewport at8/292 scrolls95px to reveal a full-width seventh Đơn app card. The hint explains scrolling. Its subpage uses the existing cream/brown ShopScreenUI cards and black/gold controls: app settings, the100xu/+50% one-day campaign and live demand forecast. App settings moved out of Amenities. Five main tabs, background, header and footer retain their layout. Evidence: ui-baseline/app-orders-shop-campaign-2026-10-14/{home,home-scrolled,app-locked,silent-saving,purchased,restored}.png. These are implementation evidence for the requested extension; other approved regions remain unchanged.
+
+### App page visual polish — requested 2026-10-14
+
+App page retains the three card bounds and actions, with a pizza-phone illustration, compact live status pill, gold50% campaign badge, clear100xu budget and paired app/counter forecast metrics. Status distinguishes paid-but-disabled from active, and the duration/no-refund/inventory/queue explanations remain visible. Other screens keep their approved layout. Evidence: ui-baseline/app-orders-visual-polish-2026-10-14. See spec-app-orders-visual-polish.md.

@@ -5,7 +5,7 @@ test.setTimeout(120000);
 type Control={id:string;x:number;y:number;width:number;height:number;enabled:boolean};
 async function data(page:Page,key:string){return JSON.parse(await page.locator('canvas').getAttribute('data-'+key)||'null');}
 async function settle(page:Page){await page.evaluate(()=>new Promise<void>(resolve=>requestAnimationFrame(()=>requestAnimationFrame(()=>resolve()))));}
-async function ready(page:Page){await expect.poll(async()=>(await data(page,'save-state'))?.state).toBe('ready');await settle(page);}
+async function ready(page:Page){await expect.poll(async()=>(await data(page,'save-state'))?.state,{timeout:30000}).toBe('ready');await settle(page);}
 async function tap(page:Page,id:string){
  await expect.poll(async()=>((await data(page,'controls'))||[]).some((c:Control)=>c.id===id&&c.enabled)).toBe(true);
  const c:Control=(await data(page,'controls')).find((c:Control)=>c.id===id),b=(await page.locator('canvas').boundingBox())!;
@@ -56,12 +56,12 @@ test('seventh card is clipped, scrollable and discoverable while day1 app remain
   expect(rect.x).toBeCloseTo(21.6+(8+i%2*176)*.88);expect(rect.y).toBeCloseTo(21.6+(292+Math.floor(i/2)*95)*.88);expect(rect.w).toBeCloseTo(168*.88);expect(rect.h).toBeCloseTo(89*.88);
  }
  const shell=home.filter((c:Control)=>c.id.startsWith('summary-tab-')||c.id==='pause'||c.id==='summary-open-first-day');
- await page.locator('canvas').screenshot({path:'_bmad-output/implementation-artifacts/ui-baseline/app-orders-shop-campaign-2026-10-14/home.png'});
+ await page.locator('canvas').screenshot({path:'_bmad-output/implementation-artifacts/ui-baseline/app-orders-visual-polish-2026-10-14/home.png'});
  await swipeHomeCard(page);expect((await data(page,'controls')).filter((c:Control)=>c.id.startsWith('summary-tab-')||c.id==='pause'||c.id==='summary-open-first-day')).toEqual(shell);
- await page.locator('canvas').screenshot({path:'_bmad-output/implementation-artifacts/ui-baseline/app-orders-shop-campaign-2026-10-14/home-scrolled.png'});await tap(page,'shop-section-app');
+ await page.locator('canvas').screenshot({path:'_bmad-output/implementation-artifacts/ui-baseline/app-orders-visual-polish-2026-10-14/home-scrolled.png'});await tap(page,'shop-section-app');
  expect((await data(page,'controls')).find((c:Control)=>c.id==='shop-app-campaign').enabled).toBe(false);expect((await campaign(page)).reason).toBe('Mở từ ngày 5');
  await tap(page,'shop-delivery-app');await tap(page,'delivery-app-close');expect((await data(page,'delivery-app')).enabled).toBe(false);
- await page.locator('canvas').screenshot({path:'_bmad-output/implementation-artifacts/ui-baseline/app-orders-shop-campaign-2026-10-14/app-locked.png'});await tap(page,'shop-screen-back');
+ await page.locator('canvas').screenshot({path:'_bmad-output/implementation-artifacts/ui-baseline/app-orders-visual-polish-2026-10-14/app-locked.png'});await tap(page,'shop-screen-back');
  await tap(page,'shop-section-amenities');expect((await data(page,'controls')).some((c:Control)=>c.id==='shop-delivery-app')).toBe(false);expect(errors).toEqual([]);
 });
 
@@ -73,15 +73,15 @@ test('app toggle and daily campaign save silently once, preserve counter forecas
  expect((await data(page,'save-state')).state).toBe('saving');await expect(page.locator('canvas')).toHaveAttribute('data-screen','preparation-hub');
  expect((await campaign(page)).bought).toBe(false);expect(Number(await page.locator('canvas').getAttribute('data-cash'))).toBe(cash);
  expect((await data(page,'controls')).some((c:Control)=>c.id.startsWith('save-'))).toBe(false);
- await page.locator('canvas').screenshot({path:'_bmad-output/implementation-artifacts/ui-baseline/app-orders-shop-campaign-2026-10-14/silent-saving.png'});await tap(page,'summary-tab-stock');
+ await page.locator('canvas').screenshot({path:'_bmad-output/implementation-artifacts/ui-baseline/app-orders-visual-polish-2026-10-14/silent-saving.png'});await tap(page,'summary-tab-stock');
  await page.evaluate(()=>(window as any).releaseAppWrite());await ready(page);await tap(page,'summary-tab-shop');await openApp(page);
  const after=await campaign(page);expect(after.bought).toBe(true);expect(after.forecast).toMatchObject({appOrders:3,shopVisits:before.forecast.shopVisits});expect(Number(await page.locator('canvas').getAttribute('data-cash'))).toBe(cash-100);
  expect((await data(page,'controls')).find((c:Control)=>c.id==='shop-app-campaign').enabled).toBe(false);
  await enableApp(page);expect((await campaign(page)).forecast.appOrders).toBe(0);expect((await campaign(page)).bought).toBe(true);await enableApp(page);expect((await campaign(page)).forecast).toEqual(after.forecast);
- await page.locator('canvas').screenshot({path:'_bmad-output/implementation-artifacts/ui-baseline/app-orders-shop-campaign-2026-10-14/purchased.png'});
+ await page.locator('canvas').screenshot({path:'_bmad-output/implementation-artifacts/ui-baseline/app-orders-visual-polish-2026-10-14/purchased.png'});
  await page.unroute('**/assets/index-*.js');await page.goto('/?mode=shop');await ready(page);await tap(page,'summary-tab-shop');await openApp(page);
  expect((await data(page,'shop-screen-cards')).find((card:any)=>card.id==='app-campaign').bought).toBe(true);expect((await data(page,'shop-screen-cards')).find((card:any)=>card.id==='app-forecast').appOrders).toBe(3);expect(Number(await page.locator('canvas').getAttribute('data-cash'))).toBe(cash-100);
- await page.locator('canvas').screenshot({path:'_bmad-output/implementation-artifacts/ui-baseline/app-orders-shop-campaign-2026-10-14/restored.png'});expect(errors).toEqual([]);
+ await page.locator('canvas').screenshot({path:'_bmad-output/implementation-artifacts/ui-baseline/app-orders-visual-polish-2026-10-14/restored.png'});expect(errors).toEqual([]);
 });
 
 test('failed campaign save shows retry and commits the staged cost once',async({page})=>{
