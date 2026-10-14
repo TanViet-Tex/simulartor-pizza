@@ -532,3 +532,9 @@ Build/typecheck, 9 unit và 1 E2E Chromium360×640 kiểm tra cả năm tab đ�
 Save đã lưu reports từng ngày; lỗi hiển thị cũ chỉ đọc daySummary=null khi restore sang chuẩn bị. reviewHistory tổng reports và review ca chưa chốt, loại trùng bằng closedDays; điểm sao theo từng lượt. latestDayReport mở rộng báo cáo archive cuối. Khách nói gì/popup dùng history; lợi nhuận/thu chi/thống kê/tiến độ chuẩn bị dùng báo cáo cuối, ghi ngày nguồn; header/footer/ngày chuẩn bị/tiền/kho vẫn đọc runtime thật. Không sửa schema, cộng lại tiền hoặc đổi luật lưu tại mốc chốt ca. Xem implementation-artifacts/spec-persistent-reviews-and-profit.md.
 
 Build/typecheck, 30 unit tập trung và 1 E2E Chromium360×640 đạt: Tiếp tục thật/reload hai lần, tổng review/filter/lợi nhuận và thu chi gần nhất còn giữ; mở tiếp đúng ngày kế tiếp.
+
+### Lãi mọi pizza đã mở và gợi ý nguyên liệu nhẹ — 2026-10-14
+
+Menu & giá hiển thị Lãi = giá bán hiện tại − vốn theo giá nguyên liệu cho mọi công thức đã sở hữu, kể cả không được chọn/đang tắt bán. Thẻ chọn giữ panel cũ, thẻ khác dùng dòng nhỏ trong chiều cao108px hiện có; bánh chưa mua không hiện lãi. Không đổi giá, nút, kích thước hay vị trí thẻ. Gợi ý nguyên liệu còn thiếu: nền alpha0.06, viền1px vàng dịu alpha0.18 thay nền0.22/viền2px alpha1; khóa kho và trạng thái đã thêm giữ nguyên.
+
+Build/typecheck và 1 E2E Chromium360×640 màn quản lý/Menu đạt, gồm đổi giá và tắt/bật món; ảnh Menu kiểm tra dòng lãi ở cả thẻ chọn và thẻ đã sở hữu khác.

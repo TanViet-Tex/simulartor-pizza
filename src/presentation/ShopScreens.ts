@@ -40,8 +40,9 @@ export function drawShopScreen(scene:Phaser.Scene,layer:Phaser.GameObjects.Conta
           ui.panel(287,y+56,48,29,recipe.enabled?'#247339':'#746b5b','#4e5530',14);const ctx=ui.context;ctx.fillStyle='#fff2dd';ctx.beginPath();ctx.arc(recipe.enabled?323:299,y+70.5,10,0,Math.PI*2);ctx.fill();
           actions.push({id:'shop-menu-toggle-'+recipe.id,x:285,y:y+54,width:52,height:34,enabled:input.canAct,run:()=>input.configure(recipe.id,recipe.percent,!recipe.enabled)});
           if(selected){ui.panel(102,y+94,233,27,'#e0ebbd');ui.icon('coin',109,y+98,18);ui.text(132,y+102,`Lãi ${recipe.price-recipe.cost} xu / bánh`,12,'#245020',false,196);}
+          else ui.text(102,y+90,`Lãi ${recipe.price-recipe.cost} xu / bánh`,10,'#245020',false,233);
         }else action('shop-recipe-buy-'+recipe.id,101,y+57,235,34,input.cash<recipe.purchasePrice?`Thiếu ${recipe.purchasePrice-input.cash} xu`:`Mua công thức · ${recipe.purchasePrice} xu`,input.canAct&&input.cash>=recipe.purchasePrice,()=>input.buy(recipe.id));
-        cards.push({id:recipe.id,y,height:rowHeight,price:recipe.price,cost:recipe.cost,owned:recipe.owned,enabled:recipe.enabled,selected});y+=rowHeight;
+        cards.push({id:recipe.id,y,height:rowHeight,price:recipe.price,cost:recipe.cost,profit:recipe.owned?recipe.price-recipe.cost:null,owned:recipe.owned,enabled:recipe.enabled,selected});y+=rowHeight;
       }
       ui.panel(8,y,344,48,'#e6edc8');ui.text(180,y+8,'Giá 80–140% · Giá cao có thể bị từ chối',11,'#623619',true,324);ui.text(180,y+27,`Áp dụng ca ngày ${input.day} · Đơn cũ giữ giá`,11,'#245020',true,324);height=y+55;
     }else if(page==='decoration'||page==='amenities'){

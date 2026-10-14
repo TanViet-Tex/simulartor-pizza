@@ -7,6 +7,10 @@ date: '2026-10-02'
 
 # Giao diện hiện tại là mốc cho các lần triển khai sau
 
+### Lãi công thức và gợi ý bếp nhẹ — yêu cầu 2026-10-14
+
+Mỗi thẻ pizza đã sở hữu luôn hiện lãi; thẻ chưa chọn có dòng nhỏ dưới controls trong chiều cao cũ, không chỉ hiện pizza đang chọn. Gợi ý nguyên liệu cần dùng khi khách vào giảm độ đậm nền/viền; giữ vị trí ô, icon, nhãn, số lượng và vùng bấm. Không đổi gameplay/giá hoặc bố cục phần khác.
+
 ### Tổng đánh giá và báo cáo gần nhất sau Tiếp tục — 2026-10-13
 
 Khách nói gì và popup Đánh giá tổng hợp đọc review của tất cả ngày; giữ hai dòng gần nhất, điểm sao theo tổng lượt và các bộ lọc cũ. Chuẩn bị sau reload hiển thị lợi nhuận/thu chi/thống kê ngày đã chốt gần nhất, nhãn lợi nhuận/tiến độ ghi ngày nguồn. Header/ngày mở tiếp/tiền/kho vẫn là dữ liệu hiện tại. Giữ nguyên mọi khung, vị trí nút, số tab/thẻ/ô và artwork. Xem [spec](spec-persistent-reviews-and-profit.md).

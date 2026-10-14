@@ -642,7 +642,7 @@ export class CozyScene extends Phaser.Scene {
   private ingredientState(x:number,y:number,w:number,h:number,available:boolean,selected:boolean,needed=false):void{
     this.graphics();
     if(selected)this.art.g.fillStyle(0xf6ead4,.08).fillRoundedRect(x+2,y+2,w-4,h-4,8);
-    if(available&&needed)this.art.g.fillStyle(0xfff1c2,.22).fillRoundedRect(x+2,y+2,w-4,h-4,8).lineStyle(2,0xffd45e,1).strokeRoundedRect(x+2,y+2,w-4,h-4,8);
+    if(available&&needed)this.art.g.fillStyle(0xfff1c2,.06).fillRoundedRect(x+2,y+2,w-4,h-4,8).lineStyle(1,0xd9ba78,.18).strokeRoundedRect(x+2,y+2,w-4,h-4,8);
     if(!available){this.art.g.fillStyle(0x19120d,.38).fillRoundedRect(x+2,y+2,w-4,h-4,8);this.icon('lock',x+w-8,y+9,12,.9);}
   }
   private stockBadge(id:StockIngredient,x:number,y:number,w:number):void{
