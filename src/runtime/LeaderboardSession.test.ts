@@ -49,6 +49,18 @@ describe('named leaderboard session',()=>{
     const port=transport();port.read=vi.fn(async()=>{throw new LeaderboardError('unconfigured','missing');});
     const session=new LeaderboardSession(storage(),port,identity);session.refresh();await tick();expect(session.view()).toMatchObject({state:'unconfigured',entries:[],self:null});
   });
+  it('keeps a loaded ranking visible when a later committed score is published',async()=>{
+    const port=transport(),row={id:identity().id,name:'Player',cash:500,day:1,rank:1};port.read=vi.fn(async()=>({entries:[row],self:row}));
+    const session=new LeaderboardSession(storage(),port,identity);session.setName('Player');session.refresh();await tick();expect(session.view().state).toBe('ready');
+    session.capture(snapshot());await tick();expect(session.view()).toMatchObject({state:'ready',entries:[row],self:row});
+  });
+  it('clears the unsent warning when a publication finishes after a list response',async()=>{
+    const port=transport();let read!:()=>void,publish!:()=>void;
+    port.read=()=>new Promise(resolve=>{read=()=>resolve({entries:[{id:identity().id,name:'Player',cash:500,day:1,rank:1}],self:null});});
+    port.publish=()=>new Promise(resolve=>{publish=resolve;});
+    const session=new LeaderboardSession(storage(),port,identity);session.setName('Player');session.refresh();await tick();session.capture(snapshot());read();await tick();
+    expect(session.view().message).toContain('chưa đồng bộ');publish();await tick();expect(session.view()).toMatchObject({state:'ready',message:''});
+  });
   it('an older tab acknowledgement cannot erase another tab latest durable failed score',async()=>{
     const store=storage(),aPort=transport(),bPort=transport();let release!:()=>void;
     aPort.publish=vi.fn().mockImplementationOnce(()=>new Promise<void>(resolve=>{release=resolve;})).mockResolvedValue(undefined);

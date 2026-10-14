@@ -13,7 +13,8 @@ import {SHOP_INSTALL_LOCATIONS} from '../presentation/ShopPlacement';
 import {ReferenceStock,type StockFilter} from '../presentation/ReferenceStock';
 import {ReferenceShop,SHOP_ART,type ShopPage} from '../presentation/ReferenceShop';
 import {UI_RASTER_SCALE,strengthenIllustrations} from '../presentation/UiRaster';
-import {ReferenceMissions} from '../presentation/ReferenceMissions';
+import {ReferenceLeaderboard} from '../presentation/ReferenceLeaderboard';
+import type {LeaderboardMenuActions} from '../domain/Leaderboard';
 import {stockRows} from '../presentation/StockPlanning';
 import {drawStockPlanner} from '../presentation/StockPlannerPanel';
 ﻿import Phaser from 'phaser';
@@ -155,6 +156,7 @@ export class CozyScene extends Phaser.Scene {
   private marketError='';
   private readonly purchaseScope=crypto.randomUUID();
   private summaryTab:'summary'|'market'|'stock'|'shop'|'missions'='summary';
+  private leaderboardPage=0;
   private get preparationHub():boolean{return this.runtime.productionActive&&this.runtime.shopPhase==='preparation'&&!this.runtime.shopOpen;}
   private lifecycle!:PlayLifecycle;
   private browserLifecycle!:BrowserPlayLifecycle;
@@ -183,7 +185,7 @@ export class CozyScene extends Phaser.Scene {
   private reloadConfirmation=false;
   private notification?:{layout:NotificationLayout;ids:string[];start:number;end:number;title:boolean;fitting?:{frames:Phaser.GameObjects.GameObject[];heading?:Phaser.GameObjects.Text}};
   private notificationButtonLabel=false;
-  constructor(private readonly runtime:CozyRuntime,private readonly preferences?:MenuPreferences,private readonly returnToMenu?:()=>void,private readonly audio=new PlayAudio(),private readonly sharedLifecycle?:PlayLifecycle,private readonly campaignSession?:CozyCampaignSession,private readonly replaceRuntime?:(runtime:CozyRuntime)=>void,private readonly loading?:{progress:(progress:number)=>void;ready:()=>void;cancel:()=>void}){super('CozyScene');}
+  constructor(private readonly runtime:CozyRuntime,private readonly preferences?:MenuPreferences,private readonly returnToMenu?:()=>void,private readonly audio=new PlayAudio(),private readonly sharedLifecycle?:PlayLifecycle,private readonly campaignSession?:CozyCampaignSession,private readonly replaceRuntime?:(runtime:CozyRuntime)=>void,private readonly loading?:{progress:(progress:number)=>void;ready:()=>void;cancel:()=>void},private readonly leaderboard?:LeaderboardMenuActions){super('CozyScene');}
   preload():void{
     if(this.loading){
       const {progress,ready,cancel}=this.loading;
@@ -215,6 +217,9 @@ export class CozyScene extends Phaser.Scene {
     registerSpecialCustomerPortraitFrames(this);
     registerSpecialCustomerFrames(this);
     this.runtime.setSpecialPresentation(true);
+    let unsubscribeLeaderboard=this.leaderboard?.subscribe(()=>{this.dirty=true;});
+    const cleanupLeaderboard=()=>{unsubscribeLeaderboard?.();unsubscribeLeaderboard=undefined;};
+    this.events.once('shutdown',cleanupLeaderboard);this.events.once('destroy',cleanupLeaderboard);
     this.events.once('shutdown',()=>this.runtime.setSpecialPresentation(false));
     const clearWorkbenchDrink=()=>{this.game.canvas.dataset.workbenchDrink='null';};
     this.events.once('shutdown',clearWorkbenchDrink);this.events.once('destroy',clearWorkbenchDrink);
@@ -368,9 +373,9 @@ export class CozyScene extends Phaser.Scene {
     const rawY=y,rawH=h;
     if(list){y=Math.max(top,y);h=Math.max(0,Math.min(bottom,rawY+rawH)-y);enabled=enabled&&h>0;}
     this.tapRects.set(id,{x,y,w,h});
-    if(this.campaignSession&&['loading','saving','error','recovery'].includes(this.campaignSession.view.state))enabled=enabled&&(['pause','mute'].includes(id)||id.startsWith('test-code-')||id.startsWith('summary-tab-')||id.startsWith('summary-figure-')||id==='summary-statement-close'||id.startsWith('save-'));
+    if(this.campaignSession&&['loading','saving','error','recovery'].includes(this.campaignSession.view.state))enabled=enabled&&(['pause','mute'].includes(id)||id.startsWith('test-code-')||id.startsWith('summary-tab-')||id.startsWith('summary-figure-')||id.startsWith('leaderboard-')||id==='summary-statement-close'||id.startsWith('save-'));
     if(this.runtime.productionActive&&!this.runtime.tutorialActive&&this.runtime.shopPhase!=='making'&&this.runtime.shopPhase!=='delivered'&&!this.runtime.pauses.length){
-      enabled=enabled&&(['pause','mute'].includes(id)||id.startsWith('market-')||id.startsWith('summary-')||id.startsWith('stock-')||id.startsWith('shop-'));
+      enabled=enabled&&(['pause','mute'].includes(id)||id.startsWith('market-')||id.startsWith('summary-')||id.startsWith('stock-')||id.startsWith('shop-')||id.startsWith('leaderboard-'));
     }
     if(this.guidedTutorialVisible)enabled=enabled&&!this.tutorialAnimating&&!this.campaignSession?.savingTutorial&&(id.startsWith('tutorial-')||this.runtime.tutorialPhase==='practice'&&id===this.runtime.expectedControl&&this.runtime.tutorialStep!=='complete');
     if(enabled)this.visibleActions.push({id,x,y,w,h,action});
@@ -919,10 +924,10 @@ export class CozyScene extends Phaser.Scene {
         summary!.ending?{id:'summary-final-result',title:'Kết quả chiến dịch',enabled:!this.campaignSession||['ready','temporary'].includes(this.campaignSession.view.state),action:()=>this.openFinalResults()}:
         {id:'summary-open-next-day',title:`Mở quán — Ngày ${summary!.day+1}`,enabled:this.runtime.canOpenNextDay,action:()=>this.openPreparedDay(true)};
       const reports=this.runtime.completedReports;
-      const tab=(id:'summary'|'market'|'stock'|'shop'|'missions')=>{this.hubNavigationMotion.select(id,performance.now(),this.reducedMotion);if(id==='shop')this.setShopPage('home');this.summaryTab=id;this.stockDrag.active=false;this.marketDrag.active=false;this.dirty=true;};
+      const tab=(id:'summary'|'market'|'stock'|'shop'|'missions')=>{this.hubNavigationMotion.select(id,performance.now(),this.reducedMotion);if(id==='shop')this.setShopPage('home');this.summaryTab=id;if(id==='missions')this.leaderboard?.refresh();this.stockDrag.active=false;this.marketDrag.active=false;this.dirty=true;};
       const shopTitles={home:'Quản lý quán',menu:'Menu & giá bán',decoration:'Trang trí',equipment:'Thiết bị',amenities:'Tiện nghi',expansion:'Mở rộng quán',staff:'Nhân viên'};
-      const title=this.summaryTab==='summary'?(summary?`Kết thúc ngày ${summary.day}`:'Chuẩn bị mở cửa'):this.summaryTab==='market'?'Chợ nguyên liệu':this.summaryTab==='stock'?'Kho nguyên liệu':this.summaryTab==='shop'?shopTitles[this.shopPage]:'Nhiệm vụ';
-      const subtitle=this.summaryTab==='missions'?`Ngày ${this.runtime.preparationDay} · Cấp ${this.runtime.progression.level}`:this.summaryTab==='summary'?(summary?`Ngày ${this.runtime.day} · Cấp ${this.runtime.progression.level}`:`Ngày ${this.runtime.day} chưa bắt đầu`):`Chuẩn bị ngày ${this.runtime.preparationDay}`;
+      const title=this.summaryTab==='summary'?(summary?`Kết thúc ngày ${summary.day}`:'Chuẩn bị mở cửa'):this.summaryTab==='market'?'Chợ nguyên liệu':this.summaryTab==='stock'?'Kho nguyên liệu':this.summaryTab==='shop'?shopTitles[this.shopPage]:'Bảng xếp hạng';
+      const subtitle=this.summaryTab==='missions'?'Tiền nhiều nhất · Ngày chơi':this.summaryTab==='summary'?(summary?`Ngày ${this.runtime.day} · Cấp ${this.runtime.progression.level}`:`Ngày ${this.runtime.day} chưa bắt đầu`):`Chuẩn bị ngày ${this.runtime.preparationDay}`;
       if(this.hubNavigationMotion.sample(performance.now(),this.reducedMotion).active!==this.summaryTab)this.hubNavigationMotion.select(this.summaryTab,performance.now(),true);
       this.hubNavigationRefresh=drawHubShell(this,this.layer,(...args)=>this.hit(...args),{title,subtitle,cash:this.runtime.state.cash,pause:()=>this.hold('user'),active:this.summaryTab,tab,motion:()=>this.hubNavigationMotion.sample(performance.now(),this.reducedMotion)});
       this.game.canvas.dataset.hubShellLayout=JSON.stringify(HUB_SHELL_LAYOUT);
@@ -933,7 +938,7 @@ export class CozyScene extends Phaser.Scene {
         new ReferenceShop(this,this.hubLayer,(...args)=>this.hubHit(...args)).draw({shell:false,offset:this.shopOffset,drag:this.shopDrag,canScroll:()=>this.runtime.pauses.length===0,scroll:offset=>{this.shopOffset=offset;},sync:render=>this.syncListHits(render),filter:this.shopFilter,setFilter:filter=>{this.shopFilter=filter;this.shopOffset=0;this.dirty=true;},selectedRecipe:this.shopSelectedRecipe,selectRecipe:recipe=>{this.shopSelectedRecipe=recipe;this.dirty=true;},advertising:this.runtime.advertisingState,advertise:()=>this.openAdvertisingDialog(),fridge:this.runtime.fridgeState,buyFridge:()=>this.openFridgeDialog(),staff:this.runtime.staffState,staffPreviews:STAFF_CATALOG.map(entry=>this.runtime.staffPreview(entry.role)),employee:role=>this.openStaffHire(role),shop:this.runtime.shopState,item:id=>this.openShopItem(id),app:()=>this.openDeliveryApp('settings'),deliveryApp:{...this.runtime.deliveryApp,eventName:this.runtime.deliveryApp.nextEvent.name},day:this.runtime.preparationDay,cash:this.runtime.state.cash,page:this.shopPage,canAct:this.runtime.canSetPrices,ovenLevel:this.runtime.ovenLevel,queueCapacity:this.runtime.queueCapacity,queueLevel:this.runtime.queueLevel,queueVisitorBonus:this.runtime.queueVisitorBonus,nextQueueCapacity:this.runtime.nextQueueCapacity,ovenPrice:this.runtime.upgradePrice('oven'),queuePrice:this.runtime.upgradePrice('queue'),menuPage:this.shopMenuPage,pageMenu:page=>{this.shopMenuPage=page;this.dirty=true;},buy:id=>this.openRecipePurchase(id),configure:(id,percent,enabled)=>{this.applyMenu(id,percent,enabled);},recipes:RECIPE_CATALOG.map(r=>r.id).map(id=>({id,name:recipeName(id),price:this.runtime.customerProgress.prices[id],percent:this.runtime.customerProgress.pricePercents[id],cost:recipeIngredients(id).reduce((n,item)=>n+this.runtime.price(item),0),enabled:this.runtime.menuRecipes.includes(id),owned:this.runtime.ownedRecipes.includes(id),purchasePrice:recipeDefinition(id).purchasePrice})),open:page=>this.setShopPage(page),price:id=>this.choosePrice(id),upgrade:kind=>this.openHubUpgrade(kind),tab,pause:()=>this.hold('user'),footer});return;
       }
       if(this.summaryTab==='missions'){
-        new ReferenceMissions(this,this.hubLayer,(...args)=>this.hubHit(...args)).draw({shell:false,day:this.runtime.preparationDay,cash:this.runtime.state.cash,progress:this.runtime.progression,ending:!!summary?.ending,tab,pause:()=>this.hold('user'),footer});return;
+        new ReferenceLeaderboard(this,this.hubLayer,(...args)=>this.hubHit(...args)).draw({view:this.leaderboard?.view()??{state:'unconfigured',message:'Bảng xếp hạng chưa được kết nối.',entries:[],self:null,name:''},page:this.leaderboardPage,setPage:page=>{this.leaderboardPage=page;this.dirty=true;},refresh:()=>this.leaderboard?.refresh(),canRefresh:!!this.leaderboard,footer});return;
       }
       if(this.summaryTab==='market'){
         new ReferenceMarket(this,this.hubLayer,(...args)=>this.hubHit(...args),render=>this.syncListHits(render)).draw({shell:false,needsIngredients:!this.runtime.boughtIngredientsForPreparation,access:id=>this.runtime.ingredientAccess(id),basketTotal:this.marketBasketTotal,reservePercent:this.runtime.marketForecast.reservePercent,suggest:()=>this.suggestMarket(),buyAll:()=>this.openMarketBasket(),unitPrice:id=>this.isMarketDrink(id)?drinkDefinition(id).purchasePrice:this.runtime.price(id),supplier:this.runtime.supplier,day:this.runtime.preparationDay,cash:this.runtime.state.cash,canBuy,readOnlyReason:summary?.ending?'Chặng bán hàng đã kết thúc · Chợ chỉ để xem':'Mua đang bị khóa · Hãy xử lý lưu tiến độ',canScroll:()=>this.runtime.pauses.length===0,filter:this.marketFilter,offset:this.marketOffset,drag:this.marketDrag,quantities:this.marketQuantities,available:id=>this.isMarketDrink(id)?this.runtime.drinkStock.find(drink=>drink.id===id)!.quantity:this.runtime.available(id),quantity:(id,delta)=>{if(this.isMarketDrink(id)||this.runtime.ingredientAccess(id).unlocked)this.marketQuantities[id]=Phaser.Math.Clamp((this.marketQuantities[id]??1)+delta,0,100);this.dirty=true;},buy:id=>this.buyMarketItem(id),editQuantity:id=>{if(!this.isMarketDrink(id))this.openMarketQuantity(id);},scroll:offset=>{this.marketOffset=offset;},setFilter:filter=>{this.marketFilter=filter;this.marketOffset=0;this.dirty=true;},tab:id=>{this.summaryTab=id;this.dirty=true;},pause:()=>this.hold('user'),price:()=>this.choosePrice(this.runtime.selectedRecipe),footer});
@@ -1292,7 +1297,7 @@ export class CozyScene extends Phaser.Scene {
     if(id.startsWith('market-')){this.summaryTab='market';this.marketFilter='all';this.marketOffset=0;}
     if(id.startsWith('stock-')){this.summaryTab='stock';this.stockFilter='all';this.stockOffset=0;}
     if(id.startsWith('shop-')){this.summaryTab='shop';this.setShopPage(id.slice(5) as ShopPage);this.shopMenuPage=0;}
-    if(id.startsWith('missions-'))this.summaryTab='missions';
+    if(id.startsWith('missions-')){this.summaryTab='missions';this.leaderboard?.refresh();}
   }
   private tutorialFocus(id:string):TutorialRect{
     const rect=(x:number,y:number,width:number,height:number)=>({x,y,width,height});
@@ -1325,8 +1330,8 @@ export class CozyScene extends Phaser.Scene {
     if(id==='shop-equipment')return hubWallRect(8,180,344,166);
     if(id==='shop-expansion')return hubWallRect(8,309,344,118);
     if(id==='shop-staff')return hubWallRect(8,180,168,163);
-    if(id==='missions-progress')return hubWallRect(8,287,344,129);
-    if(id==='missions-reward')return hubWallRect(16,378,326,30);
+    if(id==='missions-progress')return hubWallRect(8,240,344,235);
+    if(id==='missions-reward')return control('leaderboard-refresh')??hubWallRect(83,531,194,48);
     return control('summary-open-first-day')??hubWallRect(12,587,336,48);
   }
   private overlay():void{

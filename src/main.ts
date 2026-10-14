@@ -61,6 +61,7 @@ function mainMenu(): Phaser.Scene {
     scoreStamp=stamp;leaderboard.capture(snapshot,replaceCampaign);if(replaceCampaign)replaceScoreAfter=undefined;
   };
   const unsubscribeScore=session.subscribe(syncLeaderboard);
+  const leaderboardActions={view:leaderboard.view,subscribe:leaderboard.subscribe,refresh:()=>{syncLeaderboard();leaderboard.refresh();},setName:(value:string)=>leaderboard.setName(value)};
   let initialized=false;
   let menu:MainMenuScene,opening=false;
   const launch=async(operation:()=>CozyRuntime|null|Promise<CozyRuntime|null>)=>{
@@ -85,7 +86,7 @@ function mainMenu(): Phaser.Scene {
         requestAnimationFrame(()=>requestAnimationFrame(()=>{game.scene.stop('MainMenuScene');lease?.release();opening=false;}));
       },
       cancel:()=>lease?.release(),
-    }:undefined);
+    }:undefined,leaderboardActions);
     try{game.scene.add('CozyScene',play,true);}catch(error){lease?.release();throw error;}
     if(waiting)game.scene.bringToTop('MainMenuScene');else opening=false;
   };
@@ -94,7 +95,7 @@ function mainMenu(): Phaser.Scene {
   game.events.once(Phaser.Core.Events.DESTROY,()=>{unsubscribeScore();leaderboard.destroy();});
   return menu=new MainMenuScene(preferences,{
     hasSession:() => session.hasSession,
-    leaderboard:{view:leaderboard.view,subscribe:leaderboard.subscribe,refresh:()=>{syncLeaderboard();leaderboard.refresh();},setName:value=>leaderboard.setName(value)},
+    leaderboard:leaderboardActions,
     start:() => {replaceScoreAfter=session.view.campaignId;void launch(()=>session.start(mode!=='shop'));},
     continue:() => {syncLeaderboard();void launch(()=>session.continue());},
     testCode:{message:value=>session.testCodeMessage(value),claim:value=>session.claimTestCode(value),claimed:()=>!!session.runtime?.testCodeClaimed,save:()=>session.view,retry:()=>{void session.retry();}},

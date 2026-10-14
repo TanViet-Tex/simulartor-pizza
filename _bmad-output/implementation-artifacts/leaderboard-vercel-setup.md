@@ -12,7 +12,7 @@ Code hỗ trợ đặt tên và bảng chung theo tiền hiện có, giảm dầ
 
 ## Kiểm tra sau deploy
 
-Mở link bằng hai trình duyệt/thiết bị riêng, Bắt đầu và đặt hai tên khác nhau. Khi lưu xong, về menu → Bảng xếp hạng → Làm mới: cả hai thấy cùng dữ liệu, dòng mình có dấu nhận biết. Cho một người nhận mã 100.000 xu, lưu thành công rồi Làm mới ở trình duyệt kia để đối chiếu tiền. Chơi/chốt ngày để kiểm tra ngày mới; mua đồ đã lưu giảm tiền trên bảng như tiền thực tế.
+Mở link bằng hai trình duyệt/thiết bị riêng, Bắt đầu và đặt hai tên khác nhau. Khi lưu xong, về menu → Bảng xếp hạng hoặc chọn tab Xếp hạng ở màn quản lý → Làm mới: cả hai thấy cùng dữ liệu, dòng mình có dấu nhận biết. Cho một người nhận mã 100.000 xu, lưu thành công rồi Làm mới ở trình duyệt kia để đối chiếu tiền. Chơi/chốt ngày để kiểm tra ngày mới; mua đồ đã lưu giảm tiền trên bảng như tiền thực tế.
 
 Nếu chưa cấu hình database/API, bảng thông báo chưa kết nối và không tạo người chơi giả. Mất mạng không khóa game/lưu local; bản cập nhật cuối chờ trong bộ nhớ trình duyệt và được gửi lại khi có lưu mới hoặc bấm Làm mới.
 

@@ -26,9 +26,9 @@ const messages:Record<InteractiveTutorialId,string>={
   'shop-amenities':'Tiện nghi: mua và đặt để khách chờ lâu hơn. App giao hàng mở từ ngày 5.',
   'shop-expansion':'Mở rộng quán: thêm ô khách 4→5→6; bonus khách +10% rồi tổng +30%.',
   'shop-staff':'Nhân viên: thuê theo nghề, trả lương cuối ngày. Phụ bếp bận được miễn lương.',
-  'missions-goal':'Nhiệm vụ: xem mục tiêu và tiến độ. Đạt yêu cầu sẽ tự nhận thưởng.',
-  'missions-progress':'Tiến độ tăng khi bạn phục vụ đúng yêu cầu của nhiệm vụ.',
-  'missions-reward':'Thưởng được cộng tự động một lần khi đạt luật; không cần bấm nhận.',
+  'missions-goal':'Bảng xếp hạng: xem tên, tiền và ngày chơi. Người có nhiều tiền nhất đứng đầu.',
+  'missions-progress':'Bảng xếp hạng cập nhật online khi đã kết nối. Dòng vàng là người chơi của bạn.',
+  'missions-reward':'Bấm Làm mới để cập nhật bảng và xem hạng của mình.',
   ready:'Bạn đã sẵn sàng! Mua đủ nguyên liệu rồi bắt đầu ngày đầu tiên.',
 };
 export const INTERACTIVE_TUTORIAL_STEPS=INTERACTIVE_TUTORIAL_IDS.map((id,index)=>Object.freeze({id,text:messages[id],phase:interactiveTutorialPhase(index),manual:index<3||index>=11}));

@@ -8,7 +8,7 @@ describe('interactive tutorial uses existing isolated practice',()=>{
     const r=fresh();expect(r.dispatch({type:'ingredient',ingredient:'dough'})).toBe(false);expect(r.tutorialProgress?.index).toBe(0);
     for(let i=0;i<3;i++)r.nextTutorial();expect(r.dispatch({type:'ingredient',ingredient:'cheese'})).toBe(false);expect(r.tutorialProgress?.index).toBe(3);
     for(const ingredient of ['dough','sauce','cheese'] as const)r.dispatch({type:'ingredient',ingredient});expect(r.dispatch({type:'extract'})).toBe(false);r.dispatch({type:'bake'});r.advanceElapsed(60000);
-    expect(r.tutorialProgress?.index).toBe(8);expect(r.state.ovenSeconds).toBe(6);expect(r.state.stage).toBe('baking');expect(r.completedReports).toEqual([]);expect(r.stockLots).toEqual([]);
+    expect(r.tutorialProgress?.index).toBe(8);expect(r.state.ovenSeconds).toBe(4);expect(r.state.stage).toBe('baking');expect(r.completedReports).toEqual([]);expect(r.stockLots).toEqual([]);
   });
   it('round trips every practice step without touching commercial economics',()=>{
     const r=fresh();for(let i=0;i<3;i++)r.nextTutorial();

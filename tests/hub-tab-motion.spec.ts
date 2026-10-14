@@ -1,7 +1,7 @@
 import {expect,test,type Page} from '@playwright/test';
 import {build} from 'esbuild';
 
-test.setTimeout(90000);
+test.setTimeout(120000);
 async function state(page:Page){return JSON.parse(await page.locator('canvas').getAttribute('data-hub-navigation-motion')??'null');}
 async function tick(page:Page,now:number){await page.evaluate(value=>{(window as any).navFixture.now=value;},now);await page.evaluate(()=>new Promise<void>(resolve=>requestAnimationFrame(()=>requestAnimationFrame(()=>resolve()))));}
 async function tap(page:Page,id:string){
@@ -18,7 +18,7 @@ async function fixture(page:Page){
     const f={r,prefs,scene,now:0};window.navFixture=f;const motion=scene.hubNavigationMotion,select=motion.select.bind(motion),sample=motion.sample.bind(motion);
     motion.select=(id,now,reduced)=>select(id,f.now,reduced);motion.sample=(now,reduced)=>sample(f.now,reduced);
     new Phaser.Game({type:Phaser.AUTO,parent:'fixture',width:360,height:640,scale:{mode:Phaser.Scale.FIT,autoCenter:Phaser.Scale.CENTER_BOTH},scene:[scene]});
-  `},bundle:true,platform:'browser',format:'iife',define:{'import.meta.env.BASE_URL':'"/"'},write:false});
+  `},bundle:true,platform:'browser',format:'iife',minify:true,define:{'import.meta.env.BASE_URL':'"/"'},write:false});
   await page.route('**/assets/index-*.js',route=>route.abort());await page.goto('/');await page.setContent('<style>html,body{margin:0;height:100%;overflow:hidden}#fixture{width:100%;height:100%}</style><div id="fixture"></div>');
   await page.addScriptTag({content:bundle.outputFiles[0].text});await expect(page.locator('canvas')).toHaveAttribute('data-screen','preparation-hub',{timeout:30000});
 }

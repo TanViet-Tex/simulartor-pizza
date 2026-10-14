@@ -61,12 +61,12 @@ export function paintHubHeader(scene:Phaser.Scene,ctx:CanvasRenderingContext2D,h
   paintCashHeader(scene,ctx,input.cash,'hub',cash);
   hit('pause',pause.x,pause.y,pause.width,pause.height,true,input.pause);
   scene.game.canvas.dataset.hubHeader='minimal-wood-reference';
-  scene.game.canvas.dataset.hubHeaderLabels=JSON.stringify([input.title,subtitle,`${input.cash}`,'Tổng kết','Chợ','Kho','Quán','Nhiệm vụ']);
+  scene.game.canvas.dataset.hubHeaderLabels=JSON.stringify([input.title,subtitle,`${input.cash}`,'Tổng kết','Chợ','Kho','Quán','Xếp hạng']);
 }
 export function paintHubNavigation(scene:Phaser.Scene,ctx:CanvasRenderingContext2D,hit:HubHit,active:HubTab,tab:(id:HubTab)=>void,motion?:HubNavigationSample):void{
   const nav=HUB_SHELL_LAYOUT.navigation;
   const source=scene.textures.get(HUB_HEADER_ART.key).getSourceImage() as HTMLImageElement;
-  const tabs=[['summary','Tổng kết'],['market','Chợ'],['stock','Kho'],['shop','Quán'],['missions','Nhiệm vụ']] as const;
+  const tabs=[['summary','Tổng kết'],['market','Chợ'],['stock','Kho'],['shop','Quán'],['missions','Xếp hạng']] as const;
   ctx.save();ctx.beginPath();ctx.roundRect(nav.x,nav.y,nav.width,nav.height,12);ctx.clip();
   tabs.forEach(([id,title],i)=>{const width=nav.width/5,x=nav.x+i*width;
     const {amount,scale}=motion?.tabs[id]??{amount:id===active?1:0,scale:1};

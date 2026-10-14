@@ -105,7 +105,8 @@ export class LeaderboardSession implements LeaderboardMenuActions {
         catch(error){this.fail(error);this.emit();return;}
         if(this.destroyed)return;
         if(this.record?.pending===pending){this.record.pending=null;this.persist(pending);}
-        if(this.status!=='loading'&&!this.storageFailed){this.status='idle';this.message='';}this.emit();
+        if(!this.record?.pending&&this.status==='ready'&&this.message==='Kết quả mới chưa đồng bộ. Bấm Làm mới để thử lại.')this.message=this.entries.length?'':'Chưa có người chơi được ghi nhận.';
+        if(this.status!=='loading'&&this.status!=='ready'&&!this.storageFailed){this.status='idle';this.message='';}this.emit();
         if(this.storageFailed)return;
       }
     })().finally(()=>{this.running=null;});return this.running;
