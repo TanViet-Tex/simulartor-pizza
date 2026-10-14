@@ -618,3 +618,7 @@ Rush/festival shifts show a static flame beside HH:mm; no clock reflow. Rewarded
 ### Tiếng thanh toán — chỉnh tiếp2026-10-14
 
 Hệ số payment trong PlayAudio là0.294×effectsVolume, giảm thêm30% từ0.42 theo yêu cầu mới. Native/WebAudio dùng cùng mức; music/oven/arrival và mute/voice giữ nguyên. Xem implementation-artifacts/note-payment-volume-minus30-2026-10-14.md.
+
+### Tiệm Pizza PWA packaging — requested2026-10-14
+
+User request overrides the historical no-PWA baseline for installation metadata only. Manifest name/short_name, document title and apple-mobile-web-app-title are Tiệm Pizza. Standalone display, relative id/start_url/scope, Android192/512PNG and Apple180PNG use the supplied pizza artwork with full-frame resizing only. Default iOS status bar preserves the current safe-area layout. No service worker/cache/offline dependency or runtime/save/backend change; existing game titles remain unchanged. See implementation-artifacts/spec-tiem-pizza-pwa.md for checks and device install instructions.

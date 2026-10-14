@@ -59,3 +59,7 @@ Trước đợt sửa này, `src/runtime/CozyAccounts.test.ts` còn test “keep
 Test keeps the oven owner when switching customers and consumes only that pizza vẫn yêu cầu thêm đế cho đơn thứ hai khi đơn đầu đang nướng. Thất bại src/runtime/CozyKitchenV2.test.ts:74 ở cả bản khách đặc biệt và runtime HEAD4580445 đối chiếu riêng. Luật một đơn đang làm đã được yêu cầu trước đó; cần cập nhật regression đúng contract, không sửa gameplay để khớp assertion cũ. Các test tập trung còn lại69 đạt;3Chromium khách đặc biệt đạt.
 
 Đã kiểm tra một bàn làm đơn: đổi khách để xem không được tạo bánh thứ hai khi đơn đầu đang giữ bàn; quyền lò và tiêu hao vẫn thuộc bánh/đơn đang làm. Kiểm chứng cuối [518/518](unit-regression-current-2026-10-12.json); không còn assertion hai đơn trái luật đang chờ xử lý.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-tiem-pizza-pwa.md`
+  summary: Verify installed Tiệm Pizza launch on physical Android and iPhone, including icon/name, hidden address bar and campaign availability.
+  evidence: Manifest parsing, icon serving and native storage reload are automated; mobile home-screen chrome/storage cannot be reproduced by ordinary Playwright tabs. No device is available; configuration is complete but this device check is unverified.

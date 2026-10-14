@@ -640,3 +640,7 @@ App page retains the three card bounds and actions, with a pizza-phone illustrat
 ### Busy-day flame and VIP avatar cleanup — requested 2026-10-14
 
 Rush/festival gameplay days show a static orange/yellow flame beside the existing HH:mm clock, in the gap after Pause. VIP avatars keep their original portrait/decorative frame but omit green patience and selection circles. All deadlines remain live in the selected customer information, including when prep-absence/status notices are present. Other customer circles, input regions, simulation timers and gameplay stay unchanged. Evidence: ui-baseline/event-flame-vip-2026-10-14; see spec-event-flame-vip-avatar.md.
+
+### PWA icon and launcher name — requested2026-10-14
+
+Only OS/browser installation surfaces use Tiệm Pizza and the exact user-supplied pizza artwork. App standalone mode, manifest and Apple metadata do not change game header titles, menu artwork, canvas geometry or safe-area CSS. Icon exports preserve the complete original square image without crop or overlays. See spec-tiem-pizza-pwa.md.
