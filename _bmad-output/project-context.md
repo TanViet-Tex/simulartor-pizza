@@ -16,6 +16,10 @@ sources:
 
 # Project Context for AI Agents
 
+### Nghiệm thu tiếp Epic3/6/7/8 — 2026-10-15
+
+Đã chạy ngoài sandbox theo yêu cầu, chốt nghiệm thu kỹ thuật Epic6/7/8 trong phạm vi hiện đã duyệt: đơn app/shipper/sự kiện/quảng bá, đồ quán+nước ngày4+tủ lạnh+hai cấp mở rộng, bốn nghề trả trước2000xu/10ngày và hỏi gia hạn.281unit tập trung đạt; các ca browser giữ trừ tiền/kho chính xác, save lỗi/retry/reload, giao không lặp và tám đơn pizza+nước liên tiếp. Chỉ sửa bộ test/tài liệu, không đổi gameplay hoặc UI. Epic3 vẫn8/9story: hai lượt WebKit Kho ngoài sandbox tiếp tục đóng trang trong điều kiện RAM thấp, nguyên nhân chưa kết luận. Xem [biên bản mới](implementation-artifacts/epic3678-acceptance-2026-10-15.md) và sprint-status; không suy ra nghiệm thu điện thoại thật/cân bằng người chơi từ kết quả tự động.
+
 ### Tự nghiệm thu Epic1/3 — 2026-10-15
 
 Theo ủy quyền người dùng, đối chiếu theo luật hiện hành (không hồi quy về demo3ngày/vốn300/lò6giây/reservation-at-arrival/tự pause khi rời tab).1.5/1.6 done;1.2 mở lại review do tải đầu18.7MB vượt10MiB;1.7 còn kiểm tra thiết bị thật. Epic3 nghiệm thu8/9story, chỉ3.7 còn review do lượt Kho WebKit tự đóng trang trong môi trường thiếu RAM; chưa kết luận lỗi game.160unit tập trung đạt; full605 còn14test lỗi được ghi riêng. Source chỉ dịch phần đệm hit48CSSpx của dòng danh sách nhìn thấy đầy đủ vào viewport, không đổi nút/art/layout. Xem [biên bản](implementation-artifacts/epic1-3-acceptance-2026-10-15.md) và sprint-status; không đánh dấu toàn bộ Epic1/3 hoàn tất từ việc code đã có.

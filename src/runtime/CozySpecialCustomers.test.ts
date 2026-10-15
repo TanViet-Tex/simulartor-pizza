@@ -48,7 +48,7 @@ describe('special customer presentation',()=>{
   const r=prepare({schedule:day=>({...schedule!(day,{} as never),slots:schedule!(day,{} as never).slots.slice(0,1)})});for(const id of ['dough','sauce','cheese'] as const)r.buy(id,1);r.setSpecialPresentation(true);r.openShop();r.advanceSpecialPresentation(2500);
   const id=r.selectedTicketId,before=r.state.cash;
   for(const ingredient of ['dough','sauce','cheese'] as const)r.dispatch({type:'ingredient',ingredient});r.dispatch({type:'bake'});
-  r.advanceElapsed(7000);r.advanceSpecialPresentation(2500);r.advanceElapsed(50);r.dispatch({type:'extract'});r.dispatch({type:'box'});
+  r.advanceElapsed(r.bakeTiming.perfectStart*1000);r.advanceSpecialPresentation(2500);r.advanceElapsed(50);r.dispatch({type:'extract'});r.dispatch({type:'box'});
   expect(r.dispatch({type:'deliver',sourceId:id,targetId:id,commandId:'one'})).toBe(true);
   const cash=r.state.cash,bubble=r.specialBubble;expect(cash-before).toBe(560);expect(bubble?.ticketId).toBe(id);
   expect(r.dispatch({type:'deliver',sourceId:id,targetId:id,commandId:'again'})).toBe(false);expect(r.state.cash).toBe(cash);expect(r.specialBubble).toEqual(bubble);

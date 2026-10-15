@@ -18,8 +18,8 @@ function preparation(day=5,funded=true){
 }
 
 describe('one-day app campaign',()=>{
- it('appends rounded app opportunities and preserves all existing slot metadata, timings and counter bonuses',()=>{
-  for(let day=5;day<=30;day++)for(const seed of [0,42,'campaign'])for(const bonus of [0,.3]){
+ it.each(Array.from({length:26},(_,index)=>index+5).flatMap(day=>[0,42,'campaign'].flatMap(seed=>[0,.3].map(bonus=>({day,seed,bonus})))))(
+  'preserves app metadata, timings and counter bonuses on day $day / seed $seed / bonus $bonus',({day,seed,bonus})=>{
    const base=threeDaySchedule(day,{customerSeed:seed,regularDay1Stars:5,regularLatestStars:5,helpSucceeded:true,referral:true});
    const ordinary=deliverySchedule(base,true),promoted=deliverySchedule(base,true,true);
    const apps=ordinary.slots.filter(s=>(s as DeliveryScheduleSlot).source==='app');
@@ -35,7 +35,6 @@ describe('one-day app campaign',()=>{
    expect(promotedFinal.slots.filter(s=>(s as DeliveryScheduleSlot).source==='app')).toHaveLength(day>=6&&(day-6)%4===0?5:3);
    expect(promoted.slots.every(s=>s.at<base.duration&&Math.abs(s.at*20-Math.round(s.at*20))<1e-8)).toBe(true);
    expect(new Set(promoted.slots.map(s=>s.id)).size).toBe(promoted.slots.length);
-  }
  });
  it.each([1,4,31])('ignores a campaign schedule flag outside the approved days (%i)',day=>{
   const base=threeDaySchedule(day,{regularDay1Stars:null,regularLatestStars:null,helpSucceeded:false,referral:false});

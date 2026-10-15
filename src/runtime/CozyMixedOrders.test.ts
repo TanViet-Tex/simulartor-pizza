@@ -1,4 +1,5 @@
 import {shopSchedule} from '../domain/ShopSchedule';
+import {reduceShopTraffic} from '../domain/ShopTraffic';
 import {helpOfferEligible} from '../domain/HelpOffers';
 import {deliverySchedule} from '../config/deliveryEvents';
 import {beforeAll,describe,it,expect} from 'vitest';
@@ -25,7 +26,7 @@ describe('mixed pizza customer orders',()=>{
  it('uses the same seeded occasional two-customer bursts with five-seat capacity and item demand for forecast and actual day two',()=>{
   const r=new CozyRuntime(false,true,{eventSeed:13});r.claimTestCode('VIETVUIVE');expect(r.upgradeShop('queue','six')).toBe(true);r.openShop();r.closeDay();
   const forecast=r.marketForecast;expect(r.openNextDay()).toBe(true);const actual=(r as unknown as {schedule:CozySchedule}).schedule;
-  expect(actual).toEqual(shopSchedule(deliverySchedule(threeDaySchedule(2,{queueCapacity:5,customerSeed:'13',regularDay1Stars:null,regularLatestStars:null,helpSucceeded:false,helpOfferEligible:helpOfferEligible(13),referral:false}),false),.10));
+  expect(actual).toEqual(reduceShopTraffic(shopSchedule(deliverySchedule(threeDaySchedule(2,{queueCapacity:5,customerSeed:'13',regularDay1Stars:null,regularLatestStars:null,helpSucceeded:false,helpOfferEligible:helpOfferEligible(13),referral:false}),false),.10)));
   const demands=new Map<string,number>();for(const slot of actual.slots){const first=resolveScheduleRecipe(slot,r.menuRecipes);if(first)for(const item of customerPizzaRequests(13,2,slot,r.menuRecipes,first,()=>0)){for(const id of [...recipeIngredients(item.recipe),...item.finishingSauces])demands.set(id,(demands.get(id)??0)+1);}}
   for(const row of forecast.rows)expect(row.needed).toBe(Math.ceil((demands.get(row.ingredient)??0)*1.1));r.advanceElapsed(10000);expect(r.tickets).toHaveLength(1);
   const at=actual.slots.find((slot,index)=>index>0&&slot.at===actual.slots[index-1].at)!.at,batch=actual.slots.filter(slot=>slot.at===at);expect(batch).toHaveLength(2);

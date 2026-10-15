@@ -11,6 +11,8 @@ context:
 
 ## Intent
 
+> Nghiệm thu kỹ thuật 2026-10-15: ba story6.1–6.3 đạt theo luật hiện hành. Bộ test dùng đơn hai công thức/giá khác nhau từ resolver thật, kiểm tra trừ kho chính xác, nhận133xu từ138xu doanh thu trừ5xu phí, chống giao lặp và giao sát hạn khi mưa. Nhân viên thật, quảng bá app100xu/+50%/một ngày và giảm20% khách quầy thay các giả định lịch sử bên dưới. Xem [biên bản và giới hạn nghiệm thu](epic3678-acceptance-2026-10-15.md); không chứng nhận thiết bị thật hoặc cân bằng qua người chơi.
+
 <frozen-after-approval>
 Yêu cầu tiếp theo của người dùng: **bấm Giao bánh là hoàn tất, không có thời gian giao**. Quyết định này thay phần đếm giờ chuyến/đến trễ trong quy tắc trước. Vẫn book và chờ shipper tới lấy; nhân viên nhận đủ hộp chốt đơn ngay, thời gian trở về thuộc chu kỳ nhân viên đã yêu cầu.
 Người dùng yêu cầu Epic 6 và chốt hai luồng: chưa thuê nhân viên → nhận đơn app → book shipper → làm pizza → đóng hộp → shipper tới lấy → giao; đã thuê nhân viên → nhận đơn app → làm/đóng hộp → nhân viên nhận đơn đi giao → quay về nhận đơn tiếp. Giao bằng đồng hồ simulation, không bản đồ lái xe. App từ ngày5, không có đơn app trước khi bật trong chuẩn bị. Hỗ trợ đơn1–3pizza cùng công thức, feedback trễ/sai và mưa/cao điểm/lễ hội. Giữ UI, một lò, cap4/nâng6, catalog/FEFO/save cũ và background/Pause hiện hành. Không thêm nghiệp vụ tuyển/lương/đào tạo của Epic8; nhánh nhân viên qua availability port, chỉ hoạt động khi hệ thống nhân sự thật cung cấp nhân viên, không giả người đã thuê.

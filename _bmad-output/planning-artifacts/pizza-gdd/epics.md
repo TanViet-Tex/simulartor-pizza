@@ -1,5 +1,9 @@
 # Epics thiết kế - Pizza GDD v0.2
 
+### Nghiệm thu kỹ thuật — 2026-10-15
+
+Epic6/7/8 đạt phạm vi hiện đã duyệt theo các quyết định mới ghi trong từng mục bên dưới. Epic3 vẫn8/9story;3.7 chờ chạy trọn luồng Kho trên WebKit vì trang tiếp tục tự đóng trong hai lượt ngoài sandbox, nguyên nhân chưa kết luận. Xem [biên bản](../../implementation-artifacts/epic3678-acceptance-2026-10-15.md) và sprint-status. Kết quả này không thay chứng nhận thiết bị thật/cân bằng người chơi hoặc mở rộng phạm vi sang ý tưởng truyện/đào tạo/sửa chữa chưa chốt.
+
 ### Thay đổi người dùng — 2026-10-04: bỏ demo3ngày, mua công thức
 
 Người dùng yêu cầu bỏ kết thúc bắt buộc ngày 3, mua công thức bằng tiền và hoàn tất Epic 5. Đã triển khai catalog 19 nguyên liệu/8 pizza, sở hữu công thức lưu atomic, gợi ý mua toàn menu, tiếp ngày 4+, nhà cung cấp quen và khách quay lại/referral. Save cũ giữ tiền/kho/công thức đã mở, không reset campaign. Giá/định lượng và quy tắc nối tiếp là cấu hình tạm cần playtest trong [spec Epic 5](../../implementation-artifacts/spec-5-1-expanded-ingredient-and-recipe-catalog.md), không có nghĩa đã có đủ cốt truyện 30 ngày. Các đoạn baseline demo phía dưới là lịch sử trước thay đổi này.
@@ -98,6 +102,8 @@ E05 giữ phạm vi sau demo. **UI/luồng liên quan được ưu tiên ghi và
 
 ## E06 - Giao hàng và sự kiện
 
+**Current contract,2026-10-15:** later user decisions supersede historical density/availability/UI descriptions below. Real hired staff provide the availability port; app has its own seventh Shop section. The shared current schedule includes minus20% counter traffic, while app advertising costs100xu for50% more app opportunities for one day. Immediate delivery settlement, fee5 and pickup/return waits remain as implemented. Current technical acceptance evidence is recorded in `implementation-artifacts/epic3678-acceptance-2026-10-15.md`; temporary balance values are not human playtest certification.
+
 ### Triển khai theo yêu cầu 2026-10-04
 
 Người dùng yêu cầu làm E06 và chốt: chưa có nhân viên → nhận đơn app → book shipper → làm/đóng hộp → shipper tới lấy/giao; có nhân viên → làm/đóng hộp → nhân viên đi giao → quay về nhận đơn tiếp. Nhánh nhân viên nối availability từ hệ thống thuê thật ở E08, không tạo người đã thuê giả. Giao đếm thời gian simulation; thông số phí/thời gian/sự kiện là cấu hình tạm cần playtest. Save cũ giữ dữ liệu, app mặc định tắt, không lưu giữa ca. Xem [spec Epic6](../../implementation-artifacts/spec-6-delivery-and-events.md).
@@ -117,6 +123,8 @@ Sau demo; P04, P05, hỗ trợ P14. Trụ cột phục vụ và kinh tế. Phụ
 Luồng giao đã chốt và được triển khai theo spec2026-10-04. Phí/hạn/thời gian và bảng sự kiện là config tạm cần playtest, không coi là balance đã duyệt; không phát đơn giao trước khi app bật. Tuyển/lương/roster nhân viên thật vẫn thuộc E08.
 
 ## E07 - Quán, thiết bị, tiện nghi, mở rộng và quảng bá
+
+**Current contract,2026-10-15:** the previously pending approved features below have implementations: three drinks bought in Market from preparation day4, fridge3000 with usable-lot preservation×4, two expansions6000/10000 giving4→5→6 and10%/30% counter visitors, paid100/day forecast disclosure. These supersede historical single-expansion/unchosen-price/no-feature statements below. The removed workbench replacement is still outside approved scope; no repair mechanic is required. Follow the current technical acceptance record for story status.
 
 ### Quyết định mới — 2026-10-07, chuẩn bị triển khai
 
@@ -146,6 +154,8 @@ Nghiệm thu7.1/7.2 gồm UI đầy đủ hình/tên/giá/tác dụng/sở hữu
 **Triển khai 2026-10-04:** 12 món giá 500–10000 xu đã có mua/đặt/cất, vị trí cố định, preview, hiệu ứng đầu ca và lưu atomic; lò cấp 2/3 giá 2000/5000, mở rộng 4→6 giá 6000, giữ save cũ và giá lịch sử. Build, 110 unit, 7 E2E tập trung đạt. 7.1/7.4/7.5 ở review; 7.2/7.3 và toàn Epic7 còn in-progress: bàn ghế4000 đã có tác dụng10% kiên nhẫn; mở rộng2 giá10000 chưa chốt tác dụng; thiết bị mới/quảng bá/hư hỏng còn thiếu luật. Xem [spec](../../implementation-artifacts/spec-7-shop-development.md).
 
 ## E08 - Nhân viên, câu chuyện và khách đặc biệt
+
+**Current contract,2026-10-15:** the user replaced the historical day8/daily-wage rule with hiring from day1 when affordable,2000xu per ten-day term per role, zero new daily wages, and an explicit renewal prompt at expiry. Declining never auto-debits; accepting renews once through the existing atomic checkpoint transaction. Preserve legacy reports/receipts/arrears. Four fixed roles, seeded prep absence and approved special-customer presentation are implemented; training/heirloom recipes/new story rewards are not required. The historical wage paragraphs below are superseded, not pending requirements. Technical acceptance is tracked separately from physical-device and human balance testing.
 
 **Quyết định mới 2026-10-07:** không đào tạo nhân viên hoặc công thức gia truyền; giữ thuê theo nghề và lương cuối ngày. Chỉ nhân viên nguyên liệu có nhánh bận một ngày, chu kỳ 5–7 cần xác nhận trước triển khai. Khách đặc biệt triển khai chào/avatar/thoại theo spec, không thêm voice/thưởng; nhiệm vụ ẩn mới là gợi ý. Phần đề xuất tương ứng bên dưới được thay bởi [phạm vi mới](../../implementation-artifacts/requirement-epic8-next-scope.md).
 

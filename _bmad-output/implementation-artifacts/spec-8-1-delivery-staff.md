@@ -11,6 +11,8 @@ context:
 
 > Cập nhật 2026-10-13: người dùng bỏ khóa ngày 8, cho thuê từ ngày 1 khi đủ tiền trong chuẩn bị. Phí 2000 xu/người trả trước cho 10 ngày, không thu lương hằng ngày. Hết hạn hỏi người chơi gia hạn, chỉ trả phí khi đồng ý. Quy định mở ngày 8 và lương/nợ hằng ngày bên dưới là lịch sử, được thay bởi [spec-staff-hire-any-day.md](spec-staff-hire-any-day.md); vai trò và bằng chứng kiểm chứng cũ được giữ nguyên.
 
+> Nghiệm thu kỹ thuật 2026-10-15:8.1 đạt theo hợp đồng2000xu/10ngày và vai trò cố định, thuê được ngày1. Browser đã kiểm chứng thuê lỗi/retry, bốn nghề không thu lương ngày, hết hạn hỏi/để sau/gia hạn chủ động, lỗi gia hạn/reload và tám đơn pizza+nước liên tiếp không kẹt giao. Ngày phụ bếp bận được kiểm chứng bằng unit/runtime, chưa phải ca browser nghỉ trọn ngày. Epic8 được đóng theo phạm vi hiện đã duyệt; truyện/đào tạo/thưởng mới chưa được duyệt vẫn không thuộc phạm vi này. Xem [biên bản](epic3678-acceptance-2026-10-15.md).
+
 <frozen-after-approval reason="user supplied and confirmed staffing rules">
 
 ## Intent

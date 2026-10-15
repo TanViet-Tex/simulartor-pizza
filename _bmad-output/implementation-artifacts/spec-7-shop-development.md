@@ -10,6 +10,8 @@ context:
   - _bmad-output/implementation-artifacts/requirement-decoration-and-amenity-effects.md
 ---
 
+> Nghiệm thu kỹ thuật 2026-10-15: story7.1–7.5 đạt trong phạm vi đã duyệt. Đã kiểm chứng mua/đặt/cất và lưu lại, lỗi ghi/retry không trừ tiền trùng, nước ở Chợ mở từ ngày4, tủ lạnh và lò, cả hai cấp mở rộng6000/10000xu cùng quảng bá xem dự báo. Các quyết định mới thay giả định sáu mục Quán/ngưỡng cũ; không thêm sửa chữa hoặc vật thay bàn làm bánh chưa được chốt. Xem [biên bản và bằng chứng](epic3678-acceptance-2026-10-15.md).
+
 <frozen-after-approval>
 
 ## Intent

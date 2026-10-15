@@ -1,3 +1,4 @@
+import {scrollCanvasList} from './helpers/listGestures';
 import {expect,test,type Page} from '@playwright/test';
 import {build} from 'esbuild';
 test.setTimeout(120000);
@@ -62,7 +63,7 @@ test('market separates three labeled drinks, purchases quantities and restores b
  expect(await page.evaluate(()=>{const r=(window as any).drinksFixture.r;return {spent:r.state.cash,quantities:r.drinkStock.map((d:any)=>d.quantity)};})).toEqual({spent:before-60,quantities:[2,2,2]});
  await page.locator('canvas').screenshot({path:info.outputPath('drink-stock-preparation.png')});
  await tap(page,'market-filter-all');expect((await data(page,'controls')).filter((c:Control)=>/^market-buy-(water|cola|orange)$/.test(c.id)).every((c:Control)=>!c.enabled)).toBe(true);
- const bounds=(await page.locator('canvas').boundingBox())!;await page.mouse.move(bounds.x+bounds.width*.5,bounds.y+bounds.height*.6);await page.mouse.wheel(0,10000);await expect.poll(async()=>(await data(page,'market-scroll')).offset).toBe((22*53)-318);
+ const bounds=(await page.locator('canvas').boundingBox())!;await scrollCanvasList(page,180,384,10000);await expect.poll(async()=>(await data(page,'market-scroll')).offset).toBe((22*53)-318);
  const drinkControls=(await data(page,'controls')).filter((c:Control)=>/^market-buy-(water|cola|orange)$/.test(c.id));expect(drinkControls).toHaveLength(3);expect(drinkControls.every((c:Control)=>c.enabled&&c.y>=21.6+219*.88&&c.y+c.height<=21.6+537*.88)).toBe(true);
  const control=drinkControls.find((c:Control)=>c.id==='market-buy-water')!;const x=bounds.x+(control.x+control.width/2)*bounds.width/360,y=bounds.y+(control.y+control.height/2)*bounds.height/640;await page.mouse.move(x,y);await page.mouse.down();await page.mouse.move(x,y-120,{steps:4});await page.mouse.up();expect(Number(await page.locator('canvas').getAttribute('data-cash'))).toBe(before-60);
  await page.unroute('**/assets/index-*.js');await page.goto('/?mode=shop');await expect(page.locator('canvas')).toHaveAttribute('data-screen','preparation-hub',{timeout:30000});await tap(page,'summary-tab-market');await tap(page,'market-filter-drink');expect((await data(page,'market-rows')).map((r:any)=>r.available)).toEqual([2,2,2]);expect(Number(await page.locator('canvas').getAttribute('data-cash'))).toBe(before-60);

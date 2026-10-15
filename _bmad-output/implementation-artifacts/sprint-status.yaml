@@ -30,6 +30,7 @@ development_status:
   # Current menu and six shop screens: spec-bold-ui-and-menu-cleanup.md, spec-six-shop-screens.md.
   # 2026-10-15 user-authorized self-acceptance: eight stories accepted against current contracts.
   # Story3.7 remains review: its WebKit verification closed the page under low-memory conditions.
+  # Two outside-sandbox retries retained the same open criterion; epic3678-acceptance-2026-10-15.md.
   # Evidence: epic1-3-acceptance-2026-10-15.md; no full release/physical-device certification.
   3-4-reference-hub-ui-and-flows: done
   3-5-day-reviews-modal: done
@@ -52,32 +53,35 @@ development_status:
   5-1-expanded-ingredient-and-recipe-catalog: done
   5-2-menu-based-purchase-suggestions: done
 
-  # Historical Epic6 evidence: build, 100 units, 10 focused E2E and three reviews; acceptance remains review.
+  # 2026-10-15 technical acceptance: current approved Epic6/7/8 scope accepted.
+  # Evidence: epic3678-acceptance-2026-10-15.md; 281 focused units, corrected native browser flows.
+  # Technical acceptance does not certify physical phones, full browser release matrix or human balance.
   # Staff trip/return is integrated with the real Epic8 roster; historical regression resolution in deferred-work.md.
   # Sources: spec-6-delivery-and-events.md, spec-8-1-delivery-staff.md.
-  epic-6: in-progress
-  6-1-delivery-app-and-multi-pizza-orders: review
-  6-2-booked-shipper-and-staff-delivery-cycle: review
-  6-3-weather-rush-and-festival-events: review
+  epic-6: done
+  6-1-delivery-app-and-multi-pizza-orders: done
+  6-2-booked-shipper-and-staff-delivery-cycle: done
+  6-3-weather-rush-and-festival-events: done
 
   # Implemented: decorations/amenities, drinks, fridge, both expansion levels and paid forecast advertising.
   # Sources: spec-7-shop-development.md, spec-drinks-with-pizza.md, spec-fridge-and-prep-absence.md,
   # spec-shop-expansion-two-levels.md, spec-advertising-and-lottery-help.md (all status done with final verification).
   # Expansion6000/10000 gives4->5->6 and10%/30% visitors; tables only give10% patience.
   # Replacement for removed pizza-workbench item remains undecided; no damage/repair system is required.
-  epic-7: in-progress
-  7-1-decoration-ownership-and-placement: review
-  7-2-equipment-and-amenities: review
-  7-3-shop-renovation-and-expansion: review
-  7-4-placed-item-daily-gameplay-effects: review
-  7-5-preparation-item-transactions-and-save-migration: review
-  epic-8: in-progress
+  epic-7: done
+  7-1-decoration-ownership-and-placement: done
+  7-2-equipment-and-amenities: done
+  7-3-shop-renovation-and-expansion: done
+  7-4-placed-item-daily-gameplay-effects: done
+  7-5-preparation-item-transactions-and-save-migration: done
+  epic-8: done
   # Historical tracking key retained; roles are fixed, without assignment UI.
   # Hiring/wages, seeded prep absence, lottery-help and special-customer presentation are implemented.
   # Sources: spec-8-1-delivery-staff.md, spec-fridge-and-prep-absence.md,
   # spec-advertising-and-lottery-help.md, spec-special-customer-presentation.md.
-  # Do not invent training/heirloom recipes/new rewards; Epic8 acceptance remains open.
-  8-1-staff-hiring-assignment-and-wages: review
+  # Approved scope accepted; absence covered by unit/runtime, not a full browser day-off scenario.
+  # Do not invent training/heirloom recipes/new rewards or treat narrative ideas as approved scope.
+  8-1-staff-hiring-assignment-and-wages: done
   # Thirty-day ending, random losses and repeatable VIP are implemented; story acceptance remains review.
   # Sources: spec-9-1-thirty-day-campaign.md, spec-9-2-random-loss-events.md, spec-9-3-repeatable-vip-customers.md.
   # Further approved campaign content/XP/missions, long-term balance and day7/14/21/30 playtests remain outside verified scope.
@@ -88,4 +92,4 @@ development_status:
 
 # Epic4 code checks passed; its historical three-day keys no longer imply a day3 terminal boundary.
 # Story4.6 five-person human playtest still has 0 real sessions (epic-4-playtest.md).
-# Epic1/4/7/8/9 remain in-progress; automated checks are not human/device acceptance.
+# Epic1/3/4/9 remain in-progress; automated checks are not human/device acceptance.
