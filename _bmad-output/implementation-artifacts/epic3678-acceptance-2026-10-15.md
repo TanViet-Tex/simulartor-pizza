@@ -1,5 +1,7 @@
 # Technical acceptance — Epics 3, 6, 7 and 8 — 2026-10-15
 
+> Later same-day follow-up closes the outstanding3.7technical criterion and eleven unit failures: see [Stock WebKit regression report](stock-webkit-regression-2026-10-15.md). The observations and pending decisions below describe this earlier acceptance pass and remain historical evidence.
+
 Baseline: `9f8db3072c5a7be2e2b29d17b3437a4077bcf934`. User explicitly authorized continuing outside sandbox, completing the four epics in sequence and recording results. Existing unrelated dirty specifications are excluded. This record supersedes historical acceptance assumptions only where later user decisions changed the contract; it does not certify physical phones or human balance studies.
 
 ## Current contracts

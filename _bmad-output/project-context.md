@@ -16,6 +16,10 @@ sources:
 
 # Project Context for AI Agents
 
+### Stock WebKit acceptance follow-up — 2026-10-15
+
+Supersedes the open3.7and11-unit-failure status in the historical records below. All760units pass. Epic3is now9/9technically accepted: the final Stock/tab-motion checks passed on Chromium/WebKit360×640, followed by three additional real-audio WebKit Stock runs with ten Market/Stock round trips each. Retained textures/canvas usage and complete lots remain unchanged; no large pixel readback occurs during navigation. UiRaster uses pooled ordinary canvas-backed Textures without unused ImageData buffers, retaining immediate cleanup ownership and texture events; the transparent shell ends at y129instead of allocating a full-screen surface, with2×art/geometry/icon/motion unchanged. Native crash causality was not conclusively isolated, so this is focused technical acceptance, not a universal crash-free/physical-device/release certification. See [report](implementation-artifacts/stock-webkit-regression-2026-10-15.md).
+
 ### Nghiệm thu tiếp Epic3/6/7/8 — 2026-10-15
 
 Đã chạy ngoài sandbox theo yêu cầu, chốt nghiệm thu kỹ thuật Epic6/7/8 trong phạm vi hiện đã duyệt: đơn app/shipper/sự kiện/quảng bá, đồ quán+nước ngày4+tủ lạnh+hai cấp mở rộng, bốn nghề trả trước2000xu/10ngày và hỏi gia hạn.281unit tập trung đạt; các ca browser giữ trừ tiền/kho chính xác, save lỗi/retry/reload, giao không lặp và tám đơn pizza+nước liên tiếp. Chỉ sửa bộ test/tài liệu, không đổi gameplay hoặc UI. Epic3 vẫn8/9story: hai lượt WebKit Kho ngoài sandbox tiếp tục đóng trang trong điều kiện RAM thấp, nguyên nhân chưa kết luận. Xem [biên bản mới](implementation-artifacts/epic3678-acceptance-2026-10-15.md) và sprint-status; không suy ra nghiệm thu điện thoại thật/cân bằng người chơi từ kết quả tự động.

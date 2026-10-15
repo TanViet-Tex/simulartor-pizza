@@ -8,6 +8,8 @@ baseline_commit: NO_VCS
 
 ## Intent and scope
 
+> Technical acceptance follow-up2026-10-15: Stock story3.7now passes the focused full native Chromium/WebKit flow, including both explicit thresholds, lot detail, scroll, immutable complete lots/cash and ten repeated Market/Stock round trips. Three additional final WebKit repeats passed; all760units pass. The approved layout/art remains unchanged. See [evidence and limitations](stock-webkit-regression-2026-10-15.md); this is not physical-device/full release-matrix certification.
+
 User explicitly requests continuing Stock, Shop and Missions according to notes and references. Preserve the new shared header/wood, Summary/Market/kitchen/menu and money/stock/save rules. These tabs adopt shared HubTheme/HubCanvasUI, dynamic data, interactive list/cards and consistent footer. Stock uses kho.png and shop uses Quán.png plus category images. No dedicated mission reference exists in references; mission cards use shared theme and implemented CozyProgression rules, no new goals/reward claims.
 
 ## Tasks

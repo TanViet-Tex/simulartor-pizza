@@ -1,0 +1,214 @@
+{
+  "config": {
+    "argv": [
+      "C:\\Program Files\\nodejs\\node.exe",
+      "C:\\Users\\tranv\\Downloads\\game-pizza-ong-VDB-ne\\node_modules\\@playwright\\test\\cli.js",
+      "test",
+      "tests/reference-shop-screens.spec.ts",
+      "--grep",
+      "polished management market and stock",
+      "--project=webkit-360x640",
+      "--workers=1",
+      "--max-failures=1",
+      "--reporter=line,json",
+      "--output=test-results/stock-regression-webkit-resources"
+    ],
+    "configFile": "C:\\Users\\tranv\\Downloads\\game-pizza-ong-VDB-ne\\playwright.config.ts",
+    "rootDir": "C:/Users/tranv/Downloads/game-pizza-ong-VDB-ne/tests",
+    "failOnFlakyTests": false,
+    "forbidOnly": false,
+    "fullyParallel": true,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 1,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "C:/Users/tranv/Downloads/game-pizza-ong-VDB-ne/test-results/stock-regression-webkit-resources",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "chromium-360x640",
+        "name": "chromium-360x640",
+        "testDir": "C:/Users/tranv/Downloads/game-pizza-ong-VDB-ne/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 30000
+      },
+      {
+        "outputDir": "C:/Users/tranv/Downloads/game-pizza-ong-VDB-ne/test-results/stock-regression-webkit-resources",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "chromium-390x844",
+        "name": "chromium-390x844",
+        "testDir": "C:/Users/tranv/Downloads/game-pizza-ong-VDB-ne/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 30000
+      },
+      {
+        "outputDir": "C:/Users/tranv/Downloads/game-pizza-ong-VDB-ne/test-results/stock-regression-webkit-resources",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "chromium-412x915",
+        "name": "chromium-412x915",
+        "testDir": "C:/Users/tranv/Downloads/game-pizza-ong-VDB-ne/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 30000
+      },
+      {
+        "outputDir": "C:/Users/tranv/Downloads/game-pizza-ong-VDB-ne/test-results/stock-regression-webkit-resources",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "webkit-360x640",
+        "name": "webkit-360x640",
+        "testDir": "C:/Users/tranv/Downloads/game-pizza-ong-VDB-ne/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 30000
+      },
+      {
+        "outputDir": "C:/Users/tranv/Downloads/game-pizza-ong-VDB-ne/test-results/stock-regression-webkit-resources",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "webkit-390x844",
+        "name": "webkit-390x844",
+        "testDir": "C:/Users/tranv/Downloads/game-pizza-ong-VDB-ne/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 30000
+      },
+      {
+        "outputDir": "C:/Users/tranv/Downloads/game-pizza-ong-VDB-ne/test-results/stock-regression-webkit-resources",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "webkit-412x915",
+        "name": "webkit-412x915",
+        "testDir": "C:/Users/tranv/Downloads/game-pizza-ong-VDB-ne/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 30000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "line"
+      ],
+      [
+        "json"
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.63.0",
+    "workers": 1,
+    "webServer": {
+      "command": "npm run preview -- --port 4173 --strictPort",
+      "url": "http://127.0.0.1:4173",
+      "reuseExistingServer": false
+    }
+  },
+  "suites": [
+    {
+      "title": "reference-shop-screens.spec.ts",
+      "file": "reference-shop-screens.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "polished management market and stock keep real purchases filters and fixed shell",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "webkit-360x640",
+              "projectName": "webkit-360x640",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 10436,
+                  "errors": [],
+                  "stdout": [
+                    {
+                      "text": "stock resources {\n  renderer: \u001b[33m2\u001b[39m,\n  gl: \u001b[32m'WebGL 1.0'\u001b[39m,\n  textures: [\n    { key: \u001b[32m'__NORMAL'\u001b[39m, width: \u001b[90mundefined\u001b[39m, height: \u001b[90mundefined\u001b[39m },\n    { key: \u001b[32m'__DEFAULT'\u001b[39m, width: \u001b[33m32\u001b[39m, height: \u001b[33m32\u001b[39m },\n    { key: \u001b[32m'__MISSING'\u001b[39m, width: \u001b[33m32\u001b[39m, height: \u001b[33m32\u001b[39m },\n    { key: \u001b[32m'__WHITE'\u001b[39m, width: \u001b[33m4\u001b[39m, height: \u001b[33m4\u001b[39m },\n    { key: \u001b[32m'pizza-icon-coin'\u001b[39m, width: \u001b[33m256\u001b[39m, height: \u001b[33m256\u001b[39m },\n    { key: \u001b[32m'pizza-icon-ledger'\u001b[39m, width: \u001b[33m256\u001b[39m, height: \u001b[33m256\u001b[39m },\n    { key: \u001b[32m'pizza-icon-basket'\u001b[39m, width: \u001b[33m256\u001b[39m, height: \u001b[33m256\u001b[39m },\n    { key: \u001b[32m'pizza-icon-crate'\u001b[39m, width: \u001b[33m256\u001b[39m, height: \u001b[33m256\u001b[39m },\n    { key: \u001b[32m'pizza-icon-storefront'\u001b[39m, width: \u001b[33m256\u001b[39m, height: \u001b[33m256\u001b[39m },\n    { key: \u001b[32m'pizza-icon-checklist'\u001b[39m, width: \u001b[33m256\u001b[39m, height: \u001b[33m256\u001b[39m },\n    { key: \u001b[32m'pizza-icon-dough'\u001b[39m, width: \u001b[33m256\u001b[39m, height: \u001b[33m256\u001b[39m },\n    { key: \u001b[32m'pizza-icon-cheese'\u001b[39m, width: \u001b[33m256\u001b[39m, height: \u001b[33m256\u001b[39m },\n    { key: \u001b[32m'pizza-icon-sausage'\u001b[39m, width: \u001b[33m256\u001b[39m, height: \u001b[33m256\u001b[39m },\n    { key: \u001b[32m'pizza-icon-mushroom'\u001b[39m, width: \u001b[33m256\u001b[39m, height: \u001b[33m256\u001b[39m },\n    { key: \u001b[32m'pizza-icon-pepper'\u001b[39m, width: \u001b[33m256\u001b[39m, height: \u001b[33m256\u001b[39m },\n    { key: \u001b[32m'pizza-icon-onion'\u001b[39m, width: \u001b[33m256\u001b[39m, height: \u001b[33m256\u001b[39m },\n    { key: \u001b[32m'pizza-icon-avatar'\u001b[39m, width: \u001b[33m256\u001b[39m, height: \u001b[33m256\u001b[39m },\n    { key: \u001b[32m'pizza-icon-avatar-queue'\u001b[39m, width: \u001b[33m256\u001b[39m, height: \u001b[33m256\u001b[39m },\n    { key: \u001b[32m'pizza-icon-phone'\u001b[39m, width: \u001b[33m256\u001b[39m, height: \u001b[33m256\u001b[39m },\n    { key: \u001b[32m'pizza-icon-lock'\u001b[39m, width: \u001b[33m256\u001b[39m, height: \u001b[33m256\u001b[39m },\n    { key: \u001b[32m'pizza-icon-queue-lock'\u001b[39m, width: \u001b[33m256\u001b[39m, height: \u001b[33m256\u001b[39m },\n    { key: \u001b[32m'pizza-icon-box'\u001b[39m, width: \u001b[33m256\u001b[39m, height: \u001b[33m256\u001b[39m },\n    { key: \u001b[32m'pizza-icon-deliver'\u001b[39m, width: \u001b[33m256\u001b[39m, height: \u001b[33m256\u001b[39m },\n    { key: \u001b[32m'pizza-icon-user'\u001b[39m, width: \u001b[33m256\u001b[39m, height: \u001b[33m256\u001b[39m },\n    { key: \u001b[32m'pizza-icon-trash'\u001b[39m, width: \u001b[33m256\u001b[39m, height: \u001b[33m256\u001b[39m },\n    { key: \u001b[32m'pizza-icon-bell'\u001b[39m, width: \u001b[33m256\u001b[39m, height: \u001b[33m256\u001b[39m },\n    { key: \u001b[32m'pizza-icon-sauce-white'\u001b[39m, width: \u001b[33m256\u001b[39m, height: \u001b[33m256\u001b[39m },\n    { key: \u001b[32m'pizza-icon-sauce-bbq'\u001b[39m, width: \u001b[33m256\u001b[39m, height: \u001b[33m256\u001b[39m },\n    { key: \u001b[32m'pizza-icon-sauce-pesto'\u001b[39m, width: \u001b[33m256\u001b[39m, height: \u001b[33m256\u001b[39m },\n    { key: \u001b[32m'pizza-icon-sauce-hot'\u001b[39m, width: \u001b[33m256\u001b[39m, height: \u001b[33m256\u001b[39m },\n    {\n      key: \u001b[32m'market-ingredients-transparent'\u001b[39m,\n      width: \u001b[33m1254\u001b[39m,\n      height: \u001b[33m1254\u001b[39m\n    },\n    { key: \u001b[32m'market-sauces-labeled'\u001b[39m, width: \u001b[33m1254\u001b[39m, height: \u001b[33m1254\u001b[39m },\n    { key: \u001b[32m'management-background'\u001b[39m, width: \u001b[33m941\u001b[39m, height: \u001b[33m1672\u001b[39m },\n    { key: \u001b[32m'pizza-icon-sauce'\u001b[39m, width: \u001b[33m256\u001b[39m, height: \u001b[33m256\u001b[39m },\n    { key: \u001b[32m'customer-sheet-2'\u001b[39m, width: \u001b[33m1145\u001b[39m, height: \u001b[33m1374\u001b[39m },\n    { key: \u001b[32m'customer-sheet-3'\u001b[39m, width: \u001b[33m1145\u001b[39m, height: \u001b[33m1374\u001b[39m },\n    { key: \u001b[32m'customer-sheet-1'\u001b[39m, width: \u001b[33m1024\u001b[39m, height: \u001b[33m1536\u001b[39m },\n    { key: \u001b[32m'special-customer-frames'\u001b[39m, width: \u001b[33m2172\u001b[39m, height: \u001b[33m724\u001b[39m },\n    { key: \u001b[32m'customer-sheet-4'\u001b[39m, width: \u001b[33m1145\u001b[39m, height: \u001b[33m1374\u001b[39m },\n    { key: \u001b[32m'special-customer-sheet'\u001b[39m, width: \u001b[33m1402\u001b[39m, height: \u001b[33m1122\u001b[39m },\n    { key: \u001b[32m'customer-sheet-5'\u001b[39m, width: \u001b[33m1024\u001b[39m, height: \u001b[33m1536\u001b[39m },\n    { key: \u001b[32m'cozy-pizza-box'\u001b[39m, width: \u001b[33m1312\u001b[39m, height: \u001b[33m1199\u001b[39m },\n    { key: \u001b[32m'shared-hub-header'\u001b[39m, width: \u001b[33m2094\u001b[39m, height: \u001b[33m751\u001b[39m },\n    { key: \u001b[32m'reference-market'\u001b[39m, width: \u001b[33m941\u001b[39m, height: \u001b[33m1672\u001b[39m },\n    { key: \u001b[32m'reference-stock'\u001b[39m, width: \u001b[33m941\u001b[39m, height: \u001b[33m1672\u001b[39m },\n    { key: \u001b[32m'reference-drink-tray'\u001b[39m, width: \u001b[33m1696\u001b[39m, height: \u001b[33m927\u001b[39m },\n    { key: \u001b[32m'reference-shop'\u001b[39m, width: \u001b[33m941\u001b[39m, height: \u001b[33m1672\u001b[39m },\n    { key: \u001b[32m'reference-shop-menu'\u001b[39m, width: \u001b[33m941\u001b[39m, height: \u001b[33m1672\u001b[39m },\n    { key: \u001b[32m'reference-shop-decoration'\u001b[39m, width: \u001b[33m941\u001b[39m, height: \u001b[33m1672\u001b[39m },\n    { key: \u001b[32m'reference-shop-equipment'\u001b[39m, width: \u001b[33m941\u001b[39m, height: \u001b[33m1672\u001b[39m },\n    { key: \u001b[32m'reference-shop-amenities'\u001b[39m, width: \u001b[33m941\u001b[39m, height: \u001b[33m1672\u001b[39m },\n    { key: \u001b[32m'reference-shop-expansion'\u001b[39m, width: \u001b[33m941\u001b[39m, height: \u001b[33m1672\u001b[39m },\n    { key: \u001b[32m'reference-summary'\u001b[39m, width: \u001b[33m941\u001b[39m, height: \u001b[33m1672\u001b[39m },\n    { key: \u001b[32m'reference-shop-staff'\u001b[39m, width: \u001b[33m941\u001b[39m, height: \u001b[33m1672\u001b[39m },\n    { key: \u001b[32m'test-code-reward'\u001b[39m, width: \u001b[33m262\u001b[39m, height: \u001b[33m258\u001b[39m },\n    { key: \u001b[32m'reference-reviews'\u001b[39m, width: \u001b[33m941\u001b[39m, height: \u001b[33m1672\u001b[39m },\n    { key: \u001b[32m'reference-finance'\u001b[39m, width: \u001b[33m941\u001b[39m, height: \u001b[33m1672\u001b[39m },\n    { key: \u001b[32m'reference-pause-panel'\u001b[39m, width: \u001b[33m1210\u001b[39m, height: \u001b[33m1300\u001b[39m },\n    { key: \u001b[32m'notification-frame-one'\u001b[39m, width: \u001b[33m1122\u001b[39m, height: \u001b[33m1402\u001b[39m },\n    { key: \u001b[32m'notification-frame-two'\u001b[39m, width: \u001b[33m1402\u001b[39m, height: \u001b[33m1122\u001b[39m },\n    { key: \u001b[32m'reference-settings-source'\u001b[39m, width: \u001b[33m941\u001b[39m, height: \u001b[33m1672\u001b[39m },\n    { key: \u001b[32m'reference-kitchen-background'\u001b[39m, width: \u001b[33m941\u001b[39m, height: \u001b[33m1672\u001b[39m },\n    { key: \u001b[32m'reference-kitchen-ovens'\u001b[39m, width: \u001b[33m2172\u001b[39m, height: \u001b[33m724\u001b[39m },\n    {\n      key: \u001b[32m'summary-paper-344-139-10.678492239467849'\u001b[39m,\n      width: \u001b[33m688\u001b[39m,\n      height: \u001b[33m278\u001b[39m\n    },\n    {\n      key: \u001b[32m'summary-corner-reference-summary-20-338-28-0'\u001b[39m,\n      width: \u001b[33m28\u001b[39m,\n      height: \u001b[33m28\u001b[39m\n    },\n    {\n      key: \u001b[32m'summary-corner-reference-summary-894-338-28-1'\u001b[39m,\n      width: \u001b[33m28\u001b[39m,\n      height: \u001b[33m28\u001b[39m\n    },\n    {\n      key: \u001b[32m'summary-corner-reference-summary-894-679-28-2'\u001b[39m,\n      width: \u001b[33m28\u001b[39m,\n      height: \u001b[33m28\u001b[39m\n    },\n    {\n      key: \u001b[32m'summary-corner-reference-summary-20-679-28-3'\u001b[39m,\n      width: \u001b[33m28\u001b[39m,\n      height: \u001b[33m28\u001b[39m\n    },\n    {\n      key: \u001b[32m'summary-paper-344-73-10.678492239467849'\u001b[39m,\n      width: \u001b[33m688\u001b[39m,\n      height: \u001b[33m146\u001b[39m\n    },\n    {\n      key: \u001b[32m'summary-corner-reference-summary-20-720-28-0'\u001b[39m,\n      width: \u001b[33m28\u001b[39m,\n      height: \u001b[33m28\u001b[39m\n    },\n    {\n      key: \u001b[32m'summary-corner-reference-summary-894-720-28-1'\u001b[39m,\n      width: \u001b[33m28\u001b[39m,\n      height: \u001b[33m28\u001b[39m\n    },\n    {\n      key: \u001b[32m'summary-corner-reference-summary-894-884-28-2'\u001b[39m,\n      width: \u001b[33m28\u001b[39m,\n      height: \u001b[33m28\u001b[39m\n    },\n    {\n      key: \u001b[32m'summary-corner-reference-summary-20-884-28-3'\u001b[39m,\n      width: \u001b[33m28\u001b[39m,\n      height: \u001b[33m28\u001b[39m\n    },\n    {\n      key: \u001b[32m'summary-paper-344-97-10.678492239467849'\u001b[39m,\n      width: \u001b[33m688\u001b[39m,\n      height: \u001b[33m194\u001b[39m\n    },\n    {\n      key: \u001b[32m'summary-corner-reference-summary-20-927-28-0'\u001b[39m,\n      width: \u001b[33m28\u001b[39m,\n      height: \u001b[33m28\u001b[39m\n    },\n    {\n      key: \u001b[32m'summary-corner-reference-summary-894-927-28-1'\u001b[39m,\n      width: \u001b[33m28\u001b[39m,\n      height: \u001b[33m28\u001b[39m\n    },\n    {\n      key: \u001b[32m'summary-corner-reference-summary-894-1154-28-2'\u001b[39m,\n      width: \u001b[33m28\u001b[39m,\n      height: \u001b[33m28\u001b[39m\n    },\n    {\n      key: \u001b[32m'summary-corner-reference-summary-20-1154-28-3'\u001b[39m,\n      width: \u001b[33m28\u001b[39m,\n      height: \u001b[33m28\u001b[39m\n    },\n    {\n      key: \u001b[32m'summary-paper-344-86-10.678492239467849'\u001b[39m,\n      width: \u001b[33m688\u001b[39m,\n      height: \u001b[33m172\u001b[39m\n    },\n    {\n      key: \u001b[32m'summary-corner-reference-summary-20-1195-28-0'\u001b[39m,\n      width: \u001b[33m28\u001b[39m,\n      height: \u001b[33m28\u001b[39m\n    },\n    {\n      key: \u001b[32m'summary-corner-reference-summary-894-1195-28-1'\u001b[39m,\n      width: \u001b[33m28\u001b[39m,\n      height: \u001b[33m28\u001b[39m\n    },\n    {\n      key: \u001b[32m'summary-corner-reference-summary-894-1400-28-2'\u001b[39m,\n      width: \u001b[33m28\u001b[39m,\n      height: \u001b[33m28\u001b[39m\n    },\n    {\n      key: \u001b[32m'summary-corner-reference-summary-20-1400-28-3'\u001b[39m,\n      width: \u001b[33m28\u001b[39m,\n      height: \u001b[33m28\u001b[39m\n    },\n    {\n      key: \u001b[32m'summary-paper-344-32-10.678492239467849'\u001b[39m,\n      width: \u001b[33m688\u001b[39m,\n      height: \u001b[33m64\u001b[39m\n    },\n    {\n      key: \u001b[32m'summary-corner-reference-summary-20-1428-28-0'\u001b[39m,\n      width: \u001b[33m28\u001b[39m,\n      height: \u001b[33m28\u001b[39m\n    },\n    {\n      key: \u001b[32m'summary-corner-reference-summary-894-1428-28-1'\u001b[39m,\n      width: \u001b[33m28\u001b[39m,\n      height: \u001b[33m28\u001b[39m\n    },\n    {\n      key: \u001b[32m'summary-corner-reference-summary-894-1488-28-2'\u001b[39m,\n      width: \u001b[33m28\u001b[39m,\n      height: \u001b[33m28\u001b[39m\n    },\n    {\n      key: \u001b[32m'summary-corner-reference-summary-20-1488-28-3'\u001b[39m,\n      width: \u001b[33m28\u001b[39m,\n      height: \u001b[33m28\u001b[39m\n    },\n    { key: \u001b[32m'hub-shell-2'\u001b[39m, width: \u001b[33m720\u001b[39m, height: \u001b[33m1280\u001b[39m },\n    { key: \u001b[32m'shop-window-0'\u001b[39m, width: \u001b[33m720\u001b[39m, height: \u001b[33m1280\u001b[39m },\n    { key: \u001b[32m'shop-window-0-cards'\u001b[39m, width: \u001b[33m720\u001b[39m, height: \u001b[33m748\u001b[39m },\n    { key: \u001b[32m'shop-window-0-cards-thumb'\u001b[39m, width: \u001b[33m720\u001b[39m, height: \u001b[33m130\u001b[39m }\n  ]\n}\n"
+                    },
+                    {
+                      "text": "stock diagnostic: page closed\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-15T04:46:45.705Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "1c12f2bbf5db62427774-d7548462be38871c68ba",
+          "file": "reference-shop-screens.spec.ts",
+          "line": 43,
+          "column": 1
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-10-15T04:46:43.691Z",
+    "duration": 13065.502,
+    "expected": 1,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}

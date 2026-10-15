@@ -1,5 +1,8 @@
-import {describe,expect,it} from 'vitest';
+import {describe,expect,it,vi} from 'vitest';
 import {selectWorkbenchDrink} from './WorkbenchDrink';
+
+// These headless tests exercise selection only; rendering is covered in the real-browser suite.
+vi.mock('phaser',()=>({default:{}}));
 
 describe('drink follows the cutting-board order',()=>{
   const tickets=[

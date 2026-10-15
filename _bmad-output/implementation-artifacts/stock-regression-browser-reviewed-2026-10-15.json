@@ -1,0 +1,504 @@
+{
+  "config": {
+    "argv": [
+      "C:\\Program Files\\nodejs\\node.exe",
+      "C:\\Users\\tranv\\Downloads\\game-pizza-ong-VDB-ne\\node_modules\\@playwright\\test\\cli.js",
+      "test",
+      "tests/reference-shop-screens.spec.ts",
+      "tests/hub-tab-motion.spec.ts",
+      "--grep",
+      "polished management market and stock|all five tabs animate once",
+      "--project=webkit-360x640",
+      "--project=chromium-360x640",
+      "--repeat-each=2",
+      "--workers=1",
+      "--max-failures=2",
+      "--reporter=line,json",
+      "--output=test-results/stock-regression-browser-reviewed"
+    ],
+    "configFile": "C:\\Users\\tranv\\Downloads\\game-pizza-ong-VDB-ne\\playwright.config.ts",
+    "rootDir": "C:/Users/tranv/Downloads/game-pizza-ong-VDB-ne/tests",
+    "failOnFlakyTests": false,
+    "forbidOnly": false,
+    "fullyParallel": true,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 2,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "C:/Users/tranv/Downloads/game-pizza-ong-VDB-ne/test-results/stock-regression-browser-reviewed",
+        "repeatEach": 2,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "chromium-360x640",
+        "name": "chromium-360x640",
+        "testDir": "C:/Users/tranv/Downloads/game-pizza-ong-VDB-ne/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 30000
+      },
+      {
+        "outputDir": "C:/Users/tranv/Downloads/game-pizza-ong-VDB-ne/test-results/stock-regression-browser-reviewed",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "chromium-390x844",
+        "name": "chromium-390x844",
+        "testDir": "C:/Users/tranv/Downloads/game-pizza-ong-VDB-ne/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 30000
+      },
+      {
+        "outputDir": "C:/Users/tranv/Downloads/game-pizza-ong-VDB-ne/test-results/stock-regression-browser-reviewed",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "chromium-412x915",
+        "name": "chromium-412x915",
+        "testDir": "C:/Users/tranv/Downloads/game-pizza-ong-VDB-ne/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 30000
+      },
+      {
+        "outputDir": "C:/Users/tranv/Downloads/game-pizza-ong-VDB-ne/test-results/stock-regression-browser-reviewed",
+        "repeatEach": 2,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "webkit-360x640",
+        "name": "webkit-360x640",
+        "testDir": "C:/Users/tranv/Downloads/game-pizza-ong-VDB-ne/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 30000
+      },
+      {
+        "outputDir": "C:/Users/tranv/Downloads/game-pizza-ong-VDB-ne/test-results/stock-regression-browser-reviewed",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "webkit-390x844",
+        "name": "webkit-390x844",
+        "testDir": "C:/Users/tranv/Downloads/game-pizza-ong-VDB-ne/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 30000
+      },
+      {
+        "outputDir": "C:/Users/tranv/Downloads/game-pizza-ong-VDB-ne/test-results/stock-regression-browser-reviewed",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "webkit-412x915",
+        "name": "webkit-412x915",
+        "testDir": "C:/Users/tranv/Downloads/game-pizza-ong-VDB-ne/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 30000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "line"
+      ],
+      [
+        "json"
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.63.0",
+    "workers": 1,
+    "webServer": {
+      "command": "npm run preview -- --port 4173 --strictPort",
+      "url": "http://127.0.0.1:4173",
+      "reuseExistingServer": false
+    }
+  },
+  "suites": [
+    {
+      "title": "hub-tab-motion.spec.ts",
+      "file": "hub-tab-motion.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "all five tabs animate once, keep icon pixels and hit bounds, and honor reduced motion",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium-360x640",
+              "projectName": "chromium-360x640",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 12187,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-15T04:53:09.064Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "d7308d4f7ad22c799cc6-33c8732fa9e285b03b8f",
+          "file": "hub-tab-motion.spec.ts",
+          "line": 51,
+          "column": 1
+        },
+        {
+          "title": "all five tabs animate once, keep icon pixels and hit bounds, and honor reduced motion",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium-360x640",
+              "projectName": "chromium-360x640",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 13720,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-15T04:53:48.983Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "d7308d4f7ad22c799cc6-b112360b0f6a3dccc797",
+          "file": "hub-tab-motion.spec.ts",
+          "line": 51,
+          "column": 1
+        },
+        {
+          "title": "all five tabs animate once, keep icon pixels and hit bounds, and honor reduced motion",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "webkit-360x640",
+              "projectName": "webkit-360x640",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 9806,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-15T04:54:29.512Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "d7308d4f7ad22c799cc6-f302b0bbd77bfe6d8d7f",
+          "file": "hub-tab-motion.spec.ts",
+          "line": 51,
+          "column": 1
+        },
+        {
+          "title": "all five tabs animate once, keep icon pixels and hit bounds, and honor reduced motion",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "webkit-360x640",
+              "projectName": "webkit-360x640",
+              "results": [
+                {
+                  "workerIndex": 3,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 10191,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-15T04:55:01.470Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "d7308d4f7ad22c799cc6-4a3781905495e7ea6413",
+          "file": "hub-tab-motion.spec.ts",
+          "line": 51,
+          "column": 1
+        }
+      ]
+    },
+    {
+      "title": "reference-shop-screens.spec.ts",
+      "file": "reference-shop-screens.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "polished management market and stock keep real purchases filters and fixed shell",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium-360x640",
+              "projectName": "chromium-360x640",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 26529,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-15T04:53:21.615Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "stock-texture-resources",
+                      "contentType": "application/json",
+                      "body": "eyJyZXRhaW5lZCI6eyJjb3VudCI6OTMsInBpeGVscyI6NTQwODk1OTZ9LCJhZnRlciI6eyJjb3VudCI6OTMsInBpeGVscyI6NTQwODk1OTZ9LCJzaGVsbFNpemUiOnsic291cmNlIjp7IndpZHRoIjo3MjAsImhlaWdodCI6MjU4fSwiZGlzcGxheSI6eyJ3aWR0aCI6MzYwLCJoZWlnaHQiOjEyOX19fQ=="
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "1c12f2bbf5db62427774-9a96afac0e63c49c2d17",
+          "file": "reference-shop-screens.spec.ts",
+          "line": 43,
+          "column": 1
+        },
+        {
+          "title": "polished management market and stock keep real purchases filters and fixed shell",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium-360x640",
+              "projectName": "chromium-360x640",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 25523,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-15T04:54:03.110Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "stock-texture-resources",
+                      "contentType": "application/json",
+                      "body": "eyJyZXRhaW5lZCI6eyJjb3VudCI6OTMsInBpeGVscyI6NTQwODk1OTZ9LCJhZnRlciI6eyJjb3VudCI6OTMsInBpeGVscyI6NTQwODk1OTZ9LCJzaGVsbFNpemUiOnsic291cmNlIjp7IndpZHRoIjo3MjAsImhlaWdodCI6MjU4fSwiZGlzcGxheSI6eyJ3aWR0aCI6MzYwLCJoZWlnaHQiOjEyOX19fQ=="
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "1c12f2bbf5db62427774-2626f4aec355d60c61c4",
+          "file": "reference-shop-screens.spec.ts",
+          "line": 43,
+          "column": 1
+        },
+        {
+          "title": "polished management market and stock keep real purchases filters and fixed shell",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "webkit-360x640",
+              "projectName": "webkit-360x640",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 20706,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-15T04:54:39.657Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "stock-texture-resources",
+                      "contentType": "application/json",
+                      "body": "eyJyZXRhaW5lZCI6eyJjb3VudCI6OTMsInBpeGVscyI6NTQwODk1OTZ9LCJhZnRlciI6eyJjb3VudCI6OTMsInBpeGVscyI6NTQwODk1OTZ9LCJzaGVsbFNpemUiOnsic291cmNlIjp7IndpZHRoIjo3MjAsImhlaWdodCI6MjU4fSwiZGlzcGxheSI6eyJ3aWR0aCI6MzYwLCJoZWlnaHQiOjEyOX19fQ=="
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "1c12f2bbf5db62427774-d7548462be38871c68ba",
+          "file": "reference-shop-screens.spec.ts",
+          "line": 43,
+          "column": 1
+        },
+        {
+          "title": "polished management market and stock keep real purchases filters and fixed shell",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "webkit-360x640",
+              "projectName": "webkit-360x640",
+              "results": [
+                {
+                  "workerIndex": 3,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 23185,
+                  "error": {
+                    "message": "Error: page.evaluate: Target page, context or browser has been closed",
+                    "stack": "Error: page.evaluate: Target page, context or browser has been closed\n    at settle (C:\\Users\\tranv\\Downloads\\game-pizza-ong-VDB-ne\\tests\\reference-shop-screens.spec.ts:10:45)\n    at tap (C:\\Users\\tranv\\Downloads\\game-pizza-ong-VDB-ne\\tests\\reference-shop-screens.spec.ts:17:103)\n    at C:\\Users\\tranv\\Downloads\\game-pizza-ong-VDB-ne\\tests\\reference-shop-screens.spec.ts:88:62",
+                    "location": {
+                      "file": "C:\\Users\\tranv\\Downloads\\game-pizza-ong-VDB-ne\\tests\\reference-shop-screens.spec.ts",
+                      "column": 45,
+                      "line": 10
+                    },
+                    "snippet": "   8 | let bundleCode:string;\n   9 | async function data(page:Page,key:string){return JSON.parse(await page.locator('canvas').getAttribute('data-'+key)||'null');}\n> 10 | async function settle(page:Page){await page.evaluate(()=>new Promise<void>(resolve=>requestAnimationFrame(()=>requestAnimationFrame(()=>resolve()))));}\n     |                                             ^\n  11 | async function ready(page:Page){await expect(page.locator('canvas')).toHaveAttribute('data-screen',/^(preparation-hub|day-summary|day-ended-notice|game)$/,{timeout:30000});await expect.poll(async()=>(await data(page,'save-state'))?.state).toBe('ready');await settle(page);}\n  12 | async function tap(page:Page,id:string){\n  13 |   await expect.poll(async()=>((await data(page,'controls'))||[]).some((c:Control)=>c.id===id&&c.enabled)).toBe(true);"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "C:\\Users\\tranv\\Downloads\\game-pizza-ong-VDB-ne\\tests\\reference-shop-screens.spec.ts",
+                        "column": 45,
+                        "line": 10
+                      },
+                      "message": "Error: page.evaluate: Target page, context or browser has been closed\n\n   8 | let bundleCode:string;\n   9 | async function data(page:Page,key:string){return JSON.parse(await page.locator('canvas').getAttribute('data-'+key)||'null');}\n> 10 | async function settle(page:Page){await page.evaluate(()=>new Promise<void>(resolve=>requestAnimationFrame(()=>requestAnimationFrame(()=>resolve()))));}\n     |                                             ^\n  11 | async function ready(page:Page){await expect(page.locator('canvas')).toHaveAttribute('data-screen',/^(preparation-hub|day-summary|day-ended-notice|game)$/,{timeout:30000});await expect.poll(async()=>(await data(page,'save-state'))?.state).toBe('ready');await settle(page);}\n  12 | async function tap(page:Page,id:string){\n  13 |   await expect.poll(async()=>((await data(page,'controls'))||[]).some((c:Control)=>c.id===id&&c.enabled)).toBe(true);\n    at settle (C:\\Users\\tranv\\Downloads\\game-pizza-ong-VDB-ne\\tests\\reference-shop-screens.spec.ts:10:45)\n    at tap (C:\\Users\\tranv\\Downloads\\game-pizza-ong-VDB-ne\\tests\\reference-shop-screens.spec.ts:17:103)\n    at C:\\Users\\tranv\\Downloads\\game-pizza-ong-VDB-ne\\tests\\reference-shop-screens.spec.ts:88:62"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-15T04:55:12.049Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "C:\\Users\\tranv\\Downloads\\game-pizza-ong-VDB-ne\\test-results\\stock-regression-browser-reviewed\\reference-shop-screens-pol-d044c-ses-filters-and-fixed-shell-webkit-360x640-repeat1\\error-context.md"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "C:\\Users\\tranv\\Downloads\\game-pizza-ong-VDB-ne\\tests\\reference-shop-screens.spec.ts",
+                    "column": 45,
+                    "line": 10
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "1c12f2bbf5db62427774-347af9379a8dc1a4cdcd",
+          "file": "reference-shop-screens.spec.ts",
+          "line": 43,
+          "column": 1
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-10-15T04:53:07.116Z",
+    "duration": 148782.57400000002,
+    "expected": 7,
+    "skipped": 0,
+    "unexpected": 1,
+    "flaky": 0
+  }
+}

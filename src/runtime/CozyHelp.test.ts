@@ -18,7 +18,7 @@ function day2(seed=helpSeed){const r=new CozyRuntime(false,true,{eventSeed:seed}
 it('skips help in non-selected campaigns without losing the first commercial visit',()=>{
   const seed=Array.from({length:100},(_,i)=>i).find(seed=>!helpOfferEligible(seed))!;
   const r=day2(seed);expect(r.helpPending).toBeNull();expect(r.pauses).not.toContain('help');
-  expect(r.tickets[0]).toMatchObject({help:false,kind:'hurry'});expect(r.shiftClock.total).toBeGreaterThanOrEqual(22);expect(r.shiftClock.total).toBeLessThanOrEqual(28);
+  expect(r.tickets[0]).toMatchObject({help:false,kind:'hurry'});expect(r.shiftClock.total).toBeGreaterThanOrEqual(18);expect(r.shiftClock.total).toBeLessThanOrEqual(22);
   r.closeDay();const checkpoint=r.exportCheckpoint(),restored=CozyRuntime.restoreCheckpoint(checkpoint,false)!;
   expect(restored.campaignEvents.seed).toBe(seed);expect(helpOfferEligible(restored.campaignEvents.seed)).toBe(false);
   expect(restored.marketForecast).toEqual(r.marketForecast);

@@ -1,0 +1,294 @@
+{
+  "config": {
+    "argv": [
+      "C:\\Program Files\\nodejs\\node.exe",
+      "C:\\Users\\tranv\\Downloads\\game-pizza-ong-VDB-ne\\node_modules\\@playwright\\test\\cli.js",
+      "test",
+      "tests/reference-shop-screens.spec.ts",
+      "--grep",
+      "polished management market and stock",
+      "--project=webkit-360x640",
+      "--repeat-each=3",
+      "--workers=1",
+      "--max-failures=1",
+      "--reporter=line,json",
+      "--output=test-results/stock-regression-webkit-stability"
+    ],
+    "configFile": "C:\\Users\\tranv\\Downloads\\game-pizza-ong-VDB-ne\\playwright.config.ts",
+    "rootDir": "C:/Users/tranv/Downloads/game-pizza-ong-VDB-ne/tests",
+    "failOnFlakyTests": false,
+    "forbidOnly": false,
+    "fullyParallel": true,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 1,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "C:/Users/tranv/Downloads/game-pizza-ong-VDB-ne/test-results/stock-regression-webkit-stability",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "chromium-360x640",
+        "name": "chromium-360x640",
+        "testDir": "C:/Users/tranv/Downloads/game-pizza-ong-VDB-ne/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 30000
+      },
+      {
+        "outputDir": "C:/Users/tranv/Downloads/game-pizza-ong-VDB-ne/test-results/stock-regression-webkit-stability",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "chromium-390x844",
+        "name": "chromium-390x844",
+        "testDir": "C:/Users/tranv/Downloads/game-pizza-ong-VDB-ne/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 30000
+      },
+      {
+        "outputDir": "C:/Users/tranv/Downloads/game-pizza-ong-VDB-ne/test-results/stock-regression-webkit-stability",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "chromium-412x915",
+        "name": "chromium-412x915",
+        "testDir": "C:/Users/tranv/Downloads/game-pizza-ong-VDB-ne/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 30000
+      },
+      {
+        "outputDir": "C:/Users/tranv/Downloads/game-pizza-ong-VDB-ne/test-results/stock-regression-webkit-stability",
+        "repeatEach": 3,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "webkit-360x640",
+        "name": "webkit-360x640",
+        "testDir": "C:/Users/tranv/Downloads/game-pizza-ong-VDB-ne/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 30000
+      },
+      {
+        "outputDir": "C:/Users/tranv/Downloads/game-pizza-ong-VDB-ne/test-results/stock-regression-webkit-stability",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "webkit-390x844",
+        "name": "webkit-390x844",
+        "testDir": "C:/Users/tranv/Downloads/game-pizza-ong-VDB-ne/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 30000
+      },
+      {
+        "outputDir": "C:/Users/tranv/Downloads/game-pizza-ong-VDB-ne/test-results/stock-regression-webkit-stability",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "webkit-412x915",
+        "name": "webkit-412x915",
+        "testDir": "C:/Users/tranv/Downloads/game-pizza-ong-VDB-ne/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 30000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "line"
+      ],
+      [
+        "json"
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.63.0",
+    "workers": 1,
+    "webServer": {
+      "command": "npm run preview -- --port 4173 --strictPort",
+      "url": "http://127.0.0.1:4173",
+      "reuseExistingServer": false
+    }
+  },
+  "suites": [
+    {
+      "title": "reference-shop-screens.spec.ts",
+      "file": "reference-shop-screens.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "polished management market and stock keep real purchases filters and fixed shell",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "webkit-360x640",
+              "projectName": "webkit-360x640",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 17064,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-15T05:10:02.772Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "stock-texture-resources",
+                      "contentType": "application/json",
+                      "body": "eyJyZXRhaW5lZCI6eyJjb3VudCI6OTMsInBvb2xlZENhbnZhc2VzIjozMSwicGl4ZWxzIjo1NDA4OTU5Nn0sImFmdGVyIjp7ImNvdW50Ijo5MywicG9vbGVkQ2FudmFzZXMiOjMxLCJwaXhlbHMiOjU0MDg5NTk2fSwic2hlbGxTaXplIjp7InNvdXJjZSI6eyJ3aWR0aCI6NzIwLCJoZWlnaHQiOjI1OH0sImRpc3BsYXkiOnsid2lkdGgiOjM2MCwiaGVpZ2h0IjoxMjl9fX0="
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "1c12f2bbf5db62427774-d7548462be38871c68ba",
+          "file": "reference-shop-screens.spec.ts",
+          "line": 43,
+          "column": 1
+        },
+        {
+          "title": "polished management market and stock keep real purchases filters and fixed shell",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "webkit-360x640",
+              "projectName": "webkit-360x640",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 25139,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-15T05:10:20.919Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "stock-texture-resources",
+                      "contentType": "application/json",
+                      "body": "eyJyZXRhaW5lZCI6eyJjb3VudCI6OTMsInBvb2xlZENhbnZhc2VzIjozMSwicGl4ZWxzIjo1NDA4OTU5Nn0sImFmdGVyIjp7ImNvdW50Ijo5MywicG9vbGVkQ2FudmFzZXMiOjMxLCJwaXhlbHMiOjU0MDg5NTk2fSwic2hlbGxTaXplIjp7InNvdXJjZSI6eyJ3aWR0aCI6NzIwLCJoZWlnaHQiOjI1OH0sImRpc3BsYXkiOnsid2lkdGgiOjM2MCwiaGVpZ2h0IjoxMjl9fX0="
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "1c12f2bbf5db62427774-347af9379a8dc1a4cdcd",
+          "file": "reference-shop-screens.spec.ts",
+          "line": 43,
+          "column": 1
+        },
+        {
+          "title": "polished management market and stock keep real purchases filters and fixed shell",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "webkit-360x640",
+              "projectName": "webkit-360x640",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 25041,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-15T05:10:47.494Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "stock-texture-resources",
+                      "contentType": "application/json",
+                      "body": "eyJyZXRhaW5lZCI6eyJjb3VudCI6OTMsInBvb2xlZENhbnZhc2VzIjozMSwicGl4ZWxzIjo1NDA4OTU5Nn0sImFmdGVyIjp7ImNvdW50Ijo5MywicG9vbGVkQ2FudmFzZXMiOjMxLCJwaXhlbHMiOjU0MDg5NTk2fSwic2hlbGxTaXplIjp7InNvdXJjZSI6eyJ3aWR0aCI6NzIwLCJoZWlnaHQiOjI1OH0sImRpc3BsYXkiOnsid2lkdGgiOjM2MCwiaGVpZ2h0IjoxMjl9fX0="
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "1c12f2bbf5db62427774-70376a8529de805fa9d6",
+          "file": "reference-shop-screens.spec.ts",
+          "line": 43,
+          "column": 1
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-10-15T05:10:00.974Z",
+    "duration": 72492.884,
+    "expected": 3,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}

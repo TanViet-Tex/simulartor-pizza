@@ -96,9 +96,11 @@ export function paintHubNavigation(scene:Phaser.Scene,ctx:CanvasRenderingContext
 }
 /** Transparent header/navigation layer; content coordinates remain unchanged. */
 export function drawHubShell(scene:Phaser.Scene,layer:Phaser.GameObjects.Container,hit:HubHit,input:{title:string;subtitle:string;cash:number;pause:()=>void;active:HubTab;tab:(id:HubTab)=>void;motion?:()=>HubNavigationSample}):()=>void{
-  const key=`hub-shell-${serial++}`,texture=uiCanvas(scene,key,360,640);
+  // The shell only paints above the body. Keep 2x artwork while avoiding a full-screen upload on every tab-animation frame.
+  const height=Math.ceil(HUB_SHELL_LAYOUT.navigation.y+HUB_SHELL_LAYOUT.navigation.height);
+  const key=`hub-shell-${serial++}`,texture=uiCanvas(scene,key,360,height);
   paintHubHeader(scene,texture.context,hit,input);paintHubNavigation(scene,texture.context,hit,input.active,input.tab,input.motion?.());texture.refresh();
-  const image=scene.add.image(0,0,key).setOrigin(0).setDisplaySize(360,640);layer.add(image);image.once('destroy',()=>scene.textures.remove(key));
+  const image=scene.add.image(0,0,key).setOrigin(0).setDisplaySize(360,height);layer.add(image);image.once('destroy',()=>scene.textures.remove(key));
   return ()=>{if(!image.scene)return;const nav=HUB_SHELL_LAYOUT.navigation;
     texture.context.clearRect(nav.x,nav.y,nav.width,nav.height);
     paintHubNavigation(scene,texture.context,()=>{},input.active,input.tab,input.motion?.());texture.refresh();

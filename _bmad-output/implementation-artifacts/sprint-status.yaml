@@ -21,21 +21,21 @@ development_status:
   2-1-distinct-customer-patience-and-price: done
   2-2-stars-daily-rating-and-reputation: done
   2-3-regular-relationship-and-referral-eligibility: done
-  epic-3: in-progress
+  epic-3: done
   3-1-preparation-market-and-pricing: done
   3-2-dated-lot-reservations: done
   3-3-daily-cash-flow-and-profit: done
   # Hub/reviews/finance implemented: spec-reference-summary-and-details.md (34 units, 6 focused E2E).
   # Stock filters/lot details/shop navigation/menu flows: spec-stock-shop-missions-ui.md (15 units, 13 E2E).
   # Current menu and six shop screens: spec-bold-ui-and-menu-cleanup.md, spec-six-shop-screens.md.
-  # 2026-10-15 user-authorized self-acceptance: eight stories accepted against current contracts.
-  # Story3.7 remains review: its WebKit verification closed the page under low-memory conditions.
-  # Two outside-sandbox retries retained the same open criterion; epic3678-acceptance-2026-10-15.md.
-  # Evidence: epic1-3-acceptance-2026-10-15.md; no full release/physical-device certification.
+  # 2026-10-15 follow-up: all nine stories technically accepted against current contracts.
+  # Story3.7 passed final Chromium/WebKit Stock, expiry/detail/scroll and read-only lot checks.
+  # Three extra WebKit runs passed with10Market/Stock roundtrips each; native crash trigger remains unproven.
+  # Evidence: stock-webkit-regression-2026-10-15.md;760/760units; no full release/physical-device certification.
   3-4-reference-hub-ui-and-flows: done
   3-5-day-reviews-modal: done
   3-6-day-finance-details-modal: done
-  3-7-stock-filters-and-lot-details: review
+  3-7-stock-filters-and-lot-details: done
   3-8-shop-tab-ui-and-navigation: done
   3-9-next-day-menu-and-pricing: done
 
@@ -92,4 +92,4 @@ development_status:
 
 # Epic4 code checks passed; its historical three-day keys no longer imply a day3 terminal boundary.
 # Story4.6 five-person human playtest still has 0 real sessions (epic-4-playtest.md).
-# Epic1/3/4/9 remain in-progress; automated checks are not human/device acceptance.
+# Epic1/4/9 remain in-progress; automated checks are not human/device acceptance.

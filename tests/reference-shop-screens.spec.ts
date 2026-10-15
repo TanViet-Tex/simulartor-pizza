@@ -23,12 +23,12 @@ async function fixture(page:Page,funded=true){
   if(!bundleCode){
     const name:string='node:path',paths=await import(name);
     const bundle=await build({stdin:{resolveDir:paths.resolve('.'),loader:'ts',contents:`
-      import Phaser from 'phaser';import {CozyScene} from './src/scenes/CozyScene';import {CozyCampaignSession} from './src/runtime/CozyCampaignSession';import {CozySaveRepository} from './src/infrastructure/CozySaveRepository';
+      import Phaser from 'phaser';import {CozyScene} from './src/scenes/CozyScene';import {CozyCampaignSession} from './src/runtime/CozyCampaignSession';import {CozySaveRepository} from './src/infrastructure/CozySaveRepository';import {uiCanvas} from './src/presentation/UiRaster';
       (async()=>{const repo=new CozySaveRepository(),loaded=await repo.load();
       if(window.shopCheckpoint){const result=await repo.commit({campaignId:'shop-screens',commitId:'earned',sourceRevision:0,replacementToken:loaded.replacementToken,payload:window.shopCheckpoint});if(!result.ok)throw Error(result.message);}
       const session=new CozyCampaignSession(repo);let runtime=await session.load();if(!runtime)runtime=await session.start(false);
       const scene=new CozyScene(runtime,undefined,undefined,undefined,session.lifecycle,session);
-      const game=new Phaser.Game({type:Phaser.AUTO,parent:'fixture',width:360,height:640,scale:{mode:Phaser.Scale.FIT,autoCenter:Phaser.Scale.CENTER_BOTH},scene:[scene]});window.shopFixture={runtime,session,scene,game};})();
+      const game=new Phaser.Game({type:Phaser.AUTO,parent:'fixture',width:360,height:640,scale:{mode:Phaser.Scale.FIT,autoCenter:Phaser.Scale.CENTER_BOTH},scene:[scene]});window.shopFixture={runtime,session,scene,game,canvasPool:Phaser.Display.Canvas.CanvasPool,uiCanvas};})();
     `},bundle:true,platform:'browser',format:'iife',minify:true,define:{'import.meta.env.BASE_URL':'"/"'},write:false});bundleCode=bundle.outputFiles[0].text;
   }
   await page.route('**/assets/index-*.js',route=>route.abort());await page.goto('/');
@@ -62,6 +62,8 @@ test('polished management market and stock keep real purchases filters and fixed
   await tap(page,'summary-tab-stock');
   await canvas.screenshot({path:info.outputPath('polished-stock.png')});
   const cash=await canvas.getAttribute('data-cash');
+  const inventory=await data(page,'stock');
+  const lots=await page.evaluate(()=>(window as any).shopFixture.runtime.stockLots);
   const stock=(await data(page,'stock-rows')).find((r:any)=>r.id==='dough');
   expect(stock.usable).toBe(before.available+purchase.quantity);
   await tap(page,'stock-item-dough');expect(await data(page,'hub-detail')).not.toBeNull();await tap(page,'hub-detail-close');
@@ -69,9 +71,40 @@ test('polished management market and stock keep real purchases filters and fixed
   const threshold=page.getByRole('textbox',{name:'Ngưỡng sắp hết'});
   await threshold.fill('1');await threshold.press('Enter');
   await expect.poll(async()=>(await data(page,'stock-rows')).every((r:any)=>r.usable<=1)).toBe(true);
+  await tap(page,'stock-filter-expiry');
+  const expiry=page.getByRole('textbox',{name:'Số ngày sắp hết hạn'});
+  await expiry.fill('1');await expiry.press('Enter');
+  await expect.poll(async()=>(await data(page,'stock-rows')).map((r:any)=>r.id)).toContain('dough');
+  expect((await data(page,'stock-rows')).some((r:any)=>r.id==='sauce')).toBe(false);
+  const day=await page.evaluate(()=>(window as any).shopFixture.runtime.preparationDay);
+  expect((await data(page,'stock-rows')).every((r:any)=>r.nearestExpiry!==null&&r.nearestExpiry>=day&&r.nearestExpiry-day<=1)).toBe(true);
   await tap(page,'stock-filter-all');await scroll(page,10000);
   await expect.poll(async()=>(await data(page,'stock-scroll')).offset).toBeGreaterThan(0);
   expect((await data(page,'controls')).filter((c:Control)=>c.id.startsWith('summary-tab-')||c.id==='pause')).toEqual(shell);
+  const resources=()=>page.evaluate(()=>{const f=(window as any).shopFixture,textures=Object.values(f.game.textures.list) as any[];return {count:textures.length,pooledCanvases:f.canvasPool.total(),pixels:textures.reduce((sum,t)=>{const source=t.getSourceImage();return sum+(source.width||0)*(source.height||0);},0)};});
+  const retained=await resources();
+  expect(await page.evaluate(()=>{
+    const f=(window as any).shopFixture,manager=f.game.textures,key='stock-texture-lifecycle-probe',before=f.canvasPool.total(),adds:boolean[]=[],keyAdds:boolean[]=[];
+    const added=(id:string,texture:any)=>{if(id===key)adds.push(texture.key===key&&texture.has('__BASE'));},keyAdded=(texture:any)=>keyAdds.push(texture.key===key&&texture.has('__BASE'));
+    manager.on('addtexture',added);manager.on('addtexture-'+key,keyAdded);
+    try{
+      const art=f.uiCanvas(f.scene,key,20,20),ownedBeforePaint=manager.exists(key);art.context.fillRect(0,0,20,20);art.refresh();art.refresh();
+      let duplicateRejected=false;try{f.uiCanvas(f.scene,key,20,20);}catch{duplicateRejected=true;}
+      const pooledDelta=f.canvasPool.total()-before;manager.remove(key);
+      return {ownedBeforePaint,adds,keyAdds,duplicateRejected,pooledDelta,restored:f.canvasPool.total()===before};
+    }finally{manager.off('addtexture',added);manager.off('addtexture-'+key,keyAdded);if(manager.exists(key))manager.remove(key);}
+  })).toEqual({ownedBeforePaint:true,adds:[true],keyAdds:[true],duplicateRejected:true,pooledDelta:1,restored:true});
+  const shellSize=await page.evaluate(()=>{const scene=(window as any).shopFixture.scene,image=scene.layer.list.find((o:any)=>o.texture?.key.startsWith('hub-shell-')),source=image.texture.getSourceImage();return {source:{width:source.width,height:source.height},display:{width:image.displayWidth,height:image.displayHeight}};});
+  expect(shellSize).toEqual({source:{width:720,height:258},display:{width:360,height:129}});
+  await page.evaluate(()=>{(window as any).stockLargeReadbacks=0;const read=CanvasRenderingContext2D.prototype.getImageData;CanvasRenderingContext2D.prototype.getImageData=function(...args:Parameters<CanvasRenderingContext2D['getImageData']>){if(args[2]*args[3]>200000)(window as any).stockLargeReadbacks++;return read.apply(this,args);};});
+  for(let i=0;i<10;i++){await tap(page,'summary-tab-market');await tap(page,'summary-tab-stock');}
+  const after=await resources();expect(after).toEqual(retained);
+  expect(await page.evaluate(()=>(window as any).stockLargeReadbacks)).toBe(0);
+  expect(await data(page,'stock')).toEqual(inventory);
+  expect(await page.evaluate(()=>(window as any).shopFixture.runtime.stockLots)).toEqual(lots);
+  await expect.poll(async()=>(await data(page,'hub-navigation-motion')).animating).toBe(false);
+  await info.attach('stock-texture-resources',{body:JSON.stringify({retained,after,shellSize}),contentType:'application/json'});
+  await canvas.screenshot({path:info.outputPath('polished-stock-after-repeated-navigation.png')});
   await expect(canvas).toHaveAttribute('data-cash',cash!);
   await tap(page,'summary-stock-market');await expect(canvas).toHaveAttribute('data-summary-tab','market');
   expect(page.context().pages()).toHaveLength(1);expect(errors).toEqual([]);

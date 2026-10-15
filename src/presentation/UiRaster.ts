@@ -1,14 +1,23 @@
-import type Phaser from 'phaser';
+import Phaser from 'phaser';
 
 /** Logical geometry stays fixed; 2x glyphs also remain sharp on desktop FIT. */
 export const UI_RASTER_SCALE=2;
-export function uiCanvas(scene:Phaser.Scene,key:string,width:number,height:number):Phaser.Textures.CanvasTexture {
-  const texture=scene.textures.createCanvas(key,Math.ceil(width*UI_RASTER_SCALE),Math.ceil(height*UI_RASTER_SCALE))!;
-  texture.context.scale(UI_RASTER_SCALE,UI_RASTER_SCALE);
-  texture.context.imageSmoothingEnabled=true;
-  texture.context.imageSmoothingQuality='high';
+export function uiCanvas(scene:Phaser.Scene,key:string,width:number,height:number):{context:CanvasRenderingContext2D;refresh:()=>void} {
+  if(scene.textures.exists(key))throw new Error(`UI texture already exists: ${key}`);
+  const canvas=Phaser.Display.Canvas.CanvasPool.create2D(scene,Math.ceil(width*UI_RASTER_SCALE),Math.ceil(height*UI_RASTER_SCALE));
+  // Register ownership immediately, so the texture manager owns cleanup even if painting fails.
+  const texture=scene.textures.create(key,canvas);
+  if(!texture){Phaser.Display.Canvas.CanvasPool.remove(canvas);throw new Error(`UI texture already exists: ${key}`);}
+  texture.add('__BASE',0,0,0,canvas.width,canvas.height);
+  const context=canvas.getContext('2d')!;
+  context.scale(UI_RASTER_SCALE,UI_RASTER_SCALE);
+  context.imageSmoothingEnabled=true;
+  context.imageSmoothingQuality='high';
+  scene.textures.emit(Phaser.Textures.Events.ADD,key,texture);
+  scene.textures.emit(Phaser.Textures.Events.ADD_KEY+key,texture);
   scene.game.canvas.dataset.uiRasterScale=String(UI_RASTER_SCALE);
-  return texture;
+  // Paint-only UI never needs CanvasTexture's full ImageData copy or its extra blank upload.
+  return {context,refresh:()=>{texture.source[0].update();}};
 }
 
 const strengthened=new WeakMap<Phaser.Textures.TextureManager,Set<string>>();

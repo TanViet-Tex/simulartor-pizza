@@ -1,0 +1,52 @@
+[
+  {
+    "resources": {
+      "retained": {
+        "count": 93,
+        "pooledCanvases": 31,
+        "pixels": 54089596
+      },
+      "after": {
+        "count": 93,
+        "pooledCanvases": 31,
+        "pixels": 54089596
+      },
+      "shellSize": {
+        "source": {
+          "width": 720,
+          "height": 258
+        },
+        "display": {
+          "width": 360,
+          "height": 129
+        }
+      }
+    },
+    "project": "chromium-360x640"
+  },
+  {
+    "resources": {
+      "retained": {
+        "count": 93,
+        "pooledCanvases": 31,
+        "pixels": 54089596
+      },
+      "after": {
+        "count": 93,
+        "pooledCanvases": 31,
+        "pixels": 54089596
+      },
+      "shellSize": {
+        "source": {
+          "width": 720,
+          "height": 258
+        },
+        "display": {
+          "width": 360,
+          "height": 129
+        }
+      }
+    },
+    "project": "webkit-360x640"
+  }
+]

@@ -2,7 +2,7 @@
 
 ### Nghiệm thu kỹ thuật — 2026-10-15
 
-Epic6/7/8 đạt phạm vi hiện đã duyệt theo các quyết định mới ghi trong từng mục bên dưới. Epic3 vẫn8/9story;3.7 chờ chạy trọn luồng Kho trên WebKit vì trang tiếp tục tự đóng trong hai lượt ngoài sandbox, nguyên nhân chưa kết luận. Xem [biên bản](../../implementation-artifacts/epic3678-acceptance-2026-10-15.md) và sprint-status. Kết quả này không thay chứng nhận thiết bị thật/cân bằng người chơi hoặc mở rộng phạm vi sang ý tưởng truyện/đào tạo/sửa chữa chưa chốt.
+Epic3/6/7/8 đạt nghiệm thu kỹ thuật trong phạm vi hiện đã duyệt. Follow-up3.7đã qua luồng Kho đầy đủ trên Chromium/WebKit và ba lượt WebKit đổi Chợ–Kho10vòng/lượt, với760/760unit đạt. Xem [biên bản follow-up](../../implementation-artifacts/stock-webkit-regression-2026-10-15.md), [biên bản trước](../../implementation-artifacts/epic3678-acceptance-2026-10-15.md) và sprint-status. Nguyên nhân crash native ban đầu chưa được cô lập chắc chắn; kết quả này không thay chứng nhận thiết bị thật/cân bằng người chơi hoặc mở rộng phạm vi sang ý tưởng truyện/đào tạo/sửa chữa chưa chốt.
 
 ### Thay đổi người dùng — 2026-10-04: bỏ demo3ngày, mua công thức
 

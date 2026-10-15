@@ -1,0 +1,26 @@
+{
+  "nativeCrashEvents": [
+    "pw:protocol ◀ RECV {\"method\":\"Target.targetDestroyed\",\"params\":{\"targetId\":\"page-5\",\"crashed\":true},\"browserContextId\":\"8000000000000002\",\"pageProxyId\":\"4\"} +339ms",
+    "stock diagnostic: renderer crashed"
+  ],
+  "stats": {
+    "startTime": "2026-10-15T04:45:02.423Z",
+    "duration": 10349.215,
+    "expected": 0,
+    "skipped": 0,
+    "unexpected": 1,
+    "flaky": 0
+  },
+  "testError": {
+    "message": "Error: locator.screenshot: Target page, context or browser has been closed\nCall log:\n\u001b[2m  - taking element screenshot\u001b[22m\n\u001b[2m  - waiting for fonts to load...\u001b[22m\n\u001b[2m  - fonts loaded\u001b[22m\n\u001b[2m  - attempting scroll into view action\u001b[22m\n\u001b[2m    - waiting for element to be stable\u001b[22m\n",
+    "stack": "Error: locator.screenshot: Target page, context or browser has been closed\nCall log:\n\u001b[2m  - taking element screenshot\u001b[22m\n\u001b[2m  - waiting for fonts to load...\u001b[22m\n\u001b[2m  - fonts loaded\u001b[22m\n\u001b[2m  - attempting scroll into view action\u001b[22m\n\u001b[2m    - waiting for element to be stable\u001b[22m\n\n    at C:\\Users\\tranv\\Downloads\\game-pizza-ong-VDB-ne\\tests\\reference-shop-screens.spec.ts:48:16",
+    "location": {
+      "file": "C:\\Users\\tranv\\Downloads\\game-pizza-ong-VDB-ne\\tests\\reference-shop-screens.spec.ts",
+      "column": 16,
+      "line": 48
+    },
+    "snippet": "  46 |   const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));await fixture(page);\n  47 |   const canvas=page.locator('canvas');\n> 48 |   await canvas.screenshot({path:info.outputPath('polished-management.png')});\n     |                ^\n  49 |   const shell=(await data(page,'controls')).filter((c:Control)=>c.id.startsWith('summary-tab-')||c.id==='pause');\n  50 |   expect((await data(page,'controls')).filter((c:Control)=>c.id.startsWith('shop-section-'))).toHaveLength(7);\n  51 |   await tap(page,'summary-tab-market');"
+  },
+  "rawLocalReport": "stock-regression-webkit-protocol-2026-10-15.json (local, excluded from Git because it embeds the complete protocol)",
+  "diagnostic": "Real mobile WebKit with DEBUG=pw:browser*,pw:protocol; no graphics or audio override."
+}

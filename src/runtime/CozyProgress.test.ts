@@ -6,7 +6,7 @@ function time(r:CozyRuntime,s:number){for(let i=0;i<Math.round(s*20);i++)r.advan
 function serve(r:CozyRuntime){r.resolveLottery(0);if(r.thanksPending)r.dismissThanks();for(const ingredient of recipeIngredients(r.selectedRecipe))r.dispatch({type:'ingredient',ingredient});r.dispatch({type:'bake'});time(r,r.bakeTiming.perfectStart);r.dispatch({type:'extract'});r.dispatch({type:'box'});const id=r.selectedTicketId;expect(r.dispatch({type:'deliver',commandId:'serve-'+id})).toBe(true);if(r.shopPhase==='delivered')r.continueShift();return id;}
 function shop(q=4){const r=new CozyRuntime(false,true,SERVICE_SCHEDULE);for(const id of ['dough','sauce','cheese'] as const)r.buy(id,q);r.openShop();return r;}
 it('separates goal cash from sales/profit and buys sausage ownership only in preparation',()=>{
-  const r=shop();for(let i=0;i<4;i++){serve(r);if(i<3)time(r,14);}
+  const r=shop();for(let i=0;i<4;i++){serve(r);if(i<3)time(r,20-r.bakeTiming.perfectStart);}
   expect(r.progression).toMatchObject({xp:60,level:2,unlockDay:2,cheeseSales:4});expect(r.buy('sausage',1)).toBe(false);r.closeDay();
   const closed=r.daySummary!;expect(closed).toMatchObject({revenue:240,rewards:20,profit:148,cash:668,goal:{status:'completed'},progression:{xp:70}});
   expect(closed.accounts.endingCash).toBe(closed.accounts.startingCash+closed.revenue+closed.rewards-closed.purchases-closed.rent);
@@ -16,7 +16,7 @@ it('separates goal cash from sales/profit and buys sausage ownership only in pre
   expect(r.daySummary).toMatchObject({day:2,rewards:0,cost:33,goal:{status:'expired'}});expect(r.progression.xp).toBe(85);
 });
 it('mission reward and XP apply once and remain separate from sale review reputation',()=>{
-  const r=shop(8);for(let i=0;i<8;i++){const id=serve(r);expect(r.dispatch({type:'deliver',targetId:id,commandId:'repeat-'+id})).toBe(false);if(i<7)time(r,14);}
+  const r=shop(8);for(let i=0;i<8;i++){const id=serve(r);expect(r.dispatch({type:'deliver',targetId:id,commandId:'repeat-'+id})).toBe(false);if(i<7)time(r,20-r.bakeTiming.perfectStart);}
   expect(r.progression).toMatchObject({cheeseSales:8,mission:'completed',xp:140});expect(r.customerProgress.reputation).toBe(60);expect(r.lastResult).toMatchObject({rewardCoins:30,rewardReputation:2,xpDelta:35});
   r.closeDay();expect(r.daySummary).toMatchObject({rewards:50,progression:{xp:150},goal:{status:'completed'}});const cash=r.state.cash;r.closeDay();expect(r.state.cash).toBe(cash);
 });
@@ -48,7 +48,7 @@ it('completes the mission across canonical days and attributes its reward only t
   expect(r.progression).toMatchObject({xp:90,cheeseSales:6,mission:'active'});r.closeDay();const day1=r.daySummary!;
   expect(day1).toMatchObject({rewards:20,progression:{xp:100},goal:{status:'completed'}});
   r.configureMenu('sausage',100,false);for(const id of ['dough','sauce','cheese'] as const)r.buy(id,2);r.openNextDay();
-  serve(r);time(r,14);serve(r);
+  serve(r);time(r,20-r.bakeTiming.perfectStart);serve(r);
   expect(r.progression).toMatchObject({xp:150,cheeseSales:8,mission:'completed'});expect(r.lastResult).toMatchObject({rewardCoins:30,rewardReputation:2,xpDelta:35});
   expect(day1.progression.cheeseSales).toBe(6);expect(day1.rewards).toBe(20);r.closeDay();expect(r.daySummary).toMatchObject({day:2,revenue:120,rewards:30,goal:{status:'expired'}});
   for(const id of ['dough','sauce','cheese'] as const)r.buy(id,1);r.openNextDay();serve(r);r.closeDay();
@@ -66,6 +66,6 @@ it('permits a cheaper unlocked menu after close rather than locking a viable cam
 });
 it('checks bargain stock for the requested recipe when preparation chose mushroom',()=>{
   const r=new CozyRuntime(false,true,{...SERVICE_SCHEDULE,schedule:day=>({day,duration:180,grace:120,slots:[{id:'first',at:0,kind:'regular',opportunity:'commercial',commercialOrdinal:1,takeaway:true},{id:'discount',at:20,kind:'bargain',opportunity:'commercial',commercialOrdinal:2,takeaway:true}]}),resolveRecipe:slot=>slot.id==='first'?'mushroom':'cheese'});r.selectRecipe('mushroom');for(const id of ['dough','sauce','cheese'] as const)r.buy(id,5);r.buy('mushroom',1);r.openShop();
-  serve(r);time(r,14);expect(r.selectedTicket?.recipe).toBe('cheese');for(const ingredient of recipeIngredients('cheese'))expect(r.dispatch({type:'ingredient',ingredient})).toBe(true);expect(r.dispatch({type:'bake'})).toBe(true);time(r,r.bakeTiming.perfectStart);r.dispatch({type:'extract'});r.dispatch({type:'box'});r.dispatch({type:'deliver',commandId:'recipe-bargain'});
+  serve(r);time(r,20-r.bakeTiming.perfectStart);expect(r.selectedTicket?.recipe).toBe('cheese');for(const ingredient of recipeIngredients('cheese'))expect(r.dispatch({type:'ingredient',ingredient})).toBe(true);expect(r.dispatch({type:'bake'})).toBe(true);time(r,r.bakeTiming.perfectStart);r.dispatch({type:'extract'});r.dispatch({type:'box'});r.dispatch({type:'deliver',commandId:'recipe-bargain'});
   expect(r.bargainPending?.recipe).toBe('cheese');expect(r.missingRecipeReason('mushroom')).toContain('Nấm');expect(r.missingRecipeReason('cheese')).toBe('');expect(r.resolveBargain(true)).toBe(true);
 });
