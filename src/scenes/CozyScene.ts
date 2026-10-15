@@ -384,7 +384,10 @@ export class CozyScene extends Phaser.Scene {
     const scale=Math.min((canvasBounds.width||360)/360,(canvasBounds.height||640)/640),min=Math.ceil(UI_THEME.minTouch/scale);
     const width=Math.max(w,min),height=Math.max(h,min);
     x=Math.max(0,Math.min(360-width,x-(width-w)/2));y=Math.max(0,Math.min(640-height,y-(height-h)/2));w=width;h=height;
-    if(list){const expandedBottom=Math.min(bottom,y+h);y=Math.max(top,y);h=Math.max(0,expandedBottom-y);}
+    if(list){
+      if(rawY>=top&&rawY+rawH<=bottom&&h<=bottom-top)y=Math.max(top,Math.min(bottom-h,y));
+      else {const expandedBottom=Math.min(bottom,y+h);y=Math.max(top,y);h=Math.max(0,expandedBottom-y);}
+    }
     this.controls.push({id,x,y,width:w,height:h,enabled});
     // Keep input objects alive across clock redraws so a timed tap cannot fall
     // between Phaser removing the previous region and registering its replacement.

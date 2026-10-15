@@ -1,0 +1,70 @@
+{
+  "observedMs": 1292.1999999997206,
+  "decodedBytes": 18728797,
+  "resources": [
+    {
+      "name": "http://127.0.0.1:4173/assets/index-CzWsKBgp.js",
+      "bytes": 533490
+    },
+    {
+      "name": "http://127.0.0.1:4173/assets/phaser-BvRDNCue.js",
+      "bytes": 1376357
+    },
+    {
+      "name": "http://127.0.0.1:4173/assets/index-BuEhYNWK.css",
+      "bytes": 610
+    },
+    {
+      "name": "http://127.0.0.1:4173/game-content.json",
+      "bytes": 721
+    },
+    {
+      "name": "http://127.0.0.1:4173/assets/ui/sauce.svg",
+      "bytes": 812
+    },
+    {
+      "name": "http://127.0.0.1:4173/assets/references/h%E1%BB%99p%20pizza.png",
+      "bytes": 1116358
+    },
+    {
+      "name": "http://127.0.0.1:4173/assets/reference-kitchen-clean.png",
+      "bytes": 1481074
+    },
+    {
+      "name": "http://127.0.0.1:4173/assets/reference-kitchen-ovens.png",
+      "bytes": 957750
+    },
+    {
+      "name": "http://127.0.0.1:4173/assets/management-background.png",
+      "bytes": 1976285
+    },
+    {
+      "name": "http://127.0.0.1:4173/assets/customer-portraits/sheet-1.png",
+      "bytes": 2390758
+    },
+    {
+      "name": "http://127.0.0.1:4173/assets/main-menu-background.png",
+      "bytes": 1864242
+    },
+    {
+      "name": "http://127.0.0.1:4173/assets/menu-curtain.png",
+      "bytes": 2061629
+    },
+    {
+      "name": "http://127.0.0.1:4173/assets/references/Khung%20th%C3%B4ng%20b%C3%A1o%20ti%E1%BB%87m%20pizza%20%E1%BA%A5m%20c%C3%BAng.png",
+      "bytes": 1609819
+    },
+    {
+      "name": "http://127.0.0.1:4173/assets/references/H%E1%BB%99p%20tho%E1%BA%A1i%20th%C3%B4ng%20b%C3%A1o%20pizza%20%E1%BA%A5m%20c%C3%BAng.png",
+      "bytes": 1471790
+    },
+    {
+      "name": "http://127.0.0.1:4173/assets/references/th%C3%B4ng%20b%C3%A1o%20nh%E1%BA%ADn%20ti%E1%BB%81n.png",
+      "bytes": 122439
+    },
+    {
+      "name": "http://127.0.0.1:4173/assets/references/C%C3%A0i%20%C4%91%E1%BA%B7t%20ti%E1%BB%87m%20pizza%20%E1%BA%A5m%20c%C3%BAng.png",
+      "bytes": 1763570
+    }
+  ]
+}

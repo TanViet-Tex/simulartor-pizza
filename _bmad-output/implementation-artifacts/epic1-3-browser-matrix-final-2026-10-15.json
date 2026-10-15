@@ -1,0 +1,1333 @@
+{
+  "config": {
+    "argv": [
+      "C:\\Program Files\\nodejs\\node.exe",
+      "C:\\Users\\tranv\\Downloads\\game-pizza-ong-VDB-ne\\node_modules\\@playwright\\test\\cli.js",
+      "test",
+      "tests/smoke.spec.ts",
+      "tests/tutorial.spec.ts",
+      "tests/dough-workbench.spec.ts",
+      "tests/reference-summary.spec.ts",
+      "tests/reference-shop-screens.spec.ts",
+      "--grep",
+      "production canvas|new game completes isolated|ingredients need dough|reference summary uses|all six illustrated pages",
+      "--workers=1",
+      "--max-failures=5",
+      "--reporter=line,json",
+      "--output=test-results/epic1-3-matrix-final"
+    ],
+    "configFile": "C:\\Users\\tranv\\Downloads\\game-pizza-ong-VDB-ne\\playwright.config.ts",
+    "rootDir": "C:/Users/tranv/Downloads/game-pizza-ong-VDB-ne/tests",
+    "failOnFlakyTests": false,
+    "forbidOnly": false,
+    "fullyParallel": true,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 5,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "C:/Users/tranv/Downloads/game-pizza-ong-VDB-ne/test-results/epic1-3-matrix-final",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "chromium-360x640",
+        "name": "chromium-360x640",
+        "testDir": "C:/Users/tranv/Downloads/game-pizza-ong-VDB-ne/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 30000
+      },
+      {
+        "outputDir": "C:/Users/tranv/Downloads/game-pizza-ong-VDB-ne/test-results/epic1-3-matrix-final",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "chromium-390x844",
+        "name": "chromium-390x844",
+        "testDir": "C:/Users/tranv/Downloads/game-pizza-ong-VDB-ne/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 30000
+      },
+      {
+        "outputDir": "C:/Users/tranv/Downloads/game-pizza-ong-VDB-ne/test-results/epic1-3-matrix-final",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "chromium-412x915",
+        "name": "chromium-412x915",
+        "testDir": "C:/Users/tranv/Downloads/game-pizza-ong-VDB-ne/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 30000
+      },
+      {
+        "outputDir": "C:/Users/tranv/Downloads/game-pizza-ong-VDB-ne/test-results/epic1-3-matrix-final",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "webkit-360x640",
+        "name": "webkit-360x640",
+        "testDir": "C:/Users/tranv/Downloads/game-pizza-ong-VDB-ne/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 30000
+      },
+      {
+        "outputDir": "C:/Users/tranv/Downloads/game-pizza-ong-VDB-ne/test-results/epic1-3-matrix-final",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "webkit-390x844",
+        "name": "webkit-390x844",
+        "testDir": "C:/Users/tranv/Downloads/game-pizza-ong-VDB-ne/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 30000
+      },
+      {
+        "outputDir": "C:/Users/tranv/Downloads/game-pizza-ong-VDB-ne/test-results/epic1-3-matrix-final",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "webkit-412x915",
+        "name": "webkit-412x915",
+        "testDir": "C:/Users/tranv/Downloads/game-pizza-ong-VDB-ne/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 30000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "line"
+      ],
+      [
+        "json"
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.63.0",
+    "workers": 1,
+    "webServer": {
+      "command": "npm run preview -- --port 4173 --strictPort",
+      "url": "http://127.0.0.1:4173",
+      "reuseExistingServer": false
+    }
+  },
+  "suites": [
+    {
+      "title": "dough-workbench.spec.ts",
+      "file": "dough-workbench.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "ingredients need dough; boxed order blocks next customer until delivery",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium-360x640",
+              "projectName": "chromium-360x640",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 21943,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-15T03:00:22.257Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "28755ffe2fcf0449ce80-23a395a23dd6194a43e0",
+          "file": "dough-workbench.spec.ts",
+          "line": 32,
+          "column": 1
+        },
+        {
+          "title": "ingredients need dough; boxed order blocks next customer until delivery",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium-390x844",
+              "projectName": "chromium-390x844",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 20981,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-15T03:03:47.202Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "28755ffe2fcf0449ce80-b05dc40b5a4ec2c86255",
+          "file": "dough-workbench.spec.ts",
+          "line": 32,
+          "column": 1
+        },
+        {
+          "title": "ingredients need dough; boxed order blocks next customer until delivery",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium-412x915",
+              "projectName": "chromium-412x915",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 18976,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-15T03:06:36.246Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "28755ffe2fcf0449ce80-72cc0ffec45f76fa322f",
+          "file": "dough-workbench.spec.ts",
+          "line": 32,
+          "column": 1
+        },
+        {
+          "title": "ingredients need dough; boxed order blocks next customer until delivery",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "webkit-360x640",
+              "projectName": "webkit-360x640",
+              "results": [
+                {
+                  "workerIndex": 3,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 17159,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-15T03:09:24.766Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "28755ffe2fcf0449ce80-2139f182dd21ea64d648",
+          "file": "dough-workbench.spec.ts",
+          "line": 32,
+          "column": 1
+        },
+        {
+          "title": "ingredients need dough; boxed order blocks next customer until delivery",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "webkit-390x844",
+              "projectName": "webkit-390x844",
+              "results": [
+                {
+                  "workerIndex": 5,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 13552,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-15T03:11:22.128Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "28755ffe2fcf0449ce80-b82f30374ff61a0b7234",
+          "file": "dough-workbench.spec.ts",
+          "line": 32,
+          "column": 1
+        },
+        {
+          "title": "ingredients need dough; boxed order blocks next customer until delivery",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "webkit-412x915",
+              "projectName": "webkit-412x915",
+              "results": [
+                {
+                  "workerIndex": 7,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 12347,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-15T03:12:58.253Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "28755ffe2fcf0449ce80-ac9ac2dfe67aa75e95ff",
+          "file": "dough-workbench.spec.ts",
+          "line": 32,
+          "column": 1
+        }
+      ]
+    },
+    {
+      "title": "reference-shop-screens.spec.ts",
+      "file": "reference-shop-screens.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "all six illustrated pages have fixed shell, scroll and independent navigation",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium-360x640",
+              "projectName": "chromium-360x640",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 42646,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-15T03:00:46.249Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "1c12f2bbf5db62427774-a4d081feb76f01540614",
+          "file": "reference-shop-screens.spec.ts",
+          "line": 99,
+          "column": 1
+        },
+        {
+          "title": "all six illustrated pages have fixed shell, scroll and independent navigation",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium-390x844",
+              "projectName": "chromium-390x844",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 39146,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-15T03:04:08.443Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "1c12f2bbf5db62427774-5044ae16c169a75fe7a4",
+          "file": "reference-shop-screens.spec.ts",
+          "line": 99,
+          "column": 1
+        },
+        {
+          "title": "all six illustrated pages have fixed shell, scroll and independent navigation",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium-412x915",
+              "projectName": "chromium-412x915",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 36755,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-15T03:06:55.480Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "1c12f2bbf5db62427774-ff5856a5c44a11ad6108",
+          "file": "reference-shop-screens.spec.ts",
+          "line": 99,
+          "column": 1
+        },
+        {
+          "title": "all six illustrated pages have fixed shell, scroll and independent navigation",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "webkit-360x640",
+              "projectName": "webkit-360x640",
+              "results": [
+                {
+                  "workerIndex": 3,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 23286,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-15T03:09:42.881Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "1c12f2bbf5db62427774-927a9d9bc67c27185bf7",
+          "file": "reference-shop-screens.spec.ts",
+          "line": 99,
+          "column": 1
+        },
+        {
+          "title": "all six illustrated pages have fixed shell, scroll and independent navigation",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "webkit-390x844",
+              "projectName": "webkit-390x844",
+              "results": [
+                {
+                  "workerIndex": 5,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 17424,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-15T03:11:35.870Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "1c12f2bbf5db62427774-ba7203cc4da7cd907539",
+          "file": "reference-shop-screens.spec.ts",
+          "line": 99,
+          "column": 1
+        },
+        {
+          "title": "all six illustrated pages have fixed shell, scroll and independent navigation",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "webkit-412x915",
+              "projectName": "webkit-412x915",
+              "results": [
+                {
+                  "workerIndex": 7,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 18564,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-15T03:13:10.797Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "1c12f2bbf5db62427774-2ebc7e359bacf9825a52",
+          "file": "reference-shop-screens.spec.ts",
+          "line": 99,
+          "column": 1
+        }
+      ]
+    },
+    {
+      "title": "reference-summary.spec.ts",
+      "file": "reference-summary.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "reference summary uses actual reports and isolates scrollable finance/review overlays",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium-360x640",
+              "projectName": "chromium-360x640",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 51144,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-15T03:01:28.957Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "82dcf7619877574735d8-7365584ad985183b3ece",
+          "file": "reference-summary.spec.ts",
+          "line": 50,
+          "column": 1
+        },
+        {
+          "title": "reference summary uses actual reports and isolates scrollable finance/review overlays",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium-390x844",
+              "projectName": "chromium-390x844",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 36628,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-15T03:04:47.649Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "82dcf7619877574735d8-3a41455ea001dcb0906f",
+          "file": "reference-summary.spec.ts",
+          "line": 50,
+          "column": 1
+        },
+        {
+          "title": "reference summary uses actual reports and isolates scrollable finance/review overlays",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium-412x915",
+              "projectName": "chromium-412x915",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 34951,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-15T03:07:32.299Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "82dcf7619877574735d8-b1a1863c05bd6cfb95f8",
+          "file": "reference-summary.spec.ts",
+          "line": 50,
+          "column": 1
+        },
+        {
+          "title": "reference summary uses actual reports and isolates scrollable finance/review overlays",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "webkit-360x640",
+              "projectName": "webkit-360x640",
+              "results": [
+                {
+                  "workerIndex": 3,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 17094,
+                  "error": {
+                    "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mnot\u001b[2m.\u001b[22mtoContain\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // indexOf\u001b[22m\n\nExpected value: not \u001b[32m\"Trúc Trộn\"\u001b[39m\nReceived array:     \u001b[31m[\"Đen Đế Bánh\", \"★☆☆☆☆\", \"Quán đóng cửa trước khi giao món\", \"Lá Lười\", \"★☆☆☆☆\", \"Quán đóng cửa trước khi giao món\", \"Cương Thi Cười\", \"★☆☆☆☆\", \"Hết kiên nhẫn\", \"Hổ Hành\", \"★☆☆☆☆\", \"Hết kiên nhẫn\", \"Bin Bắp\", \"★☆☆☆☆\", \"Hết kiên nhẫn\", \"Trúc Tròn\", \"★☆☆☆☆\", \"Hết kiên nhẫn\", \"Sừng Hồng\", \"★☆☆☆☆\", \"Hết kiên nhẫn\", \"Ninja Nướng\", \"★☆☆☆☆\", \"Hết kiên nhẫn\", \u001b[7m\"Trúc Trộn\"\u001b[27m, \"★☆☆☆☆\", \"Hết kiên nhẫn\", \"Núi Nóng\", \"★★★★★\", \"Đúng món và chín vừa.\", \"Xương Xí Xọn\", \"★★★★★\", \"Đúng món và chín vừa.\", \"Linh Gánh Rau\", \"★★★★★\", \"Đúng món và chín vừa.\"]\u001b[39m",
+                    "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mnot\u001b[2m.\u001b[22mtoContain\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // indexOf\u001b[22m\n\nExpected value: not \u001b[32m\"Trúc Trộn\"\u001b[39m\nReceived array:     \u001b[31m[\"Đen Đế Bánh\", \"★☆☆☆☆\", \"Quán đóng cửa trước khi giao món\", \"Lá Lười\", \"★☆☆☆☆\", \"Quán đóng cửa trước khi giao món\", \"Cương Thi Cười\", \"★☆☆☆☆\", \"Hết kiên nhẫn\", \"Hổ Hành\", \"★☆☆☆☆\", \"Hết kiên nhẫn\", \"Bin Bắp\", \"★☆☆☆☆\", \"Hết kiên nhẫn\", \"Trúc Tròn\", \"★☆☆☆☆\", \"Hết kiên nhẫn\", \"Sừng Hồng\", \"★☆☆☆☆\", \"Hết kiên nhẫn\", \"Ninja Nướng\", \"★☆☆☆☆\", \"Hết kiên nhẫn\", \u001b[7m\"Trúc Trộn\"\u001b[27m, \"★☆☆☆☆\", \"Hết kiên nhẫn\", \"Núi Nóng\", \"★★★★★\", \"Đúng món và chín vừa.\", \"Xương Xí Xọn\", \"★★★★★\", \"Đúng món và chín vừa.\", \"Linh Gánh Rau\", \"★★★★★\", \"Đúng món và chín vừa.\"]\u001b[39m\n    at C:\\Users\\tranv\\Downloads\\game-pizza-ong-VDB-ne\\tests\\reference-summary.spec.ts:102:116",
+                    "location": {
+                      "file": "C:\\Users\\tranv\\Downloads\\game-pizza-ong-VDB-ne\\tests\\reference-summary.spec.ts",
+                      "column": 116,
+                      "line": 102
+                    },
+                    "snippet": "  100 |   const fiveStarText=JSON.parse(await canvas.getAttribute('data-summary-modal-text')||'[]');\n  101 |   for(const review of report.reviews){\n> 102 |     if(review.stars!==5&&!report.reviews.some((r:any)=>r.name===review.name&&r.stars===5))expect(fiveStarText).not.toContain(review.name);\n      |                                                                                                                    ^\n  103 |   }\n  104 |   await tap(page,'summary-review-filter-all');\n  105 |   await page.evaluate(()=>{const fixture=(window as any).summaryFixture;fixture.otherLease=fixture.runtime.acquirePause('test-owner');});"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "C:\\Users\\tranv\\Downloads\\game-pizza-ong-VDB-ne\\tests\\reference-summary.spec.ts",
+                        "column": 116,
+                        "line": 102
+                      },
+                      "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mnot\u001b[2m.\u001b[22mtoContain\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // indexOf\u001b[22m\n\nExpected value: not \u001b[32m\"Trúc Trộn\"\u001b[39m\nReceived array:     \u001b[31m[\"Đen Đế Bánh\", \"★☆☆☆☆\", \"Quán đóng cửa trước khi giao món\", \"Lá Lười\", \"★☆☆☆☆\", \"Quán đóng cửa trước khi giao món\", \"Cương Thi Cười\", \"★☆☆☆☆\", \"Hết kiên nhẫn\", \"Hổ Hành\", \"★☆☆☆☆\", \"Hết kiên nhẫn\", \"Bin Bắp\", \"★☆☆☆☆\", \"Hết kiên nhẫn\", \"Trúc Tròn\", \"★☆☆☆☆\", \"Hết kiên nhẫn\", \"Sừng Hồng\", \"★☆☆☆☆\", \"Hết kiên nhẫn\", \"Ninja Nướng\", \"★☆☆☆☆\", \"Hết kiên nhẫn\", \u001b[7m\"Trúc Trộn\"\u001b[27m, \"★☆☆☆☆\", \"Hết kiên nhẫn\", \"Núi Nóng\", \"★★★★★\", \"Đúng món và chín vừa.\", \"Xương Xí Xọn\", \"★★★★★\", \"Đúng món và chín vừa.\", \"Linh Gánh Rau\", \"★★★★★\", \"Đúng món và chín vừa.\"]\u001b[39m\n\n  100 |   const fiveStarText=JSON.parse(await canvas.getAttribute('data-summary-modal-text')||'[]');\n  101 |   for(const review of report.reviews){\n> 102 |     if(review.stars!==5&&!report.reviews.some((r:any)=>r.name===review.name&&r.stars===5))expect(fiveStarText).not.toContain(review.name);\n      |                                                                                                                    ^\n  103 |   }\n  104 |   await tap(page,'summary-review-filter-all');\n  105 |   await page.evaluate(()=>{const fixture=(window as any).summaryFixture;fixture.otherLease=fixture.runtime.acquirePause('test-owner');});\n    at C:\\Users\\tranv\\Downloads\\game-pizza-ong-VDB-ne\\tests\\reference-summary.spec.ts:102:116"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-15T03:10:06.254Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "screenshot",
+                      "contentType": "image/png",
+                      "path": "C:\\Users\\tranv\\Downloads\\game-pizza-ong-VDB-ne\\test-results\\epic1-3-matrix-final\\reference-summary-referenc-86562-ble-finance-review-overlays-webkit-360x640\\test-failed-1.png"
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "C:\\Users\\tranv\\Downloads\\game-pizza-ong-VDB-ne\\test-results\\epic1-3-matrix-final\\reference-summary-referenc-86562-ble-finance-review-overlays-webkit-360x640\\error-context.md"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "C:\\Users\\tranv\\Downloads\\game-pizza-ong-VDB-ne\\tests\\reference-summary.spec.ts",
+                    "column": 116,
+                    "line": 102
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "82dcf7619877574735d8-60bd284ce0ef0afe221b",
+          "file": "reference-summary.spec.ts",
+          "line": 50,
+          "column": 1
+        },
+        {
+          "title": "reference summary uses actual reports and isolates scrollable finance/review overlays",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "webkit-390x844",
+              "projectName": "webkit-390x844",
+              "results": [
+                {
+                  "workerIndex": 5,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 16180,
+                  "error": {
+                    "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mnot\u001b[2m.\u001b[22mtoContain\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // indexOf\u001b[22m\n\nExpected value: not \u001b[32m\"Trúc Trộn\"\u001b[39m\nReceived array:     \u001b[31m[\"Đen Đế Bánh\", \"★☆☆☆☆\", \"Quán đóng cửa trước khi giao món\", \"Lá Lười\", \"★☆☆☆☆\", \"Quán đóng cửa trước khi giao món\", \"Cương Thi Cười\", \"★☆☆☆☆\", \"Hết kiên nhẫn\", \"Hổ Hành\", \"★☆☆☆☆\", \"Hết kiên nhẫn\", \"Bin Bắp\", \"★☆☆☆☆\", \"Hết kiên nhẫn\", \"Trúc Tròn\", \"★☆☆☆☆\", \"Hết kiên nhẫn\", \"Sừng Hồng\", \"★☆☆☆☆\", \"Hết kiên nhẫn\", \"Ninja Nướng\", \"★☆☆☆☆\", \"Hết kiên nhẫn\", \u001b[7m\"Trúc Trộn\"\u001b[27m, \"★☆☆☆☆\", \"Hết kiên nhẫn\", \"Núi Nóng\", \"★★★★★\", \"Đúng món và chín vừa.\", \"Xương Xí Xọn\", \"★★★★★\", \"Đúng món và chín vừa.\", \"Linh Gánh Rau\", \"★★★★★\", \"Đúng món và chín vừa.\"]\u001b[39m",
+                    "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mnot\u001b[2m.\u001b[22mtoContain\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // indexOf\u001b[22m\n\nExpected value: not \u001b[32m\"Trúc Trộn\"\u001b[39m\nReceived array:     \u001b[31m[\"Đen Đế Bánh\", \"★☆☆☆☆\", \"Quán đóng cửa trước khi giao món\", \"Lá Lười\", \"★☆☆☆☆\", \"Quán đóng cửa trước khi giao món\", \"Cương Thi Cười\", \"★☆☆☆☆\", \"Hết kiên nhẫn\", \"Hổ Hành\", \"★☆☆☆☆\", \"Hết kiên nhẫn\", \"Bin Bắp\", \"★☆☆☆☆\", \"Hết kiên nhẫn\", \"Trúc Tròn\", \"★☆☆☆☆\", \"Hết kiên nhẫn\", \"Sừng Hồng\", \"★☆☆☆☆\", \"Hết kiên nhẫn\", \"Ninja Nướng\", \"★☆☆☆☆\", \"Hết kiên nhẫn\", \u001b[7m\"Trúc Trộn\"\u001b[27m, \"★☆☆☆☆\", \"Hết kiên nhẫn\", \"Núi Nóng\", \"★★★★★\", \"Đúng món và chín vừa.\", \"Xương Xí Xọn\", \"★★★★★\", \"Đúng món và chín vừa.\", \"Linh Gánh Rau\", \"★★★★★\", \"Đúng món và chín vừa.\"]\u001b[39m\n    at C:\\Users\\tranv\\Downloads\\game-pizza-ong-VDB-ne\\tests\\reference-summary.spec.ts:102:116",
+                    "location": {
+                      "file": "C:\\Users\\tranv\\Downloads\\game-pizza-ong-VDB-ne\\tests\\reference-summary.spec.ts",
+                      "column": 116,
+                      "line": 102
+                    },
+                    "snippet": "  100 |   await expect.poll(async()=>JSON.parse(await canvas.getAttribute('data-summary-reviews')||'{}').filter).toBe('5');\n  101 |   const fiveStarText=JSON.parse(await canvas.getAttribute('data-summary-modal-text')||'[]');\n> 102 |   for(const review of report.reviews){\n      |                                       ^\n  103 |     if(review.stars!==5&&!report.reviews.some((r:any)=>r.name===review.name&&r.stars===5))expect(fiveStarText).not.toContain(review.name);\n  104 |   }\n  105 |   await tap(page,'summary-review-filter-all');"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "C:\\Users\\tranv\\Downloads\\game-pizza-ong-VDB-ne\\tests\\reference-summary.spec.ts",
+                        "column": 116,
+                        "line": 102
+                      },
+                      "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mnot\u001b[2m.\u001b[22mtoContain\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // indexOf\u001b[22m\n\nExpected value: not \u001b[32m\"Trúc Trộn\"\u001b[39m\nReceived array:     \u001b[31m[\"Đen Đế Bánh\", \"★☆☆☆☆\", \"Quán đóng cửa trước khi giao món\", \"Lá Lười\", \"★☆☆☆☆\", \"Quán đóng cửa trước khi giao món\", \"Cương Thi Cười\", \"★☆☆☆☆\", \"Hết kiên nhẫn\", \"Hổ Hành\", \"★☆☆☆☆\", \"Hết kiên nhẫn\", \"Bin Bắp\", \"★☆☆☆☆\", \"Hết kiên nhẫn\", \"Trúc Tròn\", \"★☆☆☆☆\", \"Hết kiên nhẫn\", \"Sừng Hồng\", \"★☆☆☆☆\", \"Hết kiên nhẫn\", \"Ninja Nướng\", \"★☆☆☆☆\", \"Hết kiên nhẫn\", \u001b[7m\"Trúc Trộn\"\u001b[27m, \"★☆☆☆☆\", \"Hết kiên nhẫn\", \"Núi Nóng\", \"★★★★★\", \"Đúng món và chín vừa.\", \"Xương Xí Xọn\", \"★★★★★\", \"Đúng món và chín vừa.\", \"Linh Gánh Rau\", \"★★★★★\", \"Đúng món và chín vừa.\"]\u001b[39m\n\n  100 |   await expect.poll(async()=>JSON.parse(await canvas.getAttribute('data-summary-reviews')||'{}').filter).toBe('5');\n  101 |   const fiveStarText=JSON.parse(await canvas.getAttribute('data-summary-modal-text')||'[]');\n> 102 |   for(const review of report.reviews){\n      |                                       ^\n  103 |     if(review.stars!==5&&!report.reviews.some((r:any)=>r.name===review.name&&r.stars===5))expect(fiveStarText).not.toContain(review.name);\n  104 |   }\n  105 |   await tap(page,'summary-review-filter-all');\n    at C:\\Users\\tranv\\Downloads\\game-pizza-ong-VDB-ne\\tests\\reference-summary.spec.ts:102:116"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-15T03:11:53.349Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "screenshot",
+                      "contentType": "image/png",
+                      "path": "C:\\Users\\tranv\\Downloads\\game-pizza-ong-VDB-ne\\test-results\\epic1-3-matrix-final\\reference-summary-referenc-86562-ble-finance-review-overlays-webkit-390x844\\test-failed-1.png"
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "C:\\Users\\tranv\\Downloads\\game-pizza-ong-VDB-ne\\test-results\\epic1-3-matrix-final\\reference-summary-referenc-86562-ble-finance-review-overlays-webkit-390x844\\error-context.md"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "C:\\Users\\tranv\\Downloads\\game-pizza-ong-VDB-ne\\tests\\reference-summary.spec.ts",
+                    "column": 116,
+                    "line": 102
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "82dcf7619877574735d8-03688ebe7c5350153774",
+          "file": "reference-summary.spec.ts",
+          "line": 50,
+          "column": 1
+        },
+        {
+          "title": "reference summary uses actual reports and isolates scrollable finance/review overlays",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "webkit-412x915",
+              "projectName": "webkit-412x915",
+              "results": [
+                {
+                  "workerIndex": 7,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 18925,
+                  "error": {
+                    "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mnot\u001b[2m.\u001b[22mtoContain\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // indexOf\u001b[22m\n\nExpected value: not \u001b[32m\"Trúc Trộn\"\u001b[39m\nReceived array:     \u001b[31m[\"Đen Đế Bánh\", \"★☆☆☆☆\", \"Quán đóng cửa trước khi giao món\", \"Lá Lười\", \"★☆☆☆☆\", \"Quán đóng cửa trước khi giao món\", \"Cương Thi Cười\", \"★☆☆☆☆\", \"Hết kiên nhẫn\", \"Hổ Hành\", \"★☆☆☆☆\", \"Hết kiên nhẫn\", \"Bin Bắp\", \"★☆☆☆☆\", \"Hết kiên nhẫn\", \"Trúc Tròn\", \"★☆☆☆☆\", \"Hết kiên nhẫn\", \"Sừng Hồng\", \"★☆☆☆☆\", \"Hết kiên nhẫn\", \"Ninja Nướng\", \"★☆☆☆☆\", \"Hết kiên nhẫn\", \u001b[7m\"Trúc Trộn\"\u001b[27m, \"★☆☆☆☆\", \"Hết kiên nhẫn\", \"Núi Nóng\", \"★★★★★\", \"Đúng món và chín vừa.\", \"Xương Xí Xọn\", \"★★★★★\", \"Đúng món và chín vừa.\", \"Linh Gánh Rau\", \"★★★★★\", \"Đúng món và chín vừa.\"]\u001b[39m",
+                    "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mnot\u001b[2m.\u001b[22mtoContain\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // indexOf\u001b[22m\n\nExpected value: not \u001b[32m\"Trúc Trộn\"\u001b[39m\nReceived array:     \u001b[31m[\"Đen Đế Bánh\", \"★☆☆☆☆\", \"Quán đóng cửa trước khi giao món\", \"Lá Lười\", \"★☆☆☆☆\", \"Quán đóng cửa trước khi giao món\", \"Cương Thi Cười\", \"★☆☆☆☆\", \"Hết kiên nhẫn\", \"Hổ Hành\", \"★☆☆☆☆\", \"Hết kiên nhẫn\", \"Bin Bắp\", \"★☆☆☆☆\", \"Hết kiên nhẫn\", \"Trúc Tròn\", \"★☆☆☆☆\", \"Hết kiên nhẫn\", \"Sừng Hồng\", \"★☆☆☆☆\", \"Hết kiên nhẫn\", \"Ninja Nướng\", \"★☆☆☆☆\", \"Hết kiên nhẫn\", \u001b[7m\"Trúc Trộn\"\u001b[27m, \"★☆☆☆☆\", \"Hết kiên nhẫn\", \"Núi Nóng\", \"★★★★★\", \"Đúng món và chín vừa.\", \"Xương Xí Xọn\", \"★★★★★\", \"Đúng món và chín vừa.\", \"Linh Gánh Rau\", \"★★★★★\", \"Đúng món và chín vừa.\"]\u001b[39m\n    at C:\\Users\\tranv\\Downloads\\game-pizza-ong-VDB-ne\\tests\\reference-summary.spec.ts:102:116",
+                    "location": {
+                      "file": "C:\\Users\\tranv\\Downloads\\game-pizza-ong-VDB-ne\\tests\\reference-summary.spec.ts",
+                      "column": 116,
+                      "line": 102
+                    },
+                    "snippet": "  100 |   await expect.poll(async()=>JSON.parse(await canvas.getAttribute('data-summary-reviews')||'{}').filter).toBe('5');\n  101 |   const fiveStarText=JSON.parse(await canvas.getAttribute('data-summary-modal-text')||'[]');\n> 102 |   for(const review of report.reviews){\n      |                                       ^\n  103 |     if(review.stars!==5&&!report.reviews.some((r:any)=>r.name===review.name&&r.stars===5))expect(fiveStarText).not.toContain(review.name);\n  104 |   }\n  105 |   await tap(page,'summary-review-filter-all');"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "C:\\Users\\tranv\\Downloads\\game-pizza-ong-VDB-ne\\tests\\reference-summary.spec.ts",
+                        "column": 116,
+                        "line": 102
+                      },
+                      "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mnot\u001b[2m.\u001b[22mtoContain\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // indexOf\u001b[22m\n\nExpected value: not \u001b[32m\"Trúc Trộn\"\u001b[39m\nReceived array:     \u001b[31m[\"Đen Đế Bánh\", \"★☆☆☆☆\", \"Quán đóng cửa trước khi giao món\", \"Lá Lười\", \"★☆☆☆☆\", \"Quán đóng cửa trước khi giao món\", \"Cương Thi Cười\", \"★☆☆☆☆\", \"Hết kiên nhẫn\", \"Hổ Hành\", \"★☆☆☆☆\", \"Hết kiên nhẫn\", \"Bin Bắp\", \"★☆☆☆☆\", \"Hết kiên nhẫn\", \"Trúc Tròn\", \"★☆☆☆☆\", \"Hết kiên nhẫn\", \"Sừng Hồng\", \"★☆☆☆☆\", \"Hết kiên nhẫn\", \"Ninja Nướng\", \"★☆☆☆☆\", \"Hết kiên nhẫn\", \u001b[7m\"Trúc Trộn\"\u001b[27m, \"★☆☆☆☆\", \"Hết kiên nhẫn\", \"Núi Nóng\", \"★★★★★\", \"Đúng món và chín vừa.\", \"Xương Xí Xọn\", \"★★★★★\", \"Đúng món và chín vừa.\", \"Linh Gánh Rau\", \"★★★★★\", \"Đúng món và chín vừa.\"]\u001b[39m\n\n  100 |   await expect.poll(async()=>JSON.parse(await canvas.getAttribute('data-summary-reviews')||'{}').filter).toBe('5');\n  101 |   const fiveStarText=JSON.parse(await canvas.getAttribute('data-summary-modal-text')||'[]');\n> 102 |   for(const review of report.reviews){\n      |                                       ^\n  103 |     if(review.stars!==5&&!report.reviews.some((r:any)=>r.name===review.name&&r.stars===5))expect(fiveStarText).not.toContain(review.name);\n  104 |   }\n  105 |   await tap(page,'summary-review-filter-all');\n    at C:\\Users\\tranv\\Downloads\\game-pizza-ong-VDB-ne\\tests\\reference-summary.spec.ts:102:116"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-15T03:13:29.419Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "screenshot",
+                      "contentType": "image/png",
+                      "path": "C:\\Users\\tranv\\Downloads\\game-pizza-ong-VDB-ne\\test-results\\epic1-3-matrix-final\\reference-summary-referenc-86562-ble-finance-review-overlays-webkit-412x915\\test-failed-1.png"
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "C:\\Users\\tranv\\Downloads\\game-pizza-ong-VDB-ne\\test-results\\epic1-3-matrix-final\\reference-summary-referenc-86562-ble-finance-review-overlays-webkit-412x915\\error-context.md"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "C:\\Users\\tranv\\Downloads\\game-pizza-ong-VDB-ne\\tests\\reference-summary.spec.ts",
+                    "column": 116,
+                    "line": 102
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "82dcf7619877574735d8-1db6af43ba18a00f4545",
+          "file": "reference-summary.spec.ts",
+          "line": 50,
+          "column": 1
+        }
+      ]
+    },
+    {
+      "title": "smoke.spec.ts",
+      "file": "smoke.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "production canvas boots, renders and fits the mobile viewport",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium-360x640",
+              "projectName": "chromium-360x640",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 4195,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-15T03:02:20.159Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "4219922fea2e2bd3c691-fac1674c8fb1e6495df2",
+          "file": "smoke.spec.ts",
+          "line": 3,
+          "column": 1
+        },
+        {
+          "title": "production canvas boots, renders and fits the mobile viewport",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium-390x844",
+              "projectName": "chromium-390x844",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 3472,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-15T03:05:24.354Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "4219922fea2e2bd3c691-ff98bb398f10efffb0d3",
+          "file": "smoke.spec.ts",
+          "line": 3,
+          "column": 1
+        },
+        {
+          "title": "production canvas boots, renders and fits the mobile viewport",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium-412x915",
+              "projectName": "chromium-412x915",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 3009,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-15T03:08:07.309Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "4219922fea2e2bd3c691-9209f77885ce84fd773b",
+          "file": "smoke.spec.ts",
+          "line": 3,
+          "column": 1
+        },
+        {
+          "title": "production canvas boots, renders and fits the mobile viewport",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "webkit-360x640",
+              "projectName": "webkit-360x640",
+              "results": [
+                {
+                  "workerIndex": 4,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 2081,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-15T03:10:24.722Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "4219922fea2e2bd3c691-de6f9982f9beeb35363d",
+          "file": "smoke.spec.ts",
+          "line": 3,
+          "column": 1
+        },
+        {
+          "title": "production canvas boots, renders and fits the mobile viewport",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "webkit-390x844",
+              "projectName": "webkit-390x844",
+              "results": [
+                {
+                  "workerIndex": 6,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 2034,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-15T03:12:10.789Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "4219922fea2e2bd3c691-16cfb3700523f9c9b779",
+          "file": "smoke.spec.ts",
+          "line": 3,
+          "column": 1
+        },
+        {
+          "title": "production canvas boots, renders and fits the mobile viewport",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "webkit-412x915",
+              "projectName": "webkit-412x915",
+              "results": [
+                {
+                  "workerIndex": 8,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 3484,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-15T03:13:49.706Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "4219922fea2e2bd3c691-2fb2e429042660c6cb1e",
+          "file": "smoke.spec.ts",
+          "line": 3,
+          "column": 1
+        }
+      ]
+    },
+    {
+      "title": "tutorial.spec.ts",
+      "file": "tutorial.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "new game completes isolated practice and all management focuses without changing real economy",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium-360x640",
+              "projectName": "chromium-360x640",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 81325,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-15T03:02:24.488Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "01f512424d35f19bba88-5fd70f1360372ddc4051",
+          "file": "tutorial.spec.ts",
+          "line": 17,
+          "column": 1
+        },
+        {
+          "title": "new game completes isolated practice and all management focuses without changing real economy",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium-390x844",
+              "projectName": "chromium-390x844",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 67083,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-15T03:05:27.913Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "01f512424d35f19bba88-0d91ca13341f6fe49e44",
+          "file": "tutorial.spec.ts",
+          "line": 17,
+          "column": 1
+        },
+        {
+          "title": "new game completes isolated practice and all management focuses without changing real economy",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium-412x915",
+              "projectName": "chromium-412x915",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 72826,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-15T03:08:10.385Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "01f512424d35f19bba88-a7b4fce9306249c58c3c",
+          "file": "tutorial.spec.ts",
+          "line": 17,
+          "column": 1
+        },
+        {
+          "title": "new game completes isolated practice and all management focuses without changing real economy",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "webkit-360x640",
+              "projectName": "webkit-360x640",
+              "results": [
+                {
+                  "workerIndex": 4,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 52716,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-15T03:10:26.993Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "01f512424d35f19bba88-1ff17496c816a9985955",
+          "file": "tutorial.spec.ts",
+          "line": 17,
+          "column": 1
+        },
+        {
+          "title": "new game completes isolated practice and all management focuses without changing real economy",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "webkit-390x844",
+              "projectName": "webkit-390x844",
+              "results": [
+                {
+                  "workerIndex": 6,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 43894,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-15T03:12:12.996Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "01f512424d35f19bba88-8847351a3945752992b4",
+          "file": "tutorial.spec.ts",
+          "line": 17,
+          "column": 1
+        },
+        {
+          "title": "new game completes isolated practice and all management focuses without changing real economy",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "webkit-412x915",
+              "projectName": "webkit-412x915",
+              "results": [
+                {
+                  "workerIndex": 8,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 67507,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-15T03:13:53.456Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "01f512424d35f19bba88-a47dfa9cccf5a32165a2",
+          "file": "tutorial.spec.ts",
+          "line": 17,
+          "column": 1
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-10-15T03:00:17.930Z",
+    "duration": 884184.1159999999,
+    "expected": 27,
+    "skipped": 0,
+    "unexpected": 3,
+    "flaky": 0
+  }
+}

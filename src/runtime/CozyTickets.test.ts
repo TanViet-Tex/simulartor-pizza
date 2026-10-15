@@ -80,14 +80,14 @@ describe('Story 1.5 automatic tickets and shared oven', () => {
   });
   it('does not pay another boxed ticket after a rapid duplicate delivery', () => {
     const r=shop(), first=r.selectedTicketId; prepare(r); r.dispatch({type:'bake'}); advance(r,r.bakeTiming.perfectStart); r.dispatch({type:'extract'}); r.dispatch({type:'box'});
-    advance(r,14); const second=r.tickets[1]!.id,secondPrice=r.tickets[1]!.finalPrice; r.selectTicket(first);
+    advance(r,20-r.bakeTiming.perfectStart); const second=r.tickets[1]!.id,secondPrice=r.tickets[1]!.finalPrice; r.selectTicket(first);
     expect(r.dispatch({type:'deliver',targetId:first,sourceId:first,commandId:'first-paid'})).toBe(true);const cash=r.state.cash;
     r.selectTicket(second);prepare(r);expect(r.dispatch({type:'bake'})).toBe(true);advance(r,r.bakeTiming.perfectStart);expect(r.dispatch({type:'extract'})).toBe(true);expect(r.dispatch({type:'box'})).toBe(true);
     expect(r.dispatch({type:'deliver',targetId:second,sourceId:second,commandId:'first-paid'})).toBe(false);expect(r.state.cash).toBe(cash);expect(r.state.stage).toBe('boxed');
     expect(r.dispatch({type:'deliver',targetId:second,sourceId:second,commandId:'second-paid'})).toBe(true);expect(r.state.cash).toBe(cash+secondPrice);
   });
   it('emits the same deterministic arrival and oven events for fixed commands', () => {
-    function flow(){const r=shop(); prepare(r); r.dispatch({type:'bake'}); advance(r,r.bakeTiming.perfectStart); r.dispatch({type:'extract'}); r.requestDiscard(); r.confirmDiscard(); advance(r,14); return r.events;}
+    function flow(){const r=shop(); prepare(r); r.dispatch({type:'bake'}); advance(r,r.bakeTiming.perfectStart); r.dispatch({type:'extract'}); r.requestDiscard(); r.confirmDiscard(); advance(r,20-r.bakeTiming.perfectStart); return r.events;}
     expect(flow()).toEqual(flow()); expect(flow()).toContain('0.00:arrived:arrival-0:cozy-1'); expect(flow()).toContain('20.00:arrived:arrival-1:cozy-2');
   });
   it('keeps recovery clock frozen and resumes the original ticket and arrival schedule', () => {

@@ -1,3 +1,4 @@
+import {reduceShopTraffic} from '../domain/ShopTraffic';
 import {customerPizzaRequests} from '../config/customerPizzaRequests';
 import {resolveScheduleRecipe} from '../config/cozySchedule';
 import {isVipArrival} from '../domain/VipCustomers';
@@ -15,7 +16,7 @@ import type {StockIngredient} from '../domain/CozyStock';
 it('forecasts day one deterministically, adds reserve once to shared needs and subtracts usable inventory',()=>{
   const r=new CozyRuntime(false,true),before=r.exportCheckpoint();
   const forecast=r.marketForecast;
-  expect(forecast.day).toBe(1);const pizzas=forecast.portions.reduce((n,p)=>n+p.quantity,0),needed=Math.ceil(pizzas*1.1);expect(pizzas).toBeGreaterThanOrEqual(15);
+  expect(forecast.day).toBe(1);const pizzas=forecast.portions.reduce((n,p)=>n+p.quantity,0),needed=Math.ceil(pizzas*1.1);expect(pizzas).toBeGreaterThanOrEqual(12);
   expect(forecast.rows.find(row=>row.ingredient==='dough')).toMatchObject({needed,available:0,missing:needed});
   expect(r.marketForecast).toEqual(forecast);expect(r.exportCheckpoint()).toEqual(before);
   expect(r.buy('dough',2,'stock')).toBe(true);
@@ -27,7 +28,7 @@ it.each([1,5,6,11,21])('matches day %i seeded counter/app budget and forecasts e
   for(let d=1;d<day;d++){expect(d===1?r.openShop():r.openNextDay()).toBe(true);expect(r.closeDay()).toBe(true);}
   if(day>=5)expect(r.configureDeliveryApp(true,'on')).toBe(true);
   expect(r.buyShopItem('shop-sign','sign')).toBe(true);expect(r.placeShopItem('shop-sign',true,'place-sign')).toBe(true);
-  const forecast=r.marketForecast,schedule=shopSchedule(deliverySchedule(threeDaySchedule(day,{regularDay1Stars:null,regularLatestStars:null,helpSucceeded:false,referral:false,customerSeed:2718}),day>=5),r.shopState.effects.visitors);
+  const forecast=r.marketForecast,schedule=reduceShopTraffic(shopSchedule(deliverySchedule(threeDaySchedule(day,{regularDay1Stars:null,regularLatestStars:null,helpSucceeded:false,referral:false,customerSeed:2718}),day>=5),r.shopState.effects.visitors));
   const needs=new Map<StockIngredient,number>();let pizzas=0;
   for(const slot of schedule.slots){
     const first=resolveScheduleRecipe(slot,r.menuRecipes)!;const source=slot as DeliveryScheduleSlot;
@@ -108,7 +109,7 @@ it('forecasts the pending day with its app and event quantities without starting
   }
   const checkpoint=r.exportCheckpoint(),forecast=r.marketForecast;
   expect(r.day).toBe(5);expect(forecast.day).toBe(6);
-  const schedule=deliverySchedule(threeDaySchedule(6,{regularDay1Stars:null,regularLatestStars:null,helpSucceeded:false,referral:false,customerSeed:r.campaignEvents.seed,queueCapacity:r.queueCapacity as 4|6}),true);
+  const schedule=reduceShopTraffic(deliverySchedule(threeDaySchedule(6,{regularDay1Stars:null,regularLatestStars:null,helpSucceeded:false,referral:false,customerSeed:r.campaignEvents.seed,queueCapacity:r.queueCapacity as 4|6}),true));
   expect(forecast.portions.reduce((n,p)=>n+p.quantity,0)).toBe(schedule.slots.reduce((n,s)=>{const source=s as DeliveryScheduleSlot,first=resolveScheduleRecipe(s,r.menuRecipes);if(!first)return n;const items=customerPizzaRequests(r.campaignEvents.seed,6,s,r.menuRecipes,first,()=>0,source.source==='app'?source.quantity:undefined);return n+(source.source!=='app'&&isVipArrival(r.campaignEvents.seed,6,s.id)?1:items.length);},0));
   expect(r.exportCheckpoint()).toEqual(checkpoint);
   const quote=r.quoteMarketBasket([{ingredient:'dough',quantity:1}])!;

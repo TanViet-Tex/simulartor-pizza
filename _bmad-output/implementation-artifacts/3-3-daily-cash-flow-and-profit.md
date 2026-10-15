@@ -3,7 +3,11 @@ baseline_commit: NO_VCS
 ---
 # Story 3.3: Daily cash flow and profit
 
-Status: review
+Status: done
+
+## Nghiệm thu lại — 2026-10-15
+
+Đạt công thức dòng tiền/lợi nhuận, bảo toàn kho, report bất biến khi mua ngày sau, đóng ngày một lần và giữ lợi nhuận/đánh giá sau Tiếp tục/hai reload. Accounts/MarketFlow/Stock/Lots unit đạt; ReferenceSummary và saved-history đạt trên Chromium/WebKit360. Vốn500/30ngày, chi phí từ nguồn đã triển khai và đánh giá tổng hợp thay các AC demo3ngày/vốn300/chi phí luôn0 trong lịch sử bên dưới. Xem [biên bản](epic1-3-acceptance-2026-10-15.md); lỗi WebKit tự đóng trang trong một số lượt vẫn được ghi, không xóa khỏi bằng chứng.
 
 ## Story
 

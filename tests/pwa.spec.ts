@@ -13,7 +13,7 @@ test('PWA manifest and Apple metadata use Tiệm Pizza with complete pizza icons
  expect(manifest.icons.map((icon:any)=>icon.sizes).sort()).toEqual(['192x192','512x512']);
  const images=[...manifest.icons.map((icon:any)=>({url:new URL(icon.src,manifestURL).href,size:Number(icon.sizes.split('x')[0])})),{url:await page.locator('link[rel="apple-touch-icon"]').evaluate((link:HTMLLinkElement)=>link.href),size:180},{url:await page.locator('link[rel="icon"]').evaluate((link:HTMLLinkElement)=>link.href),size:32}];
  for(const image of images){const icon=await request.get(image.url);expect(icon.ok()).toBe(true);expect(icon.headers()['content-type']).toContain('image/png');const bytes=await icon.body();expect([...bytes.subarray(0,8)]).toEqual([137,80,78,71,13,10,26,10]);expect(bytes.readUInt32BE(16)).toBe(image.size);expect(bytes.readUInt32BE(20)).toBe(image.size);}
- if(browserName==='chromium'){const cdp=await page.context().newCDPSession(page);try{const parsed=await cdp.send('Page.getAppManifest');expect(parsed.errors).toEqual([]);expect(JSON.parse(parsed.data)).toMatchObject({name:'Tiệm Pizza',display:'standalone'});}finally{await cdp.detach();}}
+ if(browserName==='chromium'){const cdp=await page.context().newCDPSession(page);try{const parsed=await cdp.send('Page.getAppManifest');expect(parsed.errors).toEqual([]);if(!parsed.data)throw Error('Browser did not return the PWA manifest');expect(JSON.parse(parsed.data)).toMatchObject({name:'Tiệm Pizza',display:'standalone'});}finally{await cdp.detach();}}
 });
 
 test('PWA packaging boots the original menu and preserves native campaign storage on reload',async({page})=>{

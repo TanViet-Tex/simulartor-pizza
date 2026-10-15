@@ -16,6 +16,10 @@ sources:
 
 # Project Context for AI Agents
 
+### Tự nghiệm thu Epic1/3 — 2026-10-15
+
+Theo ủy quyền người dùng, đối chiếu theo luật hiện hành (không hồi quy về demo3ngày/vốn300/lò6giây/reservation-at-arrival/tự pause khi rời tab).1.5/1.6 done;1.2 mở lại review do tải đầu18.7MB vượt10MiB;1.7 còn kiểm tra thiết bị thật. Epic3 nghiệm thu8/9story, chỉ3.7 còn review do lượt Kho WebKit tự đóng trang trong môi trường thiếu RAM; chưa kết luận lỗi game.160unit tập trung đạt; full605 còn14test lỗi được ghi riêng. Source chỉ dịch phần đệm hit48CSSpx của dòng danh sách nhìn thấy đầy đủ vào viewport, không đổi nút/art/layout. Xem [biên bản](implementation-artifacts/epic1-3-acceptance-2026-10-15.md) và sprint-status; không đánh dấu toàn bộ Epic1/3 hoàn tất từ việc code đã có.
+
 ### Hai bảng báo cáo gọn — yêu cầu 2026-10-08
 
 Build và5E2E Chromium360×640 đạt: report thật, empty/1/2review, filter/scroll/close và chữ200%/longreview. Ảnh kiểm chứng implementation-artifacts/ui-baseline/compact-finance-reviews-2026-10-08; ba review không có lỗi code.

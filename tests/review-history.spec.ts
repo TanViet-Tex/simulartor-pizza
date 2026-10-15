@@ -47,7 +47,7 @@ test('saved multi-day reviews and last-day profit survive Continue and repeated 
   await page.unroute('**/assets/index-*.js');
   for(let reload=0;reload<2;reload++){
     if(reload===0)await page.goto('/');else await page.reload();
-    await expect(page.locator('canvas')).toHaveAttribute('data-screen','menu',{timeout:30000});await tap(page,'menu-continue');
+    await expect(page.locator('canvas')).toHaveAttribute('data-screen','menu',{timeout:30000});await tap(page,'menu-continue');const playerName=page.getByRole('textbox',{name:'Tên người chơi'});await expect.poll(async()=>await playerName.isVisible()||await page.locator('canvas').getAttribute('data-screen')==='preparation-hub',{timeout:30000}).toBe(true);if(await playerName.isVisible()){await playerName.fill('Người kiểm tra');await playerName.press('Enter');}
     const canvas=page.locator('canvas');await expect(canvas).toHaveAttribute('data-screen','preparation-hub',{timeout:30000});
     await expect.poll(async()=>(await data(page,'save-state'))?.state).toBe('ready');
     await expect(canvas).toHaveAttribute('data-day','3');

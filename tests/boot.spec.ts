@@ -13,10 +13,10 @@ test('cold boot meets local production budget and mobile typography contract',as
     const resources=performance.getEntriesByType('resource') as PerformanceResourceTiming[];
     return {observedMs:performance.now(),decodedBytes:nav.decodedBodySize+resources.reduce((sum,r)=>sum+r.decodedBodySize,0),resources:resources.map(r=>({name:r.name,bytes:r.decodedBodySize}))};
   });
-  expect(evidence.observedMs).toBeLessThanOrEqual(5000);
-  expect(evidence.decodedBytes).toBeGreaterThan(0);expect(evidence.decodedBytes).toBeLessThanOrEqual(10*1024*1024);
   await info.attach('boot-budget.json',{body:JSON.stringify(evidence,null,2),contentType:'application/json'});
   console.log(`${info.project.name} boot: ${Math.round(evidence.observedMs)}ms; ${evidence.decodedBytes} decoded bytes`);
+  expect(evidence.observedMs).toBeLessThanOrEqual(5000);
+  expect(evidence.decodedBytes).toBeGreaterThan(0);expect(evidence.decodedBytes).toBeLessThanOrEqual(10*1024*1024);
   const canvas=page.locator('canvas'),bounds=(await canvas.boundingBox())!;
   const labels=JSON.parse((await canvas.getAttribute('data-labels'))!);
   for(const label of labels){

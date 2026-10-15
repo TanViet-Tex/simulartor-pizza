@@ -1,11 +1,14 @@
 ---
 title: 'Story 1.6 — Box and Deliver to the Intended Ticket Exactly Once'
 created: '2026-10-01'
-status: review
+status: done
 baseline_commit: NO_VCS
 ---
 
 ## Story
+
+Nghiệm thu lại2026-10-15: đạt đóng hộp/giao đúng chủ, hủy giao sai, từ chối đích hết hạn, timeout và chống thanh toán lặp trong nhóm unit Tickets/Delivery/Order/Stock; luồng hộp giữ chủ đến khi giao qua cả hai browser ở ba viewport. Thời gian lò hiện hành4/3/2 và3giây trước cháy thay các con số lịch sử bên dưới. [Bằng chứng nghiệm thu](epic1-3-acceptance-2026-10-15.md). Chấp nhận story theo ủy quyền tự nghiệm thu của người dùng; không chứng nhận hiệu năng điện thoại thật.
+
 As a player with a finished pizza, I want to box it when required and deliver it to an explicit ticket, so that I understand the result and receive revenue only once.
 
 ## Acceptance Criteria

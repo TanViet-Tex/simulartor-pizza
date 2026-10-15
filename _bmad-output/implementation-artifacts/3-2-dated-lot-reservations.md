@@ -3,7 +3,11 @@ baseline_commit: NO_VCS
 ---
 # Story 3.2: Dated lot reservations
 
-Status: review
+Status: done
+
+## Nghiệm thu lại — 2026-10-15
+
+Đạt theo hợp đồng hiện hành: giữ giá vốn mua thật, FEFO, hạn dùng, preflight nguyên tử, không hoàn kho sau bake và bảo toàn giá trị qua ngày. Domain Lots/Stock còn kiểm chứng exact reservation allocations; runtime đã được người dùng thay sang tiêu hao lớp thực tế tại bake, cho nhận đơn khi kho trống/hỏa tốc. Không áp lại reservation-at-arrival hoặc giới hạn correct-assembly cũ. Nhóm160unit tập trung đạt; E2E bếp/chi tiết lô đã kiểm tra đúng phạm vi. [Bằng chứng và giới hạn](epic1-3-acceptance-2026-10-15.md).
 
 ## Story
 

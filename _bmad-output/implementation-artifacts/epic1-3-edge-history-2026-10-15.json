@@ -1,0 +1,354 @@
+{
+  "config": {
+    "argv": [
+      "C:\\Program Files\\nodejs\\node.exe",
+      "C:\\Users\\tranv\\Downloads\\game-pizza-ong-VDB-ne\\node_modules\\@playwright\\test\\cli.js",
+      "test",
+      "tests/reference-market.spec.ts",
+      "tests/review-history.spec.ts",
+      "--grep",
+      "list edge padding|saved multi-day reviews",
+      "--project=chromium-360x640",
+      "--project=webkit-360x640",
+      "--workers=1",
+      "--max-failures=3",
+      "--reporter=line,json",
+      "--output=test-results/epic1-3-edge-history"
+    ],
+    "configFile": "C:\\Users\\tranv\\Downloads\\game-pizza-ong-VDB-ne\\playwright.config.ts",
+    "rootDir": "C:/Users/tranv/Downloads/game-pizza-ong-VDB-ne/tests",
+    "failOnFlakyTests": false,
+    "forbidOnly": false,
+    "fullyParallel": true,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 3,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "C:/Users/tranv/Downloads/game-pizza-ong-VDB-ne/test-results/epic1-3-edge-history",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "chromium-360x640",
+        "name": "chromium-360x640",
+        "testDir": "C:/Users/tranv/Downloads/game-pizza-ong-VDB-ne/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 30000
+      },
+      {
+        "outputDir": "C:/Users/tranv/Downloads/game-pizza-ong-VDB-ne/test-results/epic1-3-edge-history",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "chromium-390x844",
+        "name": "chromium-390x844",
+        "testDir": "C:/Users/tranv/Downloads/game-pizza-ong-VDB-ne/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 30000
+      },
+      {
+        "outputDir": "C:/Users/tranv/Downloads/game-pizza-ong-VDB-ne/test-results/epic1-3-edge-history",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "chromium-412x915",
+        "name": "chromium-412x915",
+        "testDir": "C:/Users/tranv/Downloads/game-pizza-ong-VDB-ne/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 30000
+      },
+      {
+        "outputDir": "C:/Users/tranv/Downloads/game-pizza-ong-VDB-ne/test-results/epic1-3-edge-history",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "webkit-360x640",
+        "name": "webkit-360x640",
+        "testDir": "C:/Users/tranv/Downloads/game-pizza-ong-VDB-ne/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 30000
+      },
+      {
+        "outputDir": "C:/Users/tranv/Downloads/game-pizza-ong-VDB-ne/test-results/epic1-3-edge-history",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "webkit-390x844",
+        "name": "webkit-390x844",
+        "testDir": "C:/Users/tranv/Downloads/game-pizza-ong-VDB-ne/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 30000
+      },
+      {
+        "outputDir": "C:/Users/tranv/Downloads/game-pizza-ong-VDB-ne/test-results/epic1-3-edge-history",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "webkit-412x915",
+        "name": "webkit-412x915",
+        "testDir": "C:/Users/tranv/Downloads/game-pizza-ong-VDB-ne/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 30000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "line"
+      ],
+      [
+        "json"
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.63.0",
+    "workers": 1,
+    "webServer": {
+      "command": "npm run preview -- --port 4173 --strictPort",
+      "url": "http://127.0.0.1:4173",
+      "reuseExistingServer": false
+    }
+  },
+  "suites": [
+    {
+      "title": "reference-market.spec.ts",
+      "file": "reference-market.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "list edge padding activates its visible buy row and keeps partial rows clipped",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium-360x640",
+              "projectName": "chromium-360x640",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 18042,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-15T02:57:55.522Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "99915b996303367fdfba-cebae16a1e53610f63dd",
+          "file": "reference-market.spec.ts",
+          "line": 289,
+          "column": 1
+        },
+        {
+          "title": "list edge padding activates its visible buy row and keeps partial rows clipped",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "webkit-360x640",
+              "projectName": "webkit-360x640",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 13127,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-15T02:58:44.381Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "99915b996303367fdfba-c63c8787e78d52fc1718",
+          "file": "reference-market.spec.ts",
+          "line": 289,
+          "column": 1
+        }
+      ]
+    },
+    {
+      "title": "review-history.spec.ts",
+      "file": "review-history.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "saved multi-day reviews and last-day profit survive Continue and repeated reloads",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 90000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium-360x640",
+              "projectName": "chromium-360x640",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 28704,
+                  "error": {
+                    "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32mtrue\u001b[39m\nReceived: \u001b[31mfalse\u001b[39m\n\nCall Log:\n- Timeout 5000ms exceeded while waiting on the predicate",
+                    "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32mtrue\u001b[39m\nReceived: \u001b[31mfalse\u001b[39m\n\nCall Log:\n- Timeout 5000ms exceeded while waiting on the predicate\n    at C:\\Users\\tranv\\Downloads\\game-pizza-ong-VDB-ne\\tests\\review-history.spec.ts:50:330",
+                    "location": {
+                      "file": "C:\\Users\\tranv\\Downloads\\game-pizza-ong-VDB-ne\\tests\\review-history.spec.ts",
+                      "column": 330,
+                      "line": 50
+                    },
+                    "snippet": "  48 |   for(let reload=0;reload<2;reload++){\n  49 |     if(reload===0)await page.goto('/');else await page.reload();\n> 50 |     await expect(page.locator('canvas')).toHaveAttribute('data-screen','menu',{timeout:30000});await tap(page,'menu-continue');const playerName=page.getByRole('textbox',{name:'Tên người chơi'});await expect.poll(async()=>await playerName.isVisible()||await page.locator('canvas').getAttribute('data-screen')==='preparation-hub').toBe(true);if(await playerName.isVisible()){await playerName.fill('Người kiểm tra');await playerName.press('Enter');}\n     |                                                                                                                                                                                                                                                                                                                                          ^\n  51 |     const canvas=page.locator('canvas');await expect(canvas).toHaveAttribute('data-screen','preparation-hub',{timeout:30000});\n  52 |     await expect.poll(async()=>(await data(page,'save-state'))?.state).toBe('ready');\n  53 |     await expect(canvas).toHaveAttribute('data-day','3');"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "C:\\Users\\tranv\\Downloads\\game-pizza-ong-VDB-ne\\tests\\review-history.spec.ts",
+                        "column": 330,
+                        "line": 50
+                      },
+                      "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32mtrue\u001b[39m\nReceived: \u001b[31mfalse\u001b[39m\n\nCall Log:\n- Timeout 5000ms exceeded while waiting on the predicate\n\n  48 |   for(let reload=0;reload<2;reload++){\n  49 |     if(reload===0)await page.goto('/');else await page.reload();\n> 50 |     await expect(page.locator('canvas')).toHaveAttribute('data-screen','menu',{timeout:30000});await tap(page,'menu-continue');const playerName=page.getByRole('textbox',{name:'Tên người chơi'});await expect.poll(async()=>await playerName.isVisible()||await page.locator('canvas').getAttribute('data-screen')==='preparation-hub').toBe(true);if(await playerName.isVisible()){await playerName.fill('Người kiểm tra');await playerName.press('Enter');}\n     |                                                                                                                                                                                                                                                                                                                                          ^\n  51 |     const canvas=page.locator('canvas');await expect(canvas).toHaveAttribute('data-screen','preparation-hub',{timeout:30000});\n  52 |     await expect.poll(async()=>(await data(page,'save-state'))?.state).toBe('ready');\n  53 |     await expect(canvas).toHaveAttribute('data-day','3');\n    at C:\\Users\\tranv\\Downloads\\game-pizza-ong-VDB-ne\\tests\\review-history.spec.ts:50:330"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-15T02:58:14.143Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "screenshot",
+                      "contentType": "image/png",
+                      "path": "C:\\Users\\tranv\\Downloads\\game-pizza-ong-VDB-ne\\test-results\\epic1-3-edge-history\\review-history-saved-multi-c5e12-ntinue-and-repeated-reloads-chromium-360x640\\test-failed-1.png"
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "C:\\Users\\tranv\\Downloads\\game-pizza-ong-VDB-ne\\test-results\\epic1-3-edge-history\\review-history-saved-multi-c5e12-ntinue-and-repeated-reloads-chromium-360x640\\error-context.md"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "C:\\Users\\tranv\\Downloads\\game-pizza-ong-VDB-ne\\tests\\review-history.spec.ts",
+                    "column": 330,
+                    "line": 50
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "11a4dd616ab2b0b25e85-ba0b14a6c025f4ff2dd6",
+          "file": "review-history.spec.ts",
+          "line": 27,
+          "column": 1
+        },
+        {
+          "title": "saved multi-day reviews and last-day profit survive Continue and repeated reloads",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 90000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "webkit-360x640",
+              "projectName": "webkit-360x640",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 32137,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-15T02:58:58.071Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "11a4dd616ab2b0b25e85-af19468c64f08de88f03",
+          "file": "review-history.spec.ts",
+          "line": 27,
+          "column": 1
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-10-15T02:57:53.082Z",
+    "duration": 98193.026,
+    "expected": 3,
+    "skipped": 0,
+    "unexpected": 1,
+    "flaky": 0
+  }
+}

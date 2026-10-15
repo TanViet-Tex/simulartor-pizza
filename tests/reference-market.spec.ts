@@ -1,5 +1,7 @@
+import {scrollCanvasList} from './helpers/listGestures';
 import {expect,test,type Page} from '@playwright/test';
 import {build} from 'esbuild';
+test.setTimeout(120000);
 
 type Control={id:string;x:number;y:number;width:number;height:number;enabled:boolean};
 type Row={id:string;name:string;quantity:number;unitPrice:number;total:number;available:number;remainingCash:number;visible:boolean};
@@ -51,22 +53,22 @@ test('regular market purchase enters stock and is used once through the next-day
   await fixture(page);const canvas=page.locator('canvas');
   expect((await data(page,'market-rows')).length).toBe(22);await canvas.screenshot({path:info.outputPath('reference-market.png')});
   await buyTwo(page,'dough');await buyTwo(page,'cheese');await buyTwo(page,'sauce','sauce');
-  await expect(canvas).toHaveAttribute('data-cash','270');expect(await data(page,'express-orders')).toEqual([]);
+  await expect(canvas).toHaveAttribute('data-cash','464');expect(await data(page,'express-orders')).toEqual([]);
   await tap(page,'summary-tab-stock');
   expect((await data(page,'stock-rows')).find((r:{id:string})=>r.id==='cheese').usable).toBe(2);
   await tap(page,'stock-item-cheese');expect((await data(page,'hub-detail')).body).toContain('Lô ngày 1');await tap(page,'hub-detail-close');
   await tap(page,'summary-stock-market');await expect(canvas).toHaveAttribute('data-summary-tab','market');
-  await tap(page,'summary-open-first-day');await expect(canvas).toHaveAttribute('data-cash','270');
+  await tap(page,'summary-open-first-day');await expect(canvas).toHaveAttribute('data-cash','464');
   for(const id of ['dough','sauce','cheese'])await tap(page,id);
   await tap(page,'bake');expect((await data(page,'stock')).filter((s:{id:string})=>['dough','sauce','cheese'].includes(s.id)).map((s:{owned:number})=>s.owned)).toEqual([1,1,1]);
   await page.evaluate(()=>{(window as unknown as {marketFixture:{advance:(n:number)=>void}}).marketFixture.advance(6);});
   await expect(canvas).toHaveAttribute('data-heat','perfect');await tap(page,'extract');await tap(page,'box');await tap(page,'deliver');
   await expect(page.locator('canvas')).toHaveAttribute('data-shop','making');await tap(page,'end-day');await tap(page,'confirm-end-day');await expect(canvas).toHaveAttribute('data-screen','day-ended-notice');await tap(page,'day-ended-understood');await expect(canvas).toHaveAttribute('data-screen','day-summary');
-  const report=await data(page,'day-summary');expect(report).toMatchObject({purchases:30,cost:15,revenue:50,profit:15,cash:300});
+  const report=await data(page,'day-summary');expect(report).toMatchObject({purchases:36,cost:18,revenue:60,profit:22,cash:504});
   await tap(page,'summary-tab-market');await tap(page,'market-filter-base');
-  const dough=(await data(page,'market-rows')).find((r:Row)=>r.id==='dough');expect(dough).toMatchObject({unitPrice:6,available:1});
+  const dough=(await data(page,'market-rows')).find((r:Row)=>r.id==='dough');expect(dough).toMatchObject({unitPrice:7,available:1});
   await tap(page,'market-buy-dough');
-  await expect(canvas).toHaveAttribute('data-cash',String(300-6*dough.quantity));expect(await data(page,'day-summary')).toEqual(report);
+  await expect(canvas).toHaveAttribute('data-cash',String(504-7*dough.quantity));expect(await data(page,'day-summary')).toEqual(report);
   await tap(page,'summary-tab-stock');await tap(page,'stock-item-dough');expect((await data(page,'hub-detail')).body).toContain('Lô ngày 2');await tap(page,'hub-detail-close');
   await tap(page,'summary-stock-market');await tap(page,'summary-open-next-day');await expect(canvas).toHaveAttribute('data-day','2');await expect(canvas).toHaveAttribute('data-screen','game');
   expect(errors).toEqual([]);
@@ -264,7 +266,7 @@ test('market and stock retain their list textures and input while dragging acros
     expect(retained).toMatchObject({...baseline,sameTexture:true,sameZones:true});
     const controls=await data(page,'controls') as Control[];
     expect(new Set(controls.map(c=>c.id)).size).toBe(controls.length);
-    expect(controls.filter(c=>c.enabled&&c.id!=='market-buy-all'&&(c.id.startsWith('stock-item-')||/^market-(buy|quantity|minus|plus)-/.test(c.id))).every(c=>c.y>=(tab==='market'?219:223)&&c.y+c.height<=(tab==='market'?537:535))).toBe(true);
+    expect(controls.filter(c=>c.enabled&&c.id!=='market-buy-all'&&(c.id.startsWith('stock-item-')||/^market-(buy|quantity|minus|plus)-/.test(c.id))).every(c=>c.y>=21.6+(tab==='market'?219:223)*.88-.001&&c.y+c.height<=21.6+(tab==='market'?537:535)*.88+.001)).toBe(true);
     await canvas.screenshot({path:info.outputPath(tab+'-retained-scroll.png')});
     // Correct current row remains actionable after the scroll.
     const target=controls.find(c=>c.enabled&&c.height>=48&&(tab==='market'?c.id==='market-buy-all':c.id.startsWith('stock-item-')))!;
@@ -279,7 +281,26 @@ test('market and stock retain their list textures and input while dragging acros
       const game=(window as unknown as {marketFixture:{game:{textures:{list:Record<string,unknown>};scene:{scenes:{input:{listenerCount:(event:string)=>number}}[]}}}}).marketFixture.game;
       return {keys:Object.keys(game.textures.list).filter(k=>k.startsWith(tab+'-window-')),wheel:game.scene.scenes[0].input.listenerCount('wheel')};
     },tab);
-    expect(cleared).toEqual({keys:[],wheel:0});
+    expect(cleared).toEqual({keys:[],wheel:1}); // Quán now owns its seventh-card scroll listener.
   }
   expect(errors).toEqual([]);
+});
+
+test('list edge padding activates its visible buy row and keeps partial rows clipped',async({page})=>{
+ await fixture(page);const canvas=page.locator('canvas'),bounds=(await canvas.boundingBox())!;
+ const inspect=async(id:string)=>({control:(await data(page,'controls')).find((c:Control)=>c.id===id),raw:await page.evaluate(id=>(window as any).marketFixture.game.scene.getScene('CozyScene').tapRects.get(id),id)});
+ const first=await inspect('market-buy-dough');expect(first.raw.w).toBeCloseTo(49*.88);expect(first.raw.h).toBeCloseTo(34*.88);expect(first.control.height*bounds.height/640).toBeGreaterThanOrEqual(48);
+ // Tap the added top padding, above the first visible button, without reaching another row.
+ expect(first.control.y+1).toBeLessThan(first.raw.y);
+ await page.touchscreen.tap(bounds.x+(first.raw.x+first.raw.w/2)*bounds.width/360,bounds.y+(first.control.y+1)*bounds.height/640);
+ await expect(canvas).toHaveAttribute('data-cash','494');expect((await data(page,'stock')).find((s:any)=>s.id==='dough').owned).toBe(1);
+ await scrollCanvasList(page,300,300,11);await expect.poll(async()=>(await data(page,'market-scroll')).offset).toBeGreaterThan(0);
+ const partial=await inspect('market-buy-dough');expect(partial.raw.h).toBeLessThan(first.raw.h);expect(partial.control.height).toBeLessThan(first.control.height);const cash=await canvas.getAttribute('data-cash');
+ await page.touchscreen.tap(bounds.x+(partial.raw.x+partial.raw.w/2)*bounds.width/360,bounds.y+(partial.control.y-1)*bounds.height/640);await page.waitForTimeout(100);await expect(canvas).toHaveAttribute('data-cash',cash!);
+ if(await data(page,'price-dialog'))await tap(page,'market-price-cancel'); // The header remains legitimately clickable above the list.
+ await tap(page,'market-filter-sauce');
+ for(const id of ['market-buy-sauce','market-buy-sauce-hot']){const edge=await inspect(id);expect(edge.control.height*bounds.height/640).toBeGreaterThanOrEqual(48);expect(edge.control.y).toBeGreaterThanOrEqual(21.6+219*.88);expect(edge.control.y+edge.control.height).toBeLessThanOrEqual(21.6+537*.88);}
+ await tap(page,'summary-tab-stock');const stock=await inspect('stock-item-dough');expect(stock.control.height*bounds.height/640).toBeGreaterThanOrEqual(48);await tap(page,'stock-item-dough');expect((await data(page,'hub-detail')).body).toContain('Lô ngày 1');await tap(page,'hub-detail-close');
+ await tap(page,'summary-tab-shop');await tap(page,'shop-section-menu');const menu=await inspect('shop-menu-plus-cheese');expect(menu.control.height*bounds.height/640).toBeGreaterThanOrEqual(48);expect(menu.control.width*bounds.width/360).toBeGreaterThanOrEqual(48);
+ await expect(canvas).toHaveAttribute('data-cash',cash!);
 });

@@ -17,7 +17,7 @@ it('separates cash purchases from business cost, spoilage and retained historica
   const r=new CozyRuntime(false,true,ORDER_TEST_SCHEDULE);provision(r);r.buy('mushroom',2);r.openShop();bake(r);
   for(let i=0;i<120;i++)r.advance(50);r.dispatch({type:'extract'});r.dispatch({type:'box'});r.dispatch({type:'deliver'});r.closeDay();
   const a=identities(r);expect(a).toMatchObject({startingCash:500,sales:60,rewards:0,purchases:48,consumed:18,expired:12,rent:20,wages:0,repairs:0,other:0,endingCash:492,profit:10,openingInventoryValue:0,inventory:{units:3,value:18},cumulativeProfit:10});
-  expect(a.zeroReasons.wages).toContain('nhân viên');expect(a.zeroReasons.repairs).toContain('hỏng');
+  expect(a.zeroReasons.wages).toContain('lương');expect(a.zeroReasons.repairs).toContain('hỏng');
   const snapshot=r.daySummary;r.buy('dough',1);r.buy('mushroom',1);expect(r.state.cash).toBe(478);expect(r.daySummary).toEqual(snapshot);
   a.inventory.lots[0]!.quantity=999;expect(r.daySummary!.accounts.inventory.units).toBe(3);
   expect(r.openNextDay()).toBe(true);r.closeDay();const b=identities(r);

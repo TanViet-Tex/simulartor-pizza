@@ -1,39 +1,42 @@
 # Only audited stories are marked done. Review records verified implementation awaiting acceptance.
 # Historical story keys remain stable; current rules are 30-day campaign/new cash500 and expansion4->5->6.
-last_updated: '2026-10-12'
+last_updated: '2026-10-15'
 # Regression refresh verified: 75 files, 518/518 units, 0 failed/skipped; build/typecheck and 2 focused Chromium360x640 E2E passed.
 # Evidence: unit-regression-current-2026-10-12.json, regression-refresh-summary-2026-10-12.md.
 # Real participants, physical-device checks and the release browser matrix remain pending.
 development_status:
   epic-1: in-progress
   1-1-phaser-starter-scaffold: done
-  1-2-validated-portrait-boot: done
+  1-2-validated-portrait-boot: review
   1-3-controlled-tutorial: done
   1-4-buy-and-reserve-ingredients: done
-  # Automatic orders, single-workbench ownership and delivery are implemented; acceptance remains review.
+  # 2026-10-15 self-acceptance: one-workbench/boxing/delivery accepted under current rules.
+  # Story1.2 reopened: startup18,728,797 bytes exceeds10MiB; physical FPS/input/network remain open.
   # Sources: spec-dough-first-and-single-workbench.md, spec-staff-and-expanded-customer-orders.md.
   # Physical-phone FPS/input latency and slow-network certification remain external (mobile-performance-report.md).
-  1-5-offer-and-one-oven: review
-  1-6-box-and-deliver-once: review
+  1-5-offer-and-one-oven: done
+  1-6-box-and-deliver-once: done
   1-7-mobile-hud-and-lifecycle: review
   epic-2: done
   2-1-distinct-customer-patience-and-price: done
   2-2-stars-daily-rating-and-reputation: done
   2-3-regular-relationship-and-referral-eligibility: done
   epic-3: in-progress
-  3-1-preparation-market-and-pricing: review
-  3-2-dated-lot-reservations: review
-  3-3-daily-cash-flow-and-profit: review
+  3-1-preparation-market-and-pricing: done
+  3-2-dated-lot-reservations: done
+  3-3-daily-cash-flow-and-profit: done
   # Hub/reviews/finance implemented: spec-reference-summary-and-details.md (34 units, 6 focused E2E).
   # Stock filters/lot details/shop navigation/menu flows: spec-stock-shop-missions-ui.md (15 units, 13 E2E).
   # Current menu and six shop screens: spec-bold-ui-and-menu-cleanup.md, spec-six-shop-screens.md.
-  # These counts are historical focused evidence, not new human acceptance or release certification.
-  3-4-reference-hub-ui-and-flows: review
-  3-5-day-reviews-modal: review
-  3-6-day-finance-details-modal: review
+  # 2026-10-15 user-authorized self-acceptance: eight stories accepted against current contracts.
+  # Story3.7 remains review: its WebKit verification closed the page under low-memory conditions.
+  # Evidence: epic1-3-acceptance-2026-10-15.md; no full release/physical-device certification.
+  3-4-reference-hub-ui-and-flows: done
+  3-5-day-reviews-modal: done
+  3-6-day-finance-details-modal: done
   3-7-stock-filters-and-lot-details: review
-  3-8-shop-tab-ui-and-navigation: review
-  3-9-next-day-menu-and-pricing: review
+  3-8-shop-tab-ui-and-navigation: done
+  3-9-next-day-menu-and-pricing: done
 
   epic-4: in-progress
   4-1-three-day-schedule: review

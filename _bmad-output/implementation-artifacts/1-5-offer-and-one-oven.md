@@ -2,13 +2,17 @@
 title: 'Story 1.5 — Đơn tự tạo và một lò nướng'
 type: feature
 created: '2026-10-01'
-status: review
+status: done
 baseline_commit: NO_VCS
 context: []
 ---
 # Story 1.5 — Đơn tự tạo và một lò nướng
 
-> Cập nhật yêu cầu 2026-10-01 theo người dùng. Bản Accept/Decline chung đã hoàn thành trước đó; thay đổi dưới đây mới sửa tài liệu, chưa áp dụng vào code. Story được mở lại ở `ready-for-dev` để không coi bản cũ là đáp ứng hợp đồng mới.
+## Nghiệm thu lại — 2026-10-15
+
+Đạt theo hợp đồng hiện hành: lò4/3/2giây và3giây trước cháy, đế trước nguyên liệu, tiêu hao lớp thực tế lúc bake, một bàn/lò giữ chủ đơn đến khi giao.160unit tập trung đạt; luồng dough-workbench qua Chromium/WebKit ở360/390/412px. Các mô tả cũ về reservation-at-arrival/thời gian lò là lịch sử đã bị thay bằng yêu cầu người dùng. Xem [biên bản nghiệm thu](epic1-3-acceptance-2026-10-15.md); không suy ra Epic1 đã đạt hiệu năng thiết bị thật.
+
+> Ghi chú lịch sử2026-10-01, được thay bằng nghiệm thu2026-10-15 phía trên: tại thời điểm đó bản Accept/Decline chung đã hoàn thành nhưng yêu cầu mới chỉ được ghi tài liệu; story được mở lại ở `ready-for-dev`. Không dùng ghi chú lịch sử này để suy ra code hiện tại chưa triển khai.
 
 ## Code Map
 - `src/runtime/CozyRuntime.ts`: offer, ticket, lò có chủ sở hữu và giữ kho khi làm lại.

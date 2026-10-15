@@ -2,7 +2,7 @@
 title: 'Story 1.2 — Validated boot and portrait shell'
 type: feature
 created: '2026-10-01'
-status: done
+status: review
 baseline_commit: NO_VCS
 context: []
 ---
@@ -27,12 +27,14 @@ The approved October 1 cartoon direction supersedes the original red-primary/2px
 - [x] Validate config once per boot attempt into deeply immutable `ValidatedGameConfig`. Missing/duplicate/unknown IDs, invalid references and non-finite/out-of-range values prevent gameplay.
 - [x] Load mandatory manifest assets before constructing gameplay. On config/network/decode failure show a stable Vietnamese error and >=48px retry; no save mutation or silent fallback. Retry can recover after the resource is repaired.
 - [x] Apply approved theme and verify normal text >=4.5:1, essential boundaries/selection >=3:1. Keep Vietnamese glyphs fully visible and all actionable touch regions >=48px after scale.
-- [x] Verify 360x640, 390x844, 412x915 on Chromium/WebKit, including nonzero safe-area simulation, no overflow and screenshots. Cold local production boot <=5 seconds and loaded resource bodies <=10 MB; report test environment rather than claiming slow-network certification.
+- [ ] Verify 360x640, 390x844, 412x915 on Chromium/WebKit, including nonzero safe-area simulation, no overflow and screenshots. Cold local production boot <=5 seconds and loaded resource bodies <=10 MB; report test environment rather than claiming slow-network certification. Reopened on 2026-10-15: current startup exceeds the resource-body budget; historical evidence below remains historical.
 - [x] Run build, focused unit checks and browser regressions; update this story and sprint status with evidence.
 
 Given a valid config/assets, starting either route reaches its existing screen. Given malformed content or a missing mandatory asset, gameplay stays unconstructed until an explicit successful retry. Given repeated failures, retry stays usable and campaign storage remains untouched. Given a phone viewport, typography and controls remain within canvas/safe area.
 
 ## Verification
+
+Current re-acceptance (2026-10-15): Chromium360 boots locally in1292ms but loads18,728,797 decoded resource bytes, exceeding10MiB. Story returns to review until startup assets satisfy the existing budget. No artwork/layout or threshold changed to force acceptance. Full current evidence and remaining physical-device requirements: [Epic1/3 acceptance](epic1-3-acceptance-2026-10-15.md).
 
 Build and 43 unit tests pass. Boot/smoke matrix: 50 passed, 10 intentionally skipped (two extra timing/short-screen regressions run once, not repeated on the other five profiles). Portrait screenshots visually checked at 360x640, 390x844 and 412x915. Cold production boot: Chromium 1680/813/980 ms; WebKit 1579/1625/1356 ms. Decoded resource bodies: 1,451,590 bytes per run, below 10 MiB. Measurements are local, unthrottled; they do not certify physical-device or slow-network performance. Gameplay regression: 12 passed on Chromium/WebKit 360x640 with one worker. Initial two-worker run had WebKit oven-time timeouts; the serial run confirmed all existing baking, burning, pause, delivery and campaign checkpoint scenarios. Existing unrelated story statuses are not inferred from gameplay code.
 

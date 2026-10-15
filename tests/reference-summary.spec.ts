@@ -1,3 +1,4 @@
+import {scrollCanvasList} from './helpers/listGestures';
 import {expect,test,type Page} from '@playwright/test';
 import {build} from 'esbuild';
 
@@ -50,7 +51,7 @@ test('reference summary uses actual reports and isolates scrollable finance/revi
   test.setTimeout(60000);
   await fixture(page);const canvas=page.locator('canvas');
   const report=JSON.parse(await canvas.getAttribute('data-day-summary')||'{}');
-  expect(report).toMatchObject({revenue:150,delivered:3,cost:45,profit:85});expect(report.reviews.length).toBeGreaterThan(2);
+  expect(report).toMatchObject({revenue:180,delivered:3,cost:54,profit:106});expect(report.reviews.length).toBeGreaterThan(2);
   const recent=JSON.parse(await canvas.getAttribute('data-summary-recent-reviews')||'[]');expect(recent).toEqual(report.reviews.slice(-2).reverse());
   expect(await labels(page)).toContain('Lợi nhuận hôm nay');
   await canvas.screenshot({path:info.outputPath('reference-summary.png')});
@@ -64,7 +65,7 @@ test('reference summary uses actual reports and isolates scrollable finance/revi
   expect(financeIcons.map((icon:any)=>icon.id)).toEqual(expect.arrayContaining(['profit','sales','cheese','cost','dough','rent','wage','cash','bag','cart','stock','ending']));
   const financeRows=JSON.parse(await canvas.getAttribute('data-summary-finance-rows')||'[]');
   expect(financeRows).toEqual(expect.arrayContaining([
-    expect.objectContaining({section:'Doanh thu',label:'Phô mai × 3',amount:'150 xu'}),
+    expect.objectContaining({section:'Doanh thu',label:'Phô mai × 3',amount:'180 xu'}),
     expect.objectContaining({section:'Dòng tiền riêng',label:'Số dư cuối ngày',amount:`${report.cash} xu`}),
   ]));
   for(const cost of report.costByIngredient)expect(financeRows.some((row:any)=>row.section==='Giá vốn nguyên liệu'&&row.amount===`${cost.cost} xu`)).toBe(true);
@@ -74,38 +75,40 @@ test('reference summary uses actual reports and isolates scrollable finance/revi
   await expect(canvas).toHaveAttribute('data-day','1');await expect(canvas).toHaveAttribute('data-summary-modal','finance');
   const scroll=JSON.parse(await canvas.getAttribute('data-modal-scroll')||'[]')[0];expect(scroll.max).toBeGreaterThan(0);
   await page.waitForTimeout(250);const financeBefore=await canvas.screenshot({path:info.outputPath('reference-finance.png')});
-  await page.mouse.move(bounds.x+(scroll.x+scroll.width/2)*bounds.width/360,bounds.y+(scroll.y+scroll.height/2)*bounds.height/640);await page.mouse.wheel(0,200);
+  await scrollCanvasList(page,scroll.x+scroll.width/2,scroll.y+scroll.height/2,200);
   await expect.poll(async()=>JSON.parse(await canvas.getAttribute('data-modal-scroll')||'[]')[0].offset).toBeGreaterThan(0);
   await expectOnlyBodyChanged(page,financeBefore,await canvas.screenshot({path:info.outputPath('reference-finance-scrolled.png')}),scroll);
   await page.evaluate(()=>{document.documentElement.style.fontSize='32px';window.dispatchEvent(new Event('resize'));});
   await expect(canvas).toHaveAttribute('data-summary-body-text-scale','2');
   expect(JSON.parse(await canvas.getAttribute('data-modal-scroll')||'[]')[0].max).toBeGreaterThan(scroll.max);
   await canvas.screenshot({path:info.outputPath('reference-finance-200.png')});
-  await page.mouse.wheel(0,100000);await page.waitForTimeout(150);
+  await scrollCanvasList(page,scroll.x+scroll.width/2,scroll.y+scroll.height/2,100000);await page.waitForTimeout(150);
   await canvas.screenshot({path:info.outputPath('reference-finance-200-end.png')});
   await page.evaluate(()=>{document.documentElement.style.fontSize='16px';window.dispatchEvent(new Event('resize'));});
   await expect(canvas).toHaveAttribute('data-summary-body-text-scale','1');
   await tap(page,'summary-statement-close');await expect(canvas).toHaveAttribute('data-summary-modal','');
-  await tap(page,'summary-reviews-open');await expect(canvas).toHaveAttribute('data-summary-modal','reviews');expect(await labels(page)).toContain('Đánh giá ngày 1');
+  await tap(page,'summary-reviews-open');await expect(canvas).toHaveAttribute('data-summary-modal','reviews');expect(await labels(page)).toContain('Đánh giá tổng hợp');
   const reviewLayout=JSON.parse(await canvas.getAttribute('data-summary-modal-layout')||'{}');
   expect(reviewLayout.bounds).toMatchObject({x:30,y:100,width:300,height:440});
   expect(JSON.parse(await canvas.getAttribute('data-summary-modal-icons')||'[]').length).toBeGreaterThan(0);
   const reviewsScroll=JSON.parse(await canvas.getAttribute('data-modal-scroll')||'[]')[0];expect(reviewsScroll.max).toBeGreaterThan(0);
   await page.waitForTimeout(250);const reviewsBefore=await canvas.screenshot({path:info.outputPath('reference-reviews.png')});
-  await page.mouse.move(bounds.x+(reviewsScroll.x+reviewsScroll.width/2)*bounds.width/360,bounds.y+(reviewsScroll.y+reviewsScroll.height/2)*bounds.height/640);await page.mouse.wheel(0,170);
+  await scrollCanvasList(page,reviewsScroll.x+reviewsScroll.width/2,reviewsScroll.y+reviewsScroll.height/2,170);
   await expect.poll(async()=>JSON.parse(await canvas.getAttribute('data-modal-scroll')||'[]')[0].offset).toBeGreaterThan(0);
   await expectOnlyBodyChanged(page,reviewsBefore,await canvas.screenshot({path:info.outputPath('reference-reviews-scrolled.png')}),reviewsScroll);
   await tap(page,'summary-review-filter-5');
+  await expect.poll(async()=>JSON.parse(await canvas.getAttribute('data-summary-reviews')||'{}').filter).toBe('5');
   const fiveStarText=JSON.parse(await canvas.getAttribute('data-summary-modal-text')||'[]');
   for(const review of report.reviews){
     if(review.stars!==5&&!report.reviews.some((r:any)=>r.name===review.name&&r.stars===5))expect(fiveStarText).not.toContain(review.name);
   }
   await tap(page,'summary-review-filter-all');
+  await expect.poll(async()=>JSON.parse(await canvas.getAttribute('data-summary-reviews')||'{}').filter).toBe('all');
   await page.evaluate(()=>{const fixture=(window as any).summaryFixture;fixture.otherLease=fixture.runtime.acquirePause('test-owner');});
   await tap(page,'summary-reviews-close');await expect(canvas).toHaveAttribute('data-paused','test-owner');
   await page.evaluate(()=>{(window as any).summaryFixture.otherLease.release();});await expect(canvas).toHaveAttribute('data-paused','');
   await expect(canvas).toHaveAttribute('data-day-summary',JSON.stringify(report));await tap(page,'summary-tab-stock');await expect(canvas).toHaveAttribute('data-summary-tab','stock');
-  await tap(page,'summary-tab-summary');await tap(page,'summary-open-next-day');await expect(canvas).toHaveAttribute('data-day','2');await expect(canvas).toHaveAttribute('data-screen','game');
+  await tap(page,'summary-tab-summary');await tap(page,'summary-open-next-day');await expect(canvas).toHaveAttribute('data-summary-tab','market');await expect(canvas).toHaveAttribute('data-day','1');await expect(canvas).toHaveAttribute('data-day-summary',JSON.stringify(report));await tap(page,'market-buy-dough');await tap(page,'summary-open-next-day');await expect(canvas).toHaveAttribute('data-day','2');await expect(canvas).toHaveAttribute('data-screen','game');
 });
 
 test('finance keeps negative cash in amount columns',async({page})=>{

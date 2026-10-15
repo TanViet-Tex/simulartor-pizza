@@ -1,0 +1,280 @@
+{
+  "config": {
+    "argv": [
+      "C:\\Program Files\\nodejs\\node.exe",
+      "C:\\Users\\tranv\\Downloads\\game-pizza-ong-VDB-ne\\node_modules\\@playwright\\test\\cli.js",
+      "test",
+      "tests/reference-shop-screens.spec.ts",
+      "tests/review-history.spec.ts",
+      "--grep",
+      "polished management market|saved multi-day reviews",
+      "--project=webkit-360x640",
+      "--workers=1",
+      "--timeout=120000",
+      "--reporter=line,json",
+      "--output=test-results/epic1-3-webkit-focused"
+    ],
+    "configFile": "C:\\Users\\tranv\\Downloads\\game-pizza-ong-VDB-ne\\playwright.config.ts",
+    "rootDir": "C:/Users/tranv/Downloads/game-pizza-ong-VDB-ne/tests",
+    "failOnFlakyTests": false,
+    "forbidOnly": false,
+    "fullyParallel": true,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "C:/Users/tranv/Downloads/game-pizza-ong-VDB-ne/test-results/epic1-3-webkit-focused",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "chromium-360x640",
+        "name": "chromium-360x640",
+        "testDir": "C:/Users/tranv/Downloads/game-pizza-ong-VDB-ne/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "C:/Users/tranv/Downloads/game-pizza-ong-VDB-ne/test-results/epic1-3-webkit-focused",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "chromium-390x844",
+        "name": "chromium-390x844",
+        "testDir": "C:/Users/tranv/Downloads/game-pizza-ong-VDB-ne/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "C:/Users/tranv/Downloads/game-pizza-ong-VDB-ne/test-results/epic1-3-webkit-focused",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "chromium-412x915",
+        "name": "chromium-412x915",
+        "testDir": "C:/Users/tranv/Downloads/game-pizza-ong-VDB-ne/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "C:/Users/tranv/Downloads/game-pizza-ong-VDB-ne/test-results/epic1-3-webkit-focused",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "webkit-360x640",
+        "name": "webkit-360x640",
+        "testDir": "C:/Users/tranv/Downloads/game-pizza-ong-VDB-ne/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "C:/Users/tranv/Downloads/game-pizza-ong-VDB-ne/test-results/epic1-3-webkit-focused",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "webkit-390x844",
+        "name": "webkit-390x844",
+        "testDir": "C:/Users/tranv/Downloads/game-pizza-ong-VDB-ne/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "C:/Users/tranv/Downloads/game-pizza-ong-VDB-ne/test-results/epic1-3-webkit-focused",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "webkit-412x915",
+        "name": "webkit-412x915",
+        "testDir": "C:/Users/tranv/Downloads/game-pizza-ong-VDB-ne/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 120000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "line"
+      ],
+      [
+        "json"
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.63.0",
+    "workers": 1,
+    "webServer": {
+      "command": "npm run preview -- --port 4173 --strictPort",
+      "url": "http://127.0.0.1:4173",
+      "reuseExistingServer": false
+    }
+  },
+  "suites": [
+    {
+      "title": "reference-shop-screens.spec.ts",
+      "file": "reference-shop-screens.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "polished management market and stock keep real purchases filters and fixed shell",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "webkit-360x640",
+              "projectName": "webkit-360x640",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 56122,
+                  "error": {
+                    "message": "Error: locator.getAttribute: Target page, context or browser has been closed\nCall log:\n\u001b[2m  - waiting for locator('canvas')\u001b[22m\n",
+                    "stack": "Error: locator.getAttribute: Target page, context or browser has been closed\nCall log:\n\u001b[2m  - waiting for locator('canvas')\u001b[22m\n\n    at data (C:\\Users\\tranv\\Downloads\\game-pizza-ong-VDB-ne\\tests\\reference-shop-screens.spec.ts:9:90)\n    at C:\\Users\\tranv\\Downloads\\game-pizza-ong-VDB-ne\\tests\\reference-shop-screens.spec.ts:47:22",
+                    "location": {
+                      "file": "C:\\Users\\tranv\\Downloads\\game-pizza-ong-VDB-ne\\tests\\reference-shop-screens.spec.ts",
+                      "column": 90,
+                      "line": 9
+                    },
+                    "snippet": "   7 | type Control={id:string;x:number;y:number;width:number;height:number;enabled:boolean};\n   8 | let bundleCode:string;\n>  9 | async function data(page:Page,key:string){return JSON.parse(await page.locator('canvas').getAttribute('data-'+key)||'null');}\n     |                                                                                          ^\n  10 | async function settle(page:Page){await page.evaluate(()=>new Promise<void>(resolve=>requestAnimationFrame(()=>requestAnimationFrame(()=>resolve()))));}\n  11 | async function ready(page:Page){await expect(page.locator('canvas')).toHaveAttribute('data-screen',/^(preparation-hub|day-summary|day-ended-notice|game)$/,{timeout:30000});await expect.poll(async()=>(await data(page,'save-state'))?.state).toBe('ready');await settle(page);}\n  12 | async function tap(page:Page,id:string){"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "C:\\Users\\tranv\\Downloads\\game-pizza-ong-VDB-ne\\tests\\reference-shop-screens.spec.ts",
+                        "column": 90,
+                        "line": 9
+                      },
+                      "message": "Error: locator.getAttribute: Target page, context or browser has been closed\nCall log:\n\u001b[2m  - waiting for locator('canvas')\u001b[22m\n\n\n   7 | type Control={id:string;x:number;y:number;width:number;height:number;enabled:boolean};\n   8 | let bundleCode:string;\n>  9 | async function data(page:Page,key:string){return JSON.parse(await page.locator('canvas').getAttribute('data-'+key)||'null');}\n     |                                                                                          ^\n  10 | async function settle(page:Page){await page.evaluate(()=>new Promise<void>(resolve=>requestAnimationFrame(()=>requestAnimationFrame(()=>resolve()))));}\n  11 | async function ready(page:Page){await expect(page.locator('canvas')).toHaveAttribute('data-screen',/^(preparation-hub|day-summary|day-ended-notice|game)$/,{timeout:30000});await expect.poll(async()=>(await data(page,'save-state'))?.state).toBe('ready');await settle(page);}\n  12 | async function tap(page:Page,id:string){\n    at data (C:\\Users\\tranv\\Downloads\\game-pizza-ong-VDB-ne\\tests\\reference-shop-screens.spec.ts:9:90)\n    at C:\\Users\\tranv\\Downloads\\game-pizza-ong-VDB-ne\\tests\\reference-shop-screens.spec.ts:47:22"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-15T03:25:42.131Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "C:\\Users\\tranv\\Downloads\\game-pizza-ong-VDB-ne\\test-results\\epic1-3-webkit-focused\\reference-shop-screens-pol-d044c-ses-filters-and-fixed-shell-webkit-360x640\\error-context.md"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "C:\\Users\\tranv\\Downloads\\game-pizza-ong-VDB-ne\\tests\\reference-shop-screens.spec.ts",
+                    "column": 90,
+                    "line": 9
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "1c12f2bbf5db62427774-d7548462be38871c68ba",
+          "file": "reference-shop-screens.spec.ts",
+          "line": 43,
+          "column": 1
+        }
+      ]
+    },
+    {
+      "title": "review-history.spec.ts",
+      "file": "review-history.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "saved multi-day reviews and last-day profit survive Continue and repeated reloads",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 90000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "webkit-360x640",
+              "projectName": "webkit-360x640",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 64433,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-15T03:26:45.257Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "11a4dd616ab2b0b25e85-af19468c64f08de88f03",
+          "file": "review-history.spec.ts",
+          "line": 27,
+          "column": 1
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-10-15T03:25:32.163Z",
+    "duration": 139967.71899999998,
+    "expected": 1,
+    "skipped": 0,
+    "unexpected": 1,
+    "flaky": 0
+  }
+}

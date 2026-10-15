@@ -5,7 +5,7 @@ function shop() { const r=new CozyRuntime(false,true,ORDER_TEST_SCHEDULE); for(c
 function time(r:CozyRuntime,s:number){for(let i=0;i<s*20;i++)r.advance(50);}
 function cook(r:CozyRuntime){for(const ingredient of ['dough','sauce','cheese'] as const)r.dispatch({type:'ingredient',ingredient});r.dispatch({type:'bake'});time(r,r.bakeTiming.perfectStart);r.dispatch({type:'extract'});}
 it('confirms unboxed delivery, cancel preserves state, and duplicate commands cannot pay another target',()=>{
-  const r=shop(),source=r.selectedTicketId; cook(r);time(r,14);const target=r.tickets[1]!.id;
+  const r=shop(),source=r.selectedTicketId; cook(r);time(r,20-r.bakeTiming.perfectStart);const target=r.tickets[1]!.id;
   const cash=r.state.cash;
   expect(r.dispatch({type:'deliver',sourceId:source,targetId:source,commandId:'delivery-1'})).toBe(true);
   expect(r.deliveryPending).toMatchObject({sourceId:source,targetId:source});expect(r.state.cash).toBe(cash);
@@ -21,7 +21,7 @@ it('confirms unboxed delivery, cancel preserves state, and duplicate commands ca
 });
 it('confirms a wrong target recipe and preserves both tickets on cancellation',()=>{
   const r=shop(),source=r.selectedTicketId; cook(r);r.dispatch({type:'box'});
-  r.prepareAgain();r.selectRecipe('mushroom');r.returnToOrders();time(r,14);const target=r.tickets[1]!.id;
+  r.prepareAgain();r.selectRecipe('mushroom');r.returnToOrders();time(r,20-r.bakeTiming.perfectStart);const target=r.tickets[1]!.id;
   r.selectTicket(target);const cash=r.state.cash;
   r.dispatch({type:'deliver',sourceId:source,targetId:target,commandId:'wrong-1'});
   expect(r.deliveryPending?.reasons).toContain('Sai công thức');r.cancelDelivery();expect(r.tickets).toHaveLength(2);expect(r.state.cash).toBe(cash);
@@ -55,7 +55,7 @@ it('delivery confirmation owns its pause and cannot release visibility or alter 
   expect(r.confirmDelivery()).toBe(false);expect(r.pauses).toEqual([]);
 });
 it('cross-delivery retains consumption while boxed workbench ownership prevents another oven pizza',()=>{
-  const r=shop(),first=r.selectedTicketId;cook(r);r.dispatch({type:'box'});time(r,14);
+  const r=shop(),first=r.selectedTicketId;cook(r);r.dispatch({type:'box'});time(r,20-r.bakeTiming.perfectStart);
   const second=r.tickets[1]!.id;r.selectTicket(second);
   const stock=r.owned('dough');expect(r.productionOwnerId).toBe(first);for(const ingredient of ['dough','sauce','cheese'] as const)expect(r.dispatch({type:'ingredient',ingredient})).toBe(false);expect(r.dispatch({type:'bake'})).toBe(false);expect(r.owned('dough')).toBe(stock);
   expect(r.dispatch({type:'deliver',sourceId:first,targetId:second,commandId:'cross'})).toBe(true);

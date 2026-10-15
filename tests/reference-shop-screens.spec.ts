@@ -1,3 +1,4 @@
+import {scrollCanvasList} from './helpers/listGestures';
 import {expect,test,type Page} from '@playwright/test';
 import {build} from 'esbuild';
 import {fundedShopCheckpoint} from '../src/runtime/shopTestFixture';
@@ -16,8 +17,7 @@ async function tap(page:Page,id:string){
   await page.touchscreen.tap(b.x+(c.x+c.width/2)*b.width/360,b.y+(c.y+c.height/2)*b.height/640);await settle(page);
 }
 async function scroll(page:Page,dy:number){
-  const b=(await page.locator('canvas').boundingBox())!;
-  await page.mouse.move(b.x+180*b.width/360,b.y+390*b.height/640);await page.mouse.wheel(0,dy);await settle(page);
+  await scrollCanvasList(page,180,390,dy);await settle(page);
 }
 async function fixture(page:Page,funded=true){
   if(!bundleCode){
@@ -68,7 +68,7 @@ test('polished management market and stock keep real purchases filters and fixed
   await tap(page,'stock-filter-low');
   const threshold=page.getByRole('textbox',{name:'Ngưỡng sắp hết'});
   await threshold.fill('1');await threshold.press('Enter');
-  expect((await data(page,'stock-rows')).every((r:any)=>r.usable<=1)).toBe(true);
+  await expect.poll(async()=>(await data(page,'stock-rows')).every((r:any)=>r.usable<=1)).toBe(true);
   await tap(page,'stock-filter-all');await scroll(page,10000);
   await expect.poll(async()=>(await data(page,'stock-scroll')).offset).toBeGreaterThan(0);
   expect((await data(page,'controls')).filter((c:Control)=>c.id.startsWith('summary-tab-')||c.id==='pause')).toEqual(shell);

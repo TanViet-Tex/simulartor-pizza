@@ -1,0 +1,966 @@
+{
+  "config": {
+    "argv": [
+      "C:\\Program Files\\nodejs\\node.exe",
+      "C:\\Users\\tranv\\Downloads\\game-pizza-ong-VDB-ne\\node_modules\\@playwright\\test\\cli.js",
+      "test",
+      "tests/reference-shop-screens.spec.ts",
+      "tests/review-history.spec.ts",
+      "tests/reference-summary.spec.ts",
+      "tests/boot.spec.ts",
+      "--grep",
+      "menu price and selling|purchases save in background|failed purchase retains|polished management market|saved multi-day reviews|reference summary uses|cold boot meets|nonzero safe areas|invalid content blocks both",
+      "--project=chromium-360x640",
+      "--project=webkit-360x640",
+      "--workers=1",
+      "--max-failures=6",
+      "--reporter=line,json",
+      "--output=test-results/epic1-3-acceptance-final"
+    ],
+    "configFile": "C:\\Users\\tranv\\Downloads\\game-pizza-ong-VDB-ne\\playwright.config.ts",
+    "rootDir": "C:/Users/tranv/Downloads/game-pizza-ong-VDB-ne/tests",
+    "failOnFlakyTests": false,
+    "forbidOnly": false,
+    "fullyParallel": true,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 6,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "C:/Users/tranv/Downloads/game-pizza-ong-VDB-ne/test-results/epic1-3-acceptance-final",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "chromium-360x640",
+        "name": "chromium-360x640",
+        "testDir": "C:/Users/tranv/Downloads/game-pizza-ong-VDB-ne/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 30000
+      },
+      {
+        "outputDir": "C:/Users/tranv/Downloads/game-pizza-ong-VDB-ne/test-results/epic1-3-acceptance-final",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "chromium-390x844",
+        "name": "chromium-390x844",
+        "testDir": "C:/Users/tranv/Downloads/game-pizza-ong-VDB-ne/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 30000
+      },
+      {
+        "outputDir": "C:/Users/tranv/Downloads/game-pizza-ong-VDB-ne/test-results/epic1-3-acceptance-final",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "chromium-412x915",
+        "name": "chromium-412x915",
+        "testDir": "C:/Users/tranv/Downloads/game-pizza-ong-VDB-ne/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 30000
+      },
+      {
+        "outputDir": "C:/Users/tranv/Downloads/game-pizza-ong-VDB-ne/test-results/epic1-3-acceptance-final",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "webkit-360x640",
+        "name": "webkit-360x640",
+        "testDir": "C:/Users/tranv/Downloads/game-pizza-ong-VDB-ne/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 30000
+      },
+      {
+        "outputDir": "C:/Users/tranv/Downloads/game-pizza-ong-VDB-ne/test-results/epic1-3-acceptance-final",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "webkit-390x844",
+        "name": "webkit-390x844",
+        "testDir": "C:/Users/tranv/Downloads/game-pizza-ong-VDB-ne/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 30000
+      },
+      {
+        "outputDir": "C:/Users/tranv/Downloads/game-pizza-ong-VDB-ne/test-results/epic1-3-acceptance-final",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "webkit-412x915",
+        "name": "webkit-412x915",
+        "testDir": "C:/Users/tranv/Downloads/game-pizza-ong-VDB-ne/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 30000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "line"
+      ],
+      [
+        "json"
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.63.0",
+    "workers": 1,
+    "webServer": {
+      "command": "npm run preview -- --port 4173 --strictPort",
+      "url": "http://127.0.0.1:4173",
+      "reuseExistingServer": false
+    }
+  },
+  "suites": [
+    {
+      "title": "boot.spec.ts",
+      "file": "boot.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "cold boot meets local production budget and mobile typography contract",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium-360x640",
+              "projectName": "chromium-360x640",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 1831,
+                  "error": {
+                    "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeLessThanOrEqual\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m\n\nExpected: <= \u001b[32m10485760\u001b[39m\nReceived:    \u001b[31m18728797\u001b[39m",
+                    "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeLessThanOrEqual\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m\n\nExpected: <= \u001b[32m10485760\u001b[39m\nReceived:    \u001b[31m18728797\u001b[39m\n    at C:\\Users\\tranv\\Downloads\\game-pizza-ong-VDB-ne\\tests\\boot.spec.ts:19:82",
+                    "location": {
+                      "file": "C:\\Users\\tranv\\Downloads\\game-pizza-ong-VDB-ne\\tests\\boot.spec.ts",
+                      "column": 82,
+                      "line": 19
+                    },
+                    "snippet": "  17 |   console.log(`${info.project.name} boot: ${Math.round(evidence.observedMs)}ms; ${evidence.decodedBytes} decoded bytes`);\n  18 |   expect(evidence.observedMs).toBeLessThanOrEqual(5000);\n> 19 |   expect(evidence.decodedBytes).toBeGreaterThan(0);expect(evidence.decodedBytes).toBeLessThanOrEqual(10*1024*1024);\n     |                                                                                  ^\n  20 |   const canvas=page.locator('canvas'),bounds=(await canvas.boundingBox())!;\n  21 |   const labels=JSON.parse((await canvas.getAttribute('data-labels'))!);\n  22 |   for(const label of labels){"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "C:\\Users\\tranv\\Downloads\\game-pizza-ong-VDB-ne\\tests\\boot.spec.ts",
+                        "column": 82,
+                        "line": 19
+                      },
+                      "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeLessThanOrEqual\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m\n\nExpected: <= \u001b[32m10485760\u001b[39m\nReceived:    \u001b[31m18728797\u001b[39m\n\n  17 |   console.log(`${info.project.name} boot: ${Math.round(evidence.observedMs)}ms; ${evidence.decodedBytes} decoded bytes`);\n  18 |   expect(evidence.observedMs).toBeLessThanOrEqual(5000);\n> 19 |   expect(evidence.decodedBytes).toBeGreaterThan(0);expect(evidence.decodedBytes).toBeLessThanOrEqual(10*1024*1024);\n     |                                                                                  ^\n  20 |   const canvas=page.locator('canvas'),bounds=(await canvas.boundingBox())!;\n  21 |   const labels=JSON.parse((await canvas.getAttribute('data-labels'))!);\n  22 |   for(const label of labels){\n    at C:\\Users\\tranv\\Downloads\\game-pizza-ong-VDB-ne\\tests\\boot.spec.ts:19:82"
+                    }
+                  ],
+                  "stdout": [
+                    {
+                      "text": "chromium-360x640 boot: 1292ms; 18728797 decoded bytes\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-15T03:15:23.805Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "boot-budget.json",
+                      "contentType": "application/json",
+                      "body": "ewogICJvYnNlcnZlZE1zIjogMTI5Mi4xOTk5OTk5OTk3MjA2LAogICJkZWNvZGVkQnl0ZXMiOiAxODcyODc5NywKICAicmVzb3VyY2VzIjogWwogICAgewogICAgICAibmFtZSI6ICJodHRwOi8vMTI3LjAuMC4xOjQxNzMvYXNzZXRzL2luZGV4LUN6V3NLQmdwLmpzIiwKICAgICAgImJ5dGVzIjogNTMzNDkwCiAgICB9LAogICAgewogICAgICAibmFtZSI6ICJodHRwOi8vMTI3LjAuMC4xOjQxNzMvYXNzZXRzL3BoYXNlci1CdlJETkN1ZS5qcyIsCiAgICAgICJieXRlcyI6IDEzNzYzNTcKICAgIH0sCiAgICB7CiAgICAgICJuYW1lIjogImh0dHA6Ly8xMjcuMC4wLjE6NDE3My9hc3NldHMvaW5kZXgtQnVFaFlOV0suY3NzIiwKICAgICAgImJ5dGVzIjogNjEwCiAgICB9LAogICAgewogICAgICAibmFtZSI6ICJodHRwOi8vMTI3LjAuMC4xOjQxNzMvZ2FtZS1jb250ZW50Lmpzb24iLAogICAgICAiYnl0ZXMiOiA3MjEKICAgIH0sCiAgICB7CiAgICAgICJuYW1lIjogImh0dHA6Ly8xMjcuMC4wLjE6NDE3My9hc3NldHMvdWkvc2F1Y2Uuc3ZnIiwKICAgICAgImJ5dGVzIjogODEyCiAgICB9LAogICAgewogICAgICAibmFtZSI6ICJodHRwOi8vMTI3LjAuMC4xOjQxNzMvYXNzZXRzL3JlZmVyZW5jZXMvaCVFMSVCQiU5OXAlMjBwaXp6YS5wbmciLAogICAgICAiYnl0ZXMiOiAxMTE2MzU4CiAgICB9LAogICAgewogICAgICAibmFtZSI6ICJodHRwOi8vMTI3LjAuMC4xOjQxNzMvYXNzZXRzL3JlZmVyZW5jZS1raXRjaGVuLWNsZWFuLnBuZyIsCiAgICAgICJieXRlcyI6IDE0ODEwNzQKICAgIH0sCiAgICB7CiAgICAgICJuYW1lIjogImh0dHA6Ly8xMjcuMC4wLjE6NDE3My9hc3NldHMvcmVmZXJlbmNlLWtpdGNoZW4tb3ZlbnMucG5nIiwKICAgICAgImJ5dGVzIjogOTU3NzUwCiAgICB9LAogICAgewogICAgICAibmFtZSI6ICJodHRwOi8vMTI3LjAuMC4xOjQxNzMvYXNzZXRzL21hbmFnZW1lbnQtYmFja2dyb3VuZC5wbmciLAogICAgICAiYnl0ZXMiOiAxOTc2Mjg1CiAgICB9LAogICAgewogICAgICAibmFtZSI6ICJodHRwOi8vMTI3LjAuMC4xOjQxNzMvYXNzZXRzL2N1c3RvbWVyLXBvcnRyYWl0cy9zaGVldC0xLnBuZyIsCiAgICAgICJieXRlcyI6IDIzOTA3NTgKICAgIH0sCiAgICB7CiAgICAgICJuYW1lIjogImh0dHA6Ly8xMjcuMC4wLjE6NDE3My9hc3NldHMvbWFpbi1tZW51LWJhY2tncm91bmQucG5nIiwKICAgICAgImJ5dGVzIjogMTg2NDI0MgogICAgfSwKICAgIHsKICAgICAgIm5hbWUiOiAiaHR0cDovLzEyNy4wLjAuMTo0MTczL2Fzc2V0cy9tZW51LWN1cnRhaW4ucG5nIiwKICAgICAgImJ5dGVzIjogMjA2MTYyOQogICAgfSwKICAgIHsKICAgICAgIm5hbWUiOiAiaHR0cDovLzEyNy4wLjAuMTo0MTczL2Fzc2V0cy9yZWZlcmVuY2VzL0todW5nJTIwdGglQzMlQjRuZyUyMGIlQzMlQTFvJTIwdGklRTElQkIlODdtJTIwcGl6emElMjAlRTElQkElQTVtJTIwYyVDMyVCQW5nLnBuZyIsCiAgICAgICJieXRlcyI6IDE2MDk4MTkKICAgIH0sCiAgICB7CiAgICAgICJuYW1lIjogImh0dHA6Ly8xMjcuMC4wLjE6NDE3My9hc3NldHMvcmVmZXJlbmNlcy9IJUUxJUJCJTk5cCUyMHRobyVFMSVCQSVBMWklMjB0aCVDMyVCNG5nJTIwYiVDMyVBMW8lMjBwaXp6YSUyMCVFMSVCQSVBNW0lMjBjJUMzJUJBbmcucG5nIiwKICAgICAgImJ5dGVzIjogMTQ3MTc5MAogICAgfSwKICAgIHsKICAgICAgIm5hbWUiOiAiaHR0cDovLzEyNy4wLjAuMTo0MTczL2Fzc2V0cy9yZWZlcmVuY2VzL3RoJUMzJUI0bmclMjBiJUMzJUExbyUyMG5oJUUxJUJBJUFEbiUyMHRpJUUxJUJCJTgxbi5wbmciLAogICAgICAiYnl0ZXMiOiAxMjI0MzkKICAgIH0sCiAgICB7CiAgICAgICJuYW1lIjogImh0dHA6Ly8xMjcuMC4wLjE6NDE3My9hc3NldHMvcmVmZXJlbmNlcy9DJUMzJUEwaSUyMCVDNCU5MSVFMSVCQSVCN3QlMjB0aSVFMSVCQiU4N20lMjBwaXp6YSUyMCVFMSVCQSVBNW0lMjBjJUMzJUJBbmcucG5nIiwKICAgICAgImJ5dGVzIjogMTc2MzU3MAogICAgfQogIF0KfQ=="
+                    },
+                    {
+                      "name": "screenshot",
+                      "contentType": "image/png",
+                      "path": "C:\\Users\\tranv\\Downloads\\game-pizza-ong-VDB-ne\\test-results\\epic1-3-acceptance-final\\boot-cold-boot-meets-local-7ae79--mobile-typography-contract-chromium-360x640\\test-failed-1.png"
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "C:\\Users\\tranv\\Downloads\\game-pizza-ong-VDB-ne\\test-results\\epic1-3-acceptance-final\\boot-cold-boot-meets-local-7ae79--mobile-typography-contract-chromium-360x640\\error-context.md"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "C:\\Users\\tranv\\Downloads\\game-pizza-ong-VDB-ne\\tests\\boot.spec.ts",
+                    "column": 82,
+                    "line": 19
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "3be9e5b40a014dc58fa3-5640d809fd0302df3a8f",
+          "file": "boot.spec.ts",
+          "line": 8,
+          "column": 1
+        },
+        {
+          "title": "nonzero safe areas keep the canvas and Vietnamese labels inside usable space",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium-360x640",
+              "projectName": "chromium-360x640",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 1840,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-15T03:15:27.601Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "3be9e5b40a014dc58fa3-786b07ef381c55eb8f6c",
+          "file": "boot.spec.ts",
+          "line": 43,
+          "column": 1
+        },
+        {
+          "title": "invalid content blocks both attempts without checkpoint access, then retry recovers",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium-360x640",
+              "projectName": "chromium-360x640",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 1791,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-15T03:15:29.582Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "3be9e5b40a014dc58fa3-1702581c22b277de256e",
+          "file": "boot.spec.ts",
+          "line": 60,
+          "column": 1
+        },
+        {
+          "title": "cold boot meets local production budget and mobile typography contract",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "webkit-360x640",
+              "projectName": "webkit-360x640",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 2097,
+                  "error": {
+                    "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeLessThanOrEqual\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m\n\nExpected: <= \u001b[32m10485760\u001b[39m\nReceived:    \u001b[31m18729285\u001b[39m",
+                    "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeLessThanOrEqual\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m\n\nExpected: <= \u001b[32m10485760\u001b[39m\nReceived:    \u001b[31m18729285\u001b[39m\n    at C:\\Users\\tranv\\Downloads\\game-pizza-ong-VDB-ne\\tests\\boot.spec.ts:19:82",
+                    "location": {
+                      "file": "C:\\Users\\tranv\\Downloads\\game-pizza-ong-VDB-ne\\tests\\boot.spec.ts",
+                      "column": 82,
+                      "line": 19
+                    },
+                    "snippet": "  17 |   console.log(`${info.project.name} boot: ${Math.round(evidence.observedMs)}ms; ${evidence.decodedBytes} decoded bytes`);\n  18 |   expect(evidence.observedMs).toBeLessThanOrEqual(5000);\n> 19 |   expect(evidence.decodedBytes).toBeGreaterThan(0);expect(evidence.decodedBytes).toBeLessThanOrEqual(10*1024*1024);\n     |                                                                                  ^\n  20 |   const canvas=page.locator('canvas'),bounds=(await canvas.boundingBox())!;\n  21 |   const labels=JSON.parse((await canvas.getAttribute('data-labels'))!);\n  22 |   for(const label of labels){"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "C:\\Users\\tranv\\Downloads\\game-pizza-ong-VDB-ne\\tests\\boot.spec.ts",
+                        "column": 82,
+                        "line": 19
+                      },
+                      "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeLessThanOrEqual\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m\n\nExpected: <= \u001b[32m10485760\u001b[39m\nReceived:    \u001b[31m18729285\u001b[39m\n\n  17 |   console.log(`${info.project.name} boot: ${Math.round(evidence.observedMs)}ms; ${evidence.decodedBytes} decoded bytes`);\n  18 |   expect(evidence.observedMs).toBeLessThanOrEqual(5000);\n> 19 |   expect(evidence.decodedBytes).toBeGreaterThan(0);expect(evidence.decodedBytes).toBeLessThanOrEqual(10*1024*1024);\n     |                                                                                  ^\n  20 |   const canvas=page.locator('canvas'),bounds=(await canvas.boundingBox())!;\n  21 |   const labels=JSON.parse((await canvas.getAttribute('data-labels'))!);\n  22 |   for(const label of labels){\n    at C:\\Users\\tranv\\Downloads\\game-pizza-ong-VDB-ne\\tests\\boot.spec.ts:19:82"
+                    }
+                  ],
+                  "stdout": [
+                    {
+                      "text": "webkit-360x640 boot: 1598ms; 18729285 decoded bytes\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-15T03:17:58.833Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "boot-budget.json",
+                      "contentType": "application/json",
+                      "body": "ewogICJvYnNlcnZlZE1zIjogMTU5OCwKICAiZGVjb2RlZEJ5dGVzIjogMTg3MjkyODUsCiAgInJlc291cmNlcyI6IFsKICAgIHsKICAgICAgIm5hbWUiOiAiaHR0cDovLzEyNy4wLjAuMTo0MTczL21hbmlmZXN0LndlYm1hbmlmZXN0IiwKICAgICAgImJ5dGVzIjogNDg4CiAgICB9LAogICAgewogICAgICAibmFtZSI6ICJodHRwOi8vMTI3LjAuMC4xOjQxNzMvYXNzZXRzL2luZGV4LUN6V3NLQmdwLmpzIiwKICAgICAgImJ5dGVzIjogNTMzNDkwCiAgICB9LAogICAgewogICAgICAibmFtZSI6ICJodHRwOi8vMTI3LjAuMC4xOjQxNzMvYXNzZXRzL3BoYXNlci1CdlJETkN1ZS5qcyIsCiAgICAgICJieXRlcyI6IDEzNzYzNTcKICAgIH0sCiAgICB7CiAgICAgICJuYW1lIjogImh0dHA6Ly8xMjcuMC4wLjE6NDE3My9hc3NldHMvaW5kZXgtQnVFaFlOV0suY3NzIiwKICAgICAgImJ5dGVzIjogNjEwCiAgICB9LAogICAgewogICAgICAibmFtZSI6ICJodHRwOi8vMTI3LjAuMC4xOjQxNzMvZ2FtZS1jb250ZW50Lmpzb24iLAogICAgICAiYnl0ZXMiOiA3MjEKICAgIH0sCiAgICB7CiAgICAgICJuYW1lIjogImh0dHA6Ly8xMjcuMC4wLjE6NDE3My9hc3NldHMvdWkvc2F1Y2Uuc3ZnIiwKICAgICAgImJ5dGVzIjogODEyCiAgICB9LAogICAgewogICAgICAibmFtZSI6ICJodHRwOi8vMTI3LjAuMC4xOjQxNzMvYXNzZXRzL3JlZmVyZW5jZXMvaCVFMSVCQiU5OXAlMjBwaXp6YS5wbmciLAogICAgICAiYnl0ZXMiOiAxMTE2MzU4CiAgICB9LAogICAgewogICAgICAibmFtZSI6ICJodHRwOi8vMTI3LjAuMC4xOjQxNzMvYXNzZXRzL3JlZmVyZW5jZS1raXRjaGVuLWNsZWFuLnBuZyIsCiAgICAgICJieXRlcyI6IDE0ODEwNzQKICAgIH0sCiAgICB7CiAgICAgICJuYW1lIjogImh0dHA6Ly8xMjcuMC4wLjE6NDE3My9hc3NldHMvcmVmZXJlbmNlLWtpdGNoZW4tb3ZlbnMucG5nIiwKICAgICAgImJ5dGVzIjogOTU3NzUwCiAgICB9LAogICAgewogICAgICAibmFtZSI6ICJodHRwOi8vMTI3LjAuMC4xOjQxNzMvYXNzZXRzL21hbmFnZW1lbnQtYmFja2dyb3VuZC5wbmciLAogICAgICAiYnl0ZXMiOiAxOTc2Mjg1CiAgICB9LAogICAgewogICAgICAibmFtZSI6ICJodHRwOi8vMTI3LjAuMC4xOjQxNzMvYXNzZXRzL2N1c3RvbWVyLXBvcnRyYWl0cy9zaGVldC0xLnBuZyIsCiAgICAgICJieXRlcyI6IDIzOTA3NTgKICAgIH0sCiAgICB7CiAgICAgICJuYW1lIjogImh0dHA6Ly8xMjcuMC4wLjE6NDE3My9hc3NldHMvbWFpbi1tZW51LWJhY2tncm91bmQucG5nIiwKICAgICAgImJ5dGVzIjogMTg2NDI0MgogICAgfSwKICAgIHsKICAgICAgIm5hbWUiOiAiaHR0cDovLzEyNy4wLjAuMTo0MTczL2Fzc2V0cy9tZW51LWN1cnRhaW4ucG5nIiwKICAgICAgImJ5dGVzIjogMjA2MTYyOQogICAgfSwKICAgIHsKICAgICAgIm5hbWUiOiAiaHR0cDovLzEyNy4wLjAuMTo0MTczL2Fzc2V0cy9yZWZlcmVuY2VzL0glRTElQkIlOTlwJTIwdGhvJUUxJUJBJUExaSUyMHRoJUMzJUI0bmclMjBiJUMzJUExbyUyMHBpenphJTIwJUUxJUJBJUE1bSUyMGMlQzMlQkFuZy5wbmciLAogICAgICAiYnl0ZXMiOiAxNDcxNzkwCiAgICB9LAogICAgewogICAgICAibmFtZSI6ICJodHRwOi8vMTI3LjAuMC4xOjQxNzMvYXNzZXRzL3JlZmVyZW5jZXMvS2h1bmclMjB0aCVDMyVCNG5nJTIwYiVDMyVBMW8lMjB0aSVFMSVCQiU4N20lMjBwaXp6YSUyMCVFMSVCQSVBNW0lMjBjJUMzJUJBbmcucG5nIiwKICAgICAgImJ5dGVzIjogMTYwOTgxOQogICAgfSwKICAgIHsKICAgICAgIm5hbWUiOiAiaHR0cDovLzEyNy4wLjAuMTo0MTczL2Fzc2V0cy9yZWZlcmVuY2VzL3RoJUMzJUI0bmclMjBiJUMzJUExbyUyMG5oJUUxJUJBJUFEbiUyMHRpJUUxJUJCJTgxbi5wbmciLAogICAgICAiYnl0ZXMiOiAxMjI0MzkKICAgIH0sCiAgICB7CiAgICAgICJuYW1lIjogImh0dHA6Ly8xMjcuMC4wLjE6NDE3My9hc3NldHMvcmVmZXJlbmNlcy9DJUMzJUEwaSUyMCVDNCU5MSVFMSVCQSVCN3QlMjB0aSVFMSVCQiU4N20lMjBwaXp6YSUyMCVFMSVCQSVBNW0lMjBjJUMzJUJBbmcucG5nIiwKICAgICAgImJ5dGVzIjogMTc2MzU3MAogICAgfQogIF0KfQ=="
+                    },
+                    {
+                      "name": "screenshot",
+                      "contentType": "image/png",
+                      "path": "C:\\Users\\tranv\\Downloads\\game-pizza-ong-VDB-ne\\test-results\\epic1-3-acceptance-final\\boot-cold-boot-meets-local-7ae79--mobile-typography-contract-webkit-360x640\\test-failed-1.png"
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "C:\\Users\\tranv\\Downloads\\game-pizza-ong-VDB-ne\\test-results\\epic1-3-acceptance-final\\boot-cold-boot-meets-local-7ae79--mobile-typography-contract-webkit-360x640\\error-context.md"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "C:\\Users\\tranv\\Downloads\\game-pizza-ong-VDB-ne\\tests\\boot.spec.ts",
+                    "column": 82,
+                    "line": 19
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "3be9e5b40a014dc58fa3-221cacc562e94dd8be99",
+          "file": "boot.spec.ts",
+          "line": 8,
+          "column": 1
+        },
+        {
+          "title": "nonzero safe areas keep the canvas and Vietnamese labels inside usable space",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "webkit-360x640",
+              "projectName": "webkit-360x640",
+              "results": [
+                {
+                  "workerIndex": 3,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 2014,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-15T03:18:01.993Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "3be9e5b40a014dc58fa3-f5046309aaa605e58642",
+          "file": "boot.spec.ts",
+          "line": 43,
+          "column": 1
+        },
+        {
+          "title": "invalid content blocks both attempts without checkpoint access, then retry recovers",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "webkit-360x640",
+              "projectName": "webkit-360x640",
+              "results": [
+                {
+                  "workerIndex": 3,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 2322,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-15T03:18:04.121Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "3be9e5b40a014dc58fa3-7c6265fd862373106e75",
+          "file": "boot.spec.ts",
+          "line": 60,
+          "column": 1
+        }
+      ]
+    },
+    {
+      "title": "reference-shop-screens.spec.ts",
+      "file": "reference-shop-screens.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "polished management market and stock keep real purchases filters and fixed shell",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium-360x640",
+              "projectName": "chromium-360x640",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 22729,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-15T03:15:31.593Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "1c12f2bbf5db62427774-9a96afac0e63c49c2d17",
+          "file": "reference-shop-screens.spec.ts",
+          "line": 43,
+          "column": 1
+        },
+        {
+          "title": "menu price and selling changes persist with actual profit and recipe ownership",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium-360x640",
+              "projectName": "chromium-360x640",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 23054,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-15T03:15:54.347Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "1c12f2bbf5db62427774-bac85b461d3cbded4716",
+          "file": "reference-shop-screens.spec.ts",
+          "line": 131,
+          "column": 1
+        },
+        {
+          "title": "purchases save in background without blocking the screen and persist exactly once",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium-360x640",
+              "projectName": "chromium-360x640",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 18033,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-15T03:16:17.428Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "1c12f2bbf5db62427774-32cc68817f45888f33d6",
+          "file": "reference-shop-screens.spec.ts",
+          "line": 204,
+          "column": 1
+        },
+        {
+          "title": "failed purchase retains cash and ownership then retry applies once",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium-360x640",
+              "projectName": "chromium-360x640",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 11950,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-15T03:16:35.497Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "1c12f2bbf5db62427774-1d4e316c4fbcbf87445f",
+          "file": "reference-shop-screens.spec.ts",
+          "line": 220,
+          "column": 1
+        },
+        {
+          "title": "polished management market and stock keep real purchases filters and fixed shell",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "webkit-360x640",
+              "projectName": "webkit-360x640",
+              "results": [
+                {
+                  "workerIndex": 3,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 13151,
+                  "error": {
+                    "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32mtrue\u001b[39m\nReceived: \u001b[31mfalse\u001b[39m",
+                    "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32mtrue\u001b[39m\nReceived: \u001b[31mfalse\u001b[39m\n    at C:\\Users\\tranv\\Downloads\\game-pizza-ong-VDB-ne\\tests\\reference-shop-screens.spec.ts:71:71",
+                    "location": {
+                      "file": "C:\\Users\\tranv\\Downloads\\game-pizza-ong-VDB-ne\\tests\\reference-shop-screens.spec.ts",
+                      "column": 71,
+                      "line": 71
+                    },
+                    "snippet": "  69 |   const threshold=page.getByRole('textbox',{name:'Ngưỡng sắp hết'});\n  70 |   await threshold.fill('1');await threshold.press('Enter');\n> 71 |   expect((await data(page,'stock-rows')).every((r:any)=>r.usable<=1)).toBe(true);\n     |                                                                       ^\n  72 |   await tap(page,'stock-filter-all');await scroll(page,10000);\n  73 |   await expect.poll(async()=>(await data(page,'stock-scroll')).offset).toBeGreaterThan(0);\n  74 |   expect((await data(page,'controls')).filter((c:Control)=>c.id.startsWith('summary-tab-')||c.id==='pause')).toEqual(shell);"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "C:\\Users\\tranv\\Downloads\\game-pizza-ong-VDB-ne\\tests\\reference-shop-screens.spec.ts",
+                        "column": 71,
+                        "line": 71
+                      },
+                      "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32mtrue\u001b[39m\nReceived: \u001b[31mfalse\u001b[39m\n\n  69 |   const threshold=page.getByRole('textbox',{name:'Ngưỡng sắp hết'});\n  70 |   await threshold.fill('1');await threshold.press('Enter');\n> 71 |   expect((await data(page,'stock-rows')).every((r:any)=>r.usable<=1)).toBe(true);\n     |                                                                       ^\n  72 |   await tap(page,'stock-filter-all');await scroll(page,10000);\n  73 |   await expect.poll(async()=>(await data(page,'stock-scroll')).offset).toBeGreaterThan(0);\n  74 |   expect((await data(page,'controls')).filter((c:Control)=>c.id.startsWith('summary-tab-')||c.id==='pause')).toEqual(shell);\n    at C:\\Users\\tranv\\Downloads\\game-pizza-ong-VDB-ne\\tests\\reference-shop-screens.spec.ts:71:71"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-15T03:18:06.703Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "screenshot",
+                      "contentType": "image/png",
+                      "path": "C:\\Users\\tranv\\Downloads\\game-pizza-ong-VDB-ne\\test-results\\epic1-3-acceptance-final\\reference-shop-screens-pol-d044c-ses-filters-and-fixed-shell-webkit-360x640\\test-failed-1.png"
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "C:\\Users\\tranv\\Downloads\\game-pizza-ong-VDB-ne\\test-results\\epic1-3-acceptance-final\\reference-shop-screens-pol-d044c-ses-filters-and-fixed-shell-webkit-360x640\\error-context.md"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "C:\\Users\\tranv\\Downloads\\game-pizza-ong-VDB-ne\\tests\\reference-shop-screens.spec.ts",
+                    "column": 71,
+                    "line": 71
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "1c12f2bbf5db62427774-d7548462be38871c68ba",
+          "file": "reference-shop-screens.spec.ts",
+          "line": 43,
+          "column": 1
+        },
+        {
+          "title": "menu price and selling changes persist with actual profit and recipe ownership",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "webkit-360x640",
+              "projectName": "webkit-360x640",
+              "results": [
+                {
+                  "workerIndex": 4,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 20649,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-15T03:18:21.117Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "1c12f2bbf5db62427774-39d1b73ffc54ac727913",
+          "file": "reference-shop-screens.spec.ts",
+          "line": 131,
+          "column": 1
+        },
+        {
+          "title": "purchases save in background without blocking the screen and persist exactly once",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "webkit-360x640",
+              "projectName": "webkit-360x640",
+              "results": [
+                {
+                  "workerIndex": 4,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 21673,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-15T03:18:41.925Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "1c12f2bbf5db62427774-cdaf2b02c0aac03129bf",
+          "file": "reference-shop-screens.spec.ts",
+          "line": 204,
+          "column": 1
+        },
+        {
+          "title": "failed purchase retains cash and ownership then retry applies once",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "webkit-360x640",
+              "projectName": "webkit-360x640",
+              "results": [
+                {
+                  "workerIndex": 4,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 15192,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-15T03:19:03.625Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "1c12f2bbf5db62427774-1ba95f8fb7d9d4ef930f",
+          "file": "reference-shop-screens.spec.ts",
+          "line": 220,
+          "column": 1
+        }
+      ]
+    },
+    {
+      "title": "reference-summary.spec.ts",
+      "file": "reference-summary.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "reference summary uses actual reports and isolates scrollable finance/review overlays",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium-360x640",
+              "projectName": "chromium-360x640",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 35363,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-15T03:16:47.498Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "82dcf7619877574735d8-7365584ad985183b3ece",
+          "file": "reference-summary.spec.ts",
+          "line": 50,
+          "column": 1
+        },
+        {
+          "title": "reference summary uses actual reports and isolates scrollable finance/review overlays",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "webkit-360x640",
+              "projectName": "webkit-360x640",
+              "results": [
+                {
+                  "workerIndex": 4,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 34436,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-15T03:19:18.881Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "82dcf7619877574735d8-60bd284ce0ef0afe221b",
+          "file": "reference-summary.spec.ts",
+          "line": 50,
+          "column": 1
+        }
+      ]
+    },
+    {
+      "title": "review-history.spec.ts",
+      "file": "review-history.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "saved multi-day reviews and last-day profit survive Continue and repeated reloads",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 90000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium-360x640",
+              "projectName": "chromium-360x640",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 34770,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-15T03:17:22.913Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "11a4dd616ab2b0b25e85-ba0b14a6c025f4ff2dd6",
+          "file": "review-history.spec.ts",
+          "line": 27,
+          "column": 1
+        },
+        {
+          "title": "saved multi-day reviews and last-day profit survive Continue and repeated reloads",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 90000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "webkit-360x640",
+              "projectName": "webkit-360x640",
+              "results": [
+                {
+                  "workerIndex": 4,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 36074,
+                  "error": {
+                    "message": "Error: locator.getAttribute: Target page, context or browser has been closed\nCall log:\n\u001b[2m  - waiting for locator('canvas')\u001b[22m\n",
+                    "stack": "Error: locator.getAttribute: Target page, context or browser has been closed\nCall log:\n\u001b[2m  - waiting for locator('canvas')\u001b[22m\n\n    at data (C:\\Users\\tranv\\Downloads\\game-pizza-ong-VDB-ne\\tests\\review-history.spec.ts:6:90)\n    at tap (C:\\Users\\tranv\\Downloads\\game-pizza-ong-VDB-ne\\tests\\review-history.spec.ts:9:26)\n    at C:\\Users\\tranv\\Downloads\\game-pizza-ong-VDB-ne\\tests\\review-history.spec.ts:65:47",
+                    "location": {
+                      "file": "C:\\Users\\tranv\\Downloads\\game-pizza-ong-VDB-ne\\tests\\review-history.spec.ts",
+                      "column": 90,
+                      "line": 6
+                    },
+                    "snippet": "  4 |\n  5 | type Control={id:string;x:number;y:number;width:number;height:number;enabled:boolean};\n> 6 | async function data(page:Page,key:string){return JSON.parse(await page.locator('canvas').getAttribute('data-'+key)||'null');}\n    |                                                                                          ^\n  7 | async function tap(page:Page,id:string){\n  8 |   await expect.poll(async()=>((await data(page,'controls'))||[]).some((c:Control)=>c.id===id&&c.enabled)).toBe(true);\n  9 |   const c:Control=(await data(page,'controls')).find((c:Control)=>c.id===id),bounds=(await page.locator('canvas').boundingBox())!;"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "C:\\Users\\tranv\\Downloads\\game-pizza-ong-VDB-ne\\tests\\review-history.spec.ts",
+                        "column": 90,
+                        "line": 6
+                      },
+                      "message": "Error: locator.getAttribute: Target page, context or browser has been closed\nCall log:\n\u001b[2m  - waiting for locator('canvas')\u001b[22m\n\n\n  4 |\n  5 | type Control={id:string;x:number;y:number;width:number;height:number;enabled:boolean};\n> 6 | async function data(page:Page,key:string){return JSON.parse(await page.locator('canvas').getAttribute('data-'+key)||'null');}\n    |                                                                                          ^\n  7 | async function tap(page:Page,id:string){\n  8 |   await expect.poll(async()=>((await data(page,'controls'))||[]).some((c:Control)=>c.id===id&&c.enabled)).toBe(true);\n  9 |   const c:Control=(await data(page,'controls')).find((c:Control)=>c.id===id),bounds=(await page.locator('canvas').boundingBox())!;\n    at data (C:\\Users\\tranv\\Downloads\\game-pizza-ong-VDB-ne\\tests\\review-history.spec.ts:6:90)\n    at tap (C:\\Users\\tranv\\Downloads\\game-pizza-ong-VDB-ne\\tests\\review-history.spec.ts:9:26)\n    at C:\\Users\\tranv\\Downloads\\game-pizza-ong-VDB-ne\\tests\\review-history.spec.ts:65:47"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-15T03:19:53.380Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "C:\\Users\\tranv\\Downloads\\game-pizza-ong-VDB-ne\\test-results\\epic1-3-acceptance-final\\review-history-saved-multi-c5e12-ntinue-and-repeated-reloads-webkit-360x640\\error-context.md"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "C:\\Users\\tranv\\Downloads\\game-pizza-ong-VDB-ne\\tests\\review-history.spec.ts",
+                    "column": 90,
+                    "line": 6
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "11a4dd616ab2b0b25e85-af19468c64f08de88f03",
+          "file": "review-history.spec.ts",
+          "line": 27,
+          "column": 1
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-10-15T03:15:21.804Z",
+    "duration": 308686.603,
+    "expected": 14,
+    "skipped": 0,
+    "unexpected": 4,
+    "flaky": 0
+  }
+}

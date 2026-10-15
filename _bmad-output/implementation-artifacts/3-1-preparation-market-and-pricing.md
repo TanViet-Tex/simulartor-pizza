@@ -3,7 +3,11 @@ baseline_commit: NO_VCS
 ---
 # Story 3.1: Preparation market and pricing
 
-Status: review
+Status: done
+
+## Nghiệm thu lại — 2026-10-15
+
+Đạt theo luật hiện hành và ủy quyền tự nghiệm thu: vốn500, đơn giá catalog thật,30ngày, mua thường/đổi giá trong chuẩn bị; hỏa tốc trong ca là luồng riêng. Giá pizza đã nhận bất biến. Unit MarketFlow/MarketForecast/Stock và E2E menu, mua ngầm, lỗi ghi/retry trên hai browser xác nhận giao dịch nguyên tử và chống trừ tiền lặp. Các con số vốn300/giá cũ/giới hạn3ngày trong AC lịch sử được thay bằng project-context hiện hành. Xem [biên bản](epic1-3-acceptance-2026-10-15.md); việc này không chốt toàn bộ Epic3 khi story3.7 còn mở.
 
 ## Story
 

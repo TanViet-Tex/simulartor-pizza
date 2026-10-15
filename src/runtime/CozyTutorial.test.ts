@@ -53,11 +53,11 @@ describe('isolated first-shift guide', () => {
     expect(runtime.state.ovenSeconds).toBe(.05);
     for (let i = 0; i < 31; i++) runtime.advance(250);
     runtime.advance(250);
-    expect(runtime.state.ovenSeconds).toBe(6);
+    expect(runtime.state.ovenSeconds).toBe(runtime.bakeTiming.perfectStart);
     expect(runtime.state.stage).toBe('baking');
     expect(runtime.tutorialStep).toBe('extract');
     for (let i = 0; i < 100; i++) runtime.advance(250);
-    expect(runtime.state.ovenSeconds).toBe(6);
+    expect(runtime.state.ovenSeconds).toBe(runtime.bakeTiming.perfectStart);
     expect(runtime.startShift()).toBe(false);
     for (const type of ['extract', 'box', 'deliver'] as const) {
       expect(runtime.expectedControl).toBe(type);
